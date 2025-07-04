@@ -2,6 +2,21 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Setup
+
+1. Copy `.env.example` to `.env`.
+2. Install dependencies in both the root and backend directories:
+   ```
+   npm install
+   (cd backend && npm install)
+   ```
+3. Run the backend and frontend servers:
+   ```
+   node backend/server.js
+   npm start
+   ```
+
+
 ## Available Scripts
 
 In the project directory, you can run:
