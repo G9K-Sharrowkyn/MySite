@@ -17,6 +17,14 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
    ```
 
 
+## Default Moderator Login
+
+A moderator account is preloaded in `backend/db.json`.
+
+- **Username:** `moderator`
+- **Email:** `moderator@site.local`
+- **Password:** `mod1234`
+
 ## Available Scripts
 
 In the project directory, you can run:
