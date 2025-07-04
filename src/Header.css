@@ -1,11 +1,12 @@
 .app-header {
   background-color: #333;
   padding: 15px 20px;
-  color: white;
+  color: var(--text-light);
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-main);
 }
 
 .app-header nav ul {
@@ -13,14 +14,16 @@
   margin: 0;
   padding: 0;
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
 }
-
 .app-header nav ul li {
-  margin: 0 15px;
+  margin: 0 10px;
 }
 
 .app-header nav ul li a {
-  color: white;
+  color: var(--text-light);
   text-decoration: none;
   font-size: 1.1em;
   padding: 5px 10px;
@@ -31,4 +34,17 @@
 .app-header nav ul li a:hover,
 .app-header nav ul li a.active {
   background-color: #555;
+}
+
+.logout-button {
+  background-color: var(--accent);
+  border: none;
+  color: var(--text-light);
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  opacity: 0.8;
 }
