@@ -8,19 +8,6 @@ const CharacterSelectionPage = () => {
   const [selectedCharacters, setSelectedCharacters] = useState([]);
   const [notification, setNotification] = useState(null);
 
-  useEffect(() => {
-    fetchCharacters();
-    fetchSelectedCharacters();
-  }, []);
-
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-  };
-
-  const clearNotification = () => {
-    setNotification(null);
-  };
-
   const fetchCharacters = async () => {
     try {
       const res = await axios.get('/api/characters');
@@ -40,6 +27,19 @@ const CharacterSelectionPage = () => {
     } catch (err) {
       showNotification('Błąd podczas pobierania wybranych postaci.', 'error');
     }
+  };
+
+  useEffect(() => {
+    fetchCharacters();
+    fetchSelectedCharacters();
+  }, []);
+
+  const showNotification = (message, type) => {
+    setNotification({ message, type });
+  };
+
+  const clearNotification = () => {
+    setNotification(null);
   };
 
   const handleSelect = (charId) => {
