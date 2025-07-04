@@ -24,7 +24,7 @@
       "id": "MODERATOR-UNIQUE-ID-1234",
       "username": "moderator",
       "email": "moderator@site.local",
-      "password": "$2b$10$MODERATORHASHEDPASSWORDHERE",
+      "password": "$2b$10$NqGZhS6ZpY6sSpPXeoXjSu83sPK.VXvmfFR0yFhWAl8e3JaU7m1E6",
       "role": "moderator",
       "profile": {
         "avatar": "/public/logo192.png",
