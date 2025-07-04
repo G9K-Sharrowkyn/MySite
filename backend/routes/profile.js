@@ -3,10 +3,6 @@ const router = express.Router();
 const profileController = require('../controllers/profileController');
 const auth = require('../middleware/authMiddleware');
 
-// @route   GET api/profile/:userId
-// @desc    Get user profile by ID
-// @access  Public
-router.get('/:userId', profileController.getProfile);
 
 // @route   GET api/profile/all
 // @desc    Get all user profiles (public data)
@@ -27,5 +23,10 @@ router.get('/search', profileController.searchProfiles);
 // @desc    Get user leaderboard
 // @access  Public
 router.get('/leaderboard', profileController.getLeaderboard);
+
+// @route   GET api/profile/:userId
+// @desc    Get user profile by ID
+// @access  Public
+router.get('/:userId', profileController.getProfile);
 
 module.exports = router;
