@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import Notification from './Notification';
 import './MessagesPage.css';
 import { Link } from 'react-router-dom';
@@ -31,7 +31,7 @@ const MessagesPage = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await axios.get('/api/messages', {
+      const res = await api.get('/api/messages', {
         headers: {
           'x-auth-token': token,
         },
@@ -44,7 +44,7 @@ const MessagesPage = () => {
 
   const fetchUsers = async () => {
     try {
-      const res = await axios.get('/api/profile/all');
+      const res = await api.get('/api/profile/all');
       setUsers(res.data);
     } catch (err) {
       showNotification('Błąd podczas pobierania listy użytkowników.', 'error');
@@ -63,7 +63,7 @@ const MessagesPage = () => {
       return;
     }
     try {
-      await axios.post('/api/messages', newMessage, {
+      await api.post('/api/messages', newMessage, {
         headers: {
           'x-auth-token': token,
         },

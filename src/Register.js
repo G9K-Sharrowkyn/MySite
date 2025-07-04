@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from './api';
 import Notification from './Notification';
 import './Auth.css'; // Wspólny plik CSS dla autentykacji
 
@@ -45,7 +45,7 @@ const Register = ({ setIsLoggedIn }) => {
 
         const body = JSON.stringify(newUser);
 
-        const res = await axios.post('/api/auth/register', body, config);
+        const res = await api.post('/api/auth/register', body, config);
         console.log(res.data);
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('userId', res.data.userId);

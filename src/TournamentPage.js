@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import api from './api';
 import FightCard from './FightCard';
 import './TournamentPage.css';
 
@@ -9,7 +9,7 @@ const TournamentPage = () => {
   useEffect(() => {
     const fetchFights = async () => {
       try {
-        const res = await axios.get('/api/fights');
+        const res = await api.get('/api/fights');
         // Grupujemy walki według kategorii, tak jak w mockData
         const groupedFights = res.data.reduce((acc, fight) => {
           const category = fight.category || 'Inne'; // Domyślna kategoria

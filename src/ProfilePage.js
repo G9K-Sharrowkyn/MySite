@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { useParams, Link } from 'react-router-dom';
 import './ProfilePage.css';
 
@@ -24,7 +24,7 @@ const ProfilePage = () => {
 
   const fetchProfile = async (id) => {
     try {
-      const res = await axios.get(`/api/profile/${id}`);
+      const res = await api.get(`/api/profile/${id}`);
       setProfile(res.data);
       setDescription(res.data.description || '');
       setProfilePicture(res.data.profilePicture || '');
@@ -35,7 +35,7 @@ const ProfilePage = () => {
 
   const fetchComments = async (id) => {
     try {
-      const res = await axios.get(`/api/comments/user/${id}`);
+      const res = await api.get(`/api/comments/user/${id}`);
       setComments(res.data);
     } catch (err) {
       console.error('Błąd podczas pobierania komentarzy:', err);
@@ -50,7 +50,7 @@ const ProfilePage = () => {
       return;
     }
     try {
-      await axios.post(`/api/comments/user/${userId}`, { text: newComment }, {
+      await api.post(`/api/comments/user/${userId}`, { text: newComment }, {
         headers: {
           'x-auth-token': token,
         },
@@ -70,7 +70,7 @@ const ProfilePage = () => {
       return;
     }
     try {
-      await axios.put('/api/profile/me', { description, profilePicture }, {
+      await api.put('/api/profile/me', { description, profilePicture }, {
         headers: {
           'x-auth-token': token,
         },

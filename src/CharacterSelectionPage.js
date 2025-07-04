@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import Notification from './Notification';
 import './CharacterSelectionPage.css';
 
@@ -10,7 +10,7 @@ const CharacterSelectionPage = () => {
 
   const fetchCharacters = async () => {
     try {
-      const res = await axios.get('/api/characters');
+      const res = await api.get('/api/characters');
       setCharacters(res.data);
     } catch (err) {
       showNotification('Błąd podczas pobierania postaci.', 'error');
@@ -22,7 +22,7 @@ const CharacterSelectionPage = () => {
     const userId = localStorage.getItem('userId');
     if (!token || !userId) return;
     try {
-      const res = await axios.get(`/api/profile/${userId}`);
+      const res = await api.get(`/api/profile/${userId}`);
       setSelectedCharacters(res.data.selectedCharacters || []);
     } catch (err) {
       showNotification('Błąd podczas pobierania wybranych postaci.', 'error');
@@ -61,7 +61,7 @@ const CharacterSelectionPage = () => {
       return;
     }
     try {
-      await axios.put('/api/profile/me', { selectedCharacters }, {
+      await api.put('/api/profile/me', { selectedCharacters }, {
         headers: { 'x-auth-token': token },
       });
       showNotification('Drużyna zapisana!', 'success');

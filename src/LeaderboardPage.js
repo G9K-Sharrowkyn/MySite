@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import { Link } from 'react-router-dom';
 import './LeaderboardPage.css';
 
@@ -9,7 +9,7 @@ const LeaderboardPage = () => {
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        const res = await axios.get('/api/profile/leaderboard');
+        const res = await api.get('/api/profile/leaderboard');
         setLeaderboard(res.data);
       } catch (err) {
         console.error('Błąd podczas pobierania rankingu:', err);

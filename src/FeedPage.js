@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import Notification from './Notification';
 import './FeedPage.css';
 
@@ -12,7 +12,7 @@ const FeedPage = () => {
 
   const fetchPosts = async () => {
     try {
-      const res = await axios.get('/api/posts');
+      const res = await api.get('/api/posts');
       const list = res.data.posts || res.data;
       setPosts(list);
     } catch (err) {
@@ -22,7 +22,7 @@ const FeedPage = () => {
 
   const fetchPostComments = async (postId) => {
     try {
-      const res = await axios.get(`/api/comments/post/${postId}`);
+      const res = await api.get(`/api/comments/post/${postId}`);
       setPostComments(prev => ({ ...prev, [postId]: res.data }));
     } catch (err) {
       console.error('Błąd podczas pobierania komentarzy:', err);
@@ -54,7 +54,7 @@ const FeedPage = () => {
       return;
     }
     try {
-      await axios.post('/api/posts', newPost, { headers: { 'x-auth-token': token } });
+      await api.post('/api/posts', newPost, { headers: { 'x-auth-token': token } });
       setNewPost({ title: '', content: '', type: 'discussion', teamA: '', teamB: '' });
       showNotification('Post dodany!', 'success');
       fetchPosts();
@@ -71,7 +71,7 @@ const FeedPage = () => {
       return;
     }
     try {
-      await axios.post(`/api/posts/${id}/like`, {}, { headers: { 'x-auth-token': token } });
+      await api.post(`/api/posts/${id}/like`, {}, { headers: { 'x-auth-token': token } });
       fetchPosts();
     } catch (err) {
       console.error('Błąd podczas lajkowania postu:', err.response?.data);
@@ -86,7 +86,7 @@ const FeedPage = () => {
       return;
     }
     try {
-      await axios.post(`/api/votes/fight/${postId}`, { postId, team }, { headers: { 'x-auth-token': token } });
+      await api.post(`/api/votes/fight/${postId}`, { postId, team }, { headers: { 'x-auth-token': token } });
       fetchPosts();
     } catch (err) {
       console.error('Błąd podczas głosowania:', err.response?.data);
@@ -105,7 +105,7 @@ const FeedPage = () => {
       return;
     }
     try {
-      await axios.post(`/api/comments/post/${postId}`, { text: newComments[postId] }, { headers: { 'x-auth-token': token } });
+      await api.post(`/api/comments/post/${postId}`, { text: newComments[postId] }, { headers: { 'x-auth-token': token } });
       setNewComments(prev => ({ ...prev, [postId]: '' }));
       fetchPostComments(postId);
     } catch (err) {

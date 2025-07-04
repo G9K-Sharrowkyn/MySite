@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from './api';
 import Notification from './Notification';
 import { useNavigate } from 'react-router-dom';
 import './Auth.css'; // Wspólny plik CSS dla autentykacji
@@ -41,7 +41,7 @@ const Login = ({ setIsLoggedIn }) => {
 
       const body = JSON.stringify(user);
 
-      const res = await axios.post('/api/auth/login', body, config);
+      const res = await api.post('/api/auth/login', body, config);
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userId', res.data.userId);
       setIsLoggedIn(true);

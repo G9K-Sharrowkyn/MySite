@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import Notification from './Notification';
 import './ModeratorPanel.css';
 
@@ -26,7 +26,7 @@ const ModeratorPanel = () => {
 
   const fetchFights = async () => {
     try {
-      const res = await axios.get('/api/fights');
+      const res = await api.get('/api/fights');
       setFights(res.data);
     } catch (err) {
       console.error('Błąd podczas pobierania walk:', err);
@@ -37,7 +37,7 @@ const ModeratorPanel = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await axios.get('/api/fights/pairs', {
+      const res = await api.get('/api/fights/pairs', {
         headers: { 'x-auth-token': token },
       });
       setPlayerPairs(res.data);
@@ -67,7 +67,7 @@ const ModeratorPanel = () => {
     }
 
     try {
-      await axios.post('/api/fights', newFight, {
+      await api.post('/api/fights', newFight, {
         headers: {
           'x-auth-token': token,
         },
@@ -99,7 +99,7 @@ const ModeratorPanel = () => {
     }
     if (window.confirm('Czy na pewno chcesz usunąć tę walkę?')) {
       try {
-        await axios.delete(`/api/fights/${id}`, {
+        await api.delete(`/api/fights/${id}`, {
           headers: {
             'x-auth-token': token,
           },
@@ -122,7 +122,7 @@ const ModeratorPanel = () => {
 
     try {
       for (const pair of playerPairs) {
-        await axios.post(
+        await api.post(
           '/api/fights/auto',
           { user1Id: pair.user1Id, user2Id: pair.user2Id, category: 'Auto' },
           { headers: { 'x-auth-token': token } }

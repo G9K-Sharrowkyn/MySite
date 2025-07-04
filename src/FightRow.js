@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from './api';
 import './FightRow.css';
 
 const FightRow = ({ fight }) => {
@@ -8,7 +8,7 @@ const FightRow = ({ fight }) => {
 
   const fetchComments = async () => {
     try {
-      const res = await axios.get(`/api/comments/fight/${fight.id}`);
+      const res = await api.get(`/api/comments/fight/${fight.id}`);
       setComments(res.data);
     } catch (err) {
       console.error('Błąd podczas pobierania komentarzy:', err);
@@ -24,7 +24,7 @@ const FightRow = ({ fight }) => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      await axios.post(`/api/comments/fight/${fight.id}`, { text: newComment }, { headers: { 'x-auth-token': token } });
+      await api.post(`/api/comments/fight/${fight.id}`, { text: newComment }, { headers: { 'x-auth-token': token } });
       setNewComment('');
       fetchComments();
     } catch (err) {

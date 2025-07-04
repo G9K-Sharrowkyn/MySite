@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from './api';
 import TournamentPage from './TournamentPage';
 import { Link } from 'react-router-dom';
 import './Home.css';
@@ -15,7 +15,7 @@ const Home = () => {
       return;
     }
     try {
-      const res = await axios.get(`/api/profile/search?query=${searchQuery}`);
+      const res = await api.get(`/api/profile/search?query=${searchQuery}`);
       setSearchResults(res.data);
     } catch (err) {
       console.error('Błąd podczas wyszukiwania:', err);
