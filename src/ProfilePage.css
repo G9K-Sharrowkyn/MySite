@@ -1,28 +1,30 @@
 .profile-page {
   padding: 20px;
-  background-color: #0d0d0d;
+  background-color: var(--bg-dark);
   min-height: calc(100vh - 60px);
-  color: #fff;
+  color: var(--text-light);
+  font-family: var(--font-main);
+  max-width: 800px;
+  margin: 0 auto;
 }
-
 .profile-header {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 30px;
+  text-align: center;
 }
-
 .profile-picture {
   width: 150px;
   height: 150px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #e74c3c;
+  border: 3px solid var(--accent);
   margin-bottom: 15px;
 }
 
 .profile-header h2 {
-  color: #e74c3c;
+  color: var(--accent);
   margin-bottom: 10px;
 }
 
@@ -41,25 +43,25 @@
 }
 
 .profile-details {
-  background-color: #1a1a1a;
+  background-color: var(--bg-light);
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 30px;
 }
 
 .profile-details h3 {
-  color: #e74c3c;
+  color: var(--accent);
   margin-bottom: 10px;
 }
 
 .comments-section {
-  background-color: #1a1a1a;
+  background-color: var(--bg-light);
   padding: 20px;
   border-radius: 8px;
 }
 
 .comments-section h3 {
-  color: #e74c3c;
+  color: var(--accent);
   margin-bottom: 20px;
 }
 

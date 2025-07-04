@@ -25,6 +25,13 @@ A moderator account is preloaded in `backend/db.json`.
 - **Email:** `moderator@site.local`
 - **Password:** `mod1234`
 
+## Styling Overview
+
+The interface uses a dark theme with a consistent **Roboto** font across all pages. Layouts are responsive up to 1000 px and navigation wraps on small screens. Key colors and spacing are defined using CSS variables for easier customization.
+
+![Application screenshot](docs/screenshot.png)
+
+
 ## Available Scripts
 
 In the project directory, you can run:
