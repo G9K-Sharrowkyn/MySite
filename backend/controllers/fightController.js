@@ -136,3 +136,76 @@ exports.deleteFight = async (req, res) => {
   await db.write();
   res.json({ msg: 'Walka usunięta' });
 };
+
+// @desc    Get all possible player pairs based on selected characters
+// @route   GET /api/fights/pairs
+// @access  Private (Moderator)
+exports.getPlayerPairs = async (req, res) => {
+  const db = req.db;
+  await db.read();
+
+  // Users with at least two selected characters are considered
+  const players = db.data.users.filter(
+    u => Array.isArray(u.selectedCharacters) && u.selectedCharacters.length >= 2
+  );
+
+  const pairs = [];
+  for (let i = 0; i < players.length; i++) {
+    for (let j = i + 1; j < players.length; j++) {
+      pairs.push({
+        user1Id: players[i].id,
+        user1: players[i].username,
+        user2Id: players[j].id,
+        user2: players[j].username,
+      });
+    }
+  }
+
+  res.json(pairs);
+};
+
+// @desc    Create fight using players' selected characters
+// @route   POST /api/fights/auto
+// @access  Private (Moderator)
+exports.createFightFromSelections = async (req, res) => {
+  const { user1Id, user2Id, category } = req.body;
+  const db = req.db;
+  await db.read();
+
+  const user1 = db.data.users.find(u => u.id === user1Id);
+  const user2 = db.data.users.find(u => u.id === user2Id);
+
+  if (!user1 || !user2) {
+    return res.status(404).json({ msg: 'Użytkownik nie znaleziony' });
+  }
+
+  const fighter1Id = user1.selectedCharacters && user1.selectedCharacters[0];
+  const fighter2Id = user2.selectedCharacters && user2.selectedCharacters[0];
+
+  if (!fighter1Id || !fighter2Id) {
+    return res
+      .status(400)
+      .json({ msg: 'Obaj użytkownicy muszą mieć wybrane postacie' });
+  }
+
+  const fighter1 = db.data.characters.find(c => c.id === fighter1Id);
+  const fighter2 = db.data.characters.find(c => c.id === fighter2Id);
+
+  const newFight = {
+    id: uuidv4(),
+    category: category || 'Auto',
+    user1: user1.username,
+    user2: user2.username,
+    fighter1: fighter1 ? fighter1.name : fighter1Id,
+    fighter2: fighter2 ? fighter2.name : fighter2Id,
+    user1Record: '',
+    user2Record: '',
+    overallRecord1: '',
+    overallRecord2: '',
+    createdAt: new Date().toISOString(),
+  };
+
+  db.data.fights.push(newFight);
+  await db.write();
+  res.status(201).json(newFight);
+};

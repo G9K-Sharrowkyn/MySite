@@ -14,6 +14,16 @@ router.get('/', fightController.getFights);
 // @access  Private (Moderator)
 router.post('/', auth, authorize(['moderator', 'admin']), fightController.createFight);
 
+// @route   GET api/fights/pairs
+// @desc    Get available player pairs
+// @access  Private (Moderator)
+router.get('/pairs', auth, authorize(['moderator', 'admin']), fightController.getPlayerPairs);
+
+// @route   POST api/fights/auto
+// @desc    Create fight from selected characters
+// @access  Private (Moderator)
+router.post('/auto', auth, authorize(['moderator', 'admin']), fightController.createFightFromSelections);
+
 // @route   PUT api/fights/:id
 // @desc    Update a fight
 // @access  Private (Moderator)

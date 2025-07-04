@@ -6,6 +6,7 @@ import './ModeratorPanel.css';
 const ModeratorPanel = () => {
   const [fights, setFights] = useState([]);
   const [notification, setNotification] = useState(null);
+  const [playerPairs, setPlayerPairs] = useState([]);
   const [newFight, setNewFight] = useState({
     category: '',
     user1: '',
@@ -20,6 +21,7 @@ const ModeratorPanel = () => {
 
   useEffect(() => {
     fetchFights();
+    fetchPairs();
   }, []);
 
   const fetchFights = async () => {
@@ -28,6 +30,19 @@ const ModeratorPanel = () => {
       setFights(res.data);
     } catch (err) {
       console.error('Błąd podczas pobierania walk:', err);
+    }
+  };
+
+  const fetchPairs = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const res = await axios.get('/api/fights/pairs', {
+        headers: { 'x-auth-token': token },
+      });
+      setPlayerPairs(res.data);
+    } catch (err) {
+      console.error('Błąd podczas pobierania par graczy:', err);
     }
   };
 
@@ -98,6 +113,29 @@ const ModeratorPanel = () => {
     }
   };
 
+  const createMatches = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      showNotification('Musisz być zalogowany jako moderator, aby utworzyć walki.', 'error');
+      return;
+    }
+
+    try {
+      for (const pair of playerPairs) {
+        await axios.post(
+          '/api/fights/auto',
+          { user1Id: pair.user1Id, user2Id: pair.user2Id, category: 'Auto' },
+          { headers: { 'x-auth-token': token } }
+        );
+      }
+      showNotification('Walki utworzone automatycznie', 'success');
+      fetchFights();
+    } catch (err) {
+      console.error('Błąd podczas tworzenia walk:', err);
+      showNotification('Błąd tworzenia walk', 'error');
+    }
+  };
+
   return (
     <div className="moderator-panel">
       <h1>Panel Moderatora</h1>
@@ -126,6 +164,18 @@ const ModeratorPanel = () => {
           </div>
         ))}
       </div>
+
+      <h2>Dostępne pary graczy</h2>
+      <ul className="pair-list">
+        {playerPairs.map(pair => (
+          <li key={pair.user1Id + pair.user2Id}>
+            {pair.user1} vs {pair.user2}
+          </li>
+        ))}
+      </ul>
+      {playerPairs.length > 0 && (
+        <button onClick={createMatches} className="generate-btn">Utwórz walki automatycznie</button>
+      )}
     </div>
   );
 };
