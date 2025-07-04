@@ -35,7 +35,7 @@ const ProfilePage = () => {
 
   const fetchComments = async (id) => {
     try {
-      const res = await axios.get(`/api/comments/${id}`);
+      const res = await axios.get(`/api/comments/user/${id}`);
       setComments(res.data);
     } catch (err) {
       console.error('Błąd podczas pobierania komentarzy:', err);
@@ -50,7 +50,7 @@ const ProfilePage = () => {
       return;
     }
     try {
-      await axios.post(`/api/comments/${userId}`, { text: newComment }, {
+      await axios.post(`/api/comments/user/${userId}`, { text: newComment }, {
         headers: {
           'x-auth-token': token,
         },

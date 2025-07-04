@@ -3,14 +3,16 @@ const router = express.Router();
 const commentController = require('../controllers/commentController');
 const auth = require('../middleware/authMiddleware');
 
-// @route   GET api/comments/:userId
-// @desc    Get comments for a user profile
-// @access  Public
-router.get('/:userId', commentController.getComments);
+// Profile comments
+router.get('/user/:userId', commentController.getProfileComments);
+router.post('/user/:userId', auth, commentController.addProfileComment);
 
-// @route   POST api/comments/:userId
-// @desc    Add a comment to a user profile
-// @access  Private
-router.post('/:userId', auth, commentController.addComment);
+// Post comments
+router.get('/post/:postId', commentController.getPostComments);
+router.post('/post/:postId', auth, commentController.addPostComment);
+
+// Fight comments
+router.get('/fight/:fightId', commentController.getFightComments);
+router.post('/fight/:fightId', auth, commentController.addFightComment);
 
 module.exports = router;
