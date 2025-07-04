@@ -1,0 +1,28 @@
+.feed-page {
+  padding: 20px;
+  color: #fff;
+}
+
+.add-post-form {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.post-item {
+  background-color: #1a1a1a;
+  padding: 15px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+}
+
+.post-actions button,
+.fight-vote button {
+  margin-right: 10px;
+}
+
+.author {
+  font-size: 0.9em;
+  color: #aaa;
+}

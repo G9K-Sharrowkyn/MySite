@@ -9,6 +9,7 @@ import ProfilePage from './ProfilePage';
 import MessagesPage from './MessagesPage';
 import CharacterSelectionPage from './CharacterSelectionPage';
 import LeaderboardPage from './LeaderboardPage';
+import FeedPage from './FeedPage';
 import Home from './Home';
 import './App.css';
 
@@ -34,6 +35,7 @@ function App() {
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/characters" element={<CharacterSelectionPage />} />
           <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/feed" element={<FeedPage />} />
         </Routes>
       </div>
     </Router>

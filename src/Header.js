@@ -26,6 +26,7 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
       <nav>
         <ul>
           <li><Link to="/">Turnieje</Link></li>
+          <li><Link to="/feed">Tablica</Link></li>
           {isLoggedIn ? (
             <>
               <li><Link to="/profile/me">Mój Profil</Link></li>
