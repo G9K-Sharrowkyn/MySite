@@ -54,13 +54,61 @@ exports.updateFight = async (req, res) => {
     return res.status(404).json({ msg: 'Walka nie znaleziona' });
   }
 
-  db.data.fights[index] = { ...db.data.fights[index], ...updatedData };
+  const existingFight = db.data.fights[index];
+  db.data.fights[index] = { ...existingFight, ...updatedData };
 
-  // Jeśli walka ma zwycięzcę, przyznaj punkty
-  if (updatedData.winnerId) {
-    const winner = db.data.users.find(u => u.id === updatedData.winnerId);
-    if (winner) {
-      winner.points = (winner.points || 0) + 10; // Przyznaj 10 punktów za zwycięstwo
+  const participantIds = [existingFight.user1, existingFight.user2];
+
+  // Jeśli walka ma zwycięzcę lub zaktualizowano wynik, zaktualizuj statystyki
+  if (updatedData.winnerId || updatedData.result) {
+    const users = participantIds
+      .map(id => db.data.users.find(u => u.id === id))
+      .filter(Boolean);
+
+    const updateDerivedStats = user => {
+      user.stats = user.stats || {};
+      user.stats.totalFights =
+        (user.stats.fightsWon || 0) +
+        (user.stats.fightsLost || 0) +
+        (user.stats.fightsDrawn || 0) +
+        (user.stats.fightsNoContest || 0);
+      user.stats.winRate =
+        user.stats.totalFights > 0
+          ? (user.stats.fightsWon || 0) / user.stats.totalFights
+          : 0;
+    };
+
+    if (updatedData.winnerId) {
+      const winner = users.find(u => u.id === updatedData.winnerId);
+      const loser = users.find(u => u.id !== updatedData.winnerId);
+
+      if (winner) {
+        winner.points = (winner.points || 0) + 10; // Przyznaj 10 punktów za zwycięstwo
+        winner.stats = winner.stats || {};
+        winner.stats.fightsWon = (winner.stats.fightsWon || 0) + 1;
+        updateDerivedStats(winner);
+      }
+
+      if (loser) {
+        loser.stats = loser.stats || {};
+        loser.stats.fightsLost = (loser.stats.fightsLost || 0) + 1;
+        updateDerivedStats(loser);
+      }
+    } else if (updatedData.result === 'draw') {
+      users.forEach(user => {
+        user.stats = user.stats || {};
+        user.stats.fightsDrawn = (user.stats.fightsDrawn || 0) + 1;
+        updateDerivedStats(user);
+      });
+    } else if (
+      updatedData.result === 'noContest' ||
+      updatedData.result === 'no-contest'
+    ) {
+      users.forEach(user => {
+        user.stats = user.stats || {};
+        user.stats.fightsNoContest = (user.stats.fightsNoContest || 0) + 1;
+        updateDerivedStats(user);
+      });
     }
   }
 
