@@ -12,7 +12,7 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
    ```
 3. Run the backend and frontend servers:
    ```
-   node backend/server.js
+   (cd backend && npm start)
    npm start
    ```
 
