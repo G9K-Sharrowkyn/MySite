@@ -40,7 +40,7 @@ exports.sendMessage = async (req, res) => {
     toUsername: receiver.username,
     subject,
     body,
-    timestamp: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
     read: false,
   };
 
