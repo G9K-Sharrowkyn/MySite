@@ -61,6 +61,10 @@ exports.updateProfile = async (req, res) => {
     return res.status(404).json({ msg: 'Użytkownik nie znaleziony' });
   }
 
+  if (selectedCharacters && selectedCharacters.length > 2) {
+    return res.status(400).json({ msg: 'Można wybrać maksymalnie dwie postacie' });
+  }
+
   db.data.users[userIndex].description = description || db.data.users[userIndex].description;
   db.data.users[userIndex].profilePicture = profilePicture || db.data.users[userIndex].profilePicture;
   db.data.users[userIndex].selectedCharacters = selectedCharacters || db.data.users[userIndex].selectedCharacters;

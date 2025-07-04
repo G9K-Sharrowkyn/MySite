@@ -46,6 +46,10 @@ const CharacterSelectionPage = () => {
     if (selectedCharacters.includes(charId)) {
       setSelectedCharacters(selectedCharacters.filter(id => id !== charId));
     } else {
+      if (selectedCharacters.length >= 2) {
+        showNotification('Możesz wybrać maksymalnie dwie postacie.', 'error');
+        return;
+      }
       setSelectedCharacters([...selectedCharacters, charId]);
     }
   };
