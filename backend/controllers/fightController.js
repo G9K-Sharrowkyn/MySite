@@ -1,4 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
+const { calculateRank } = require('./profileController');
 
 // @desc    Get all fights
 // @route   GET /api/fights
@@ -87,6 +88,7 @@ exports.updateFight = async (req, res) => {
         winner.stats = winner.stats || {};
         winner.stats.fightsWon = (winner.stats.fightsWon || 0) + 1;
         updateDerivedStats(winner);
+        winner.stats.rank = calculateRank(winner.stats.fightsWon || 0);
       }
 
       if (loser) {

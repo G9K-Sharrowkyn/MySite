@@ -1,14 +1,12 @@
 const { v4: uuidv4 } = require('uuid');
 
-const getRank = (points) => {
-  if (points >= 300) {
-    return 'Mistrz';
-  } else if (points >= 100) {
-    return 'Wojownik';
-  } else {
-    return 'Początkujący';
-  }
+const calculateRank = victories => {
+  const rawRank = Math.floor((Math.sqrt(8 * victories + 1) - 1) / 2);
+  if (rawRank < 1) return 1;
+  if (rawRank > 100) return 100;
+  return rawRank;
 };
+exports.calculateRank = calculateRank;
 
 // @desc    Get user profile
 // @route   GET /api/profile/:userId
@@ -32,7 +30,7 @@ exports.getProfile = async (req, res) => {
     characters: db.data.characters.filter(c => c.ownerId === user.id),
     fights: db.data.fights.filter(f => f.user1 === user.id || f.user2 === user.id),
     points: user.points || 0,
-    rank: getRank(user.points || 0),
+    rank: calculateRank(user.stats?.fightsWon || 0),
   });
 };
 
@@ -107,7 +105,7 @@ exports.getLeaderboard = async (req, res) => {
       username: user.username,
       points: user.points || 0,
       profilePicture: user.profilePicture || '',
-      rank: getRank(user.points || 0),
+      rank: calculateRank(user.stats?.fightsWon || 0),
     }))
     .sort((a, b) => b.points - a.points); // Sortuj malejąco według punktów
 
