@@ -82,3 +82,33 @@
 .fight-item-moderator .delete-btn:hover {
   background-color: #c82333;
 }
+
+.pair-list {
+  list-style: none;
+  padding: 0;
+  max-width: 800px;
+  margin: 20px auto;
+}
+
+.pair-list li {
+  background-color: #222;
+  margin-bottom: 10px;
+  padding: 10px 15px;
+  border-radius: 5px;
+}
+
+.generate-btn {
+  display: block;
+  margin: 0 auto 40px auto;
+  padding: 12px 20px;
+  background-color: #e67e22;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.generate-btn:hover {
+  background-color: #d35400;
+}
