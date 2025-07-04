@@ -1,0 +1,14 @@
+.tournament-page {
+  padding: 20px;
+  background-color: #0d0d0d;
+  min-height: calc(100vh - 60px); /* Wysokość strony minus wysokość nagłówka */
+  color: #fff;
+}
+
+.tournament-page h1 {
+  text-align: center;
+  color: #e74c3c;
+  margin-bottom: 40px;
+  font-size: 3em;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}

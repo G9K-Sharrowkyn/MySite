@@ -1,0 +1,22 @@
+.fight-card-category {
+  margin-bottom: 30px;
+  background-color: #1a1a1a;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fight-card-category h2 {
+  text-align: center;
+  color: #e74c3c;
+  margin-bottom: 20px;
+  font-size: 2em;
+  border-bottom: 2px solid #e74c3c;
+  padding-bottom: 10px;
+}
+
+.fights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}

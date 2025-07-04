@@ -1,0 +1,6 @@
+ERROR
+[eslint] 
+src\CharacterSelectionPage.js
+  Line 10:5:  'fetchCharacters' is not defined  no-undef
+
+Search for the keywords to learn more about each error.

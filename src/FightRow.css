@@ -1,0 +1,56 @@
+.fight-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  border: 1px solid #333;
+  margin-bottom: 10px;
+  padding: 10px;
+  background-color: #222;
+  color: #eee;
+  border-radius: 5px;
+}
+
+.fighter-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 45%;
+  text-align: center;
+}
+
+.user-info {
+  font-size: 0.9em;
+  color: #aaa;
+}
+
+.fighter-name {
+  font-size: 1.5em;
+  font-weight: bold;
+  margin: 5px 0;
+  color: #fff;
+}
+
+.record {
+  font-size: 0.8em;
+  color: #bbb;
+}
+
+.fighter-image.placeholder {
+  width: 80px;
+  height: 80px;
+  background-color: #555;
+  border-radius: 5px;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.7em;
+}
+
+.vs-text {
+  font-size: 2em;
+  font-weight: bold;
+  color: #e74c3c; /* Czerwony kolor dla "VS" */
+  margin: 0 10px;
+}

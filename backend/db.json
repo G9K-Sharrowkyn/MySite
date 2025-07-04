@@ -1,0 +1,52 @@
+{
+  "users": [
+    {
+      "id": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "username": "ultracode1",
+      "email": "invinciblecharles@wp.pl",
+      "password": "$2b$10$V5G3DvlBhzkyKPd4T9jrFeLRNwJo1wLaeOsQ13hXm4Jgb0w7e3ICK",
+      "role": "user",
+      "profile": {
+        "avatar": "/public/logo192.png",
+        "description": "I love anime and games!",
+        "stats": {
+          "wins": 0,
+          "losses": 0,
+          "draws": 0,
+          "noContest": 0
+        },
+        "rank": 1,
+        "score": 0
+      },
+      "selectedCharacters": []
+    },
+    {
+      "id": "MODERATOR-UNIQUE-ID-1234",
+      "username": "moderator",
+      "email": "moderator@site.local",
+      "password": "$2b$10$MODERATORHASHEDPASSWORDHERE",
+      "role": "moderator",
+      "profile": {
+        "avatar": "/public/logo192.png",
+        "description": "I am the site moderator.",
+        "stats": {"wins": 0, "losses": 0, "draws": 0, "noContest": 0},
+        "rank": 10,
+        "score": 1000
+      },
+      "selectedCharacters": []
+    }
+  ],
+  "fights": [],
+  "characters": [
+    {"id": "char1", "name": "Goku", "universe": "Dragon Ball", "image": "/public/goku.png"},
+    {"id": "char2", "name": "Naruto", "universe": "Naruto", "image": "/public/naruto.png"},
+    {"id": "char3", "name": "Batman", "universe": "DC", "image": "/public/batman.png"},
+    {"id": "char4", "name": "Sailor Moon", "universe": "Sailor Moon", "image": "/public/sailormoon.png"}
+  ],
+  "tournaments": [],
+  "posts": [],
+  "comments": [],
+  "messages": [],
+  "votes": [],
+  "notifications": []
+}
