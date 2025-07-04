@@ -45,7 +45,16 @@
   ],
   "tournaments": [],
   "posts": [],
-  "comments": [],
+  "comments": [
+    {
+      "id": "example-comment-id",
+      "postId": "example-post-id",
+      "authorId": "example-user-id",
+      "authorUsername": "demo",
+      "text": "Przykładowy komentarz",
+      "timestamp": "2024-01-01T00:00:00.000Z"
+    }
+  ],
   "messages": [],
   "votes": [],
   "notifications": []
