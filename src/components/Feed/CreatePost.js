@@ -3,9 +3,9 @@ import axios from 'axios';
 import { useLanguage } from '../../i18n/LanguageContext';
 import './CreatePost.css';
 
-const CreatePost = ({ onPostCreated }) => {
+const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => {
   const { t } = useLanguage();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(!!initialData);
   const [postData, setPostData] = useState({
     title: '',
     content: '',
@@ -17,6 +17,20 @@ const CreatePost = ({ onPostCreated }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = localStorage.getItem('token');
+
+  React.useEffect(() => {
+    if (initialData) {
+      setPostData({
+        title: initialData.title || '',
+        content: initialData.content || '',
+        type: initialData.type || 'discussion',
+        teamA: initialData.teamA || '',
+        teamB: initialData.teamB || '',
+        image: initialData.image || ''
+      });
+      setIsExpanded(true);
+    }
+  }, [initialData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -32,26 +46,38 @@ const CreatePost = ({ onPostCreated }) => {
 
     setIsSubmitting(true);
     try {
-      await axios.post('/api/posts', postData, {
-        headers: { 'x-auth-token': token }
-      });
+      if (initialData && initialData.id) {
+        // Update existing post
+        const response = await axios.put(`/api/posts/${initialData.id}`, postData, {
+          headers: { 'x-auth-token': token }
+        });
+        if (onPostUpdated) {
+          onPostUpdated(response.data);
+        }
+      } else {
+        // Create new post
+        await axios.post('/api/posts', postData, {
+          headers: { 'x-auth-token': token }
+        });
+        if (onPostCreated) {
+          onPostCreated();
+        }
+      }
 
-      // Reset form
-      setPostData({
-        title: '',
-        content: '',
-        type: 'discussion',
-        teamA: '',
-        teamB: '',
-        image: ''
-      });
-      setIsExpanded(false);
-      
-      if (onPostCreated) {
-        onPostCreated();
+      // Reset form only if creating new post
+      if (!initialData) {
+        setPostData({
+          title: '',
+          content: '',
+          type: 'discussion',
+          teamA: '',
+          teamB: '',
+          image: ''
+        });
+        setIsExpanded(false);
       }
     } catch (error) {
-      console.error('Error creating post:', error);
+      console.error('Error submitting post:', error);
     } finally {
       setIsSubmitting(false);
     }
