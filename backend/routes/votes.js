@@ -1,21 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const voteController = require('../controllers/voteController');
-const auth = require('../middleware/auth');
+const auth = require('../middleware/authMiddleware');
 
-// @route   POST api/votes/fight/:fightId
-// @desc    Vote for team A or B in a fight
+// @route   POST api/votes
+// @desc    Vote on a fight
 // @access  Private
-router.post('/fight/:fightId', auth, voteController.voteForFight);
+router.post('/', auth, voteController.vote);
 
-// @route   GET api/votes/fight/:fightId
-// @desc    Get vote results for a fight
+// @route   GET api/votes/fight/:fightId/user
+// @desc    Get user's vote for a fight
+// @access  Private
+router.get('/fight/:fightId/user', auth, voteController.getUserVote);
+
+// @route   GET api/votes/fight/:fightId/stats
+// @desc    Get vote statistics for a fight
 // @access  Public
-router.get('/fight/:fightId', voteController.getFightVotes);
+router.get('/fight/:fightId/stats', voteController.getFightVoteStats);
 
-// @route   GET api/votes/user/:userId
-// @desc    Get user's voting history
+// @route   DELETE api/votes/fight/:fightId
+// @desc    Remove vote
 // @access  Private
-router.get('/user/:userId', auth, voteController.getUserVotes);
+router.delete('/fight/:fightId', auth, voteController.removeVote);
+
+// @route   GET api/votes/user/me
+// @desc    Get all votes by user
+// @access  Private
+router.get('/user/me', auth, voteController.getUserVotes);
 
 module.exports = router;

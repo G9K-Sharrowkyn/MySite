@@ -1,181 +1,460 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Notification from './Notification';
+import { useNavigate } from 'react-router-dom';
+import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
 import './ModeratorPanel.css';
 
 const ModeratorPanel = () => {
+  const [activeTab, setActiveTab] = useState('fights');
   const [fights, setFights] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [characters, setCharacters] = useState([]);
   const [notification, setNotification] = useState(null);
-  const [playerPairs, setPlayerPairs] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Fight creation state
   const [newFight, setNewFight] = useState({
-    category: '',
-    user1: '',
-    user2: '',
-    fighter1: '',
-    fighter2: '',
-    user1Record: '',
-    user2Record: '',
-    overallRecord1: '',
-    overallRecord2: '',
+    type: 'main', // main, community
+    title: '',
+    description: '',
+    character1: '',
+    character2: '',
+    category: 'Main Event',
+    featured: false
   });
 
-  useEffect(() => {
-    fetchFights();
-    fetchPairs();
-  }, []);
+  const navigate = useNavigate();
+  const token = localStorage.getItem('token');
+  const currentUserId = localStorage.getItem('userId');
 
-  const fetchFights = async () => {
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    
+    checkModeratorAccess();
+    fetchData();
+  }, [token, navigate]);
+
+  const checkModeratorAccess = async () => {
     try {
-      const res = await axios.get('/api/fights');
-      setFights(res.data);
-    } catch (err) {
-      console.error('Błąd podczas pobierania walk:', err);
+      const response = await axios.get('/api/profile/me', {
+        headers: { 'x-auth-token': token }
+      });
+      
+      if (response.data.role !== 'moderator') {
+        showNotification('Brak uprawnień moderatora', 'error');
+        navigate('/');
+      }
+    } catch (error) {
+      console.error('Error checking moderator access:', error);
+      navigate('/login');
     }
   };
 
-  const fetchPairs = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+  const fetchData = async () => {
+    setLoading(true);
     try {
-      const res = await axios.get('/api/fights/pairs', {
-        headers: { 'x-auth-token': token },
-      });
-      setPlayerPairs(res.data);
-    } catch (err) {
-      console.error('Błąd podczas pobierania par graczy:', err);
+      const [fightsRes, postsRes, usersRes, charactersRes] = await Promise.all([
+        axios.get('/api/fights'),
+        axios.get('/api/posts'),
+        axios.get('/api/profile/all'),
+        axios.get('/api/characters')
+      ]);
+
+      setFights(fightsRes.data.fights || fightsRes.data);
+      setPosts(postsRes.data.posts || postsRes.data);
+      setUsers(usersRes.data);
+      setCharacters(charactersRes.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      showNotification('Błąd podczas ładowania danych', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
   };
 
-  const clearNotification = () => {
-    setNotification(null);
-  };
-
-  const onChange = (e) => {
-    setNewFight({ ...newFight, [e.target.name]: e.target.value });
-  };
-
-  const onSubmit = async (e) => {
+  const handleFightSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token'); // Zakładamy, że token jest przechowywany w localStorage
-    if (!token) {
-      showNotification('Musisz być zalogowany jako moderator, aby dodać walkę.', 'error');
-      return;
-    }
+    setLoading(true);
 
     try {
-      await axios.post('/api/fights', newFight, {
-        headers: {
-          'x-auth-token': token,
-        },
+      const character1 = characters.find(c => c.id === newFight.character1);
+      const character2 = characters.find(c => c.id === newFight.character2);
+
+      const fightData = {
+        type: 'fight',
+        title: newFight.title,
+        content: newFight.description,
+        teamA: character1?.name || newFight.character1,
+        teamB: character2?.name || newFight.character2,
+        featured: newFight.featured,
+        category: newFight.category,
+        moderatorCreated: true
+      };
+
+      await axios.post('/api/posts', fightData, {
+        headers: { 'x-auth-token': token }
       });
-      showNotification('Walka dodana pomyślnie!', 'success');
+
+      showNotification('Walka główna została utworzona!', 'success');
       setNewFight({
-        category: '',
-        user1: '',
-        user2: '',
-        fighter1: '',
-        fighter2: '',
-        user1Record: '',
-        user2Record: '',
-        overallRecord1: '',
-        overallRecord2: '',
+        type: 'main',
+        title: '',
+        description: '',
+        character1: '',
+        character2: '',
+        category: 'Main Event',
+        featured: false
       });
-      fetchFights(); // Odśwież listę walk
-    } catch (err) {
-      console.error('Błąd podczas dodawania walki:', err.response.data);
-      showNotification(err.response.data.msg || 'Błąd dodawania walki', 'error');
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error creating fight:', error);
+      showNotification('Błąd podczas tworzenia walki', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const onDelete = async (id) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      showNotification('Musisz być zalogowany jako moderator, aby usunąć walkę.', 'error');
-      return;
-    }
-    if (window.confirm('Czy na pewno chcesz usunąć tę walkę?')) {
-      try {
-        await axios.delete(`/api/fights/${id}`, {
-          headers: {
-            'x-auth-token': token,
-          },
-        });
-        showNotification('Walka usunięta pomyślnie!', 'success');
-        fetchFights();
-      } catch (err) {
-        console.error('Błąd podczas usuwania walki:', err.response.data);
-        showNotification(err.response.data.msg || 'Błąd usuwania walki', 'error');
-      }
-    }
-  };
-
-  const createMatches = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      showNotification('Musisz być zalogowany jako moderator, aby utworzyć walki.', 'error');
-      return;
-    }
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Czy na pewno chcesz usunąć ten post?')) return;
 
     try {
-      for (const pair of playerPairs) {
-        await axios.post(
-          '/api/fights/auto',
-          { user1Id: pair.user1Id, user2Id: pair.user2Id, category: 'Auto' },
-          { headers: { 'x-auth-token': token } }
-        );
-      }
-      showNotification('Walki utworzone automatycznie', 'success');
-      fetchFights();
-    } catch (err) {
-      console.error('Błąd podczas tworzenia walk:', err);
-      showNotification('Błąd tworzenia walk', 'error');
+      await axios.delete(`/api/posts/${postId}`, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      showNotification('Post został usunięty', 'success');
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      showNotification('Błąd podczas usuwania postu', 'error');
     }
   };
+
+  const handleFeaturePost = async (postId, featured) => {
+    try {
+      await axios.put(`/api/posts/${postId}`, 
+        { featured: !featured },
+        { headers: { 'x-auth-token': token } }
+      );
+      
+      showNotification(
+        !featured ? 'Post został wyróżniony' : 'Post przestał być wyróżniony', 
+        'success'
+      );
+      fetchData();
+    } catch (error) {
+      console.error('Error featuring post:', error);
+      showNotification('Błąd podczas zmiany statusu postu', 'error');
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString('pl-PL');
+  };
+
+  if (loading && fights.length === 0) {
+    return (
+      <div className="moderator-panel">
+        <div className="loading-screen">
+          <div className="spinner"></div>
+          <p>Ładowanie panelu moderatora...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="moderator-panel">
-      <h1>Panel Moderatora</h1>
-      <Notification message={notification?.message} type={notification?.type} onClose={clearNotification} />
-
-      <h2>Dodaj nową walkę</h2>
-      <form onSubmit={onSubmit} className="add-fight-form">
-        <input type="text" name="category" value={newFight.category} onChange={onChange} placeholder="Kategoria (np. Main Card)" required />
-        <input type="text" name="user1" value={newFight.user1} onChange={onChange} placeholder="Użytkownik 1" required />
-        <input type="text" name="fighter1" value={newFight.fighter1} onChange={onChange} placeholder="Zawodnk 1" required />
-        <input type="text" name="user1Record" value={newFight.user1Record} onChange={onChange} placeholder="Rekord Użytkownika 1" required />
-        <input type="text" name="overallRecord1" value={newFight.overallRecord1} onChange={onChange} placeholder="Ogólny Rekord 1" required />
-        <input type="text" name="user2" value={newFight.user2} onChange={onChange} placeholder="Użytkownik 2" required />
-        <input type="text" name="fighter2" value={newFight.fighter2} onChange={onChange} placeholder="Zawodnk 2" required />
-        <input type="text" name="user2Record" value={newFight.user2Record} onChange={onChange} placeholder="Rekord Użytkownika 2" required />
-        <input type="text" name="overallRecord2" value={newFight.overallRecord2} onChange={onChange} placeholder="Ogólny Rekord 2" required />
-        <button type="submit">Dodaj Walkę</button>
-      </form>
-
-      <h2>Zarządzaj walkami</h2>
-      <div className="fight-list-moderator">
-        {fights.map((fight) => (
-          <div key={fight.id} className="fight-item-moderator">
-            <span>{fight.category}: {fight.fighter1} vs {fight.fighter2}</span>
-            <button onClick={() => onDelete(fight.id)} className="delete-btn">Usuń</button>
-          </div>
-        ))}
+      <div className="panel-header">
+        <h1>🛡️ Panel Moderatora</h1>
+        <p>Zarządzaj treścią i społecznością GeekFights</p>
       </div>
 
-      <h2>Dostępne pary graczy</h2>
-      <ul className="pair-list">
-        {playerPairs.map(pair => (
-          <li key={pair.user1Id + pair.user2Id}>
-            {pair.user1} vs {pair.user2}
-          </li>
-        ))}
-      </ul>
-      {playerPairs.length > 0 && (
-        <button onClick={createMatches} className="generate-btn">Utwórz walki automatycznie</button>
+      {notification && (
+        <div className={`notification ${notification.type}`}>
+          {notification.message}
+          <button onClick={() => setNotification(null)}>✕</button>
+        </div>
       )}
+
+      <div className="panel-tabs">
+        <button 
+          className={`tab-btn ${activeTab === 'fights' ? 'active' : ''}`}
+          onClick={() => setActiveTab('fights')}
+        >
+          ⚔️ Walki Główne
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
+          onClick={() => setActiveTab('posts')}
+        >
+          📝 Zarządzaj Postami
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
+          onClick={() => setActiveTab('users')}
+        >
+          👥 Użytkownicy
+        </button>
+        <button 
+          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
+          onClick={() => setActiveTab('stats')}
+        >
+          📊 Statystyki
+        </button>
+      </div>
+
+      <div className="panel-content">
+        {activeTab === 'fights' && (
+          <div className="fights-section">
+            <div className="create-fight-card">
+              <h3>🌟 Stwórz Walkę Główną</h3>
+              <form onSubmit={handleFightSubmit} className="fight-form">
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Tytuł walki</label>
+                    <input
+                      type="text"
+                      value={newFight.title}
+                      onChange={(e) => setNewFight({...newFight, title: e.target.value})}
+                      placeholder="np. Epicki pojedynek: Batman vs Superman"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Kategoria</label>
+                    <select
+                      value={newFight.category}
+                      onChange={(e) => setNewFight({...newFight, category: e.target.value})}
+                    >
+                      <option value="Main Event">Main Event</option>
+                      <option value="Co-Main Event">Co-Main Event</option>
+                      <option value="Featured Fight">Featured Fight</option>
+                      <option value="Special Event">Special Event</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Postać 1</label>
+                    <select
+                      value={newFight.character1}
+                      onChange={(e) => setNewFight({...newFight, character1: e.target.value})}
+                      required
+                    >
+                      <option value="">Wybierz postać</option>
+                      {characters.map(char => (
+                        <option key={char.id} value={char.id}>
+                          {char.name} ({char.universe})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="vs-divider">VS</div>
+                  <div className="form-group">
+                    <label>Postać 2</label>
+                    <select
+                      value={newFight.character2}
+                      onChange={(e) => setNewFight({...newFight, character2: e.target.value})}
+                      required
+                    >
+                      <option value="">Wybierz postać</option>
+                      {characters.map(char => (
+                        <option key={char.id} value={char.id}>
+                          {char.name} ({char.universe})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Opis walki</label>
+                  <textarea
+                    value={newFight.description}
+                    onChange={(e) => setNewFight({...newFight, description: e.target.value})}
+                    placeholder="Opisz tę epicką walkę..."
+                    rows="4"
+                    required
+                  />
+                </div>
+
+                <div className="form-options">
+                  <label className="checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={newFight.featured}
+                      onChange={(e) => setNewFight({...newFight, featured: e.target.checked})}
+                    />
+                    <span className="checkmark"></span>
+                    Wyróżnij na stronie głównej
+                  </label>
+                </div>
+
+                <button type="submit" className="create-btn" disabled={loading}>
+                  {loading ? '⏳ Tworzenie...' : '🚀 Stwórz Walkę'}
+                </button>
+              </form>
+            </div>
+
+            <div className="existing-fights">
+              <h3>🎯 Istniejące Walki</h3>
+              <div className="fights-grid">
+                {posts.filter(post => post.type === 'fight').map(fight => (
+                  <div key={fight.id} className="fight-card">
+                    <div className="fight-header">
+                      <h4>{fight.title}</h4>
+                      <div className="fight-badges">
+                        {fight.featured && <span className="featured-badge">⭐ Wyróżnione</span>}
+                        <span className="category-badge">{fight.category || 'Fight'}</span>
+                      </div>
+                    </div>
+                    <div className="fight-details">
+                      <div className="fighters">
+                        <span className="fighter">{fight.teamA}</span>
+                        <span className="vs">VS</span>
+                        <span className="fighter">{fight.teamB}</span>
+                      </div>
+                      <div className="fight-stats">
+                        <span>👍 {fight.likes?.length || 0}</span>
+                        <span>🗳️ {(fight.fight?.votes?.teamA || 0) + (fight.fight?.votes?.teamB || 0)}</span>
+                      </div>
+                    </div>
+                    <div className="fight-actions">
+                      <button 
+                        onClick={() => handleFeaturePost(fight.id, fight.featured)}
+                        className="feature-btn"
+                      >
+                        {fight.featured ? '⭐ Usuń wyróżnienie' : '⭐ Wyróżnij'}
+                      </button>
+                      <button 
+                        onClick={() => handleDeletePost(fight.id)}
+                        className="delete-btn"
+                      >
+                        🗑️ Usuń
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'posts' && (
+          <div className="posts-section">
+            <h3>📝 Wszystkie Posty</h3>
+            <div className="posts-list">
+              {posts.map(post => (
+                <div key={post.id} className="post-card">
+                  <div className="post-header">
+                    <div className="post-info">
+                      <h4>{post.title}</h4>
+                      <p className="post-meta">
+                        Autor: {post.author?.username || 'Nieznany'} • 
+                        {formatDate(post.createdAt)} • 
+                        Typ: {post.type}
+                      </p>
+                    </div>
+                    <div className="post-stats">
+                      <span>👍 {post.likes?.length || 0}</span>
+                      <span>💬 {post.comments?.length || 0}</span>
+                    </div>
+                  </div>
+                  <div className="post-content">
+                    <p>{post.content.substring(0, 150)}...</p>
+                  </div>
+                  <div className="post-actions">
+                    <button 
+                      onClick={() => handleFeaturePost(post.id, post.featured)}
+                      className="feature-btn"
+                    >
+                      {post.featured ? '⭐ Usuń wyróżnienie' : '⭐ Wyróżnij'}
+                    </button>
+                    <button 
+                      onClick={() => handleDeletePost(post.id)}
+                      className="delete-btn"
+                    >
+                      🗑️ Usuń
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <div className="users-section">
+            <h3>👥 Zarządzanie Użytkownikami</h3>
+            <div className="users-grid">
+              {users.map(user => (
+                <div key={user.id} className="user-card">
+                  <img 
+                    src={placeholderImages.userSmall} 
+                    alt={user.username}
+                    className="user-avatar"
+                  />
+                  <div className="user-info">
+                    <h4>{user.username}</h4>
+                    <p>ID: {user.id}</p>
+                  </div>
+                  <div className="user-actions">
+                    <button className="view-btn">👁️ Zobacz profil</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'stats' && (
+          <div className="stats-section">
+            <h3>📊 Statystyki Platformy</h3>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <div className="stat-icon">👥</div>
+                <div className="stat-info">
+                  <h4>{users.length}</h4>
+                  <p>Użytkowników</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">📝</div>
+                <div className="stat-info">
+                  <h4>{posts.length}</h4>
+                  <p>Postów</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">⚔️</div>
+                <div className="stat-info">
+                  <h4>{posts.filter(p => p.type === 'fight').length}</h4>
+                  <p>Walk</p>
+                </div>
+              </div>
+              <div className="stat-card">
+                <div className="stat-icon">🎮</div>
+                <div className="stat-info">
+                  <h4>{characters.length}</h4>
+                  <p>Postaci</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

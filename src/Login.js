@@ -42,6 +42,11 @@ const Login = ({ setIsLoggedIn }) => {
       const body = JSON.stringify(user);
 
       const res = await axios.post('/api/auth/login', body, config);
+      console.log('Login response:', res.data);
+      if (!res.data.userId) {
+        showNotification('Błąd logowania: brak userId w odpowiedzi serwera.', 'error');
+        return;
+      }
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('userId', res.data.userId);
       setIsLoggedIn(true);

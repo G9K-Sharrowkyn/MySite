@@ -1,0 +1,79 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { translations } from './translations';
+
+const LanguageContext = createContext();
+
+export { LanguageContext };
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
+
+export const LanguageProvider = ({ children }) => {
+  const [currentLanguage, setCurrentLanguage] = useState('pl');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Load saved language from localStorage
+    const savedLanguage = localStorage.getItem('geekfights-language');
+    if (savedLanguage && translations[savedLanguage]) {
+      setCurrentLanguage(savedLanguage);
+    }
+
+    // Load saved theme from localStorage
+    const savedTheme = localStorage.getItem('geekfights-theme');
+    if (savedTheme === 'dark') {
+      setIsDarkMode(true);
+      document.body.classList.add('dark-mode');
+    }
+  }, []);
+
+  const changeLanguage = (language) => {
+    if (translations[language]) {
+      setCurrentLanguage(language);
+      localStorage.setItem('geekfights-language', language);
+    }
+  };
+
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    
+    if (newDarkMode) {
+      document.body.classList.add('dark-mode');
+      localStorage.setItem('geekfights-theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-mode');
+      localStorage.setItem('geekfights-theme', 'light');
+    }
+  };
+
+  const t = (key) => {
+    const keys = key.split('.');
+    let value = translations[currentLanguage];
+    
+    for (const k of keys) {
+      value = value?.[k];
+    }
+    
+    return value || key;
+  };
+
+  const value = {
+    currentLanguage,
+    changeLanguage,
+    isDarkMode,
+    toggleDarkMode,
+    t
+  };
+
+  return (
+    <LanguageContext.Provider value={value}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};

@@ -1,0 +1,144 @@
+<<<<<<<
+  return (
+    <div className="post-card" onClick={() => window.location.href = `/post/${post.id}`}>
+      <div className="post-header">
+        <div className="author-info">
+          <Link to={`/profile/${post.author?.id}`} className="author-link">
+            <img 
+              src={post.author?.profilePicture || placeholderImages.userSmall} 
+              alt={post.author?.username}
+              className="author-avatar"
+            />
+            <div className="author-details">
+              <span className="author-name">{post.author?.username || 'Anonim'}</span>
+              <span 
+                className="author-rank"
+                style={{ color: getRankColor(post.author?.rank) }}
+              >
+                {post.author?.rank || 'Rookie'}
+              </span>
+            </div>
+          </Link>
+        </div>
+        <div className="post-meta">
+          <span className="post-type">{getPostTypeIcon(post.type)}</span>
+          <span className="post-time">{formatTimeAgo(post.createdAt)}</span>
+        </div>
+      </div>
+
+      <div className="post-content" style={{ cursor: 'pointer' }}>
+        <h3 className="post-title">{post.title}</h3>
+        <p className="post-text">{post.content}</p>
+        
+        {post.image && (
+          <div className="post-image">
+            <img src={replacePlaceholderUrl(post.image)} alt="Post content" />
+          </div>
+        )}
+        
+        {post.type === 'fight' && post.fight && (
+          <div className="fight-section">
+            <div className="fight-teams">
+              <button 
+                className={`team-btn team-a ${userVote === 'A' ? 'voted' : ''}`}
+                onClick={() => handleVote('A')}
+                disabled={!!userVote}
+              >
+                <span className="team-name">{post.fight.teamA}</span>
+                <span className="vote-count">{post.fight.votes?.teamA || 0}</span>
+              </button>
+              
+              <div className="vs-divider">VS</div>
+              
+              <button 
+                className={`team-btn team-b ${userVote === 'B' ? 'voted' : ''}`}
+                onClick={() => handleVote('B')}
+                disabled={!!userVote}
+              >
+                <span className="team-name">{post.fight.teamB}</span>
+                <span className="vote-count">{post.fight.votes?.teamB || 0}</span>
+              </button>
+            </div>
+            
+            {userVote && (
+              <div className="vote-status">
+                ✅ Zagłosowałeś na: <strong>{userVote === 'A' ? post.fight.teamA : post.fight.teamB}</strong>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+=======
+  return (
+    <div className="post-card">
+      <div className="post-header">
+        <div className="author-info">
+          <Link to={`/profile/${post.author?.id}`} className="author-link">
+            <img 
+              src={post.author?.profilePicture || placeholderImages.userSmall} 
+              alt={post.author?.username}
+              className="author-avatar"
+            />
+            <div className="author-details">
+              <span className="author-name">{post.author?.username || 'Anonim'}</span>
+              <span 
+                className="author-rank"
+                style={{ color: getRankColor(post.author?.rank) }}
+              >
+                {post.author?.rank || 'Rookie'}
+              </span>
+            </div>
+          </Link>
+        </div>
+        <div className="post-meta">
+          <span className="post-type">{getPostTypeIcon(post.type)}</span>
+          <span className="post-time">{formatTimeAgo(post.createdAt)}</span>
+        </div>
+      </div>
+
+      <div className="post-content" style={{ cursor: 'pointer' }}>
+        <Link to={`/post/${post.id}`} className="post-title-link">
+          <h3 className="post-title">{post.title}</h3>
+        </Link>
+        <p className="post-text">{post.content}</p>
+        
+        {post.image && (
+          <Link to={`/post/${post.id}`} className="post-image-link">
+            <div className="post-image">
+              <img src={replacePlaceholderUrl(post.image)} alt="Post content" />
+            </div>
+          </Link>
+        )}
+        
+        {post.type === 'fight' && post.fight && (
+          <div className="fight-section">
+            <div className="fight-teams">
+              <button 
+                className={`team-btn team-a ${userVote === 'A' ? 'voted' : ''}`}
+                onClick={() => handleVote('A')}
+                disabled={!!userVote}
+              >
+                <span className="team-name">{post.fight.teamA}</span>
+                <span className="vote-count">{post.fight.votes?.teamA || 0}</span>
+              </button>
+              
+              <div className="vs-divider">VS</div>
+              
+              <button 
+                className={`team-btn team-b ${userVote === 'B' ? 'voted' : ''}`}
+                onClick={() => handleVote('B')}
+                disabled={!!userVote}
+              >
+                <span className="team-name">{post.fight.teamB}</span>
+                <span className="vote-count">{post.fight.votes?.teamB || 0}</span>
+              </button>
+            </div>
+            
+            {userVote && (
+              <div className="vote-status">
+                ✅ Zagłosowałeś na: <strong>{userVote === 'A' ? post.fight.teamA : post.fight.teamB}</strong>
+              </div>
+            )}
+          </div>
+        )}
+      </div>

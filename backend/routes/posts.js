@@ -33,4 +33,9 @@ router.delete('/:id', auth, postController.deletePost);
 // @access  Private
 router.post('/:id/like', auth, postController.toggleLike);
 
+// @route   GET api/posts/user/:userId
+// @desc    Get posts by user ID
+// @access  Public
+router.get('/user/:userId', postController.getPostsByUser);
+
 module.exports = router;

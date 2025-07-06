@@ -5,6 +5,7 @@ exports.getAllPosts = async (req, res) => {
   const { page = 1, limit = 10, sortBy = 'createdAt' } = req.query;
   
   try {
+    console.log('Fetching all posts with params:', { page, limit, sortBy });
     await db.read();
     let posts = db.data.posts || [];
     
@@ -35,6 +36,7 @@ exports.getAllPosts = async (req, res) => {
       };
     });
     
+    console.log(`Returning ${postsWithUserInfo.length} posts out of ${posts.length}`);
     res.json({
       posts: postsWithUserInfo,
       totalPosts: posts.length,
@@ -42,8 +44,50 @@ exports.getAllPosts = async (req, res) => {
       totalPages: Math.ceil(posts.length / limit)
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error fetching all posts:', err.message);
     res.status(500).send('Server Error');
+  }
+};
+
+exports.getPostsByUser = async (req, res) => {
+  const db = req.db;
+  const { userId } = req.params;
+  const { page = 1, limit = 10 } = req.query;
+  
+  try {
+    await db.read();
+    
+    if (!db.data.posts) {
+      return res.json([]);
+    }
+    
+    // Filter posts by user ID
+    let userPosts = db.data.posts.filter(post => post.authorId === userId);
+    
+    // Sort by creation date (newest first)
+    userPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    
+    // Pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    const paginatedPosts = userPosts.slice(startIndex, endIndex);
+    
+    // Add author info to posts
+    const author = db.data.users.find(u => u.id === userId);
+    const postsWithUserInfo = paginatedPosts.map(post => ({
+      ...post,
+      author: author ? {
+        id: author.id,
+        username: author.username,
+        profilePicture: author.profile?.profilePicture || author.profilePicture || '',
+        rank: author.stats?.rank || author.rank || 'Rookie'
+      } : null
+    }));
+    
+    res.json(postsWithUserInfo);
+  } catch (err) {
+    console.error('Error fetching user posts:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -111,11 +155,34 @@ exports.createPost = async (req, res) => {
     
     db.data.posts.push(newPost);
     
-    // Update user stats
+    // Update user stats safely
     const userIndex = db.data.users.findIndex(u => u.id === req.user.id);
     if (userIndex !== -1) {
+      // Initialize activity and stats if they don't exist
+      if (!db.data.users[userIndex].activity) {
+        db.data.users[userIndex].activity = {
+          postsCreated: 0,
+          likesReceived: 0,
+          commentsPosted: 0,
+          fightsCreated: 0,
+          votesGiven: 0
+        };
+      }
+      if (!db.data.users[userIndex].stats) {
+        db.data.users[userIndex].stats = {
+          experience: 0,
+          rank: 'Rookie',
+          level: 1,
+          points: 0
+        };
+      }
+      
       db.data.users[userIndex].activity.postsCreated += 1;
       db.data.users[userIndex].stats.experience += 10; // Award experience for posting
+      
+      if (type === 'fight') {
+        db.data.users[userIndex].activity.fightsCreated += 1;
+      }
     }
     
     await db.write();
@@ -134,8 +201,8 @@ exports.createPost = async (req, res) => {
     
     res.json(postWithAuthor);
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+    console.error('Error creating post:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };
 
@@ -229,9 +296,18 @@ exports.toggleLike = async (req, res) => {
         likedAt: new Date().toISOString()
       });
       
-      // Update post author's stats
+      // Update post author's stats safely
       const authorIndex = db.data.users.findIndex(u => u.id === post.authorId);
       if (authorIndex !== -1) {
+        if (!db.data.users[authorIndex].activity) {
+          db.data.users[authorIndex].activity = {
+            postsCreated: 0,
+            likesReceived: 0,
+            commentsPosted: 0,
+            fightsCreated: 0,
+            votesGiven: 0
+          };
+        }
         db.data.users[authorIndex].activity.likesReceived += 1;
       }
     }

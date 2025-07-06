@@ -4,86 +4,447 @@
   min-height: calc(100vh - 60px);
   color: var(--text-light);
   font-family: var(--font-main);
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
 }
+
 .profile-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
+  gap: 30px;
   margin-bottom: 30px;
-  text-align: center;
+  background-color: var(--bg-light);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
+
 .profile-picture {
   width: 150px;
   height: 150px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--accent);
-  margin-bottom: 15px;
+  border: 4px solid var(--accent);
+  flex-shrink: 0;
 }
 
-.profile-header h2 {
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h2 {
   color: var(--accent);
   margin-bottom: 10px;
+  font-size: 2.2em;
 }
 
-.edit-profile-btn {
-  background-color: #3498db;
+.profile-rank {
+  font-size: 1.2em;
+  margin-bottom: 20px;
+  color: var(--text-light);
+}
+
+.fight-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.stat-item {
+  background-color: var(--bg-dark);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #333;
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.9em;
+  color: #aaa;
+  margin-bottom: 5px;
+}
+
+.stat-value {
+  display: block;
+  font-size: 1.5em;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+.profile-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.edit-profile-btn, .send-message-btn {
+  background-color: var(--accent);
   color: white;
   border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
+  padding: 12px 24px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  text-decoration: none;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  display: inline-block;
 }
 
-.edit-profile-btn:hover {
+.edit-profile-btn:hover, .send-message-btn:hover {
   background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+.edit-profile-form {
+  background-color: var(--bg-light);
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.edit-profile-form .form-group {
+  margin-bottom: 20px;
+}
+
+.edit-profile-form label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.edit-profile-form input, .edit-profile-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+.edit-profile-form textarea {
+  resize: vertical;
+  min-height: 100px;
 }
 
 .profile-details {
   background-color: var(--bg-light);
-  padding: 20px;
-  border-radius: 8px;
+  padding: 25px;
+  border-radius: 12px;
   margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .profile-details h3 {
   color: var(--accent);
+  margin-bottom: 15px;
+  font-size: 1.4em;
+}
+
+.profile-posts {
+  background-color: var(--bg-light);
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.profile-posts h3 {
+  color: var(--accent);
+  margin-bottom: 20px;
+  font-size: 1.4em;
+}
+
+.posts-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.posts-grid .post-card {
+  margin: 0;
+  width: 100%;
+}
+
+.profile-characters {
+  background-color: var(--bg-light);
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.profile-characters h3 {
+  color: var(--accent);
+  margin-bottom: 20px;
+  font-size: 1.4em;
+}
+
+.characters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 20px;
+}
+
+.character-card {
+  background-color: var(--bg-dark);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #333;
+  transition: transform 0.3s ease;
+}
+
+.character-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--accent);
+}
+
+.character-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
   margin-bottom: 10px;
+  border: 2px solid var(--accent);
+}
+
+.character-name {
+  font-weight: bold;
+  color: var(--text-light);
+  margin-bottom: 5px;
+}
+
+.character-universe {
+  font-size: 0.9em;
+  color: #aaa;
+}
+
+.profile-fights {
+  background-color: var(--bg-light);
+  padding: 25px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.profile-fights h3 {
+  color: var(--accent);
+  margin-bottom: 20px;
+  font-size: 1.4em;
+}
+
+.fights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.fight-item {
+  background-color: var(--bg-dark);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #333;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 15px;
+  align-items: center;
+}
+
+.fight-participants {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fight-participants .vs {
+  color: #aaa;
+  font-weight: bold;
+}
+
+.fight-participants .winner {
+  color: var(--accent);
+  font-weight: bold;
+}
+
+.fight-participants .participant {
+  color: var(--text-light);
+}
+
+.fight-result {
+  text-align: center;
+  font-weight: bold;
+}
+
+.fight-date {
+  text-align: right;
+  color: #aaa;
+  font-size: 0.9em;
+}
+
+.more-fights {
+  text-align: center;
+  color: #aaa;
+  font-style: italic;
 }
 
 .comments-section {
   background-color: var(--bg-light);
-  padding: 20px;
-  border-radius: 8px;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
 .comments-section h3 {
   color: var(--accent);
   margin-bottom: 20px;
+  font-size: 1.4em;
+}
+
+.add-comment-form {
+  margin-bottom: 25px;
 }
 
 .add-comment-form textarea {
-  width: calc(100% - 20px);
-  padding: 10px;
-  margin-bottom: 10px;
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 15px;
   border: 1px solid #333;
-  border-radius: 4px;
-  background-color: #222;
-  color: #eee;
+  border-radius: 8px;
+  background-color: var(--bg-dark);
+  color: var(--text-light);
   font-size: 1em;
   resize: vertical;
+  min-height: 100px;
+  box-sizing: border-box;
+}
+
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
 
 .comment-item {
-  background-color: #222;
-  padding: 10px 15px;
-  border-radius: 5px;
-  margin-bottom: 10px;
+  background-color: var(--bg-dark);
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #333;
 }
 
-.comment-item strong {
-  color: #3498db;
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.comment-author {
+  display: flex;
+  align-items: center;
+}
+
+.comment-author a {
+  display: flex;
+  align-items: center;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.comment-author a:hover {
+  text-decoration: underline;
+}
+
+.author-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  margin-right: 0.5rem;
+  border: 1px solid var(--accent);
+}
+
+.comment-date {
+  color: #888;
+  font-size: 12px;
+}
+
+.comment-text {
+  color: var(--text-light);
+  margin: 0.5rem 0;
+  line-height: 1.4;
+}
+
+.delete-comment-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.delete-comment-btn:hover {
+  color: #ff4444;
+  background-color: rgba(255, 68, 68, 0.1);
+}
+
+.comment-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.char-count {
+  color: #888;
+  font-size: 12px;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: var(--accent);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+    gap: 20px;
+  }
+  
+  .fight-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .fight-item {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .characters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
 }

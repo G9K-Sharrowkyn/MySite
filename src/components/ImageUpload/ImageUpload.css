@@ -1,0 +1,261 @@
+/* Image Upload Component */
+.image-upload {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Upload Area */
+.upload-area {
+  border: 3px dashed #e9ecef;
+  border-radius: 15px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: #fafafa;
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-area:hover {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.05);
+  transform: translateY(-2px);
+}
+
+.upload-area.drag-over {
+  border-color: #667eea;
+  background: rgba(102, 126, 234, 0.1);
+  transform: scale(1.02);
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.upload-icon {
+  font-size: 3rem;
+  color: #667eea;
+  margin-bottom: 10px;
+}
+
+.upload-text {
+  color: #666;
+}
+
+.upload-primary {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.upload-secondary {
+  font-size: 0.9rem;
+  margin: 0;
+  color: #999;
+}
+
+/* Image Preview */
+.image-preview {
+  position: relative;
+  border-radius: 15px;
+  overflow: hidden;
+  background: #f8f9fa;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.preview-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.image-preview:hover .image-overlay {
+  opacity: 1;
+}
+
+.change-btn,
+.remove-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.change-btn {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.change-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.remove-btn {
+  background: linear-gradient(45deg, #e74c3c, #c0392b);
+  color: white;
+  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+}
+
+.remove-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
+}
+
+.change-btn:disabled,
+.remove-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Upload Spinner */
+.upload-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner {
+  width: 30px;
+  height: 30px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Profile Picture Variant */
+.image-upload.profile-picture {
+  max-width: 200px;
+}
+
+.image-upload.profile-picture .upload-area {
+  aspect-ratio: 1;
+  border-radius: 50%;
+  padding: 30px 15px;
+}
+
+.image-upload.profile-picture .preview-image {
+  height: 200px;
+  border-radius: 50%;
+}
+
+.image-upload.profile-picture .image-preview {
+  border-radius: 50%;
+  aspect-ratio: 1;
+}
+
+.image-upload.profile-picture .image-overlay {
+  border-radius: 50%;
+}
+
+/* Small Variant */
+.image-upload.small {
+  max-width: 150px;
+}
+
+.image-upload.small .upload-area {
+  padding: 25px 15px;
+}
+
+.image-upload.small .upload-icon {
+  font-size: 2rem;
+}
+
+.image-upload.small .upload-primary {
+  font-size: 1rem;
+}
+
+.image-upload.small .upload-secondary {
+  font-size: 0.8rem;
+}
+
+.image-upload.small .preview-image {
+  height: 150px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .upload-area {
+    padding: 30px 15px;
+  }
+  
+  .upload-icon {
+    font-size: 2.5rem;
+  }
+  
+  .upload-primary {
+    font-size: 1rem;
+  }
+  
+  .change-btn,
+  .remove-btn {
+    padding: 8px 16px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .image-upload {
+    max-width: 100%;
+  }
+  
+  .upload-area {
+    padding: 25px 10px;
+  }
+  
+  .upload-icon {
+    font-size: 2rem;
+  }
+  
+  .image-overlay {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .change-btn,
+  .remove-btn {
+    width: 80%;
+    padding: 10px;
+  }
+}

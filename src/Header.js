@@ -1,49 +1,310 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useLanguage } from './i18n/LanguageContext';
+import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
+import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
 import './Header.css';
 
 const Header = ({ isLoggedIn, setIsLoggedIn }) => {
+  const [user, setUser] = useState(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
-  const [isModerator, setIsModerator] = useState(false);
+  const { t } = useLanguage();
 
   useEffect(() => {
+    if (isLoggedIn) {
+      fetchUserData();
+      fetchUnreadCounts();
+      // Set up polling for real-time updates
+      const interval = setInterval(() => {
+        fetchUnreadCounts();
+      }, 30000); // Check every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn]);
+
+  const fetchUserData = async () => {
     const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
-    // Check if user is moderator
-    const userId = localStorage.getItem('userId');
-    setIsModerator(userId === 'MODERATOR-UNIQUE-ID-1234');
-  }, [setIsLoggedIn]);
+    if (!token) return;
+
+    try {
+      const response = await axios.get('/api/profile/me', {
+        headers: { 'x-auth-token': token }
+      });
+      setUser(response.data);
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
+    }
+  };
+
+  const fetchUnreadCounts = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const [messagesResponse, notificationsResponse] = await Promise.all([
+        axios.get('/api/messages/unread/count', {
+          headers: { 'x-auth-token': token }
+        }),
+        axios.get('/api/notifications/unread/count', {
+          headers: { 'x-auth-token': token }
+        })
+      ]);
+
+      setUnreadMessages(messagesResponse.data.unreadCount);
+      setUnreadNotifications(notificationsResponse.data.unreadCount);
+    } catch (error) {
+      console.error('Error fetching unread counts:', error);
+      if (error.response?.status === 401) {
+        handleLogout();
+      }
+    }
+  };
+
+  const fetchNotifications = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await axios.get('/api/notifications?limit=5', {
+        headers: { 'x-auth-token': token }
+      });
+      setNotifications(response.data.notifications);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     setIsLoggedIn(false);
-    navigate('/login'); // Przekieruj na stronę logowania po wylogowaniu
+    setUser(null);
+    setUnreadMessages(0);
+    setUnreadNotifications(0);
+    setShowUserMenu(false);
+    navigate('/');
+  };
+
+  const toggleNotifications = async () => {
+    if (!showNotifications) {
+      await fetchNotifications();
+    }
+    setShowNotifications(!showNotifications);
+  };
+
+  const markNotificationAsRead = async (notificationId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      await axios.put(`/api/notifications/${notificationId}/read`, {}, {
+        headers: { 'x-auth-token': token }
+      });
+      fetchUnreadCounts();
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      await axios.put('/api/notifications/read-all', {}, {
+        headers: { 'x-auth-token': token }
+      });
+      fetchUnreadCounts();
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    }
   };
 
   return (
-    <header className="app-header">
-      <nav>
-        <ul>
-          <li><Link to="/">Turnieje</Link></li>
-          <li><Link to="/feed">Tablica</Link></li>
-          {isLoggedIn ? (
-            <>
-              <li><Link to="/profile/me">Mój Profil</Link></li>
-              <li><Link to="/messages">Wiadomości</Link></li>
-              <li><Link to="/characters">Postacie</Link></li>
-              {isModerator && <li><Link to="/moderator">Panel Moderatora</Link></li>}
-              <li><Link to="/leaderboard">Ranking</Link></li>
-              <li><button onClick={handleLogout} className="logout-button">Wyloguj</button></li>
-            </>
-          ) : (
-            <>
-              <li><Link to="/register">Rejestracja</Link></li>
-              <li><Link to="/login">Logowanie</Link></li>
-            </>
+    <header className="header">
+      <div className="header-container">
+        {/* Logo */}
+        <div className="header-logo">
+          <Link to="/">
+            <h1>GeekFights</h1>
+          </Link>
+        </div>
+
+        {/* Navigation */}
+        <nav className="header-nav">
+          <Link to="/" className="nav-link">{t('home')}</Link>
+          <Link to="/feed" className="nav-link">{t('feed')}</Link>
+          <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
+          <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
+          {user && user.role === 'moderator' && (
+            <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
           )}
-        </ul>
-      </nav>
+        </nav>
+
+        {/* Language Switcher */}
+        <LanguageSwitcher />
+
+        {/* User Section */}
+        <div className="header-user">
+          {isLoggedIn ? (
+            <div className="user-section">
+              {/* Messages */}
+              <Link to="/messages" className="icon-button">
+                <span className="icon">💬</span>
+                {unreadMessages > 0 && (
+                  <span className="badge">{unreadMessages}</span>
+                )}
+              </Link>
+
+              {/* Notifications */}
+              <div className="notifications-container">
+                <button 
+                  className="icon-button"
+                  onClick={toggleNotifications}
+                >
+                  <span className="icon">🔔</span>
+                  {unreadNotifications > 0 && (
+                    <span className="badge">{unreadNotifications}</span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="notifications-dropdown">
+                    <div className="notifications-header">
+                      <h3>{t('notifications')}</h3>
+                      {unreadNotifications > 0 && (
+                        <button 
+                          className="mark-all-read"
+                          onClick={markAllNotificationsAsRead}
+                        >
+                          {t('markAllAsRead')}
+                        </button>
+                      )}
+                    </div>
+                    <div className="notifications-list">
+                      {notifications.length > 0 ? (
+                        notifications.map(notification => (
+                          <div 
+                            key={notification.id} 
+                            className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                            onClick={() => markNotificationAsRead(notification.id)}
+                          >
+                            <div className="notification-title">{notification.title}</div>
+                            <div className="notification-content">{notification.content}</div>
+                            <div className="notification-time">
+                              {new Date(notification.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-notifications">{t('noNotifications')}</div>
+                      )}
+                    </div>
+                    <div className="notifications-footer">
+                      <Link to="/notifications" onClick={() => setShowNotifications(false)}>
+                        {t('seeAll')}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* User Menu */}
+              <div className="user-menu-container">
+                <button 
+                  className="user-button"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                >
+                  <img 
+                    src={replacePlaceholderUrl(user?.profilePicture) || placeholderImages.userSmall} 
+                    alt="Profile" 
+                    className="user-avatar"
+                  />
+                  <span className="user-name">{user?.username}</span>
+                  <span className="dropdown-arrow">▼</span>
+                </button>
+
+                {showUserMenu && (
+                  <div className="user-dropdown">
+                    <Link 
+                      to="/profile/me" 
+                      className="dropdown-item"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <span className="dropdown-icon">👤</span>
+                      {t('profile')}
+                    </Link>
+                    <Link 
+                      to="/messages" 
+                      className="dropdown-item"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <span className="dropdown-icon">💬</span>
+                      {t('messages')}
+                      {unreadMessages > 0 && (
+                        <span className="dropdown-badge">{unreadMessages}</span>
+                      )}
+                    </Link>
+                    <Link 
+                      to="/characters" 
+                      className="dropdown-item"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <span className="dropdown-icon">🎮</span>
+                      {t('characters')}
+                    </Link>
+                    <div className="dropdown-divider"></div>
+                    <button 
+                      className="dropdown-item logout-item"
+                      onClick={handleLogout}
+                    >
+                      <span className="dropdown-icon">🚪</span>
+                      {t('logout')}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="auth-buttons">
+              <Link to="/login" className="btn btn-outline">{t('login')}</Link>
+              <Link to="/register" className="btn btn-primary">{t('register')}</Link>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Menu Toggle */}
+      <div className="mobile-menu-toggle">
+        <button className="hamburger">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+
+      {/* Click outside handlers */}
+      {(showUserMenu || showNotifications) && (
+        <div 
+          className="overlay"
+          onClick={() => {
+            setShowUserMenu(false);
+            setShowNotifications(false);
+          }}
+        ></div>
+      )}
     </header>
   );
 };

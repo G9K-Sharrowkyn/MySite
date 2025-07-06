@@ -1,211 +1,295 @@
 const { v4: uuidv4 } = require('uuid');
-const { calculateRank } = require('./profileController');
+
+// @desc    Create a new fight
+// @route   POST /api/fights
+// @access  Private (Moderator only for main fights, users for feed fights)
+exports.createFight = async (req, res) => {
+  const { 
+    title, 
+    description, 
+    fighter1, 
+    fighter2, 
+    fighter1Image, 
+    fighter2Image,
+    category, 
+    type = 'feed', // 'main' or 'feed'
+    endDate 
+  } = req.body;
+  
+  const db = req.db;
+  await db.read();
+
+  // Check if user is moderator for main fights
+  const user = db.data.users.find(u => u.id === req.user.id);
+  if (type === 'main' && user.role !== 'moderator') {
+    return res.status(403).json({ msg: 'Tylko moderatorzy mogą tworzyć główne walki' });
+  }
+
+  const newFight = {
+    id: uuidv4(),
+    title,
+    description,
+    fighter1,
+    fighter2,
+    fighter1Image: fighter1Image || 'https://via.placeholder.com/150',
+    fighter2Image: fighter2Image || 'https://via.placeholder.com/150',
+    category,
+    type, // 'main' or 'feed'
+    createdBy: req.user.id,
+    createdByUsername: user.username,
+    createdAt: new Date().toISOString(),
+    endDate: endDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
+    status: 'active', // 'active', 'ended', 'cancelled'
+    votes: {
+      fighter1: 0,
+      fighter2: 0,
+      total: 0
+    },
+    winner: null,
+    comments: []
+  };
+
+  db.data.fights.push(newFight);
+  await db.write();
+
+  res.json({ msg: 'Walka została utworzona', fight: newFight });
+};
 
 // @desc    Get all fights
 // @route   GET /api/fights
 // @access  Public
 exports.getFights = async (req, res) => {
-  const db = req.db;
-  await db.read();
-  res.json(db.data.fights);
-};
-
-// @desc    Create a new fight (Moderator only)
-// @route   POST /api/fights
-// @access  Private (Moderator)
-exports.createFight = async (req, res) => {
-  const { category, user1, user2, fighter1, fighter2, user1Record, user2Record, overallRecord1, overallRecord2 } = req.body;
+  const { type, category, status, page = 1, limit = 10 } = req.query;
   const db = req.db;
   await db.read();
 
-  // Tutaj można dodać logikę sprawdzającą, czy użytkownik jest moderatorem
-  // Na razie zakładamy, że każdy zalogowany użytkownik może tworzyć walki dla uproszczenia
+  let fights = db.data.fights;
 
-  const newFight = {
-    id: uuidv4(),
-    category,
-    user1,
-    user2,
-    fighter1,
-    fighter2,
-    user1Record,
-    user2Record,
-    overallRecord1,
-    overallRecord2,
-    createdAt: new Date().toISOString(),
-  };
-
-  db.data.fights.push(newFight);
-  await db.write();
-  res.status(201).json(newFight);
-};
-
-// @desc    Update a fight (Moderator only)
-// @route   PUT /api/fights/:id
-// @access  Private (Moderator)
-exports.updateFight = async (req, res) => {
-  const { id } = req.params;
-  const updatedData = req.body;
-  const db = req.db;
-  await db.read();
-
-  const index = db.data.fights.findIndex(f => f.id === id);
-
-  if (index === -1) {
-    return res.status(404).json({ msg: 'Walka nie znaleziona' });
+  // Filter by type
+  if (type) {
+    fights = fights.filter(fight => fight.type === type);
   }
 
-  const existingFight = db.data.fights[index];
-  db.data.fights[index] = { ...existingFight, ...updatedData };
+  // Filter by category
+  if (category) {
+    fights = fights.filter(fight => fight.category === category);
+  }
 
-  const participantIds = [existingFight.user1, existingFight.user2];
+  // Filter by status
+  if (status) {
+    fights = fights.filter(fight => fight.status === status);
+  }
 
-  // Jeśli walka ma zwycięzcę lub zaktualizowano wynik, zaktualizuj statystyki
-  if (updatedData.winnerId || updatedData.result) {
-    const users = participantIds
-      .map(id => db.data.users.find(u => u.id === id))
-      .filter(Boolean);
+  // Sort by creation date (newest first)
+  fights.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    const updateDerivedStats = user => {
-      user.stats = user.stats || {};
-      user.stats.totalFights =
-        (user.stats.fightsWon || 0) +
-        (user.stats.fightsLost || 0) +
-        (user.stats.fightsDrawn || 0) +
-        (user.stats.fightsNoContest || 0);
-      user.stats.winRate =
-        user.stats.totalFights > 0
-          ? (user.stats.fightsWon || 0) / user.stats.totalFights
-          : 0;
+  // Pagination
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+  const paginatedFights = fights.slice(startIndex, endIndex);
+
+  // Add creator info and vote counts
+  const fightsWithDetails = paginatedFights.map(fight => {
+    const creator = db.data.users.find(u => u.id === fight.createdBy);
+    const totalVotes = db.data.votes.filter(v => v.fightId === fight.id).length;
+    const fighter1Votes = db.data.votes.filter(v => v.fightId === fight.id && v.choice === 'fighter1').length;
+    const fighter2Votes = db.data.votes.filter(v => v.fightId === fight.id && v.choice === 'fighter2').length;
+
+    return {
+      ...fight,
+      createdByUsername: creator ? creator.username : 'Nieznany',
+      votes: {
+        fighter1: fighter1Votes,
+        fighter2: fighter2Votes,
+        total: totalVotes
+      }
     };
+  });
 
-    if (updatedData.winnerId) {
-      const winner = users.find(u => u.id === updatedData.winnerId);
-      const loser = users.find(u => u.id !== updatedData.winnerId);
-
-      if (winner) {
-        winner.points = (winner.points || 0) + 10; // Przyznaj 10 punktów za zwycięstwo
-        winner.stats = winner.stats || {};
-        winner.stats.fightsWon = (winner.stats.fightsWon || 0) + 1;
-        updateDerivedStats(winner);
-        winner.stats.rank = calculateRank(winner.stats.fightsWon || 0);
-      }
-
-      if (loser) {
-        loser.stats = loser.stats || {};
-        loser.stats.fightsLost = (loser.stats.fightsLost || 0) + 1;
-        updateDerivedStats(loser);
-      }
-    } else if (updatedData.result === 'draw') {
-      users.forEach(user => {
-        user.stats = user.stats || {};
-        user.stats.fightsDrawn = (user.stats.fightsDrawn || 0) + 1;
-        updateDerivedStats(user);
-      });
-    } else if (
-      updatedData.result === 'noContest' ||
-      updatedData.result === 'no-contest'
-    ) {
-      users.forEach(user => {
-        user.stats = user.stats || {};
-        user.stats.fightsNoContest = (user.stats.fightsNoContest || 0) + 1;
-        updateDerivedStats(user);
-      });
+  res.json({
+    fights: fightsWithDetails,
+    pagination: {
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(fights.length / limit),
+      totalFights: fights.length,
+      hasNext: endIndex < fights.length,
+      hasPrev: startIndex > 0
     }
-  }
-
-  await db.write();
-  res.json(db.data.fights[index]);
+  });
 };
 
-// @desc    Delete a fight (Moderator only)
-// @route   DELETE /api/fights/:id
-// @access  Private (Moderator)
-exports.deleteFight = async (req, res) => {
-  const { id } = req.params;
+// @desc    Get single fight
+// @route   GET /api/fights/:id
+// @access  Public
+exports.getFight = async (req, res) => {
   const db = req.db;
   await db.read();
 
-  const initialLength = db.data.fights.length;
-  db.data.fights = db.data.fights.filter(f => f.id !== id);
-
-  if (db.data.fights.length === initialLength) {
+  const fight = db.data.fights.find(f => f.id === req.params.id);
+  if (!fight) {
     return res.status(404).json({ msg: 'Walka nie znaleziona' });
   }
 
-  await db.write();
-  res.json({ msg: 'Walka usunięta' });
-};
+  // Get creator info
+  const creator = db.data.users.find(u => u.id === fight.createdBy);
+  
+  // Get vote counts
+  const totalVotes = db.data.votes.filter(v => v.fightId === fight.id).length;
+  const fighter1Votes = db.data.votes.filter(v => v.fightId === fight.id && v.choice === 'fighter1').length;
+  const fighter2Votes = db.data.votes.filter(v => v.fightId === fight.id && v.choice === 'fighter2').length;
 
-// @desc    Get all possible player pairs based on selected characters
-// @route   GET /api/fights/pairs
-// @access  Private (Moderator)
-exports.getPlayerPairs = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  // Get comments
+  const comments = db.data.comments.filter(c => c.fightId === fight.id)
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-  // Users with at least two selected characters are considered
-  const players = db.data.users.filter(
-    u => Array.isArray(u.selectedCharacters) && u.selectedCharacters.length >= 2
-  );
-
-  const pairs = [];
-  for (let i = 0; i < players.length; i++) {
-    for (let j = i + 1; j < players.length; j++) {
-      pairs.push({
-        user1Id: players[i].id,
-        user1: players[i].username,
-        user2Id: players[j].id,
-        user2: players[j].username,
-      });
-    }
-  }
-
-  res.json(pairs);
-};
-
-// @desc    Create fight using players' selected characters
-// @route   POST /api/fights/auto
-// @access  Private (Moderator)
-exports.createFightFromSelections = async (req, res) => {
-  const { user1Id, user2Id, category } = req.body;
-  const db = req.db;
-  await db.read();
-
-  const user1 = db.data.users.find(u => u.id === user1Id);
-  const user2 = db.data.users.find(u => u.id === user2Id);
-
-  if (!user1 || !user2) {
-    return res.status(404).json({ msg: 'Użytkownik nie znaleziony' });
-  }
-
-  const fighter1Id = user1.selectedCharacters && user1.selectedCharacters[0];
-  const fighter2Id = user2.selectedCharacters && user2.selectedCharacters[0];
-
-  if (!fighter1Id || !fighter2Id) {
-    return res
-      .status(400)
-      .json({ msg: 'Obaj użytkownicy muszą mieć wybrane postacie' });
-  }
-
-  const fighter1 = db.data.characters.find(c => c.id === fighter1Id);
-  const fighter2 = db.data.characters.find(c => c.id === fighter2Id);
-
-  const newFight = {
-    id: uuidv4(),
-    category: category || 'Auto',
-    user1: user1.username,
-    user2: user2.username,
-    fighter1: fighter1 ? fighter1.name : fighter1Id,
-    fighter2: fighter2 ? fighter2.name : fighter2Id,
-    user1Record: '',
-    user2Record: '',
-    overallRecord1: '',
-    overallRecord2: '',
-    createdAt: new Date().toISOString(),
+  const fightWithDetails = {
+    ...fight,
+    createdByUsername: creator ? creator.username : 'Nieznany',
+    votes: {
+      fighter1: fighter1Votes,
+      fighter2: fighter2Votes,
+      total: totalVotes
+    },
+    comments
   };
 
-  db.data.fights.push(newFight);
+  res.json(fightWithDetails);
+};
+
+// @desc    Update fight (moderator only)
+// @route   PUT /api/fights/:id
+// @access  Private (Moderator only)
+exports.updateFight = async (req, res) => {
+  const db = req.db;
+  await db.read();
+
+  const user = db.data.users.find(u => u.id === req.user.id);
+  if (user.role !== 'moderator') {
+    return res.status(403).json({ msg: 'Tylko moderatorzy mogą edytować walki' });
+  }
+
+  const fightIndex = db.data.fights.findIndex(f => f.id === req.params.id);
+  if (fightIndex === -1) {
+    return res.status(404).json({ msg: 'Walka nie znaleziona' });
+  }
+
+  const { title, description, status, winner, endDate } = req.body;
+
+  if (title) db.data.fights[fightIndex].title = title;
+  if (description) db.data.fights[fightIndex].description = description;
+  if (status) db.data.fights[fightIndex].status = status;
+  if (winner) db.data.fights[fightIndex].winner = winner;
+  if (endDate) db.data.fights[fightIndex].endDate = endDate;
+
+  db.data.fights[fightIndex].updatedAt = new Date().toISOString();
+
   await db.write();
-  res.status(201).json(newFight);
+  res.json({ msg: 'Walka zaktualizowana', fight: db.data.fights[fightIndex] });
+};
+
+// @desc    Delete fight (moderator only)
+// @route   DELETE /api/fights/:id
+// @access  Private (Moderator only)
+exports.deleteFight = async (req, res) => {
+  const db = req.db;
+  await db.read();
+
+  const user = db.data.users.find(u => u.id === req.user.id);
+  if (user.role !== 'moderator') {
+    return res.status(403).json({ msg: 'Tylko moderatorzy mogą usuwać walki' });
+  }
+
+  const fightIndex = db.data.fights.findIndex(f => f.id === req.params.id);
+  if (fightIndex === -1) {
+    return res.status(404).json({ msg: 'Walka nie znaleziona' });
+  }
+
+  // Remove associated votes and comments
+  db.data.votes = db.data.votes.filter(v => v.fightId !== req.params.id);
+  db.data.comments = db.data.comments.filter(c => c.fightId !== req.params.id);
+  
+  // Remove fight
+  db.data.fights.splice(fightIndex, 1);
+
+  await db.write();
+  res.json({ msg: 'Walka została usunięta' });
+};
+
+// @desc    Get fight categories
+// @route   GET /api/fights/categories
+// @access  Public
+exports.getCategories = async (req, res) => {
+  const categories = [
+    'Anime',
+    'Marvel',
+    'DC',
+    'Gaming',
+    'Movies',
+    'TV Shows',
+    'Books',
+    'Mythology',
+    'History',
+    'Mixed'
+  ];
+  
+  res.json(categories);
+};
+
+// @desc    End fight and determine winner (moderator only)
+// @route   POST /api/fights/:id/end
+// @access  Private (Moderator only)
+exports.endFight = async (req, res) => {
+  const db = req.db;
+  await db.read();
+
+  const user = db.data.users.find(u => u.id === req.user.id);
+  if (user.role !== 'moderator') {
+    return res.status(403).json({ msg: 'Tylko moderatorzy mogą kończyć walki' });
+  }
+
+  const fightIndex = db.data.fights.findIndex(f => f.id === req.params.id);
+  if (fightIndex === -1) {
+    return res.status(404).json({ msg: 'Walka nie znaleziona' });
+  }
+
+  const fight = db.data.fights[fightIndex];
+  
+  // Count votes
+  const fighter1Votes = db.data.votes.filter(v => v.fightId === fight.id && v.choice === 'fighter1').length;
+  const fighter2Votes = db.data.votes.filter(v => v.fightId === fight.id && v.choice === 'fighter2').length;
+
+  let winner;
+  if (fighter1Votes > fighter2Votes) {
+    winner = 'fighter1';
+  } else if (fighter2Votes > fighter1Votes) {
+    winner = 'fighter2';
+  } else {
+    winner = 'draw';
+  }
+
+  db.data.fights[fightIndex].status = 'ended';
+  db.data.fights[fightIndex].winner = winner;
+  db.data.fights[fightIndex].endedAt = new Date().toISOString();
+  db.data.fights[fightIndex].finalVotes = {
+    fighter1: fighter1Votes,
+    fighter2: fighter2Votes,
+    total: fighter1Votes + fighter2Votes
+  };
+
+  // Award points to users who voted for the winner
+  if (winner !== 'draw') {
+    const winningVotes = db.data.votes.filter(v => v.fightId === fight.id && v.choice === winner);
+    winningVotes.forEach(vote => {
+      const userIndex = db.data.users.findIndex(u => u.id === vote.userId);
+      if (userIndex !== -1) {
+        if (!db.data.users[userIndex].stats) {
+          db.data.users[userIndex].stats = { points: 0 };
+        }
+        db.data.users[userIndex].stats.points = (db.data.users[userIndex].stats.points || 0) + 10;
+      }
+    });
+  }
+
+  await db.write();
+  res.json({ msg: 'Walka zakończona', fight: db.data.fights[fightIndex] });
 };

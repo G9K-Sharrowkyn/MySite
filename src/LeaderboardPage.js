@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { placeholderImages } from './utils/placeholderImage';
 import './LeaderboardPage.css';
 
 const LeaderboardPage = () => {
@@ -27,7 +28,16 @@ const LeaderboardPage = () => {
             <li key={user.id} className="leaderboard-item">
               <span className="rank">{index + 1}.</span>
               <Link to={`/profile/${user.id}`} className="leaderboard-user-link">
-                <img src={user.profilePicture || 'https://via.placeholder.com/50'} alt="Profilowe" className="leaderboard-profile-picture" />
+                <img src={user.profilePicture || placeholderImages.userSmall} alt="Profilowe" className="leaderboard-profile-picture" />
+                <div className="leaderboard-user-info">
+                  <span className="username">{user.username}</span>
+                  <span className="stats">
+                    Zwycięstwa: {user.victories} | 
+                    Walki: {user.totalFights} | 
+                    Win Rate: {user.winRate}% |
+                    Ranga: {user.rank}
+                  </span>
+                </div>
                 <span className="username">{user.username}</span>
               </Link>
               <span className="points">{user.points} pkt</span>

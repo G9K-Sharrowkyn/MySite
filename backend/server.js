@@ -20,7 +20,9 @@ const db = new Low(adapter, {
   comments: [],
   messages: [],
   votes: [],
-  notifications: []
+  notifications: [],
+  officialFights: [],
+  divisions: []
 });
 
 // Read data from JSON file
@@ -28,7 +30,8 @@ db.read();
 
 // Middleware
 app.use(cors());
-app.use(express.json()); // Body parser for JSON
+app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
+app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
 
 // Make db accessible to routes
 app.use((req, res, next) => {
@@ -47,6 +50,8 @@ app.use('/api/tournaments', require('./routes/tournaments'));
 app.use('/api/posts', require('./routes/posts'));
 app.use('/api/votes', require('./routes/votes'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/stats', require('./routes/stats'));
+app.use('/api/divisions', require('./routes/divisions'));
 
 // Basic route
 app.get('/', (req, res) => {

@@ -1,0 +1,359 @@
+/* Create Post Card */
+.create-post-card {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  margin-bottom: 25px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.create-post-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
+}
+
+/* Login Prompt */
+.login-prompt {
+  padding: 30px;
+  text-align: center;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+.login-prompt p {
+  margin: 0;
+  color: #666;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Create Post Prompt */
+.create-post-prompt {
+  padding: 25px 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.create-post-prompt:hover {
+  background: linear-gradient(135deg, #e9ecef 0%, #f8f9fa 100%);
+}
+
+.prompt-content {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.prompt-icon {
+  font-size: 1.5rem;
+  color: #667eea;
+}
+
+.prompt-text {
+  color: #666;
+  font-size: 1.1rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+/* Create Post Form */
+.create-post-form {
+  padding: 0;
+}
+
+.form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 30px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.form-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.1);
+}
+
+/* Post Type Selector */
+.post-type-selector {
+  display: flex;
+  padding: 20px 30px;
+  gap: 10px;
+  background: #fafafa;
+  border-bottom: 1px solid #f0f0f0;
+  overflow-x: auto;
+}
+
+.type-btn {
+  padding: 12px 20px;
+  border: 2px solid #e9ecef;
+  background: white;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  color: #666;
+  font-family: inherit;
+}
+
+.type-btn:hover {
+  border-color: #667eea;
+  color: #667eea;
+  transform: translateY(-1px);
+}
+
+.type-btn.active {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  border-color: #667eea;
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Form Fields */
+.form-fields {
+  padding: 25px 30px;
+}
+
+.title-input {
+  width: 100%;
+  padding: 15px 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 15px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.3s ease;
+  margin-bottom: 20px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.title-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.content-input {
+  width: 100%;
+  padding: 15px 20px;
+  border: 2px solid #e9ecef;
+  border-radius: 15px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  resize: vertical;
+  min-height: 120px;
+  font-family: inherit;
+  line-height: 1.5;
+  background: white;
+  box-sizing: border-box;
+}
+
+.content-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Fight Inputs */
+.fight-inputs {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.team-input {
+  flex: 1;
+  padding: 12px 18px;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.team-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.vs-label {
+  font-weight: 900;
+  color: #667eea;
+  font-size: 1.1rem;
+  background: white;
+  padding: 8px 12px;
+  border-radius: 50%;
+  border: 2px solid #667eea;
+  box-shadow: 0 2px 10px rgba(102, 126, 234, 0.2);
+}
+
+/* Image Input */
+.image-input {
+  width: 100%;
+  padding: 12px 18px;
+  border: 2px solid #e9ecef;
+  border-radius: 12px;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  margin-top: 20px;
+  background: white;
+  box-sizing: border-box;
+}
+
+.image-input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  padding: 20px 30px 30px;
+  background: #fafafa;
+}
+
+.cancel-btn {
+  padding: 12px 25px;
+  border: 2px solid #e9ecef;
+  background: white;
+  color: #666;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.cancel-btn:hover {
+  border-color: #dc3545;
+  color: #dc3545;
+  transform: translateY(-1px);
+}
+
+.submit-btn {
+  padding: 12px 30px;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 700;
+  font-family: inherit;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .create-post-form {
+    margin: 0 -5px;
+  }
+  
+  .form-header,
+  .post-type-selector,
+  .form-fields,
+  .form-actions {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  
+  .post-type-selector {
+    gap: 8px;
+  }
+  
+  .type-btn {
+    padding: 10px 16px;
+    font-size: 0.85rem;
+  }
+  
+  .fight-inputs {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .vs-label {
+    transform: rotate(90deg);
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+    padding: 15px;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-post-prompt {
+    padding: 20px;
+  }
+  
+  .form-header,
+  .post-type-selector,
+  .form-fields,
+  .form-actions {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .form-header h3 {
+    font-size: 1.1rem;
+  }
+  
+  .post-type-selector {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  
+  .type-btn {
+    flex: 1;
+    min-width: calc(50% - 4px);
+  }
+}

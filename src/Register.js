@@ -46,7 +46,11 @@ const Register = ({ setIsLoggedIn }) => {
         const body = JSON.stringify(newUser);
 
         const res = await axios.post('/api/auth/register', body, config);
-        console.log(res.data);
+        console.log('Register response:', res.data);
+        if (!res.data.userId) {
+          showNotification('Błąd rejestracji: brak userId w odpowiedzi serwera.', 'error');
+          return;
+        }
         localStorage.setItem('token', res.data.token);
         localStorage.setItem('userId', res.data.userId);
         setIsLoggedIn(true);
