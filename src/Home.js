@@ -247,17 +247,19 @@ const Home = () => {
             <h3>📱 {t('recentPosts')}</h3>
             <div className="posts-list">
               {recentPosts.slice(0, 6).map(post => (
-                <div key={post.id} className="post-preview">
-                  <div className="post-icon">{getPostTypeIcon(post.type)}</div>
-                  <div className="post-info">
-                    <h4>{post.title}</h4>
-                    <p>{t('by')} {post.author?.username || t('anonymous')}</p>
-                    <span className="post-time">{formatTimeAgo(post.createdAt)}</span>
+                <Link key={post.id} to={`/post/${post.id}`} className="post-preview-link">
+                  <div className="post-preview">
+                    <div className="post-icon">{getPostTypeIcon(post.type)}</div>
+                    <div className="post-info">
+                      <h4>{post.title}</h4>
+                      <p>{t('by')} {post.author?.username || t('anonymous')}</p>
+                      <span className="post-time">{formatTimeAgo(post.createdAt)}</span>
+                    </div>
+                    <div className="post-stats">
+                      <span>👍 {post.likes?.length || 0}</span>
+                    </div>
                   </div>
-                  <div className="post-stats">
-                    <span>👍 {post.likes?.length || 0}</span>
-                  </div>
-                </div>
+                </Link>
               ))}
             </div>
             <Link to="/feed" className="view-all-link">{t('seeAllPosts')} →</Link>

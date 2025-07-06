@@ -8,13 +8,19 @@ import './ProfilePage.css';
 
 const ProfilePage = () => {
   const { userId } = useParams();
-  const [profile, setProfile] = useState(null);
+
+  // Initialize profile state from localStorage if available
+  const storedProfile = localStorage.getItem('cachedProfile');
+  const initialProfile = storedProfile ? JSON.parse(storedProfile) : null;
+
+  const [profile, setProfile] = useState(initialProfile);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [description, setDescription] = useState('');
-  const [profilePicture, setProfilePicture] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [description, setDescription] = useState(initialProfile?.description || '');
+  const [profilePicture, setProfilePicture] = useState(initialProfile?.profilePicture || '');
+  const [loading, setLoading] = useState(initialProfile === null); // only true if no profile yet
+  const [isFetching, setIsFetching] = useState(false); // new state for background fetching
   const [error, setError] = useState(null);
   const [posts, setPosts] = useState([]);
   const navigate = useNavigate();
@@ -35,7 +41,11 @@ const ProfilePage = () => {
   }, [actualUserId]);
 
   const fetchProfile = async (id) => {
-    setLoading(true);
+    if (profile === null) {
+      setLoading(true);
+    } else {
+      setIsFetching(true);
+    }
     setError(null);
     try {
       let res;
@@ -45,6 +55,7 @@ const ProfilePage = () => {
         if (!token) {
           setError('Nie można znaleźć Twojego profilu. Zaloguj się ponownie.');
           setLoading(false);
+          setIsFetching(false);
           return;
         }
         res = await axios.get('/api/profile/me', {
@@ -60,10 +71,14 @@ const ProfilePage = () => {
       setDescription(res.data.description || '');
       setProfilePicture(res.data.profilePicture || '');
       setLoading(false);
+      setIsFetching(false);
+      // Update localStorage cache
+      localStorage.setItem('cachedProfile', JSON.stringify(res.data));
     } catch (err) {
       console.error('Profile fetch error:', err);
       setError('Błąd podczas pobierania profilu lub profil nie istnieje.');
       setLoading(false);
+      setIsFetching(false);
     }
   };
 
@@ -154,7 +169,7 @@ const ProfilePage = () => {
     }
   };
 
-  if (loading) return <div className="profile-page"><p>Ładowanie profilu...</p></div>;
+  if (loading && profile === null) return <div className="profile-page"><p>Ładowanie profilu...</p></div>;
   if (error) return <div className="profile-page"><p style={{color: 'red'}}>{error}</p><button onClick={() => navigate('/login')}>Zaloguj się ponownie</button></div>;
 
   return (
@@ -228,27 +243,28 @@ const ProfilePage = () => {
         <div className="posts-grid">
           {posts.length > 0 ? (
             posts.map(post => (
-              <PostCard 
-                key={post.id} 
-                post={post}
-                onUpdate={(updatedPost) => {
-                  setPosts(prevPosts => 
-                    prevPosts.map(p => p.id === updatedPost.id ? updatedPost : p)
-                  );
-                }}
-                showEditDelete={userId === 'me' || profile.role === 'moderator'}
-                onDelete={async (postId) => {
-                  if (!token) return;
-                  try {
-                    await axios.delete(`/api/posts/${postId}`, {
-                      headers: { 'x-auth-token': token }
-                    });
-                    setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
-                  } catch (error) {
-                    console.error('Error deleting post:', error);
-                  }
-                }}
-              />
+              <div key={post.id} className="profile-post-link">
+                <PostCard 
+                  post={post}
+                  onUpdate={(updatedPost) => {
+                    setPosts(prevPosts => 
+                      prevPosts.map(p => p.id === updatedPost.id ? updatedPost : p)
+                    );
+                  }}
+                  showEditDelete={userId === 'me' || profile.role === 'moderator'}
+                  onDelete={async (postId) => {
+                    if (!token) return;
+                    try {
+                      await axios.delete(`/api/posts/${postId}`, {
+                        headers: { 'x-auth-token': token }
+                      });
+                      setPosts(prevPosts => prevPosts.filter(p => p.id !== postId));
+                    } catch (error) {
+                      console.error('Error deleting post:', error);
+                    }
+                  }}
+                />
+              </div>
             ))
           ) : (
             <p>Brak postów.</p>

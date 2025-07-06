@@ -359,6 +359,18 @@
       "authorUsername": "demo",
       "text": "Przykładowy komentarz",
       "createdAt": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "f3b08e3f-0b34-4786-94ea-2b3fdddbdae5",
+      "type": "post",
+      "targetId": "38031cb1-b8db-4be5-ab58-c933cf33ab2b",
+      "postId": "38031cb1-b8db-4be5-ab58-c933cf33ab2b",
+      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "authorUsername": "ultracode1",
+      "text": "dwqdqw",
+      "createdAt": "2025-07-06T12:30:48.006Z",
+      "likes": 0,
+      "likedBy": []
     }
   ],
   "messages": [

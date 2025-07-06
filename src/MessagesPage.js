@@ -96,8 +96,10 @@ const MessagesPage = () => {
   // Debounce search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      if (showNewMessage) {
+      if (showNewMessage && searchQuery.trim() !== '') {
         searchUsers(searchQuery);
+      } else {
+        setUsers([]);
       }
     }, 300);
     return () => clearTimeout(timeoutId);
@@ -186,9 +188,15 @@ const MessagesPage = () => {
         <div className="conversations-sidebar">
           <div className="sidebar-header">
             <h2>💬 Wiadomości</h2>
-            <button 
+            <button
               className="new-message-btn"
-              onClick={() => setShowNewMessage(!showNewMessage)}
+              onClick={() => {
+                if (showNewMessage) {
+                  setSearchQuery('');
+                  setUsers([]);
+                }
+                setShowNewMessage(!showNewMessage);
+              }}
             >
               ✏️
             </button>
@@ -205,22 +213,26 @@ const MessagesPage = () => {
                   className="user-search-input"
                 />
               </div>
-              <div className="users-list">
-                {filteredUsers.map(user => (
-                  <div 
-                    key={user.id}
-                    className="user-item"
-                    onClick={() => startNewConversation(user)}
-                  >
-                    <img 
-                      src={placeholderImages.userSmall} 
-                      alt={user.username}
-                      className="user-avatar"
-                    />
-                    <span className="user-name">{user.username}</span>
-                  </div>
-                ))}
-              </div>
+          <div className="users-list">
+            {searchQuery.trim() !== '' ? (
+              filteredUsers.map(user => (
+                <div
+                  key={user.id}
+                  className="user-item"
+                  onClick={() => startNewConversation(user)}
+                >
+                  <img
+                    src={placeholderImages.userSmall}
+                    alt={user.username}
+                    className="user-avatar"
+                  />
+                  <span className="user-name">{user.username}</span>
+                </div>
+              ))
+            ) : (
+              <p className="no-users-message">Wpisz nazwę użytkownika, aby wyszukać</p>
+            )}
+          </div>
             </div>
           )}
 

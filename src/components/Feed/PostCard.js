@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages } from '../../utils/placeholderImage';
+import CreatePost from './CreatePost';
 import './PostCard.css';
 
 const PostCard = ({ post, onUpdate }) => {
@@ -11,6 +12,7 @@ const PostCard = ({ post, onUpdate }) => {
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(post.likes?.length || 0);
   const [userVote, setUserVote] = useState(null);
+  const [isEditing, setIsEditing] = useState(false);
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
@@ -95,6 +97,43 @@ const PostCard = ({ post, onUpdate }) => {
     }
   };
 
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+
+  const handleDeleteConfirm = async () => {
+    if (!token) return;
+
+    try {
+      await axios.delete(`/api/posts/${post.id}`, {
+        headers: { 'x-auth-token': token }
+      });
+      if (onUpdate) {
+        onUpdate(null, true); // notify parent to refresh posts after deletion
+      }
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+    }
+  };
+
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+  };
+
+  const handleEditToggle = () => {
+    setIsEditing(!isEditing);
+  };
+
+  const handlePostUpdated = (updatedPost) => {
+    setIsEditing(false);
+    if (onUpdate) {
+      onUpdate(updatedPost);
+    }
+  };
+
   const formatTimeAgo = (dateString) => {
     const now = new Date();
     const postDate = new Date(dateString);
@@ -129,6 +168,18 @@ const PostCard = ({ post, onUpdate }) => {
     };
     return rankColors[rank] || '#666';
   };
+
+  if (isEditing) {
+    return (
+      <div className="post-card editing">
+        <CreatePost 
+          initialData={post} 
+          onPostUpdated={handlePostUpdated} 
+          onCancel={handleEditToggle}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="post-card">
@@ -225,7 +276,33 @@ const PostCard = ({ post, onUpdate }) => {
           <span className="action-icon">📤</span>
           <span className="action-text">Udostępnij</span>
         </button>
+
+        {currentUserId === post.author?.id && (
+          <>
+            <button className="action-btn edit-btn" onClick={handleEditToggle}>
+              <span className="action-icon">✏️</span>
+              <span className="action-text">Edit</span>
+            </button>
+            <button className="action-btn delete-btn" onClick={handleDelete}>
+              <span className="action-icon">🗑️</span>
+              <span className="action-text">Delete</span>
+            </button>
+          </>
+        )}
       </div>
+
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={handleDeleteCancel}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h3>Confirm Delete</h3>
+            <p>Are you sure you want to delete this post?</p>
+            <div className="modal-actions">
+              <button className="btn btn-cancel" onClick={handleDeleteCancel}>Cancel</button>
+              <button className="btn btn-delete" onClick={handleDeleteConfirm}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showComments && (
         <div className="comments-section" onClick={e => e.stopPropagation()}>

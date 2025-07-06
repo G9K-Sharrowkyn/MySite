@@ -1,0 +1,112 @@
+useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (showNewMessage) {
+        searchUsers(searchQuery);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, showNewMessage]);
+=======
+  // Debounce search
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (showNewMessage && searchQuery.trim() !== '') {
+        searchUsers(searchQuery);
+      } else {
+        setUsers([]);
+      }
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, showNewMessage]);
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+            <button
+              className="new-message-btn"
+              onClick={() => setShowNewMessage(!showNewMessage)}
+            >
+              ✏️
+            </button>
+=======
+            <button
+              className="new-message-btn"
+              onClick={() => {
+                if (showNewMessage) {
+                  setSearchQuery('');
+                  setUsers([]);
+                }
+                setShowNewMessage(!showNewMessage);
+              }}
+            >
+              ✏️
+            </button>
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+          <div className="users-list">
+            {filteredUsers.map(user => (
+              <div 
+                key={user.id}
+                className="user-item"
+                onClick={() => startNewConversation(user)}
+              >
+                <img 
+                  src={placeholderImages.userSmall} 
+                  alt={user.username}
+                  className="user-avatar"
+                />
+                <span className="user-name">{user.username}</span>
+              </div>
+            ))}
+          </div>
+=======
+          <div className="users-list">
+            {searchQuery.trim() !== '' ? (
+              filteredUsers.map(user => (
+                <div
+                  key={user.id}
+                  className="user-item"
+                  onClick={() => startNewConversation(user)}
+                >
+                  <img
+                    src={placeholderImages.userSmall}
+                    alt={user.username}
+                    className="user-avatar"
+                  />
+                  <span className="user-name">{user.username}</span>
+                </div>
+              ))
+            ) : (
+              <p className="no-users-message">Wpisz nazwę użytkownika, aby wyszukać</p>
+            )}
+          </div>
+>>>>>>> REPLACE
+
+<<<<<<< SEARCH
+  const startConversationWithUser = (user) => {
+    setSelectedConversation(user);
+    fetchConversation(user.id);
+    setShowNewMessage(false);
+  };
+
+  const startNewConversation = (user) => {
+    setSelectedConversation(user);
+    setMessages([]);
+    setShowNewMessage(false);
+  };
+=======
+  const startConversationWithUser = (user) => {
+    setSelectedConversation(user);
+    fetchConversation(user.id);
+    setShowNewMessage(false);
+    setSearchQuery('');
+    setUsers([]);
+  };
+
+  const startNewConversation = (user) => {
+    setSelectedConversation(user);
+    setMessages([]);
+    setShowNewMessage(false);
+    setSearchQuery('');
+    setUsers([]);
+  };
