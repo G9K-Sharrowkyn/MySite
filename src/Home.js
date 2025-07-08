@@ -29,15 +29,13 @@ const Home = () => {
       const [postsRes, usersRes, officialFightsRes] = await Promise.all([
         axios.get('/api/posts?limit=20'),
         axios.get('/api/profile/leaderboard'),
-        axios.get('/api/divisions').catch(() => ({ data: [] })) // Get official fights from divisions
+        axios.get('/api/posts/official?limit=6')
       ]);
 
       const posts = postsRes.data.posts || postsRes.data;
       
-      // Get official fights (moderator-created fights)
-      const official = posts.filter(post => 
-        post.type === 'fight' && post.isOfficial
-      ).slice(0, 6);
+      // Get official fights from the dedicated endpoint
+      const official = officialFightsRes.data.fights || [];
       
       // Get recent community posts (non-official)
       const recent = posts.filter(post => !post.isOfficial).slice(0, 8);
@@ -79,7 +77,7 @@ const Home = () => {
     }
 
     try {
-      await axios.post(`/api/votes/fight/${postId}`, { team }, {
+      await axios.post(`/api/posts/${postId}/fight-vote`, { team }, {
         headers: { 'x-auth-token': localStorage.getItem('token') }
       });
       
@@ -124,36 +122,34 @@ const Home = () => {
 
   return (
     <div className="home-page">
-      {/* Hero Section */}
-      <section className="hero-section">
-        <div className="hero-background">
-          <div className="hero-content">
-            <div className="hero-text">
-              <h1>🌟 {t('welcomeTitle')}</h1>
-              <p className="hero-subtitle">
-                {t('welcomeSubtitle')}
-              </p>
-              
-              <div className="hero-stats">
-                <div className="stat-item">
-                  <span className="stat-number">{stats.totalUsers}</span>
-                  <span className="stat-label">{t('geeks')}</span>
+      {/* Hero Section - only for not logged in users */}
+      {!isLoggedIn && (
+        <section className="hero-section">
+          <div className="hero-background">
+            <div className="hero-content">
+              <div className="hero-text">
+                <h1>🌟 {t('welcomeTitle')}</h1>
+                <p className="hero-subtitle">
+                  {t('welcomeSubtitle')}
+                </p>
+                <div className="hero-stats">
+                  <div className="stat-item">
+                    <span className="stat-number">{stats.totalUsers}</span>
+                    <span className="stat-label">{t('geeks')}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{stats.totalFights}</span>
+                    <span className="stat-label">{t('fights')}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{stats.totalVotes}</span>
+                    <span className="stat-label">{t('votes')}</span>
+                  </div>
+                  <div className="stat-item">
+                    <span className="stat-number">{stats.totalPosts}</span>
+                    <span className="stat-label">{t('posts')}</span>
+                  </div>
                 </div>
-                <div className="stat-item">
-                  <span className="stat-number">{stats.totalFights}</span>
-                  <span className="stat-label">{t('fights')}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">{stats.totalVotes}</span>
-                  <span className="stat-label">{t('votes')}</span>
-                </div>
-                <div className="stat-item">
-                  <span className="stat-number">{stats.totalPosts}</span>
-                  <span className="stat-label">{t('posts')}</span>
-                </div>
-              </div>
-
-              {!isLoggedIn ? (
                 <div className="hero-actions">
                   <Link to="/register" className="btn btn-primary btn-large">
                     🚀 {t('joinFree')}
@@ -162,29 +158,22 @@ const Home = () => {
                     🔑 {t('login')}
                   </Link>
                 </div>
-              ) : (
-                <div className="hero-actions">
-                  <Link to="/feed" className="btn btn-primary btn-large">
-                    📱 {t('feed')}
-                  </Link>
-                  <Link to="/leaderboard" className="btn btn-outline btn-large">
-                    🏆 {t('seeRanking')}
-                  </Link>
-                </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
-
+        </section>
+      )}
       {/* Official Fights Section */}
       {officialFights.length > 0 && (
         <section className="official-fights-section">
           <div className="section-header">
             <h2>🏆 {t('officialFights')}</h2>
             <p>{t('officialFightsDesc')}</p>
+            <div className="section-badges">
+              <span className="badge badge-priority">🔥 PRIORITY</span>
+              <span className="badge badge-moderator">🛡️ MODERATOR APPROVED</span>
+            </div>
           </div>
-          
           <div className="official-fights-grid">
             {officialFights.map(fight => (
               <div key={fight.id} className="official-fight-card">
@@ -194,7 +183,6 @@ const Home = () => {
                   </div>
                   <span className="fight-time">{formatTimeAgo(fight.createdAt)}</span>
                 </div>
-                
                 <h3 className="fight-title">{fight.title}</h3>
                 <p className="fight-description">{fight.content}</p>
                 
@@ -231,6 +219,7 @@ const Home = () => {
           
           <div className="section-footer">
             <Link to="/divisions" className="btn btn-primary">{t('divisions')}</Link>
+            <Link to="/feed?type=official" className="btn btn-outline">{t('viewAllOfficialFights') || 'View All Official Fights'}</Link>
           </div>
         </section>
       )}
@@ -240,6 +229,10 @@ const Home = () => {
         <div className="section-header">
           <h2>🔥 {t('communityFeed')}</h2>
           <p>{t('latestFromCommunity')}</p>
+          <div className="section-badges">
+            <span className="badge badge-community">👥 COMMUNITY</span>
+            <span className="badge badge-user-generated">✍️ USER GENERATED</span>
+          </div>
         </div>
         
         <div className="activity-container">

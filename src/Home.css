@@ -177,21 +177,65 @@
 
 .section-header {
   text-align: center;
-  margin-bottom: 50px;
-  color: white;
+  margin-bottom: 2rem;
 }
 
 .section-header h2 {
   font-size: 2.5rem;
-  font-weight: 800;
-  margin: 0 0 15px 0;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  margin-bottom: 0.5rem;
+  color: var(--text-primary);
 }
 
 .section-header p {
-  font-size: 1.2rem;
-  opacity: 0.9;
-  margin: 0;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 1rem;
+}
+
+.section-badges {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-priority {
+  background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.badge-moderator {
+  background: linear-gradient(45deg, #4ecdc4, #44a08d);
+  color: white;
+  box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+}
+
+.badge-community {
+  background: linear-gradient(45deg, #a8e6cf, #7fcdcd);
+  color: white;
+  box-shadow: 0 4px 15px rgba(168, 230, 207, 0.3);
+}
+
+.badge-user-generated {
+  background: linear-gradient(45deg, #ffd93d, #ff6b6b);
+  color: white;
+  box-shadow: 0 4px 15px rgba(255, 217, 61, 0.3);
+}
+
+.badge-official {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 .featured-fights-grid {
@@ -332,8 +376,23 @@
 }
 
 .section-footer {
-  text-align: center;
-  margin-top: 50px;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.section-footer .btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 25px;
+  transition: all 0.3s ease;
+}
+
+.section-footer .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
 }
 
 /* Activity Section */
@@ -559,6 +618,44 @@
   justify-content: center;
   gap: 20px;
   flex-wrap: wrap;
+}
+
+/* Official Fights Section - Enhanced */
+.official-fights-section {
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+  padding: 3rem 0;
+  margin: 2rem 0;
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+  border: 2px solid var(--accent-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.official-fights-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4);
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+/* Community Feed Section - Subdued */
+.community-feed-section {
+  background: var(--bg-primary);
+  padding: 2rem 0;
+  margin: 1rem 0;
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border-color);
 }
 
 /* Responsive Design */

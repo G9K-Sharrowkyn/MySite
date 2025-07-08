@@ -20,81 +20,20 @@
       },
       "selectedCharacters": [],
       "divisions": {
-        "regular": {
-          "joinedAt": "2025-07-06T05:59:43.742Z",
+        "universalThreat": {
+          "joinedAt": "2025-07-08T00:18:23.270Z",
           "team": {
             "mainCharacter": {
-              "id": "char2",
-              "name": "Naruto",
-              "universe": "Naruto",
-              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmNzkzMWUiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5hcnV0bzwvdGV4dD48L3N2Zz4="
+              "id": "char10",
+              "name": "Darth Vader",
+              "universe": "Star Wars",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMwMDAwMDAiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlZhZGVyPC90ZXh0Pjwvc3ZnPg=="
             },
             "secondaryCharacter": {
-              "id": "char3",
-              "name": "Batman",
-              "universe": "DC",
-              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMxYzFjMWMiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhdG1hbjwvdGV4dD48L3N2Zz4="
-            }
-          },
-          "wins": 0,
-          "losses": 0,
-          "draws": 0,
-          "rank": "Rookie",
-          "points": 0,
-          "isChampion": false
-        },
-        "metahuman": {
-          "joinedAt": "2025-07-06T05:30:05.185Z",
-          "selectedCharacter": {
-            "id": "char11",
-            "name": "Captain America",
-            "universe": "Marvel",
-            "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiM0MTY5ZTEiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkNhcCBBbWVyaWNhPC90ZXh0Pjwvc3ZnPg=="
-          },
-          "wins": 0,
-          "losses": 0,
-          "draws": 0,
-          "rank": "Rookie",
-          "points": 0,
-          "isChampion": false
-        },
-        "planetBusters": {
-          "joinedAt": "2025-07-06T05:52:30.414Z",
-          "team": {
-            "mainCharacter": {
-              "id": "char6",
-              "name": "Superman",
-              "universe": "DC",
-              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNkYzE0M2MiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlN1cGVybWFuPC90ZXh0Pjwvc3ZnPg=="
-            },
-            "secondaryCharacter": {
-              "id": "char7",
-              "name": "Wonder Woman",
-              "universe": "DC",
-              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZmQ3MDAiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPldvbmRlciBXb21hbjwvdGV4dD48L3N2Zz4="
-            }
-          },
-          "wins": 0,
-          "losses": 0,
-          "draws": 0,
-          "rank": "Rookie",
-          "points": 0,
-          "isChampion": false
-        },
-        "godTier": {
-          "joinedAt": "2025-07-06T05:52:46.006Z",
-          "team": {
-            "mainCharacter": {
-              "id": "char6",
-              "name": "Superman",
-              "universe": "DC",
-              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNkYzE0M2MiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlN1cGVybWFuPC90ZXh0Pjwvc3ZnPg=="
-            },
-            "secondaryCharacter": {
-              "id": "char7",
-              "name": "Wonder Woman",
-              "universe": "DC",
-              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZmQ3MDAiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPldvbmRlciBXb21hbjwvdGV4dD48L3N2Zz4="
+              "id": "char9",
+              "name": "Luke Skywalker",
+              "universe": "Star Wars",
+              "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiM4N2NlZWIiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkx1a2U8L3RleHQ+PC9zdmc+"
             }
           },
           "wins": 0,
@@ -106,14 +45,14 @@
         }
       },
       "activity": {
-        "postsCreated": 1,
-        "likesReceived": 1,
+        "postsCreated": 6,
+        "likesReceived": 3,
         "commentsPosted": 0,
-        "fightsCreated": 0,
+        "fightsCreated": 3,
         "votesGiven": 0
       },
       "stats": {
-        "experience": 10,
+        "experience": 60,
         "rank": "Rookie",
         "level": 1,
         "points": 0
@@ -210,147 +149,127 @@
   "characters": [
     {
       "id": "char1",
-      "name": "Goku",
-      "universe": "Dragon Ball",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZjZiMzUiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkdva3U8L3RleHQ+PC9zdmc+"
+      "name": "Anti-Monitor (New52)",
+      "universe": "DC",
+      "image": "/characters/Anti-Monitor(New52).webp"
     },
     {
       "id": "char2",
-      "name": "Naruto",
-      "universe": "Naruto",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmNzkzMWUiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPk5hcnV0bzwvdGV4dD48L3N2Zz4="
+      "name": "Azrael (Dark Multiverse)",
+      "universe": "DC",
+      "image": "/characters/Azrael(DarkMultiverse).jpg"
     },
     {
       "id": "char3",
-      "name": "Batman",
+      "name": "Batman (New52)",
       "universe": "DC",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMxYzFjMWMiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkJhdG1hbjwvdGV4dD48L3N2Zz4="
+      "image": "/characters/Batman(New52).jpg"
     },
     {
       "id": "char4",
-      "name": "Sailor Moon",
-      "universe": "Sailor Moon",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZjY5YjQiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlNhaWxvciBNb29uPC90ZXh0Pjwvc3ZnPg=="
+      "name": "Black Adam (New52)",
+      "universe": "DC",
+      "image": "/characters/Black_Adam(New52).jpg"
     },
     {
       "id": "char5",
-      "name": "Vegeta",
-      "universe": "Dragon Ball",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiM0MTY5ZTEiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlZlZ2V0YTwvdGV4dD48L3N2Zz4="
+      "name": "Black Winter (Prime)",
+      "universe": "Marvel",
+      "image": "/characters/Black_Winter(Prime).jpg"
     },
     {
       "id": "char6",
-      "name": "Superman",
-      "universe": "DC",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNkYzE0M2MiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlN1cGVybWFuPC90ZXh0Pjwvc3ZnPg=="
+      "name": "Broly (Dragon Ball Z)",
+      "universe": "Dragon Ball Z",
+      "image": "/characters/Broly(DragonBallZ).jpg"
     },
     {
       "id": "char7",
-      "name": "Wonder Woman",
+      "name": "Darkseid (New52)",
       "universe": "DC",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZmQ3MDAiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPldvbmRlciBXb21hbjwvdGV4dD48L3N2Zz4="
+      "image": "/characters/Darkseid_(New52).jpg"
     },
     {
       "id": "char8",
-      "name": "Spider-Man",
+      "name": "Deadpool (DKMU)",
       "universe": "Marvel",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNkYzE0M2MiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlNwaWRlci1NYW48L3RleHQ+PC9zdmc+"
+      "image": "/characters/Deadpool(DKMU).jpg"
     },
     {
       "id": "char9",
-      "name": "Luke Skywalker",
-      "universe": "Star Wars",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiM4N2NlZWIiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkx1a2U8L3RleHQ+PC9zdmc+"
+      "name": "Franklin Richards (Adult)",
+      "universe": "Marvel",
+      "image": "/characters/Franklin_Richards(Adult).webp"
     },
     {
       "id": "char10",
-      "name": "Darth Vader",
-      "universe": "Star Wars",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMwMDAwMDAiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlZhZGVyPC90ZXh0Pjwvc3ZnPg=="
+      "name": "Goku (SSJ4)",
+      "universe": "Dragon Ball GT",
+      "image": "/characters/Goku(SSJ4).jpg"
     },
     {
       "id": "char11",
-      "name": "Captain America",
-      "universe": "Marvel",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiM0MTY5ZTEiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkNhcCBBbWVyaWNhPC90ZXh0Pjwvc3ZnPg=="
+      "name": "Goku (Ultra Instinct)",
+      "universe": "Dragon Ball Super",
+      "image": "/characters/Goku(UltraInstinct).webp"
     },
     {
       "id": "char12",
-      "name": "Iron Man",
+      "name": "Hyperion (Prime)",
       "universe": "Marvel",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZmQ3MDAiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPklyb24gTWFuPC90ZXh0Pjwvc3ZnPg=="
+      "image": "/characters/Hyperion(Prime).jpg"
     },
     {
       "id": "char13",
-      "name": "Thor",
-      "universe": "Marvel",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZjZiMzUiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlRob3I8L3RleHQ+PC9zdmc+"
+      "name": "Joker (New52)",
+      "universe": "DC",
+      "image": "/characters/Joker(New52).webp"
     },
     {
       "id": "char14",
-      "name": "Hulk",
+      "name": "King Thanos (Prime)",
       "universe": "Marvel",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMzMmNkMzIiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkh1bGs8L3RleHQ+PC9zdmc+"
+      "image": "/characters/King_Thanos(Prime).jpg"
     },
     {
       "id": "char15",
-      "name": "Luffy",
-      "universe": "One Piece",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNkYzE0M2MiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkx1ZmZ5PC90ZXh0Pjwvc3ZnPg=="
+      "name": "Nate Grey (Uncanny X-Men)",
+      "universe": "Marvel",
+      "image": "/characters/Nate_Grey(Uncanny X-Men).webp"
     },
     {
       "id": "char16",
-      "name": "Zoro",
-      "universe": "One Piece",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMzMmNkMzIiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlpvcm88L3RleHQ+PC9zdmc+"
+      "name": "Scarlet King",
+      "universe": "SCP Foundation",
+      "image": "/characters/Scarlet_King.jpg"
     },
     {
       "id": "char17",
-      "name": "Ichigo",
-      "universe": "Bleach",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZjZiMzUiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkljaGlnbzwvdGV4dD48L3N2Zz4="
+      "name": "Sentry (Composite)",
+      "universe": "Marvel",
+      "image": "/characters/Sentry(Composite).jpg"
     },
     {
       "id": "char18",
-      "name": "Pikachu",
-      "universe": "Pokemon",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNmZmQ3MDAiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiMwMDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiPlBpa2FjaHU8L3RleHQ+PC9zdmc+"
+      "name": "Superman (New52)",
+      "universe": "DC",
+      "image": "/characters/Superman(New52).webp"
     },
     {
       "id": "char19",
-      "name": "Kirito",
-      "universe": "Sword Art Online",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiMxYzFjMWMiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPktpcml0bzwvdGV4dD48L3N2Zz4="
+      "name": "Vegeta (SSJ4)",
+      "universe": "Dragon Ball GT",
+      "image": "/characters/Vegeta(SSJ4).webp"
     },
     {
       "id": "char20",
-      "name": "Jotaro Kujo",
-      "universe": "JoJo's Bizarre Adventure",
-      "image": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDE1MCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiM0MTY5ZTEiLz48dGV4dCB4PSI3NSIgeT0iMTA1IiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTUiIGZpbGw9IiNmZmYiIHRleHQtYW5jaG9yPSJtaWRkbGUiPkpvdGFybzwvdGV4dD48L3N2Zz4="
+      "name": "Vegeta (Ultra Ego)",
+      "universe": "Dragon Ball Super",
+      "image": "/characters/Vegeta(UltraEgo).jpg"
     }
   ],
   "tournaments": [],
-  "posts": [
-    {
-      "id": "38031cb1-b8db-4be5-ab58-c933cf33ab2b",
-      "title": "dfgdfgdfg",
-      "content": "fdgdfgdfg",
-      "type": "discussion",
-      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-      "createdAt": "2025-07-06T04:55:56.680Z",
-      "updatedAt": "2025-07-06T04:55:56.680Z",
-      "likes": [
-        {
-          "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-          "likedAt": "2025-07-06T05:50:54.562Z"
-        }
-      ],
-      "comments": [],
-      "views": 0,
-      "image": null,
-      "fight": null
-    }
-  ],
+  "posts": [],
   "comments": [
     {
       "id": "example-comment-id",
@@ -369,6 +288,18 @@
       "authorUsername": "ultracode1",
       "text": "dwqdqw",
       "createdAt": "2025-07-06T12:30:48.006Z",
+      "likes": 0,
+      "likedBy": []
+    },
+    {
+      "id": "24c0cd95-0d9a-4aa6-b19c-2041bd825f11",
+      "type": "post",
+      "targetId": "b124cc77-242f-488b-9b73-ec3d6ad14a1b",
+      "postId": "b124cc77-242f-488b-9b73-ec3d6ad14a1b",
+      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "authorUsername": "ultracode1",
+      "text": "dqwdqwd",
+      "createdAt": "2025-07-08T00:03:54.210Z",
       "likes": 0,
       "likedBy": []
     }

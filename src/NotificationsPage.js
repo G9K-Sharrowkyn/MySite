@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Modal from './components/Modal/Modal';
+import { useLanguage } from './i18n/LanguageContext';
 import './NotificationsPage.css';
 
 const NotificationsPage = () => {
@@ -9,7 +11,10 @@ const NotificationsPage = () => {
   const [filter, setFilter] = useState('all');
   const [pagination, setPagination] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [notificationToDelete, setNotificationToDelete] = useState(null);
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -87,23 +92,26 @@ const NotificationsPage = () => {
     }
   };
 
-  const deleteNotification = async (notificationId) => {
+  const deleteNotification = (notificationId) => {
+    setNotificationToDelete(notificationId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteNotification = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    if (!window.confirm('Czy na pewno chcesz usunąć to powiadomienie?')) {
-      return;
-    }
-
     try {
-      await axios.delete(`/api/notifications/${notificationId}`, {
+      await axios.delete(`/api/notifications/${notificationToDelete}`, {
         headers: { 'x-auth-token': token }
       });
       
       // Remove from local state
       setNotifications(prev => 
-        prev.filter(notification => notification.id !== notificationId)
+        prev.filter(notification => notification.id !== notificationToDelete)
       );
+      setShowDeleteModal(false);
+      setNotificationToDelete(null);
     } catch (error) {
       console.error('Error deleting notification:', error);
     }
@@ -159,7 +167,7 @@ const NotificationsPage = () => {
   if (loading) {
     return (
       <div className="notifications-page">
-        <div className="loading">Ładowanie powiadomień...</div>
+        <div className="loading">{t('loading')}</div>
       </div>
     );
   }
@@ -167,11 +175,11 @@ const NotificationsPage = () => {
   return (
     <div className="notifications-page">
       <div className="page-header">
-        <h1>Powiadomienia</h1>
+        <h1>{t('notifications')}</h1>
         <div className="header-actions">
           {unreadCount > 0 && (
             <button onClick={markAllAsRead} className="btn btn-outline">
-              Oznacz wszystkie jako przeczytane ({unreadCount})
+              {t('markAllAsRead')} ({unreadCount})
             </button>
           )}
         </div>
@@ -183,31 +191,31 @@ const NotificationsPage = () => {
           className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
           onClick={() => setFilter('all')}
         >
-          Wszystkie
+          {t('all')}
         </button>
         <button 
           className={`filter-tab ${filter === 'message' ? 'active' : ''}`}
           onClick={() => setFilter('message')}
         >
-          💬 Wiadomości
+          💬 {t('messages')}
         </button>
         <button 
           className={`filter-tab ${filter === 'comment' ? 'active' : ''}`}
           onClick={() => setFilter('comment')}
         >
-          💭 Komentarze
+          💭 {t('comments')}
         </button>
         <button 
           className={`filter-tab ${filter === 'like' ? 'active' : ''}`}
           onClick={() => setFilter('like')}
         >
-          👍 Polubienia
+          👍 {t('likes')}
         </button>
         <button 
           className={`filter-tab ${filter === 'fight_result' ? 'active' : ''}`}
           onClick={() => setFilter('fight_result')}
         >
-          🏆 Wyniki walk
+          🏆 {t('fightResults')}
         </button>
       </div>
 
@@ -246,7 +254,7 @@ const NotificationsPage = () => {
                       e.stopPropagation();
                       markAsRead(notification.id);
                     }}
-                    title="Oznacz jako przeczytane"
+                    title={t('markAsRead')}
                   >
                     ✓
                   </button>
@@ -257,7 +265,7 @@ const NotificationsPage = () => {
                     e.stopPropagation();
                     deleteNotification(notification.id);
                   }}
-                  title="Usuń powiadomienie"
+                  title={t('deleteNotification')}
                 >
                   🗑️
                 </button>
@@ -267,11 +275,11 @@ const NotificationsPage = () => {
         ) : (
           <div className="no-notifications">
             <div className="no-notifications-icon">🔔</div>
-            <h3>Brak powiadomień</h3>
+            <h3>{t('noNotifications')}</h3>
             <p>
               {filter === 'all' 
-                ? 'Nie masz żadnych powiadomień'
-                : `Brak powiadomień typu: ${filter}`
+                ? t('noNotificationsMessage')
+                : t('noNotificationsOfType', { type: filter })
               }
             </p>
           </div>
@@ -286,11 +294,11 @@ const NotificationsPage = () => {
             disabled={!pagination.hasPrev}
             onClick={() => setCurrentPage(prev => prev - 1)}
           >
-            ← Poprzednia
+            ← {t('previous')}
           </button>
           
           <span className="pagination-info">
-            Strona {pagination.currentPage} z {pagination.totalPages}
+            {t('pageInfo', { current: pagination.currentPage, total: pagination.totalPages })}
           </span>
           
           <button 
@@ -298,10 +306,24 @@ const NotificationsPage = () => {
             disabled={!pagination.hasNext}
             onClick={() => setCurrentPage(prev => prev + 1)}
           >
-            Następna →
+            {t('next')} →
           </button>
         </div>
       )}
+
+      {/* Delete Notification Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title={t('confirmDelete')}
+        type="warning"
+        confirmText={t('delete')}
+        cancelText={t('cancel')}
+        onConfirm={confirmDeleteNotification}
+        confirmButtonType="danger"
+      >
+        <p>{t('deleteNotificationConfirm')}</p>
+      </Modal>
     </div>
   );
 };

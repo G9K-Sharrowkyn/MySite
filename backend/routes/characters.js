@@ -19,4 +19,9 @@ router.post('/', auth, authorize(['moderator', 'admin']), characterController.ad
 // @access  Private (Moderator)
 router.put('/:id', auth, authorize(['moderator', 'admin']), characterController.updateCharacter);
 
+// @route   POST api/characters/suggest
+// @desc    Suggest a new character (User suggestion)
+// @access  Private
+router.post('/suggest', auth, characterController.suggestCharacter);
+
 module.exports = router;

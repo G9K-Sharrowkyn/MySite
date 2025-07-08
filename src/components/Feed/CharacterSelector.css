@@ -1,0 +1,92 @@
+.character-selector {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  z-index: 1;
+}
+
+.character-input {
+  width: 90%;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+  padding: 8px 12px;
+  font-size: 1rem;
+  border: 2px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.character-input:focus {
+  border-color: #888;
+  box-shadow: none;
+}
+
+.character-suggestions-right {
+  position: absolute;
+  top: 0;
+  right: -260px;
+  width: 250px;
+  max-height: 200px;
+  overflow-y: auto;
+  background: white !important;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.character-item-name-only {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 1rem;
+  color: #222 !important; /* Strong visible color with !important */
+  border-bottom: 1px solid #eee;
+}
+
+.character-item-name-only .character-name {
+  color: #222 !important;
+}
+
+.character-item-name-only:hover {
+  background-color: #f0f0f0;
+}
+
+.character-image-below {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.character-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid #ccc;
+}
+
+.change-picture-btn {
+  margin-top: 6px;
+  padding: 6px 12px;
+  background-color: #007bff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+}
+
+.change-picture-btn:hover {
+  background-color: #0056b3;
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../../i18n/LanguageContext';
 import { replacePlaceholderUrl } from '../../utils/placeholderImage';
@@ -12,23 +12,17 @@ const TeamSelection = ({ division, onTeamSelected, onCancel }) => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const { t } = useLanguage();
-  const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    fetchCharacters();
-    fetchTakenCharacters();
-  }, [division.id]);
-
-  const fetchCharacters = async () => {
+  const fetchCharacters = useCallback(async () => {
     try {
       const response = await axios.get('/api/characters');
       setCharacters(response.data);
     } catch (error) {
       console.error('Error fetching characters:', error);
     }
-  };
+  }, []);
 
-  const fetchTakenCharacters = async () => {
+  const fetchTakenCharacters = useCallback(async () => {
     try {
       const response = await axios.get(`/api/divisions/${division.id}/taken-characters`);
       setTakenCharacters(response.data.takenCharacters || []);
@@ -37,7 +31,12 @@ const TeamSelection = ({ division, onTeamSelected, onCancel }) => {
       console.error('Error fetching taken characters:', error);
       setLoading(false);
     }
-  };
+  }, [division.id]);
+
+  useEffect(() => {
+    fetchCharacters();
+    fetchTakenCharacters();
+  }, [fetchCharacters, fetchTakenCharacters]);
 
   const isCharacterTaken = (characterId) => {
     return takenCharacters.includes(characterId);
@@ -56,17 +55,11 @@ const TeamSelection = ({ division, onTeamSelected, onCancel }) => {
   };
 
   const handleConfirmTeam = () => {
-    console.log('🔥 Team confirmation started');
-    console.log('Selected main character:', selectedCharacters[0]);
-    console.log('Selected secondary character:', selectedCharacters[1]);
-    
     if (selectedCharacters.length === 2) {
       const teamData = {
         mainCharacter: selectedCharacters[0],
         secondaryCharacter: selectedCharacters[1]
       };
-      console.log('✅ Team data prepared:', teamData);
-      console.log('🚀 Calling onTeamSelected...');
       onTeamSelected(teamData);
     }
   };
@@ -125,7 +118,7 @@ const TeamSelection = ({ division, onTeamSelected, onCancel }) => {
                 </div>
               ) : (
                 <div className="empty-slot">
-                  <span>{index === 0 ? 'Main Character' : 'Secondary Character'}</span>
+                  <span>{t('warrior') || 'Warrior'} {index + 1}</span>
                 </div>
               )}
             </div>

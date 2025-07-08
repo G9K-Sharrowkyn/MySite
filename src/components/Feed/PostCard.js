@@ -3,7 +3,9 @@ import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages } from '../../utils/placeholderImage';
 import CreatePost from './CreatePost';
+import ReactionMenu from './ReactionMenu';
 import './PostCard.css';
+import { useLanguage } from '../../i18n/LanguageContext';
 
 const PostCard = ({ post, onUpdate }) => {
   const [comments, setComments] = useState([]);
@@ -13,6 +15,14 @@ const PostCard = ({ post, onUpdate }) => {
   const [likesCount, setLikesCount] = useState(post.likes?.length || 0);
   const [userVote, setUserVote] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const { currentLanguage, t } = useLanguage();
+  const [translatedContent, setTranslatedContent] = useState(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedComments, setTranslatedComments] = useState({});
+  const [translatingComments, setTranslatingComments] = useState({});
+  const [showReactionMenu, setShowReactionMenu] = useState(false);
+  const [userReaction, setUserReaction] = useState(null);
+  const [reactions, setReactions] = useState(post.reactions || []);
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
@@ -29,6 +39,9 @@ const PostCard = ({ post, onUpdate }) => {
       setUserVote(vote?.team || null);
     }
   }, [post, currentUserId]);
+  
+  // Additional state for poll votes in 'other' posts
+const [pollVote, setPollVote] = useState(null);
 
   const fetchComments = async () => {
     try {
@@ -55,13 +68,11 @@ const PostCard = ({ post, onUpdate }) => {
   };
 
   const handleVote = async (team) => {
-    if (!token || userVote) return;
-    
+    if (!token) return;
     try {
-      await axios.post(`/api/votes/fight/${post.id}`, { team }, {
+      await axios.post(`/api/posts/${post.id}/fight-vote`, { team }, {
         headers: { 'x-auth-token': token }
       });
-      
       setUserVote(team);
       // Refresh post data
       if (onUpdate) {
@@ -71,6 +82,207 @@ const PostCard = ({ post, onUpdate }) => {
     } catch (error) {
       console.error('Error voting:', error);
     }
+  };
+
+  const handlePollVote = async (optionIndex) => {
+    if (!token || pollVote !== null) return;
+    
+    try {
+      await axios.post(`/api/posts/${post.id}/poll-vote`, { 
+        optionIndex 
+      }, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      setPollVote(optionIndex);
+      // Refresh post data
+      if (onUpdate) {
+        const updatedPost = await axios.get(`/api/posts/${post.id}`);
+        onUpdate(updatedPost.data);
+      }
+    } catch (error) {
+      console.error('Error voting in poll:', error);
+    }
+  };
+
+  const getVotePercentage = (votes, totalVotes) => {
+    if (totalVotes === 0) return 0;
+    return Math.round((votes / totalVotes) * 100);
+  };
+
+  const getTotalVotes = () => {
+    if (post.type === 'fight' && post.fight?.votes) {
+      return (post.fight.votes.teamA || 0) + (post.fight.votes.teamB || 0);
+    }
+    if (post.poll?.votes?.voters) {
+      return post.poll.votes.voters.length;
+    }
+    return 0;
+  };
+
+  const renderVotingSection = () => {
+    if (post.type === 'fight' && post.fight) {
+      return renderFightVoting();
+    }
+    if (post.poll && post.poll.options) {
+      return renderPollVoting();
+    }
+    return null;
+  };
+
+  const renderFightVoting = () => {
+    const teamAVotes = post.fight.votes?.teamA || 0;
+    const teamBVotes = post.fight.votes?.teamB || 0;
+    const drawVotes = post.fight.votes?.draw || 0;
+    const totalVotes = teamAVotes + teamBVotes + drawVotes;
+    const teamAPercentage = getVotePercentage(teamAVotes, totalVotes);
+    const teamBPercentage = getVotePercentage(teamBVotes, totalVotes);
+    const drawPercentage = getVotePercentage(drawVotes, totalVotes);
+
+    return (
+      <div className="voting-section fight-voting">
+        <h4 className="voting-title">⚔️ {t('voteForWinner') || 'Vote for the Winner!'}</h4>
+        <div className="fight-teams-container">
+          <div className={`vote-option team-option${userVote === 'A' ? ' voted' : ''}`}> 
+            <div className="vote-option-content">
+              <div className="vote-option-header">
+                <h5 className="vote-option-title">{post.fight.teamA || 'Team A'}</h5>
+                {userVote === 'A' && <span className="vote-check">✅</span>}
+              </div>
+              <div className="vote-progress-container">
+                <div className="vote-progress-bar">
+                  <div 
+                    className="vote-progress-fill team-a-fill"
+                    style={{ width: `${teamAPercentage}%` }}
+                  ></div>
+                </div>
+                <div className="vote-stats">
+                  <span className="vote-count">{teamAVotes}</span>
+                  <span className="vote-percentage">{teamAPercentage}%</span>
+                </div>
+              </div>
+              <button
+                className={`vote-button team-a-btn${userVote === 'A' ? ' voted' : ''}`}
+                onClick={() => handleVote('A')}
+              >
+                {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+              </button>
+            </div>
+          </div>
+
+          <div className="vs-draw-column">
+            <div className="vs-divider-large">
+              <span className="vs-text">VS</span>
+            </div>
+            <div className="draw-button-row">
+              <button
+                className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
+                onClick={() => handleVote('draw')}
+              >
+                🤝 {t('draw')}
+                {drawVotes > 0 && (
+                  <span className="draw-vote-count">{drawVotes} ({drawPercentage}%)</span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className={`vote-option team-option${userVote === 'B' ? ' voted' : ''}`}> 
+            <div className="vote-option-content">
+              <div className="vote-option-header">
+                <h5 className="vote-option-title">{post.fight.teamB || 'Team B'}</h5>
+                {userVote === 'B' && <span className="vote-check">✅</span>}
+              </div>
+              <div className="vote-progress-container">
+                <div className="vote-progress-bar">
+                  <div 
+                    className="vote-progress-fill team-b-fill"
+                    style={{ width: `${teamBPercentage}%` }}
+                  ></div>
+                </div>
+                <div className="vote-stats">
+                  <span className="vote-count">{teamBVotes}</span>
+                  <span className="vote-percentage">{teamBPercentage}%</span>
+                </div>
+              </div>
+              <button
+                className={`vote-button team-b-btn${userVote === 'B' ? ' voted' : ''}`}
+                onClick={() => handleVote('B')}
+              >
+                {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+              </button>
+            </div>
+          </div>
+        </div>
+        <div className="voting-footer">
+          <span className="total-votes">
+            🗳️ {totalVotes} {t('totalVotes') || 'total votes'}
+          </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderPollVoting = () => {
+    const totalVotes = getTotalVotes();
+    const options = post.poll.options || [];
+
+    return (
+      <div className="voting-section poll-voting">
+        <h4 className="voting-title">📊 {t('poll') || 'Poll'}</h4>
+        
+        <div className="vote-options">
+          {options.map((option, index) => {
+            const optionVotes = post.poll.votes?.voters?.filter(v => v.optionIndex === index).length || 0;
+            const optionPercentage = getVotePercentage(optionVotes, totalVotes);
+            const isVoted = pollVote === index;
+
+            return (
+              <div key={index} className={`vote-option ${isVoted ? 'voted' : ''} ${pollVote !== null ? 'disabled' : ''}`}>
+                <div className="vote-option-content">
+                  <div className="vote-option-header">
+                    <h5 className="vote-option-title">{option}</h5>
+                    {isVoted && <span className="vote-check">✅</span>}
+                  </div>
+                  
+                  <div className="vote-progress-container">
+                    <div className="vote-progress-bar">
+                      <div 
+                        className="vote-progress-fill poll-fill"
+                        style={{ width: `${optionPercentage}%` }}
+                      ></div>
+                    </div>
+                    <div className="vote-stats">
+                      <span className="vote-count">{optionVotes}</span>
+                      <span className="vote-percentage">{optionPercentage}%</span>
+                    </div>
+                  </div>
+                  
+                  <button
+                    className={`vote-button poll-btn ${isVoted ? 'voted' : ''}`}
+                    onClick={() => handlePollVote(index)}
+                    disabled={pollVote !== null}
+                  >
+                    {isVoted ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="voting-footer">
+          <span className="total-votes">
+            🗳️ {totalVotes} {t('totalVotes') || 'total votes'}
+          </span>
+          {pollVote !== null && (
+            <span className="user-vote-status">
+              ✅ {t('youVotedFor') || 'You voted for'} <strong>{options[pollVote]}</strong>
+            </span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   const handleCommentSubmit = async (e) => {
@@ -107,7 +319,7 @@ const PostCard = ({ post, onUpdate }) => {
         headers: { 'x-auth-token': token }
       });
       if (onUpdate) {
-        onUpdate(null, true); // notify parent to refresh posts after deletion
+        onUpdate(post.id, true); // notify parent to refresh posts after deletion
       }
       setShowDeleteModal(false);
     } catch (error) {
@@ -169,6 +381,100 @@ const PostCard = ({ post, onUpdate }) => {
     return rankColors[rank] || '#666';
   };
 
+  // Simple heuristic: if UI is EN and content contains Polish chars, or vice versa
+  const needsTranslation = () => {
+    if (!post.content) return false;
+    if (currentLanguage === 'en' && /[ąćęłńóśźż]/i.test(post.content)) return true;
+    if (currentLanguage === 'pl' && /[a-z]/i.test(post.content) && !/[ąćęłńóśźż]/i.test(post.content)) return true;
+    return false;
+  };
+
+  const handleTranslate = async () => {
+    setIsTranslating(true);
+    // Simulate translation (replace with real API call)
+    setTimeout(() => {
+      setTranslatedContent(`[${t('translated') || 'Translated'}] ${post.content}`);
+      setIsTranslating(false);
+    }, 1000);
+  };
+
+  const needsCommentTranslation = (text) => {
+    if (!text) return false;
+    if (currentLanguage === 'en' && /[ąćęłńóśźż]/i.test(text)) return true;
+    if (currentLanguage === 'pl' && /[a-z]/i.test(text) && !/[ąćęłńóśźż]/i.test(text)) return true;
+    return false;
+  };
+
+  const handleTranslateComment = (commentId, text) => {
+    setTranslatingComments(prev => ({ ...prev, [commentId]: true }));
+    setTimeout(() => {
+      setTranslatedComments(prev => ({ ...prev, [commentId]: `[${t('translated') || 'Translated'}] ${text}` }));
+      setTranslatingComments(prev => ({ ...prev, [commentId]: false }));
+    }, 1000);
+  };
+
+  const handleReactionSelect = async (reaction) => {
+    if (!token) return;
+    
+    try {
+      const response = await axios.post(`/api/posts/${post.id}/reaction`, { 
+        reactionId: reaction.id,
+        reactionIcon: reaction.icon,
+        reactionName: reaction.name
+      }, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      setUserReaction(reaction);
+      setReactions(response.data.reactions);
+      setShowReactionMenu(false);
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+    }
+  };
+
+  const handleReactionClick = () => {
+    if (!token) {
+      alert(t('mustBeLoggedInToVote') || 'You must be logged in to react!');
+      return;
+    }
+    setShowReactionMenu(true);
+  };
+
+  // SparkleOverlay component
+  const SparkleOverlay = ({ count = 7 }) => {
+    const [sparkles, setSparkles] = useState([]);
+
+    useEffect(() => {
+      // Generate random sparkles
+      const newSparkles = Array.from({ length: count }).map((_, i) => {
+        const angle = Math.random() * 2 * Math.PI;
+        const radius = 90 + Math.random() * 30; // px from center
+        const x = 50 + Math.cos(angle) * radius;
+        const y = 50 + Math.sin(angle) * radius;
+        const delay = Math.random() * 1.2;
+        return { id: i, x, y, delay };
+      });
+      setSparkles(newSparkles);
+    }, [count]);
+
+    return (
+      <div className="sparkle-overlay">
+        {sparkles.map(s => (
+          <div
+            key={s.id}
+            className="sparkle"
+            style={{
+              left: `${s.x}%`,
+              top: `${s.y}%`,
+              animationDelay: `${s.delay}s`,
+            }}
+          />
+        ))}
+      </div>
+    );
+  };
+
   if (isEditing) {
     return (
       <div className="post-card editing">
@@ -213,6 +519,14 @@ const PostCard = ({ post, onUpdate }) => {
           <h3 className="post-title">{post.title}</h3>
         </Link>
         <p className="post-text">{post.content}</p>
+        {needsTranslation() && (
+          <button className="translate-btn" onClick={handleTranslate} disabled={isTranslating}>
+            {isTranslating ? t('loading') : t('translate') || 'Translate'}
+          </button>
+        )}
+        {translatedContent && (
+          <p className="post-text translated">{translatedContent}</p>
+        )}
         
         {post.image && (
           <Link to={`/post/${post.id}`} className="post-image-link">
@@ -222,37 +536,7 @@ const PostCard = ({ post, onUpdate }) => {
           </Link>
         )}
         
-        {post.type === 'fight' && post.fight && (
-          <div className="fight-section">
-            <div className="fight-teams">
-              <button 
-                className={`team-btn team-a ${userVote === 'A' ? 'voted' : ''}`}
-                onClick={() => handleVote('A')}
-                disabled={!!userVote}
-              >
-                <span className="team-name">{post.fight.teamA}</span>
-                <span className="vote-count">{post.fight.votes?.teamA || 0}</span>
-              </button>
-              
-              <div className="vs-divider">VS</div>
-              
-              <button 
-                className={`team-btn team-b ${userVote === 'B' ? 'voted' : ''}`}
-                onClick={() => handleVote('B')}
-                disabled={!!userVote}
-              >
-                <span className="team-name">{post.fight.teamB}</span>
-                <span className="vote-count">{post.fight.votes?.teamB || 0}</span>
-              </button>
-            </div>
-            
-            {userVote && (
-              <div className="vote-status">
-                ✅ Zagłosowałeś na: <strong>{userVote === 'A' ? post.fight.teamA : post.fight.teamB}</strong>
-              </div>
-            )}
-          </div>
-        )}
+        {renderVotingSection()}
       </div>
 
       <div className="post-actions" onClick={e => e.stopPropagation()}>
@@ -272,20 +556,28 @@ const PostCard = ({ post, onUpdate }) => {
           <span className="action-text">{comments.length}</span>
         </button>
         
+        <button 
+          className={`action-btn react-btn ${userReaction ? 'reacted' : ''}`}
+          onClick={handleReactionClick}
+        >
+          <span className="action-icon">{userReaction ? userReaction.icon : '😀'}</span>
+          <span className="action-text">{t('react')}</span>
+        </button>
+        
         <button className="action-btn share-btn">
           <span className="action-icon">📤</span>
-          <span className="action-text">Udostępnij</span>
+          <span className="action-text">{t('share')}</span>
         </button>
 
         {currentUserId === post.author?.id && (
           <>
             <button className="action-btn edit-btn" onClick={handleEditToggle}>
               <span className="action-icon">✏️</span>
-              <span className="action-text">Edit</span>
+              <span className="action-text">{t('edit')}</span>
             </button>
             <button className="action-btn delete-btn" onClick={handleDelete}>
               <span className="action-icon">🗑️</span>
-              <span className="action-text">Delete</span>
+              <span className="action-text">{t('delete')}</span>
             </button>
           </>
         )}
@@ -294,12 +586,26 @@ const PostCard = ({ post, onUpdate }) => {
       {showDeleteModal && (
         <div className="modal-overlay" onClick={handleDeleteCancel}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>Confirm Delete</h3>
-            <p>Are you sure you want to delete this post?</p>
+            <h3>{t('confirmDelete')}</h3>
+            <p>{t('confirmDeletePost')}</p>
             <div className="modal-actions">
-              <button className="btn btn-cancel" onClick={handleDeleteCancel}>Cancel</button>
-              <button className="btn btn-delete" onClick={handleDeleteConfirm}>Delete</button>
+              <button className="btn btn-cancel" onClick={handleDeleteCancel}>{t('cancel')}</button>
+              <button className="btn btn-delete" onClick={handleDeleteConfirm}>{t('delete')}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reactions Display */}
+      {reactions.length > 0 && (
+        <div className="reactions-display">
+          <div className="reactions-list">
+            {reactions.map((reaction, index) => (
+              <div key={index} className="reaction-item">
+                <span className="reaction-icon">{reaction.icon}</span>
+                <span className="reaction-count">{reaction.count}</span>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -312,7 +618,7 @@ const PostCard = ({ post, onUpdate }) => {
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="Napisz komentarz..."
+                placeholder={t('writeComment')}
                 className="comment-input"
               />
               <button type="submit" className="comment-submit">
@@ -333,6 +639,14 @@ const PostCard = ({ post, onUpdate }) => {
                   <strong>{comment.authorUsername}</strong>
                 </Link>
                 <p className="comment-text">{comment.text}</p>
+                {needsCommentTranslation(comment.text) && (
+                  <button className="translate-btn" onClick={() => handleTranslateComment(comment.id, comment.text)} disabled={translatingComments[comment.id]}>
+                    {translatingComments[comment.id] ? t('loading') : t('translate') || 'Translate'}
+                  </button>
+                )}
+                {translatedComments[comment.id] && (
+                  <p className="comment-text translated">{translatedComments[comment.id]}</p>
+                )}
                 <span className="comment-time">
                   {formatTimeAgo(comment.createdAt)}
                 </span>
@@ -340,6 +654,14 @@ const PostCard = ({ post, onUpdate }) => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Reaction Menu */}
+      {showReactionMenu && (
+        <ReactionMenu
+          onReactionSelect={handleReactionSelect}
+          onClose={() => setShowReactionMenu(false)}
+        />
       )}
     </div>
   );

@@ -3,14 +3,23 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../../i18n/LanguageContext';
 import TeamSelection from './TeamSelection';
+import Modal from '../Modal/Modal';
 import './DivisionsPage.css';
 
 const DivisionsPage = () => {
   const [divisions, setDivisions] = useState([]);
-  const [userDivisions, setUserDivisions] = useState([]);
+  const [userDivisions, setUserDivisions] = useState({});
+  const [divisionStats, setDivisionStats] = useState({});
+  const [divisionChampions, setDivisionChampions] = useState({});
   const [selectedDivision, setSelectedDivision] = useState(null);
   const [showTeamSelection, setShowTeamSelection] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [divisionToLeave, setDivisionToLeave] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showErrorModal, setShowErrorModal] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
   
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -71,14 +80,48 @@ const DivisionsPage = () => {
       const response = await axios.get('/api/divisions/user', {
         headers: { 'x-auth-token': token }
       });
-      // Ensure response.data is always an array
-      const userDivs = Array.isArray(response.data) ? response.data : [];
+      // Ensure response.data is always an object
+      const userDivs = response.data && typeof response.data === 'object' ? response.data : {};
       setUserDivisions(userDivs);
     } catch (error) {
       console.error('Error fetching user divisions:', error);
-      setUserDivisions([]);
+      setUserDivisions({});
     }
   }, [token]);
+
+  const fetchDivisionStats = useCallback(async () => {
+    try {
+      const statsPromises = divisionsData.map(division => 
+        axios.get(`/api/divisions/${division.id}/stats`)
+      );
+      const statsResponses = await Promise.all(statsPromises);
+      const stats = {};
+      statsResponses.forEach((response, index) => {
+        stats[divisionsData[index].id] = response.data;
+      });
+      setDivisionStats(stats);
+    } catch (error) {
+      console.error('Error fetching division stats:', error);
+      setDivisionStats({});
+    }
+  }, [divisionsData]);
+
+  const fetchDivisionChampions = useCallback(async () => {
+    try {
+      const championPromises = divisionsData.map(division => 
+        axios.get(`/api/divisions/${division.id}/champion`)
+      );
+      const championResponses = await Promise.all(championPromises);
+      const champions = {};
+      championResponses.forEach((response, index) => {
+        champions[divisionsData[index].id] = response.data.champion;
+      });
+      setDivisionChampions(champions);
+    } catch (error) {
+      console.error('Error fetching division champions:', error);
+      setDivisionChampions({});
+    }
+  }, [divisionsData]);
 
   useEffect(() => {
     if (!token) {
@@ -88,12 +131,14 @@ const DivisionsPage = () => {
     
     const loadData = async () => {
       await fetchUserDivisions();
+      await fetchDivisionStats();
+      await fetchDivisionChampions();
       setDivisions(divisionsData);
       setLoading(false);
     };
     
     loadData();
-  }, [token, navigate, divisionsData, fetchUserDivisions]);
+  }, [token, navigate, divisionsData, fetchUserDivisions, fetchDivisionStats, fetchDivisionChampions]);
 
   const handleJoinDivision = (division) => {
     setSelectedDivision(division);
@@ -122,11 +167,12 @@ const DivisionsPage = () => {
       });
       
       console.log('✅ Division join successful:', response.data);
-      alert('Successfully joined division!');
+      setSuccessMessage(t('successfullyJoinedDivision'));
+      setShowSuccessModal(true);
 
-      // Refresh user divisions
-      console.log('🔄 Refreshing user divisions...');
-      await fetchUserDivisions();
+      // Refresh user divisions and stats
+      console.log('🔄 Refreshing user divisions and stats...');
+      await Promise.all([fetchUserDivisions(), fetchDivisionStats()]);
       setShowTeamSelection(false);
       setSelectedDivision(null);
       console.log('✅ Division join process completed');
@@ -135,21 +181,27 @@ const DivisionsPage = () => {
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
       console.error('Error message:', error.message);
-      alert(error.response?.data?.message || 'Error joining division. Please try again.');
+      setErrorMessage(error.response?.data?.message || t('errorJoiningDivision'));
+      setShowErrorModal(true);
     }
   };
 
-  const handleLeaveDivision = async (divisionId) => {
-    if (!window.confirm('Are you sure you want to leave this division?')) return;
+  const handleLeaveDivision = (divisionId) => {
+    setDivisionToLeave(divisionId);
+    setShowLeaveModal(true);
+  };
 
+  const confirmLeaveDivision = async () => {
     try {
       await axios.post('/api/divisions/leave', {
-        divisionId: divisionId
+        divisionId: divisionToLeave
       }, {
         headers: { 'x-auth-token': token }
       });
 
-      await fetchUserDivisions();
+      await Promise.all([fetchUserDivisions(), fetchDivisionStats()]);
+      setShowLeaveModal(false);
+      setDivisionToLeave(null);
     } catch (error) {
       console.error('Error leaving division:', error);
       alert(error.response?.data?.message || 'Error leaving division. Please try again.');
@@ -215,33 +267,68 @@ const DivisionsPage = () => {
                 </div>
               </div>
 
+              {/* Champion Display */}
+              {divisionChampions[division.id] && (
+                <div className="champion-section">
+                  <div className="champion-badge">
+                    <span className="champion-icon">👑</span>
+                    <span className="champion-title">{t('currentChampion')}</span>
+                  </div>
+                  <div className="champion-info">
+                    <div className="champion-avatar">
+                      <img 
+                        src={divisionChampions[division.id].profilePicture || '/placeholder-character.png'} 
+                        alt={divisionChampions[division.id].username}
+                        className="champion-image"
+                      />
+                      <div className="champion-frame"></div>
+                    </div>
+                    <div className="champion-details">
+                      <h4 className="champion-name">{divisionChampions[division.id].username}</h4>
+                      <p className="champion-title-text">{divisionChampions[division.id].title}</p>
+                      <div className="champion-stats">
+                        <span>{t('wins')}: {divisionChampions[division.id].stats?.wins || 0}</span>
+                        <span>{t('rank')}: {divisionChampions[division.id].stats?.rank || 'Unknown'}</span>
+                        <span>{t('points')}: {divisionChampions[division.id].stats?.points || 0}</span>
+                      </div>
+                      <div className="champion-team">
+                        <span className="team-label">{t('championTeam')}:</span>
+                        <div className="champion-characters">
+                          <span>{divisionChampions[division.id].team?.mainCharacter?.name}</span>
+                          <span className="vs-separator">vs</span>
+                          <span>{divisionChampions[division.id].team?.secondaryCharacter?.name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {isJoined && userTeam?.team ? (
                 <div className="user-team">
-                  <h4>Your Team:</h4>
+                  <h4>{t('yourTeam')}:</h4>
                   <div className="team-characters">
-                    <div className="team-character main">
+                    <div className="team-character">
                       <img 
                         src={userTeam.team.mainCharacter.image} 
                         alt={userTeam.team.mainCharacter.name}
                         className="character-image"
                       />
                       <span className="character-name">{userTeam.team.mainCharacter.name}</span>
-                      <span className="character-role">Main</span>
                     </div>
-                    <div className="team-character secondary">
+                    <div className="team-character">
                       <img 
                         src={userTeam.team.secondaryCharacter.image} 
                         alt={userTeam.team.secondaryCharacter.name}
                         className="character-image"
                       />
                       <span className="character-name">{userTeam.team.secondaryCharacter.name}</span>
-                      <span className="character-role">Secondary</span>
                     </div>
                   </div>
                   <div className="team-stats">
-                    <span>Wins: {userTeam.wins || 0}</span>
-                    <span>Losses: {userTeam.losses || 0}</span>
-                    <span>Win Rate: {((userTeam.wins || 0) / ((userTeam.wins || 0) + (userTeam.losses || 0)) * 100 || 0).toFixed(1)}%</span>
+                    <span>{t('wins')}: {userTeam.wins || 0}</span>
+                    <span>{t('losses')}: {userTeam.losses || 0}</span>
+                    <span>{t('winRate')}: {((userTeam.wins || 0) / ((userTeam.wins || 0) + (userTeam.losses || 0)) * 100 || 0).toFixed(1)}%</span>
                   </div>
                 </div>
               ) : null}
@@ -253,13 +340,13 @@ const DivisionsPage = () => {
                       className="change-team-btn"
                       onClick={() => handleJoinDivision(division)}
                     >
-                      🔄 Change Team
+                      🔄 {t('changeTeam')}
                     </button>
                     <button 
                       className="leave-btn"
                       onClick={() => handleLeaveDivision(division.id)}
                     >
-                      🚪 Leave Division
+                      🚪 {t('leaveDivision')}
                     </button>
                   </div>
                 ) : (
@@ -273,7 +360,7 @@ const DivisionsPage = () => {
               </div>
 
               <div className="division-participants">
-                <span>👥 Active Teams: {division.activeTeams || 0}</span>
+                <span>👥 {t('activeTeams')}: {divisionStats[division.id]?.activeTeams || 0}</span>
               </div>
             </div>
           );
@@ -303,6 +390,46 @@ const DivisionsPage = () => {
           </ul>
         </div>
       </div>
+
+      {/* Leave Division Confirmation Modal */}
+      <Modal
+        isOpen={showLeaveModal}
+        onClose={() => setShowLeaveModal(false)}
+        title={t('warning') || 'Warning'}
+        type="warning"
+        confirmText={t('confirm') || 'Confirm'}
+        cancelText={t('cancel') || 'Cancel'}
+        onConfirm={confirmLeaveDivision}
+        confirmButtonType="danger"
+      >
+        <p>Are you sure you want to leave this division? This action cannot be undone.</p>
+      </Modal>
+
+      {/* Success Modal */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title={t('success') || 'Success'}
+        type="success"
+        confirmText={t('confirm') || 'OK'}
+        onConfirm={() => setShowSuccessModal(false)}
+        showCancelButton={false}
+      >
+        <p>{successMessage}</p>
+      </Modal>
+
+      {/* Error Modal */}
+      <Modal
+        isOpen={showErrorModal}
+        onClose={() => setShowErrorModal(false)}
+        title={t('error') || 'Error'}
+        type="error"
+        confirmText={t('confirm') || 'OK'}
+        onConfirm={() => setShowErrorModal(false)}
+        showCancelButton={false}
+      >
+        <p>{errorMessage}</p>
+      </Modal>
     </div>
   );
 };

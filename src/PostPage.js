@@ -78,7 +78,7 @@ const PostPage = () => {
     if (!token || userVote) return;
     
     try {
-      await axios.post(`/api/votes/fight/${postId}`, { team }, {
+      await axios.post(`/api/posts/${postId}/fight-vote`, { team }, {
         headers: { 'x-auth-token': token }
       });
       

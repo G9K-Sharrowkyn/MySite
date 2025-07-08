@@ -166,18 +166,29 @@
 .loading {
   padding: 40px 20px;
   text-align: center;
-  color: #666;
+  color: #333;
   font-style: italic;
+  font-weight: 500;
 }
 
 .no-conversations {
   padding: 60px 20px;
   text-align: center;
-  color: #666;
+  color: #333;
 }
 
 .no-conversations p {
   margin: 10px 0;
+  color: #555;
+  font-weight: 500;
+}
+
+.no-users-message {
+  padding: 20px;
+  text-align: center;
+  color: #333;
+  font-style: italic;
+  font-weight: 500;
 }
 
 .conversation-item {
@@ -314,13 +325,14 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #666;
+  color: #333;
   text-align: center;
 }
 
 .no-messages p {
   margin: 10px 0;
-  font-size: 1.1rem;
+  color: #555;
+  font-weight: 500;
 }
 
 .message {
@@ -432,7 +444,7 @@
 
 .welcome-message {
   text-align: center;
-  color: #666;
+  color: #333;
   max-width: 400px;
   padding: 40px;
 }
@@ -441,11 +453,13 @@
   color: #333;
   margin-bottom: 15px;
   font-size: 1.5rem;
+  font-weight: 600;
 }
 
 .welcome-message p {
-  font-size: 1.1rem;
-  line-height: 1.5;
+  color: #555;
+  font-weight: 500;
+  line-height: 1.6;
 }
 
 /* Responsive Design */

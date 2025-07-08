@@ -38,4 +38,24 @@ router.post('/:id/join', auth, tournamentController.joinTournament);
 // @access  Private
 router.post('/:id/leave', auth, tournamentController.leaveTournament);
 
+// @route   POST api/tournaments/:id/start
+// @desc    Start tournament (moderator only)
+// @access  Private
+router.post('/:id/start', auth, tournamentController.startTournament);
+
+// @route   POST api/tournaments/:id/matches/:matchId/advance
+// @desc    Advance match (moderator only)
+// @access  Private
+router.post('/:id/matches/:matchId/advance', auth, tournamentController.advanceMatch);
+
+// @route   POST api/tournaments/:id/matches/:matchId/vote
+// @desc    Vote in tournament match
+// @access  Private
+router.post('/:id/matches/:matchId/vote', auth, tournamentController.voteInTournament);
+
+// @route   GET api/tournaments/:id/brackets
+// @desc    Get tournament brackets
+// @access  Public
+router.get('/:id/brackets', tournamentController.getTournamentBrackets);
+
 module.exports = router;

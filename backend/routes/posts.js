@@ -8,6 +8,11 @@ const auth = require('../middleware/auth');
 // @access  Public
 router.get('/', postController.getAllPosts);
 
+// @route   GET api/posts/official
+// @desc    Get official fights only
+// @access  Public
+router.get('/official', postController.getOfficialFights);
+
 // @route   GET api/posts/:id
 // @desc    Get post by ID
 // @access  Public
@@ -32,6 +37,21 @@ router.delete('/:id', auth, postController.deletePost);
 // @desc    Like/unlike post
 // @access  Private
 router.post('/:id/like', auth, postController.toggleLike);
+
+// @route   POST api/posts/:id/poll-vote
+// @desc    Vote in a post poll
+// @access  Private
+router.post('/:id/poll-vote', auth, postController.voteInPoll);
+
+// @route   POST api/posts/:id/fight-vote
+// @desc    Vote in a fight post
+// @access  Private
+router.post('/:id/fight-vote', auth, postController.voteInFight);
+
+// @route   POST api/posts/:id/reaction
+// @desc    Add reaction to post
+// @access  Private
+router.post('/:id/reaction', auth, postController.addReaction);
 
 // @route   GET api/posts/user/:userId
 // @desc    Get posts by user ID

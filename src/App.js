@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './i18n/LanguageContext';
 import Header from './Header';
 import TournamentPage from './TournamentPage';
@@ -33,7 +33,7 @@ function App() {
         <div className="App">
           <Header isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn} />
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={isLoggedIn ? <Navigate to="/feed" replace /> : <Home />} />
           <Route path="/register" element={<Register setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/login" element={<Login setIsLoggedIn={setIsLoggedIn} />} />
           <Route path="/moderator" element={<ModeratorPanel />} />

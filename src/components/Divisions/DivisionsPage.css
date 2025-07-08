@@ -463,3 +463,204 @@ body.dark-mode .info-card li {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* Champion Display Styles */
+.champion-section {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+  border: 2px solid #FFD700;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.champion-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent 30%, rgba(255, 215, 0, 0.1) 50%, transparent 70%);
+  animation: championShine 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes championShine {
+  0%, 100% { transform: translateX(-100%); }
+  50% { transform: translateX(100%); }
+}
+
+.champion-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  border-radius: 20px;
+  color: #000;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.champion-icon {
+  font-size: 1.2rem;
+  animation: crownBounce 2s ease-in-out infinite;
+}
+
+@keyframes crownBounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+.champion-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.champion-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.champion-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFD700;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.champion-frame {
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 2px solid #FFD700;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700);
+  background-size: 200% 200%;
+  animation: frameGlow 2s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes frameGlow {
+  0%, 100% { 
+    background-position: 0% 50%;
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+  }
+  50% { 
+    background-position: 100% 50%;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.8);
+  }
+}
+
+.champion-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.champion-name {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.champion-title-text {
+  margin: 0 0 0.5rem 0;
+  color: #FFD700;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.champion-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.champion-stats span {
+  background: rgba(255, 215, 0, 0.1);
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.champion-team {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.team-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.champion-characters {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.vs-separator {
+  color: #FFD700;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* Responsive design for champion section */
+@media (max-width: 768px) {
+  .champion-info {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .champion-stats {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .champion-characters {
+    justify-content: center;
+  }
+}
+
+/* Enhanced division card styling for champions */
+.division-card:has(.champion-section) {
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1);
+}
+
+.division-card:has(.champion-section) .division-header {
+  border-bottom: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Champion hover effects */
+.champion-section:hover .champion-frame {
+  animation: frameGlow 1s ease-in-out infinite;
+}
+
+.champion-section:hover .champion-icon {
+  animation: crownBounce 1s ease-in-out infinite;
+}

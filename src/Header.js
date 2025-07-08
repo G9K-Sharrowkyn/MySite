@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './i18n/LanguageContext';
@@ -16,22 +16,12 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      fetchUserData();
-      fetchUnreadCounts();
-      // Set up polling for real-time updates
-      const interval = setInterval(() => {
-        fetchUnreadCounts();
-      }, 30000); // Check every 30 seconds
-
-      return () => clearInterval(interval);
-    }
-  }, [isLoggedIn]);
-
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      setIsLoggedIn(false);
+      return;
+    }
 
     try {
       const response = await axios.get('/api/profile/me', {
@@ -44,11 +34,15 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
         handleLogout();
       }
     }
-  };
+  }, [setIsLoggedIn]);
 
-  const fetchUnreadCounts = async () => {
+  const fetchUnreadCounts = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token) {
+      setUnreadMessages(0);
+      setUnreadNotifications(0);
+      return;
+    }
 
     try {
       const [messagesResponse, notificationsResponse] = await Promise.all([
@@ -66,9 +60,26 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
       console.error('Error fetching unread counts:', error);
       if (error.response?.status === 401) {
         handleLogout();
+      } else {
+        // Set to 0 if there's any other error
+        setUnreadMessages(0);
+        setUnreadNotifications(0);
       }
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedIn) {
+      fetchUserData();
+      fetchUnreadCounts();
+      // Set up polling for real-time updates
+      const interval = setInterval(() => {
+        fetchUnreadCounts();
+      }, 30000); // Check every 30 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [isLoggedIn, fetchUserData, fetchUnreadCounts]);
 
   const fetchNotifications = async () => {
     const token = localStorage.getItem('token');
@@ -137,9 +148,7 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
       <div className="header-container">
         {/* Logo */}
         <div className="header-logo">
-          <Link to="/">
-            <h1>GeekFights</h1>
-          </Link>
+          <h1>GeekFights</h1>
         </div>
 
         {/* Navigation */}

@@ -67,7 +67,7 @@ router.get('/user', auth, async (req, res) => {
     const userId = req.user.id;
     
     // Find user's division participations
-    const userDivisions = req.db.data.users.find(u => u.id === userId)?.divisions || [];
+    const userDivisions = req.db.data.users.find(u => u.id === userId)?.divisions || {};
     
     res.json(userDivisions);
   } catch (error) {
@@ -341,5 +341,276 @@ router.post('/:divisionId/create-fight', auth, roleMiddleware(['moderator']), as
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Get division statistics
+router.get('/:divisionId/stats', async (req, res) => {
+  try {
+    await req.db.read();
+    const { divisionId } = req.params;
+    
+    // Count active teams in this division
+    const activeTeams = req.db.data.users.filter(user => 
+      user.divisions && user.divisions[divisionId]
+    ).length;
+    
+    // Get division info
+    const divisionInfo = {
+      id: divisionId,
+      activeTeams,
+      totalUsers: req.db.data.users.length
+    };
+    
+    res.json(divisionInfo);
+  } catch (error) {
+    console.error('Error fetching division stats:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Assign division champion (moderator only)
+router.post('/:divisionId/assign-champion', auth, roleMiddleware(['moderator']), async (req, res) => {
+  try {
+    await req.db.read();
+    const { divisionId } = req.params;
+    const { userId } = req.body;
+    
+    // Find user
+    const userIndex = req.db.data.users.findIndex(u => u.id === userId);
+    if (userIndex === -1) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Check if user is in the division
+    if (!req.db.data.users[userIndex].divisions?.[divisionId]) {
+      return res.status(400).json({ message: 'User is not in this division' });
+    }
+    
+    // Remove champion status from all users in this division
+    req.db.data.users.forEach(user => {
+      if (user.divisions && user.divisions[divisionId]) {
+        user.divisions[divisionId].isChampion = false;
+        user.divisions[divisionId].championTitle = null;
+        user.divisions[divisionId].championSince = null;
+      }
+    });
+    
+    // Assign champion status to the selected user
+    req.db.data.users[userIndex].divisions[divisionId].isChampion = true;
+    req.db.data.users[userIndex].divisions[divisionId].championTitle = `${divisionId.charAt(0).toUpperCase() + divisionId.slice(1)} Champion`;
+    req.db.data.users[userIndex].divisions[divisionId].championSince = new Date().toISOString();
+    
+    // Update user's global title if they don't have a higher one
+    const currentTitle = req.db.data.users[userIndex].title || '';
+    const divisionTitles = {
+      'regular': 'Regular Division Champion',
+      'metahuman': 'Metahuman Division Champion', 
+      'planet-busters': 'Planet Busters Champion',
+      'god-tier': 'God Tier Champion',
+      'universal-threat': 'Universal Threat Champion',
+      'omnipotent': 'Omnipotent Champion'
+    };
+    
+    const newTitle = divisionTitles[divisionId];
+    if (newTitle && !currentTitle.includes('Champion')) {
+      req.db.data.users[userIndex].title = newTitle;
+    }
+    
+    await req.db.write();
+    
+    res.json({ 
+      message: 'Champion assigned successfully',
+      champion: {
+        userId: req.db.data.users[userIndex].id,
+        username: req.db.data.users[userIndex].username,
+        title: newTitle,
+        championSince: req.db.data.users[userIndex].divisions[divisionId].championSince
+      }
+    });
+  } catch (error) {
+    console.error('Error assigning champion:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update user ranking after fight result
+router.post('/:divisionId/update-ranking', auth, async (req, res) => {
+  try {
+    await req.db.read();
+    const { divisionId } = req.params;
+    const { winnerId, loserId, isDraw = false } = req.body;
+    
+    // Update winner stats
+    if (winnerId && !isDraw) {
+      const winnerIndex = req.db.data.users.findIndex(u => u.id === winnerId);
+      if (winnerIndex !== -1 && req.db.data.users[winnerIndex].divisions?.[divisionId]) {
+        req.db.data.users[winnerIndex].divisions[divisionId].wins += 1;
+        req.db.data.users[winnerIndex].divisions[divisionId].points += 10;
+        req.db.data.users[winnerIndex].divisions[divisionId].streak = (req.db.data.users[winnerIndex].divisions[divisionId].streak || 0) + 1;
+        
+        // Update rank based on points
+        updateUserRank(req.db.data.users[winnerIndex].divisions[divisionId]);
+      }
+    }
+    
+    // Update loser stats
+    if (loserId && !isDraw) {
+      const loserIndex = req.db.data.users.findIndex(u => u.id === loserId);
+      if (loserIndex !== -1 && req.db.data.users[loserIndex].divisions?.[divisionId]) {
+        req.db.data.users[loserIndex].divisions[divisionId].losses += 1;
+        req.db.data.users[loserIndex].divisions[divisionId].points = Math.max(0, req.db.data.users[loserIndex].divisions[divisionId].points - 2);
+        req.db.data.users[loserIndex].divisions[divisionId].streak = 0;
+        
+        // Update rank based on points
+        updateUserRank(req.db.data.users[loserIndex].divisions[divisionId]);
+      }
+    }
+    
+    // Update draw stats
+    if (isDraw && winnerId && loserId) {
+      const user1Index = req.db.data.users.findIndex(u => u.id === winnerId);
+      const user2Index = req.db.data.users.findIndex(u => u.id === loserId);
+      
+      if (user1Index !== -1 && req.db.data.users[user1Index].divisions?.[divisionId]) {
+        req.db.data.users[user1Index].divisions[divisionId].draws += 1;
+        req.db.data.users[user1Index].divisions[divisionId].points += 1;
+      }
+      
+      if (user2Index !== -1 && req.db.data.users[user2Index].divisions?.[divisionId]) {
+        req.db.data.users[user2Index].divisions[divisionId].draws += 1;
+        req.db.data.users[user2Index].divisions[divisionId].points += 1;
+      }
+    }
+    
+    await req.db.write();
+    
+    res.json({ message: 'Ranking updated successfully' });
+  } catch (error) {
+    console.error('Error updating ranking:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get division champion
+router.get('/:divisionId/champion', async (req, res) => {
+  try {
+    await req.db.read();
+    const { divisionId } = req.params;
+    
+    // Find the champion in this division
+    const champion = req.db.data.users.find(user => 
+      user.divisions && 
+      user.divisions[divisionId] && 
+      user.divisions[divisionId].isChampion
+    );
+    
+    if (!champion) {
+      return res.json({ champion: null });
+    }
+    
+    res.json({
+      champion: {
+        id: champion.id,
+        username: champion.username,
+        profilePicture: champion.profilePicture,
+        title: champion.title,
+        team: champion.divisions[divisionId].team,
+        stats: {
+          wins: champion.divisions[divisionId].wins,
+          losses: champion.divisions[divisionId].losses,
+          draws: champion.divisions[divisionId].draws,
+          points: champion.divisions[divisionId].points,
+          rank: champion.divisions[divisionId].rank
+        },
+        championSince: champion.divisions[divisionId].championSince
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching division champion:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user's division achievements
+router.get('/:divisionId/achievements/:userId', async (req, res) => {
+  try {
+    await req.db.read();
+    const { divisionId, userId } = req.params;
+    
+    const user = req.db.data.users.find(u => u.id === userId);
+    if (!user || !user.divisions?.[divisionId]) {
+      return res.status(404).json({ message: 'User not found in division' });
+    }
+    
+    const divisionData = user.divisions[divisionId];
+    const achievements = [];
+    
+    // Check for various achievements
+    if (divisionData.wins >= 10) {
+      achievements.push({
+        id: 'veteran',
+        name: 'Division Veteran',
+        description: 'Win 10 fights in this division',
+        icon: '🏆',
+        unlocked: true
+      });
+    }
+    
+    if (divisionData.streak >= 5) {
+      achievements.push({
+        id: 'streak',
+        name: 'Winning Streak',
+        description: 'Win 5 fights in a row',
+        icon: '🔥',
+        unlocked: true
+      });
+    }
+    
+    if (divisionData.isChampion) {
+      achievements.push({
+        id: 'champion',
+        name: 'Division Champion',
+        description: 'Become the champion of this division',
+        icon: '👑',
+        unlocked: true
+      });
+    }
+    
+    if (divisionData.points >= 100) {
+      achievements.push({
+        id: 'elite',
+        name: 'Elite Fighter',
+        description: 'Reach 100 points in this division',
+        icon: '⚡',
+        unlocked: true
+      });
+    }
+    
+    res.json({ achievements });
+  } catch (error) {
+    console.error('Error fetching achievements:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Helper function to update user rank based on points
+function updateUserRank(divisionData) {
+  const points = divisionData.points;
+  
+  if (points >= 200) {
+    divisionData.rank = 'Legend';
+  } else if (points >= 150) {
+    divisionData.rank = 'Master';
+  } else if (points >= 100) {
+    divisionData.rank = 'Elite';
+  } else if (points >= 50) {
+    divisionData.rank = 'Veteran';
+  } else if (points >= 20) {
+    divisionData.rank = 'Fighter';
+  } else if (points >= 10) {
+    divisionData.rank = 'Novice';
+  } else {
+    divisionData.rank = 'Rookie';
+  }
+}
 
 module.exports = router;

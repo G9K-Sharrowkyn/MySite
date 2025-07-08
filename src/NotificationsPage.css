@@ -128,14 +128,16 @@
 }
 
 .notification-text {
-  color: #aaa;
+  color: #ccc;
   margin-bottom: 8px;
   line-height: 1.4;
+  font-weight: 500;
 }
 
 .notification-time {
-  color: #666;
+  color: #888;
   font-size: 0.9em;
+  font-weight: 500;
 }
 
 .notification-actions {
@@ -195,8 +197,9 @@
 }
 
 .no-notifications p {
-  color: #aaa;
+  color: #ccc;
   font-size: 1.1em;
+  font-weight: 500;
 }
 
 /* Pagination */
@@ -232,8 +235,9 @@
 }
 
 .pagination-info {
-  color: #aaa;
+  color: #ccc;
   font-weight: 500;
+  font-size: 0.95em;
 }
 
 /* Buttons */

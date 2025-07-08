@@ -56,10 +56,14 @@ const Feed = () => {
     setPage(1);
   };
 
-  const handlePostUpdate = (updatedPost) => {
-    setPosts(prev => prev.map(post => 
-      post.id === updatedPost.id ? updatedPost : post
-    ));
+const handlePostUpdate = (updatedPost, isDeleted) => {
+    if (isDeleted) {
+      setPosts(prev => prev.filter(post => post.id !== updatedPost));
+    } else {
+      setPosts(prev => prev.map(post => 
+        post.id === updatedPost.id ? updatedPost : post
+      ));
+    }
   };
 
   const handleSortChange = (newSort) => {

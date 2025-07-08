@@ -1,0 +1,60 @@
+const { t } = useLanguage();
+  const [isExpanded, setIsExpanded] = useState(!!initialData);
+  const [postData, setPostData] = useState({
+    title: '',
+    content: '',
+    type: 'discussion',
+    teamA: '',
+    teamB: '',
+    image: ''
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const token = localStorage.getItem('token');
+
+  React.useEffect(() => {
+    if (initialData) {
+      setPostData({
+        title: initialData.title || '',
+        content: initialData.content || '',
+        type: initialData.type || 'discussion',
+        teamA: initialData.teamA || '',
+        teamB: initialData.teamB || '',
+        image: initialData.image || ''
+      });
+      setIsExpanded(true);
+    }
+  }, [initialData]);
+=======
+const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => {
+  const { t } = useLanguage();
+  const [isExpanded, setIsExpanded] = useState(!!initialData);
+  const [postData, setPostData] = useState({
+    title: '',
+    content: '',
+    type: 'discussion',
+    teamA: '',
+    teamB: '',
+    image: '',
+    pollOptions: ['', ''],
+    photos: []
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const token = localStorage.getItem('token');
+
+  React.useEffect(() => {
+    if (initialData) {
+      setPostData({
+        title: initialData.title || '',
+        content: initialData.content || '',
+        type: initialData.type || 'discussion',
+        teamA: initialData.teamA || '',
+        teamB: initialData.teamB || '',
+        image: initialData.image || '',
+        pollOptions: initialData.pollOptions || ['', ''],
+        photos: initialData.photos || []
+      });
+      setIsExpanded(true);
+    }
+  }, [initialData]);

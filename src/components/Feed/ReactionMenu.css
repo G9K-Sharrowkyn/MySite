@@ -1,0 +1,276 @@
+.reaction-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+.reaction-menu {
+  background: white;
+  border-radius: 20px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideInUp 0.3s ease;
+  position: relative;
+  z-index: 1001;
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reaction-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.reaction-menu-header h3 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #666;
+  cursor: pointer;
+  padding: 5px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.reaction-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reaction-category {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.reaction-category:hover {
+  border-color: #667eea;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+}
+
+.category-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  background: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.category-btn:hover {
+  background: #f8f9fa;
+}
+
+.category-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.category-icon {
+  font-size: 1.5rem;
+  width: 30px;
+  text-align: center;
+}
+
+.category-label {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.reaction-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  padding: 15px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    max-height: 0;
+  }
+  to {
+    opacity: 1;
+    max-height: 200px;
+  }
+}
+
+.reaction-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: white;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.reaction-option:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.reaction-icon {
+  font-size: 2rem;
+  transition: transform 0.3s ease;
+}
+
+.reaction-option:hover .reaction-icon {
+  transform: scale(1.2);
+}
+
+.reaction-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #333;
+  text-align: center;
+}
+
+/* Dark mode support */
+.dark-mode .reaction-menu {
+  background: #2d3748;
+  color: white;
+}
+
+.dark-mode .reaction-menu-header {
+  border-bottom-color: #4a5568;
+}
+
+.dark-mode .reaction-menu-header h3 {
+  color: white;
+}
+
+.dark-mode .close-btn {
+  color: #a0aec0;
+}
+
+.dark-mode .close-btn:hover {
+  background: #4a5568;
+  color: white;
+}
+
+.dark-mode .reaction-category {
+  border-color: #4a5568;
+}
+
+.dark-mode .reaction-category:hover {
+  border-color: #667eea;
+}
+
+.dark-mode .category-btn {
+  background: #2d3748;
+  color: white;
+}
+
+.dark-mode .category-btn:hover {
+  background: #4a5568;
+}
+
+.dark-mode .reaction-options {
+  background: #4a5568;
+  border-top-color: #4a5568;
+}
+
+.dark-mode .reaction-option {
+  background: #2d3748;
+  color: white;
+}
+
+.dark-mode .reaction-name {
+  color: #e2e8f0;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .reaction-menu {
+    width: 95%;
+    padding: 15px;
+  }
+  
+  .reaction-options {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 8px;
+    padding: 12px 15px;
+  }
+  
+  .reaction-option {
+    padding: 10px;
+  }
+  
+  .reaction-icon {
+    font-size: 1.5rem;
+  }
+  
+  .reaction-name {
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .reaction-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .category-btn {
+    padding: 12px 15px;
+  }
+  
+  .category-icon {
+    font-size: 1.2rem;
+  }
+  
+  .category-label {
+    font-size: 0.9rem;
+  }
+} 

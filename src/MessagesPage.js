@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useSearchParams } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
+import { useLanguage } from './i18n/LanguageContext';
 import './MessagesPage.css';
 
 const MessagesPage = () => {
@@ -14,6 +15,7 @@ const MessagesPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [searchParams] = useSearchParams();
+  const { t } = useLanguage();
 
   const token = localStorage.getItem('token');
   const currentUserId = localStorage.getItem('userId');
@@ -157,10 +159,10 @@ const MessagesPage = () => {
     const now = new Date();
     const diffInMinutes = Math.floor((now - date) / (1000 * 60));
     
-    if (diffInMinutes < 1) return 'Teraz';
-    if (diffInMinutes < 60) return `${diffInMinutes}m`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h`;
-    if (diffInMinutes < 10080) return `${Math.floor(diffInMinutes / 1440)}d`;
+    if (diffInMinutes < 1) return t('now');
+    if (diffInMinutes < 60) return `${diffInMinutes}${t('minutesAgo')}`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}${t('hoursAgo')}`;
+    if (diffInMinutes < 10080) return `${Math.floor(diffInMinutes / 1440)}${t('daysAgo')}`;
     return date.toLocaleDateString();
   };
 
@@ -173,9 +175,9 @@ const MessagesPage = () => {
     return (
       <div className="messages-page">
         <div className="login-required">
-          <h2>🔐 Logowanie wymagane</h2>
-          <p>Musisz być zalogowany, aby korzystać z wiadomości.</p>
-          <Link to="/login" className="login-btn">Zaloguj się</Link>
+          <h2>🔐 {t('loginRequired')}</h2>
+          <p>{t('loginRequiredMessage')}</p>
+          <Link to="/login" className="login-btn">{t('login')}</Link>
         </div>
       </div>
     );
@@ -187,7 +189,7 @@ const MessagesPage = () => {
         {/* Conversations Sidebar */}
         <div className="conversations-sidebar">
           <div className="sidebar-header">
-            <h2>💬 Wiadomości</h2>
+            <h2>💬 {t('messages')}</h2>
             <button
               className="new-message-btn"
               onClick={() => {
@@ -207,7 +209,7 @@ const MessagesPage = () => {
               <div className="search-users">
                 <input
                   type="text"
-                  placeholder="Szukaj użytkowników..."
+                  placeholder={t('searchUsers')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="user-search-input"
@@ -230,7 +232,7 @@ const MessagesPage = () => {
                 </div>
               ))
             ) : (
-              <p className="no-users-message">Wpisz nazwę użytkownika, aby wyszukać</p>
+              <p className="no-users-message">{t('enterUsernameToSearch')}</p>
             )}
           </div>
             </div>
@@ -238,7 +240,7 @@ const MessagesPage = () => {
 
           <div className="conversations-list">
             {loading ? (
-              <div className="loading">Ładowanie...</div>
+              <div className="loading">{t('loading')}</div>
             ) : conversations.length > 0 ? (
               conversations.map(conversation => (
                 <div 
@@ -274,8 +276,8 @@ const MessagesPage = () => {
               ))
             ) : (
               <div className="no-conversations">
-                <p>Brak konwersacji</p>
-                <p>Kliknij ✏️ aby rozpocząć nową</p>
+                <p>{t('noConversations')}</p>
+                <p>{t('clickToStartNew')}</p>
               </div>
             )}
           </div>
@@ -316,8 +318,8 @@ const MessagesPage = () => {
                   ))
                 ) : (
                   <div className="no-messages">
-                    <p>Brak wiadomości</p>
-                    <p>Napisz pierwszą wiadomość!</p>
+                    <p>{t('noMessages')}</p>
+                    <p>{t('writeFirstMessage')}</p>
                   </div>
                 )}
               </div>
@@ -327,7 +329,7 @@ const MessagesPage = () => {
                   type="text"
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
-                  placeholder="Napisz wiadomość..."
+                  placeholder={t('writeMessage')}
                   className="message-input"
                 />
                 <button type="submit" className="send-btn" disabled={!newMessage.trim()}>
@@ -338,8 +340,8 @@ const MessagesPage = () => {
           ) : (
             <div className="no-chat-selected">
               <div className="welcome-message">
-                <h3>💬 Witaj w wiadomościach!</h3>
-                <p>Wybierz konwersację z lewej strony lub rozpocznij nową</p>
+                <h3>💬 {t('welcomeToMessages')}</h3>
+                <p>{t('selectConversationOrStartNew')}</p>
               </div>
             </div>
           )}

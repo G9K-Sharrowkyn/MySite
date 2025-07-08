@@ -1,0 +1,107 @@
+
+When creating a division, nothing pops up in the console. Nothing happens. I just go back to the division site, and active teams are zero, despite me creating one.
+
+One user can have only one team in the official fights. He can pick any character, that wasn't picked by another user. Picked character is blocked, and should be greyed out on the character list.
+
+There are several divisions. In official fights users from one division fight against people from the same division. It will naturally create a ranking system, as in the ufc, or boxing.
+
+We need a working system of official fights. Only moderator can post them, and those are only on the main page. Winning in them gives user an official record. There are several divisions, and each user can participate in any division! Moderator sets up the fights, they land on the main screen, users vote, winner gets a fight with someone else next time. At some point, moderator gives someone a rank of division champion. That man will have a unique Title under his nickname, and a golden frame on his title.
+
+Also! In official and regular fights, there should be a poll underneath, where people can vote, for one team, or another, or another. User, or moderator, while creating a fight, writes a post, with some explanation or backstory, and fullfills the poll settings. Every user who sees the post, sees the message in the post, and has an option to vote in the poll under the post, where he can choose a winner, of a fight in the post.
+
+
+Meanwhile, on feed, anyone can post a fight, with any fighters. It's a true facebook-like feed, where anyone can post. Winning fights in feed gives a regular record to the user, which counts separately from the official record in main fights.
+
+Also we need a better posting system. When creating a post, person should have an option to choose "discussion" tag, "fight" tag or "other" tag. Discussion post will give him option to write title, post itself, and send a photo from a pc, or choose a pic from the site database.
+Fight tag, will contain title, post itself, and also an option to choose photo from pc or from the database. But this tag will also require person to fullfill "poll" settings. If it's superman vs batman fight, the user will need to fill one pool with superman and the other with batman. Then, the other users will be able to vote in such fight poll, react and write comments.
+Other tag will have title, post itself, pictures from pc or database and an optional poll. Fight has a mandatory poll!
+
+Posts are devided to 3 categories, but there is no way to pick a photo for the team members from the database or to upload pictures from pc.
+Also, we need tome buttons like "Vote!", under the teams. This should be the way to vote!
+Also, fight post where user inputs heros who will fight, should look like this: "User chooses fight post, there he clicks "Add fighters" button, where a single line gets added to the post, where he implements a single hero in one bracket and another one in the other bracket. He can click again "Add fighters" button, to introduce another line, to make it a 2vs2 fight, or 9vs9, whatever. Not used brackets count as empty spot, so 9 brackets, where there are 9 people on left team and 4 people in right team, with 5 brackets empty, will show up as 9 vs 4 fight.
+
+This is done quite well... But we need picking characters in the brackets remade! When user picks first character, it has to look like a plain, empty bracket. When he types first character, like "s", he sees propositions like "superman","spider-man","sinestro". When he continues with "su", he will see "superman", "surtur", "sunfire", whatever.
+
+For now, we can see propositions of characters at once, and it spoils site layout badly... Propositions need to appear when user starts typing!
+Also, "picked characters" should not be picked on the profile site, but on the divisions site. When someone picks his team in one of the divisions, this team is shown on his profile, as his chosen team.
+
+First thing... Language settings, that are on the page, change only UI language. That should change all text on the page!
+
+Second thing... True dark mode. Current dark mode has some whites too... It should be much darker.
+
+Third thing... Main screen should show firstly "Official Fights", posted by moderator. Lower, under all the main Fights, there should be latest posts from feed, from normal users.
+
+----
+
+There are still some minor tweaks to be done... 
+First thing... We have "GeekFights" logo and "Main Site" on the header that both lead to the same place... Why? Make logo uncklickable, and leave only main site, as a way to go to the main site. 
+Also... When I create a post, and try to edit it, I should see all the options that were previously insterted. For now, all that user inserted is gone, when trying to edit it. Writing long post, all over again simply because user wanted to fix one word mistake in the post will be iritating as hell! 
+Thirdly... Fight post... Needs a major rework... User selects title, and the whole post story... This is good. But lower, we got option to add pictures from pc, select pictures from database, add warriors, and a mandatory poll, where user needs to fill the brackets. This is both too complicated and irritating.
+System should work like this: User writes post content, or doesn't, and then first thing below post content, there is "Teams" menu. In there, user picks warriors to the teams, he can add warriors to one team, or add more teams, whatever. With every chosen character, this character picture appears below the character name, representing the character. Then, below created teams, there should be a notification title, that "If you want to swap images, click on selected character!". Then, if user wants another pictures of some character, he can click on the database picture, that automatically is shown after selecting the character, and he can upload his own picture. 
+Fourth thing, there is no need for poll, or poll brackets to be there. Creating 2 teams, should assign two options to choose from, when the post is posted. User created 2 teams fights? Post will contain these two teams, one of the left, the other on the right. One team would have a dark-red background, the other would have dark-blue background. There should be some animated hover, that when user moves mouse over a team, that background, and character frames start to shine, and when clicked, some magic sparkles appear, and the vote is counted as one vote for the clicked team! No need for poll then! 
+Poll could be transfered to regular discussion posts, but it should be optional. Some button, that allows adding poll, if someone wants it.
+
+Fifth thing... We can't have basic internet explorer-like popups, statying "Are you sure you want to leave this division?"... It's not 1998. It should be a nice popup, that suits the page layout and doesn't brake immersion. All such pop ups should be reworked!
+
+Sixth thing. When on leaderboard, when I click on a user profile, I don't see his profile. I am sending you a picture how it looks. A blank, grey page. This looks bad. It should take us to real profile page.
+
+Seventh... Some things are not translated correctly. Like edit or delete post menu. It stays polish, despite all site being translated to spanish, after changing language. 
+
+Eight... Messages menu. "No conversations", "choose conversation", "insert name of a user" are almost invisible. They are whitish on a white background. 
+
+Ninth... Notificaitons. When I enter notifications menu, I change languages, but whole notification menu stays Polish, no matter what.
+
+Lastly... When voting in the post, I get "PostCard.js:70 
+ POST http://localhost:3000/api/votes 404 (Not Found)
+handleVote	@	PostCard.js:70
+onClick	@	PostCard.js:199
+<button>		
+renderFightVoting	@	PostCard.js:194
+renderVotingSection	@	PostCard.js:123
+PostCard	@	PostCard.js:469
+<PostCard>		
+(anonymous)	@	Feed.js:97
+Feed	@	Feed.js:97
+<Feed>		
+FeedPage	@	FeedPage.js:5
+PostCard.js:81 Error voting: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+code
+: 
+"ERR_BAD_REQUEST"
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
+message
+: 
+"Request failed with status code 404"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}
+response
+: 
+{data: {…}, status: 404, statusText: 'Not Found', headers: AxiosHeaders, config: {…}, …}
+status
+: 
+404
+stack
+: 
+"AxiosError: Request failed with status code 404\n    at settle (http://localhost:3000/static/js/bundle.js:2197:12)\n    at XMLHttpRequest.onloadend (http://localhost:3000/static/js/bundle.js:824:66)\n    at Axios.request (http://localhost:3000/static/js/bundle.js:1323:41)\n    at async handleVote (http://localhost:3000/static/js/bundle.js:62229:7)"
+[[Prototype]]
+: 
+Error
+handleVote	@	PostCard.js:81
+await in handleVote		
+onClick	@	PostCard.js:199
+<button>		
+renderFightVoting	@	PostCard.js:194
+renderVotingSection	@	PostCard.js:123
+PostCard	@	PostCard.js:469
+<PostCard>		
+(anonymous)	@	Feed.js:97
+Feed	@	Feed.js:97
+<Feed>		
+FeedPage	@	FeedPage.js:5" in the console log.

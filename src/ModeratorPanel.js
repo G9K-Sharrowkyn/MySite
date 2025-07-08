@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
+import CharacterSelector from './components/Feed/CharacterSelector';
+import Modal from './components/Modal/Modal';
 import './ModeratorPanel.css';
 
 const ModeratorPanel = () => {
@@ -12,14 +14,15 @@ const ModeratorPanel = () => {
   const [characters, setCharacters] = useState([]);
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [postToDelete, setPostToDelete] = useState(null);
   
   // Fight creation state
   const [newFight, setNewFight] = useState({
-    type: 'main', // main, community
     title: '',
     description: '',
-    character1: '',
-    character2: '',
+    character1: null,
+    character2: null,
     category: 'Main Event',
     featured: false
   });
@@ -58,7 +61,7 @@ const ModeratorPanel = () => {
     setLoading(true);
     try {
       const [fightsRes, postsRes, usersRes, charactersRes] = await Promise.all([
-        axios.get('/api/fights'),
+        axios.get('/api/posts/official'),
         axios.get('/api/posts'),
         axios.get('/api/profile/all'),
         axios.get('/api/characters')
@@ -86,17 +89,21 @@ const ModeratorPanel = () => {
     setLoading(true);
 
     try {
-      const character1 = characters.find(c => c.id === newFight.character1);
-      const character2 = characters.find(c => c.id === newFight.character2);
+      if (!newFight.character1 || !newFight.character2) {
+        showNotification('Wybierz obie postacie do walki', 'error');
+        setLoading(false);
+        return;
+      }
 
       const fightData = {
         type: 'fight',
         title: newFight.title,
         content: newFight.description,
-        teamA: character1?.name || newFight.character1,
-        teamB: character2?.name || newFight.character2,
+        teamA: newFight.character1.name,
+        teamB: newFight.character2.name,
         featured: newFight.featured,
         category: newFight.category,
+        isOfficial: true,
         moderatorCreated: true
       };
 
@@ -104,13 +111,12 @@ const ModeratorPanel = () => {
         headers: { 'x-auth-token': token }
       });
 
-      showNotification('Walka główna została utworzona!', 'success');
+      showNotification('Oficjalna walka została utworzona!', 'success');
       setNewFight({
-        type: 'main',
         title: '',
         description: '',
-        character1: '',
-        character2: '',
+        character1: null,
+        character2: null,
         category: 'Main Event',
         featured: false
       });
@@ -124,16 +130,21 @@ const ModeratorPanel = () => {
     }
   };
 
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć ten post?')) return;
+  const handleDeletePost = (postId) => {
+    setPostToDelete(postId);
+    setShowDeleteModal(true);
+  };
 
+  const confirmDeletePost = async () => {
     try {
-      await axios.delete(`/api/posts/${postId}`, {
+      await axios.delete(`/api/posts/${postToDelete}`, {
         headers: { 'x-auth-token': token }
       });
       
       showNotification('Post został usunięty', 'success');
       fetchData();
+      setShowDeleteModal(false);
+      setPostToDelete(null);
     } catch (error) {
       console.error('Error deleting post:', error);
       showNotification('Błąd podczas usuwania postu', 'error');
@@ -248,34 +259,20 @@ const ModeratorPanel = () => {
                 <div className="form-row">
                   <div className="form-group">
                     <label>Postać 1</label>
-                    <select
-                      value={newFight.character1}
-                      onChange={(e) => setNewFight({...newFight, character1: e.target.value})}
-                      required
-                    >
-                      <option value="">Wybierz postać</option>
-                      {characters.map(char => (
-                        <option key={char.id} value={char.id}>
-                          {char.name} ({char.universe})
-                        </option>
-                      ))}
-                    </select>
+                    <CharacterSelector
+                      characters={characters}
+                      selectedCharacter={newFight.character1}
+                      onSelect={(character) => setNewFight({...newFight, character1: character})}
+                    />
                   </div>
                   <div className="vs-divider">VS</div>
                   <div className="form-group">
                     <label>Postać 2</label>
-                    <select
-                      value={newFight.character2}
-                      onChange={(e) => setNewFight({...newFight, character2: e.target.value})}
-                      required
-                    >
-                      <option value="">Wybierz postać</option>
-                      {characters.map(char => (
-                        <option key={char.id} value={char.id}>
-                          {char.name} ({char.universe})
-                        </option>
-                      ))}
-                    </select>
+                    <CharacterSelector
+                      characters={characters}
+                      selectedCharacter={newFight.character2}
+                      onSelect={(character) => setNewFight({...newFight, character2: character})}
+                    />
                   </div>
                 </div>
 
@@ -309,15 +306,16 @@ const ModeratorPanel = () => {
             </div>
 
             <div className="existing-fights">
-              <h3>🎯 Istniejące Walki</h3>
+              <h3>🎯 Istniejące Walki Oficjalne</h3>
               <div className="fights-grid">
-                {posts.filter(post => post.type === 'fight').map(fight => (
+                {fights.map(fight => (
                   <div key={fight.id} className="fight-card">
                     <div className="fight-header">
                       <h4>{fight.title}</h4>
                       <div className="fight-badges">
-                        {fight.featured && <span className="featured-badge">⭐ Wyróżnione</span>}
-                        <span className="category-badge">{fight.category || 'Fight'}</span>
+                        <span className="badge badge-official">🛡️ Oficjalna</span>
+                        {fight.featured && <span className="badge badge-featured">⭐ Wyróżnione</span>}
+                        {fight.category && <span className="badge badge-category">{fight.category}</span>}
                       </div>
                     </div>
                     <div className="fight-details">
@@ -329,6 +327,11 @@ const ModeratorPanel = () => {
                       <div className="fight-stats">
                         <span>👍 {fight.likes?.length || 0}</span>
                         <span>🗳️ {(fight.fight?.votes?.teamA || 0) + (fight.fight?.votes?.teamB || 0)}</span>
+                        <span>💬 {fight.comments?.length || 0}</span>
+                      </div>
+                      <div className="fight-meta">
+                        <span className="fight-date">{formatDate(fight.createdAt)}</span>
+                        <span className="fight-status">{fight.fight?.status === 'active' ? '🟢 Aktywna' : '🔴 Zakończona'}</span>
                       </div>
                     </div>
                     <div className="fight-actions">
@@ -347,6 +350,11 @@ const ModeratorPanel = () => {
                     </div>
                   </div>
                 ))}
+                {fights.length === 0 && (
+                  <div className="no-fights">
+                    <p>Brak oficjalnych walk. Stwórz pierwszą walkę!</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -455,6 +463,20 @@ const ModeratorPanel = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Post Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Potwierdzenie usunięcia"
+        type="warning"
+        confirmText="Usuń"
+        cancelText="Anuluj"
+        onConfirm={confirmDeletePost}
+        confirmButtonType="danger"
+      >
+        <p>Czy na pewno chcesz usunąć ten post? Ta akcja nie może być cofnięta.</p>
+      </Modal>
     </div>
   );
 };

@@ -52,7 +52,7 @@ export const LanguageProvider = ({ children }) => {
     }
   };
 
-  const t = (key) => {
+  const t = (key, params = {}) => {
     const keys = key.split('.');
     let value = translations[currentLanguage];
     
@@ -60,7 +60,16 @@ export const LanguageProvider = ({ children }) => {
       value = value?.[k];
     }
     
-    return value || key;
+    if (!value) return key;
+    
+    // Handle interpolation for keys with placeholders like {type}, {current}, {total}
+    if (typeof value === 'string' && Object.keys(params).length > 0) {
+      return value.replace(/\{(\w+)\}/g, (match, paramName) => {
+        return params[paramName] !== undefined ? params[paramName] : match;
+      });
+    }
+    
+    return value;
   };
 
   const value = {
