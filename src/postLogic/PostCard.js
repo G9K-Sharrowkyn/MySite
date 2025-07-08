@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from '../../utils/placeholderImage';
+import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
 import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
 import './PostCard.css';
-import { useLanguage } from '../../i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const PostCard = ({ post, onUpdate }) => {
   const [comments, setComments] = useState([]);

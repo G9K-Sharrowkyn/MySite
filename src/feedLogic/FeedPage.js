@@ -1,5 +1,5 @@
 import React from 'react';
-import Feed from './components/Feed/Feed';
+import Feed from '../postLogic/Feed';
 
 const FeedPage = () => {
   return <Feed />;

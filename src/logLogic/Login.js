@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import Notification from './Notification';
+import Notification from '../notificationLogic/Notification';
 import { useNavigate } from 'react-router-dom';
-import './Auth.css'; // Wspólny plik CSS dla autentykacji
+import '../Auth.css'; // Wspólny plik CSS dla autentykacji
 
 const Login = ({ setIsLoggedIn }) => {
   const [formData, setFormData] = useState({

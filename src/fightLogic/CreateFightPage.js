@@ -116,6 +116,7 @@ const CreateFightPage = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Submitting fight!');
     setLoading(true);
     setError('');
     setSuccess('');
@@ -161,6 +162,15 @@ const CreateFightPage = () => {
       setLoading(false);
     }
   };
+
+  // Add canSubmit for real-time validation
+  const canSubmit =
+    formData.title.trim() &&
+    formData.description.trim() &&
+    formData.fighter1.trim() &&
+    formData.fighter2.trim() &&
+    formData.fighter1 !== formData.fighter2 &&
+    !loading;
 
   if (!user) {
     return <div className="create-fight-page loading">Ładowanie...</div>;
@@ -369,6 +379,16 @@ const CreateFightPage = () => {
           </div>
         </div>
 
+        {/* Debug output for troubleshooting */}
+        <div style={{ background: '#222', color: '#fff', padding: '10px', marginBottom: '10px', borderRadius: '6px' }}>
+          <strong>DEBUG:</strong><br/>
+          title: '{formData.title}'<br/>
+          description: '{formData.description}'<br/>
+          fighter1: '{formData.fighter1}'<br/>
+          fighter2: '{formData.fighter2}'<br/>
+          canSubmit: {String(canSubmit)}
+        </div>
+
         {/* Submit */}
         <div className="form-actions">
           <button
@@ -380,7 +400,7 @@ const CreateFightPage = () => {
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={!canSubmit}
             className="btn btn-primary"
           >
             {loading ? 'Tworzenie...' : 'Stwórz walkę'}

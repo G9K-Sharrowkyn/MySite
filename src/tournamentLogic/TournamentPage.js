@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useLanguage } from './i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 import './TournamentPage.css';
 
 const TournamentPage = () => {

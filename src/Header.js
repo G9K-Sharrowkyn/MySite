@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './i18n/LanguageContext';
 import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
-import LanguageSwitcher from './components/LanguageSwitcher/LanguageSwitcher';
+import LanguageSwitcher from './LanguageSwitcher/LanguageSwitcher';
 import './Header.css';
 
 const Header = ({ isLoggedIn, setIsLoggedIn }) => {

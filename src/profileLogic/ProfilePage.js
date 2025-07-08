@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
-import ImageUpload from './components/ImageUpload/ImageUpload';
-import PostCard from './components/Feed/PostCard';
+import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import ImageUpload from '../ImageUpload/ImageUpload';
+import PostCard from '../postLogic/PostCard';
 import './ProfilePage.css';
 
 const ProfilePage = () => {

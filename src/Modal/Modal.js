@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useLanguage } from '../../i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 import './Modal.css';
 
 const Modal = ({ 

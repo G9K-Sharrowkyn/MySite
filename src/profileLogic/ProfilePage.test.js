@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import ProfilePage from './ProfilePage';
+import ProfilePage from './profileLogic/ProfilePage';
 
 describe('ProfilePage component', () => {
   test('renders ProfilePage component without crashing', () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useLanguage } from './i18n/LanguageContext';
+import { useLanguage } from '../i18n/LanguageContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './LeaderboardPage.css';

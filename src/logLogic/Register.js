@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import Notification from './Notification';
-import './Auth.css'; // Wspólny plik CSS dla autentykacji
+import Notification from '../notificationLogic/Notification';
+import '../Auth.css'; // Wspólny plik CSS dla autentykacji
 
 const Register = ({ setIsLoggedIn }) => {
   const [formData, setFormData] = useState({

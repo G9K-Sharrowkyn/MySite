@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../../i18n/LanguageContext';
-import { replacePlaceholderUrl } from '../../utils/placeholderImage';
+import { useLanguage } from '../i18n/LanguageContext';
+import { replacePlaceholderUrl } from '../utils/placeholderImage';
 import './TeamSelection.css';
 
 const TeamSelection = ({ division, onTeamSelected, onCancel }) => {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import Notification from './Notification';
+import Notification from '../notificationLogic/Notification';
 import './CharacterSelectionPage.css';
 
 const CharacterSelectionPage = () => {

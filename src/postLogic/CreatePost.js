@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../../i18n/LanguageContext';
-import CharacterSelector from './CharacterSelector';
+import { useLanguage } from '../i18n/LanguageContext';
+import CharacterSelector from '../feedLogic/CharacterSelector';
 import './CreatePost.css';
 
 const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => {
@@ -240,8 +240,13 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     }
     
     if (postData.type === 'fight') {
-      // Fight posts must have at least one team and valid poll options
-      if (postData.teams.length === 0) {
+      // Fight posts must have at least two teams, each with at least one fighter
+      if (postData.teams.length < 2) {
+        return false;
+      }
+      const teamAHasFighter = postData.teams[0].warriors && postData.teams[0].warriors.some(w => w.character && w.character.name);
+      const teamBHasFighter = postData.teams[1].warriors && postData.teams[1].warriors.some(w => w.character && w.character.name);
+      if (!teamAHasFighter || !teamBHasFighter) {
         return false;
       }
       if (postData.pollOptions.filter(opt => opt.trim()).length < 2) {

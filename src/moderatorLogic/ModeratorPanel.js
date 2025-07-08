@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
-import CharacterSelector from './components/Feed/CharacterSelector';
-import Modal from './components/Modal/Modal';
+import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import CharacterSelector from '../feedLogic/CharacterSelector';
+import Modal from '../Modal/Modal';
 import './ModeratorPanel.css';
 
 const ModeratorPanel = () => {
