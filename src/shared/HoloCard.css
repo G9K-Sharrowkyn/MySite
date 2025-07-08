@@ -1,0 +1,38 @@
+/* HoloCard effect with overlays always on top */
+.holo-card {
+  position: relative;
+  aspect-ratio: 9 / 16;
+  width: 100%;
+  min-width: 112px;
+  max-width: 200px;
+  height: auto;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #111;
+  display: flex;
+  align-items: stretch;
+  justify-content: stretch;
+}
+
+.holo-card.active {
+  min-width: 172px;
+  max-width: 260px;
+}
+
+.holo-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  background-image: url("https://assets.codepen.io/13471/sparkles.gif"), url(https://assets.codepen.io/13471/holo.png), linear-gradient(125deg, #ff008450 15%, #fca40040 30%, #ffff0030 40%, #00ff8a20 60%, #00cfff40 70%, #cc4cfa50 85%);
+  background-position: 50% 50%;
+  background-size: 100% 100%, 100% 100%, 160%;
+  background-blend-mode: overlay;
+  opacity: 0.75;
+  mix-blend-mode: color-dodge;
+  filter: brightness(1) contrast(1);
+  transition: all .33s ease;
+  border-radius: 16px;
+} 

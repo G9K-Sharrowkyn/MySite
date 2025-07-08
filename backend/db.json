@@ -45,14 +45,14 @@
         }
       },
       "activity": {
-        "postsCreated": 6,
-        "likesReceived": 3,
+        "postsCreated": 7,
+        "likesReceived": 4,
         "commentsPosted": 0,
-        "fightsCreated": 3,
+        "fightsCreated": 4,
         "votesGiven": 0
       },
       "stats": {
-        "experience": 60,
+        "experience": 70,
         "rank": "Rookie",
         "level": 1,
         "points": 0
@@ -269,7 +269,52 @@
     }
   ],
   "tournaments": [],
-  "posts": [],
+  "posts": [
+    {
+      "id": "9de9a21e-64e5-4011-a2be-b8a776bf2b8e",
+      "title": "wdqwdqwdqwdqwd",
+      "content": "qwdqwdqwdqwdqwdqwd",
+      "type": "fight",
+      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "createdAt": "2025-07-08T20:43:39.141Z",
+      "updatedAt": "2025-07-08T20:43:39.141Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Scarlet King",
+          "Sentry (Composite)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Scarlet King",
+        "teamB": "Sentry (Composite)",
+        "votes": {
+          "teamA": 0,
+          "teamB": 1,
+          "voters": [
+            {
+              "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+              "team": "B",
+              "votedAt": "2025-07-08T23:48:11.446Z"
+            }
+          ],
+          "draw": 0
+        },
+        "status": "active",
+        "isOfficial": false
+      },
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false
+    }
+  ],
   "comments": [
     {
       "id": "example-comment-id",

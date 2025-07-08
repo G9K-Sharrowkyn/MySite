@@ -249,9 +249,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
       if (!teamAHasFighter || !teamBHasFighter) {
         return false;
       }
-      if (postData.pollOptions.filter(opt => opt.trim()).length < 2) {
-        return false;
-      }
+      // Removed pollOptions check for fight posts
     }
     
     return true;

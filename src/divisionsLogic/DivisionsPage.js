@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
 import TeamSelection from './TeamSelection';
 import Modal from '../Modal/Modal';
+import HoloCard from '../shared/HoloCard';
 import './DivisionsPage.css';
 
 const DivisionsPage = () => {
@@ -307,24 +308,29 @@ const DivisionsPage = () => {
               {isJoined && userTeam?.team ? (
                 <div className="user-team">
                   <h4>{t('yourTeam')}:</h4>
-                  <div className="team-characters">
-                    <div className="team-character">
-                      <img 
-                        src={userTeam.team.mainCharacter.image} 
-                        alt={userTeam.team.mainCharacter.name}
-                        className="character-image"
-                      />
-                      <span className="character-name">{userTeam.team.mainCharacter.name}</span>
+                  <HoloCard>
+                    <div className="team-field">
+                      <div className="team-images">
+                        <img 
+                          src={userTeam.team.mainCharacter.image} 
+                          alt={userTeam.team.mainCharacter.name}
+                          className="team-image"
+                          style={userTeam.team.secondaryCharacter ? {height: '50%'} : {height: '100%'}}
+                        />
+                        {userTeam.team.secondaryCharacter && (
+                          <>
+                            <div className="team-divider" />
+                            <img 
+                              src={userTeam.team.secondaryCharacter.image} 
+                              alt={userTeam.team.secondaryCharacter.name}
+                              className="team-image"
+                              style={{height: '50%'}}
+                            />
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="team-character">
-                      <img 
-                        src={userTeam.team.secondaryCharacter.image} 
-                        alt={userTeam.team.secondaryCharacter.name}
-                        className="character-image"
-                      />
-                      <span className="character-name">{userTeam.team.secondaryCharacter.name}</span>
-                    </div>
-                  </div>
+                  </HoloCard>
                   <div className="team-stats">
                     <span>{t('wins')}: {userTeam.wins || 0}</span>
                     <span>{t('losses')}: {userTeam.losses || 0}</span>

@@ -6,6 +6,7 @@ import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
+import HoloCard from '../shared/HoloCard';
 
 const PostCard = ({ post, onUpdate }) => {
   const [comments, setComments] = useState([]);
@@ -23,6 +24,7 @@ const PostCard = ({ post, onUpdate }) => {
   const [showReactionMenu, setShowReactionMenu] = useState(false);
   const [userReaction, setUserReaction] = useState(null);
   const [reactions, setReactions] = useState(post.reactions || []);
+  const [characters, setCharacters] = useState([]);
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
@@ -38,6 +40,17 @@ const PostCard = ({ post, onUpdate }) => {
       const vote = post.fight.votes.voters.find(v => v.userId === currentUserId);
       setUserVote(vote?.team || null);
     }
+
+    // Fetch character list for mapping names to images
+    const fetchCharacters = async () => {
+      try {
+        const response = await axios.get('/api/characters');
+        setCharacters(response.data);
+      } catch (err) {
+        // Ignore error, fallback to name only
+      }
+    };
+    fetchCharacters();
   }, [post, currentUserId]);
   
   // Additional state for poll votes in 'other' posts
@@ -130,91 +143,94 @@ const [pollVote, setPollVote] = useState(null);
     return null;
   };
 
+  // Helper to get character object by name
+  const getCharacterByName = (name) => {
+    if (!name) return null;
+    return characters.find(c => c.name === name);
+  };
+
+  const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey) => {
+    const isVoted = userVote === teamKey;
+    return (
+      <div className="team-column">
+        <div className="team-names">
+          {teamList.map((name, idx) => (
+            <span key={idx} className="team-char-name-text">{name}</span>
+          ))}
+        </div>
+        <div className={`team-zone${isVoted ? ' sparkly' : ''}`}> 
+          {teamList.map((name, idx) => {
+            const char = getCharacterByName(name);
+            return (
+              <div key={idx} className="character-panel">
+                <div className="character-frame">
+                  <img
+                    src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
+                    alt={name}
+                    className="team-image-large"
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="team-vote-panel">
+          <div className="vote-stats">
+            <span className="vote-count">{votes} {t('votes') || 'votes'}</span>
+          </div>
+          <button
+            className={`vote-button team-btn ${isVoted ? 'voted' : ''}`}
+            onClick={onVote}
+            disabled={isVoted}
+          >
+            {isVoted ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   const renderFightVoting = () => {
     const teamAVotes = post.fight.votes?.teamA || 0;
     const teamBVotes = post.fight.votes?.teamB || 0;
     const drawVotes = post.fight.votes?.draw || 0;
     const totalVotes = teamAVotes + teamBVotes + drawVotes;
-    const teamAPercentage = getVotePercentage(teamAVotes, totalVotes);
-    const teamBPercentage = getVotePercentage(teamBVotes, totalVotes);
-    const drawPercentage = getVotePercentage(drawVotes, totalVotes);
+
+    const teamAList = (post.fight.teamA || '').split(',').map(n => n.trim()).filter(Boolean);
+    const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
 
     return (
       <div className="voting-section fight-voting">
         <h4 className="voting-title">⚔️ {t('voteForWinner') || 'Vote for the Winner!'}</h4>
-        <div className="fight-teams-container">
-          <div className={`vote-option team-option${userVote === 'A' ? ' voted' : ''}`}> 
-            <div className="vote-option-content">
-              <div className="vote-option-header">
-                <h5 className="vote-option-title">{post.fight.teamA || 'Team A'}</h5>
-                {userVote === 'A' && <span className="vote-check">✅</span>}
-              </div>
-              <div className="vote-progress-container">
-                <div className="vote-progress-bar">
-                  <div 
-                    className="vote-progress-fill team-a-fill"
-                    style={{ width: `${teamAPercentage}%` }}
-                  ></div>
-                </div>
-                <div className="vote-stats">
-                  <span className="vote-count">{teamAVotes}</span>
-                  <span className="vote-percentage">{teamAPercentage}%</span>
-                </div>
-              </div>
-              <button
-                className={`vote-button team-a-btn${userVote === 'A' ? ' voted' : ''}`}
-                onClick={() => handleVote('A')}
-              >
-                {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-              </button>
-            </div>
-          </div>
-
-          <div className="vs-draw-column">
-            <div className="vs-divider-large">
-              <span className="vs-text">VS</span>
-            </div>
-            <div className="draw-button-row">
-              <button
-                className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
-                onClick={() => handleVote('draw')}
-              >
-                🤝 {t('draw')}
-                {drawVotes > 0 && (
-                  <span className="draw-vote-count">{drawVotes} ({drawPercentage}%)</span>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <div className={`vote-option team-option${userVote === 'B' ? ' voted' : ''}`}> 
-            <div className="vote-option-content">
-              <div className="vote-option-header">
-                <h5 className="vote-option-title">{post.fight.teamB || 'Team B'}</h5>
-                {userVote === 'B' && <span className="vote-check">✅</span>}
-              </div>
-              <div className="vote-progress-container">
-                <div className="vote-progress-bar">
-                  <div 
-                    className="vote-progress-fill team-b-fill"
-                    style={{ width: `${teamBPercentage}%` }}
-                  ></div>
-                </div>
-                <div className="vote-stats">
-                  <span className="vote-count">{teamBVotes}</span>
-                  <span className="vote-percentage">{teamBPercentage}%</span>
-                </div>
-              </div>
-              <button
-                className={`vote-button team-b-btn${userVote === 'B' ? ' voted' : ''}`}
-                onClick={() => handleVote('B')}
-              >
-                {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-              </button>
-            </div>
-          </div>
+        <div className="fight-teams-symmetrical">
+          {renderTeamPanel(
+            teamAList,
+            post.fight.teamA || 'Team A',
+            userVote === 'A',
+            () => handleVote('A'),
+            teamAVotes,
+            'A'
+          )}
+          {renderTeamPanel(
+            teamBList,
+            post.fight.teamB || 'Team B',
+            userVote === 'B',
+            () => handleVote('B'),
+            teamBVotes,
+            'B'
+          )}
         </div>
-        <div className="voting-footer">
+        <div className="voting-footer-symmetrical">
+          <button
+            className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
+            onClick={() => handleVote('draw')}
+            disabled={userVote === 'draw'}
+          >
+            🤝 {t('draw')}
+            {drawVotes > 0 && (
+              <span className="draw-vote-count">{drawVotes} {t('votes') || 'votes'}</span>
+            )}
+          </button>
           <span className="total-votes">
             🗳️ {totalVotes} {t('totalVotes') || 'total votes'}
           </span>

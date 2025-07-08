@@ -154,7 +154,6 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
         {/* Navigation */}
         <nav className="header-nav">
           <Link to="/" className="nav-link">{t('home')}</Link>
-          <Link to="/feed" className="nav-link">{t('feed')}</Link>
           <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
           <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
           {user && user.role === 'moderator' && (
