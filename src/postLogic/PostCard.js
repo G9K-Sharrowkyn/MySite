@@ -174,18 +174,6 @@ const [pollVote, setPollVote] = useState(null);
             );
           })}
         </div>
-        <div className="team-vote-panel">
-          <div className="vote-stats">
-            <span className="vote-count">{votes} {t('votes') || 'votes'}</span>
-          </div>
-          <button
-            className={`vote-button team-btn ${isVoted ? 'voted' : ''}`}
-            onClick={onVote}
-            disabled={isVoted}
-          >
-            {isVoted ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-          </button>
-        </div>
       </div>
     );
   };
@@ -194,14 +182,13 @@ const [pollVote, setPollVote] = useState(null);
     const teamAVotes = post.fight.votes?.teamA || 0;
     const teamBVotes = post.fight.votes?.teamB || 0;
     const drawVotes = post.fight.votes?.draw || 0;
-    const totalVotes = teamAVotes + teamBVotes + drawVotes;
+    // const totalVotes = teamAVotes + teamBVotes + drawVotes;
 
     const teamAList = (post.fight.teamA || '').split(',').map(n => n.trim()).filter(Boolean);
     const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
 
     return (
       <div className="voting-section fight-voting">
-        <h4 className="voting-title">⚔️ {t('voteForWinner') || 'Vote for the Winner!'}</h4>
         <div className="fight-teams-symmetrical">
           {renderTeamPanel(
             teamAList,
@@ -220,20 +207,28 @@ const [pollVote, setPollVote] = useState(null);
             'B'
           )}
         </div>
-        <div className="voting-footer-symmetrical">
+        <div className="voting-footer-row">
+          <button
+            className={`vote-button team-a-btn ${userVote === 'A' ? 'voted' : ''}`}
+            onClick={() => handleVote('A')}
+            disabled={userVote === 'A'}
+          >
+            {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+          </button>
           <button
             className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
             onClick={() => handleVote('draw')}
             disabled={userVote === 'draw'}
           >
-            🤝 {t('draw')}
-            {drawVotes > 0 && (
-              <span className="draw-vote-count">{drawVotes} {t('votes') || 'votes'}</span>
-            )}
+            {t('draw')}
           </button>
-          <span className="total-votes">
-            🗳️ {totalVotes} {t('totalVotes') || 'total votes'}
-          </span>
+          <button
+            className={`vote-button team-b-btn ${userVote === 'B' ? 'voted' : ''}`}
+            onClick={() => handleVote('B')}
+            disabled={userVote === 'B'}
+          >
+            {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+          </button>
         </div>
       </div>
     );
