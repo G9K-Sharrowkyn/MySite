@@ -163,7 +163,7 @@ const [pollVote, setPollVote] = useState(null);
             const char = getCharacterByName(name);
             return (
               <div key={idx} className="character-panel">
-                <div className="character-frame">
+                <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                   <img
                     src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
                     alt={name}

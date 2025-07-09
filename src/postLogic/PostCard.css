@@ -1354,6 +1354,13 @@
   background: #111;
 }
 
+.character-frame.not-chosen::before, .character-frame.not-chosen::after {
+  background: conic-gradient(from var(--α), #222 0deg, #444 90deg, #666 180deg, #444 270deg, #222 360deg) border-box;
+  /* Optionally, you can use a solid color for a more muted look: */
+  /* background: #222; */
+  animation: none;
+}
+
 .team-image-large {
   width: 100%;
   height: 80%;
