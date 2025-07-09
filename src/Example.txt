@@ -1,83 +1,93 @@
-<div class='card' contenteditable></div>
-
-// the rainbow palette
-$c: #f94144, #f3722c, #f8961e, #f9844a, #f9c74f, #90be6d, #43aa8b, #4d908e, #277da1, #577590;
-$b: 6px; // border-width
-$r: 2em; // blur radius
-
-@property --α { /* must register --α to animate it */
-	syntax: '<angle>';
-	initial-value: 0deg;
-	/* used only on pseudo, nowhere to be inherited, 
-	 * better perf if set false, see 
-	 * https://www.bram.us/2024/10/03/benchmarking-the-performance-of-css-property/ */
-	inherits: false
+html, body {
+  height: 100%;
 }
 
-.card {
-	/* needed for absolutely positioned pseudo */
-	position: relative;
-	/* set dimensions IF even necessary to set, 
-	 * not given by content or parent layout */
-	max-width: 15em;
-	aspect-ratio: 3/ 2;
-	/* transparent, just to reserve the space */
-	border: solid $b #0000;
-	padding: .75em; /* space between border & text */
-	border-radius: 1em; /* round corners */
-	/* (semi)transparent background, can be 
-	 * a gradient with (semi)transparent stops */
-	background: #edabab21;
-		
-	&::before, &::after {
-		/* full opaque coverage of its box */
-		--full: conic-gradient(red 0 0);
-		/* grid doesn't work for stacking 
-		 * when a stacked item is text node */
-		position: absolute;
-		/* equal to the border-width with minus */
-		inset: -1*$b;
-		/* inherit parent box model & rounded corners */
-		border: inherit;
-		border-radius: inherit;
-		/* reserve no-clip space for glow */
-		box-shadow: 0 0 3*$r rgba(0 0 0/ .001);
-		background: 
-			conic-gradient(from var(--α), 
-					#{$c}, #{nth($c, 1)}) border-box;
-		/* make everything inside padding-box transparent
-		 * by subtracting padding-box from no-clip box */
-		mask: var(--full) no-clip subtract, 
-			var(--full) padding-box;
-		/* don't get in the way of selecting text */
-		pointer-events: none;
-		/* animate gradient start angle */
-		animation: α 4s linear infinite;
-		content: ''
-	}
-	
-	/* turn one pseudo layer into glow */
-	&::after { filter: blur($r) }
+.wrap {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-@keyframes α { to { --α: 1turn } }
+.button {
+  min-width: 300px;
+  min-height: 60px;
+  display: inline-flex;
+  font-family: 'Nunito', sans-serif;
+  font-size: 22px;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  text-align: center;
+  letter-spacing: 1.3px;
+  font-weight: 700;
+  color: #313133;
+  background: #4FD1C5;
+background: linear-gradient(90deg, rgba(129,230,217,1) 0%, rgba(79,209,197,1) 100%);
+  border: none;
+  border-radius: 1000px;
+  box-shadow: 12px 12px 24px rgba(79,209,197,.64);
+  transition: all 0.3s ease-in-out 0s;
+  cursor: pointer;
+  outline: none;
+  position: relative;
+  padding: 10px;
+  }
 
-/* layout & prettifying */
-html, body, div {
-	box-sizing: border-box;
-	display: grid;
-	place-items: center
+.button::before {
+content: '';
+  border-radius: 1000px;
+  min-width: calc(300px + 12px);
+  min-height: calc(60px + 12px);
+  border: 6px solid #00FFCB;
+  box-shadow: 0 0 60px rgba(0,255,203,.64);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: all .3s ease-in-out 0s;
 }
 
-html { min-height: 100% }
+.button:hover, 
+.button:focus {
+  color: #313133;
+  transform: translateY(-6px);
+}
 
-body {
-	background: 
-		url(https://images.unsplash.com/photo-1735542214686-a745d3684c39?w=1400) 
-			5%/ cover #212121;
-	background-blend-mode: multiply;
-	color: #dedede;
-	font: 300 clamp(.875em, 5vw, 2.5em) saira, sans-serif;
-	text-align: center;
-	text-wrap: balance
+.button:hover::before, 
+.button:focus::before {
+  opacity: 1;
+}
+
+.button::after {
+  content: '';
+  width: 30px; height: 30px;
+  border-radius: 100%;
+  border: 6px solid #00FFCB;
+  position: absolute;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: ring 1.5s infinite;
+}
+
+.button:hover::after, 
+.button:focus::after {
+  animation: none;
+  display: none;
+}
+
+@keyframes ring {
+  0% {
+    width: 30px;
+    height: 30px;
+    opacity: 1;
+  }
+  100% {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+  }
 }

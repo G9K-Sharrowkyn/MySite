@@ -182,53 +182,61 @@ const [pollVote, setPollVote] = useState(null);
     const teamAVotes = post.fight.votes?.teamA || 0;
     const teamBVotes = post.fight.votes?.teamB || 0;
     const drawVotes = post.fight.votes?.draw || 0;
-    // const totalVotes = teamAVotes + teamBVotes + drawVotes;
 
     const teamAList = (post.fight.teamA || '').split(',').map(n => n.trim()).filter(Boolean);
     const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
 
     return (
       <div className="voting-section fight-voting">
-        <div className="fight-teams-symmetrical">
-          {renderTeamPanel(
-            teamAList,
-            post.fight.teamA || 'Team A',
-            userVote === 'A',
-            () => handleVote('A'),
-            teamAVotes,
-            'A'
-          )}
-          {renderTeamPanel(
-            teamBList,
-            post.fight.teamB || 'Team B',
-            userVote === 'B',
-            () => handleVote('B'),
-            teamBVotes,
-            'B'
-          )}
-        </div>
-        <div className="voting-footer-row">
-          <button
-            className={`vote-button team-a-btn ${userVote === 'A' ? 'voted' : ''}`}
-            onClick={() => handleVote('A')}
-            disabled={userVote === 'A'}
-          >
-            {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-          </button>
-          <button
-            className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
-            onClick={() => handleVote('draw')}
-            disabled={userVote === 'draw'}
-          >
-            {t('draw')}
-          </button>
-          <button
-            className={`vote-button team-b-btn ${userVote === 'B' ? 'voted' : ''}`}
-            onClick={() => handleVote('B')}
-            disabled={userVote === 'B'}
-          >
-            {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-          </button>
+        <div className="fight-vote-row-3col">
+          {/* Team A column */}
+          <div className="team-vote-col">
+            {renderTeamPanel(
+              teamAList,
+              post.fight.teamA || 'Team A',
+              userVote === 'A',
+              () => handleVote('A'),
+              teamAVotes,
+              'A'
+            )}
+            <button
+              className={`vote-button team-a-btn ${userVote === 'A' ? 'voted' : ''}`}
+              onClick={() => handleVote('A')}
+              disabled={userVote === 'A'}
+            >
+              {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+            </button>
+          </div>
+
+          {/* Draw column */}
+          <div className="draw-vote-col">
+            <button
+              className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
+              onClick={() => handleVote('draw')}
+              disabled={userVote === 'draw'}
+            >
+              {t('draw')}
+            </button>
+          </div>
+
+          {/* Team B column */}
+          <div className="team-vote-col">
+            {renderTeamPanel(
+              teamBList,
+              post.fight.teamB || 'Team B',
+              userVote === 'B',
+              () => handleVote('B'),
+              teamBVotes,
+              'B'
+            )}
+            <button
+              className={`vote-button team-b-btn ${userVote === 'B' ? 'voted' : ''}`}
+              onClick={() => handleVote('B')}
+              disabled={userVote === 'B'}
+            >
+              {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+            </button>
+          </div>
         </div>
       </div>
     );

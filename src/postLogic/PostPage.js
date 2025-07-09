@@ -165,31 +165,67 @@ const PostPage = () => {
           
           {post.type === 'fight' && post.fight && (
             <div className="fight-section">
-              <div className="fight-teams">
+              <div className="fight-teams-symmetrical">
+                <div className="team-column">
+                  <div className="team-zone">
+                    <div className="team-names">
+                      <span className="team-char-name-text">{post.fight.teamA}</span>
+                    </div>
+                    <div className="character-stack">
+                      <div className="character-frame">
+                        <img src="/placeholder-character.png" alt={post.fight.teamA} />
+                      </div>
+                    </div>
+                    <div className="team-vote-panel">
+                      <div className="vote-count">{post.fight.votes?.teamA || 0} votes</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="team-column">
+                  <div className="team-zone">
+                    <div className="team-names">
+                      <span className="team-char-name-text">{post.fight.teamB}</span>
+                    </div>
+                    <div className="character-stack">
+                      <div className="character-frame">
+                        <img src="/placeholder-character.png" alt={post.fight.teamB} />
+                      </div>
+                    </div>
+                    <div className="team-vote-panel">
+                      <div className="vote-count">{post.fight.votes?.teamB || 0} votes</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="voting-buttons-row">
                 <button 
-                  className={`team-btn team-a ${userVote === 'A' ? 'voted' : ''}`}
+                  className={`vote-button team-a-btn ${userVote === 'A' ? 'voted' : ''}`}
                   onClick={() => handleVote('A')}
                   disabled={!!userVote}
                 >
-                  <span className="team-name">{post.fight.teamA}</span>
-                  <span className="vote-count">{post.fight.votes?.teamA || 0}</span>
+                  {userVote === 'A' ? 'Voted!' : 'Vote!'}
                 </button>
-                
-                <div className="vs-divider">VS</div>
-                
                 <button 
-                  className={`team-btn team-b ${userVote === 'B' ? 'voted' : ''}`}
+                  className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
+                  onClick={() => handleVote('draw')}
+                  disabled={!!userVote}
+                >
+                  Draw
+                </button>
+                <button 
+                  className={`vote-button team-b-btn ${userVote === 'B' ? 'voted' : ''}`}
                   onClick={() => handleVote('B')}
                   disabled={!!userVote}
                 >
-                  <span className="team-name">{post.fight.teamB}</span>
-                  <span className="vote-count">{post.fight.votes?.teamB || 0}</span>
+                  {userVote === 'B' ? 'Voted!' : 'Vote!'}
                 </button>
               </div>
               
               {userVote && (
                 <div className="vote-status">
-                  ✅ You voted for: <strong>{userVote === 'A' ? post.fight.teamA : post.fight.teamB}</strong>
+                  ✅ You voted for: <strong>{userVote === 'A' ? post.fight.teamA : userVote === 'B' ? post.fight.teamB : 'Draw'}</strong>
                 </div>
               )}
             </div>
