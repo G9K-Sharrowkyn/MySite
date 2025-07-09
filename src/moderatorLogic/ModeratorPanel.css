@@ -450,7 +450,6 @@
 
 .post-card:hover {
   border-color: #667eea;
-  transform: translateY(-1px);
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
 }
 

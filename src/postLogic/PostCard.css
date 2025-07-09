@@ -4,13 +4,32 @@
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: box-shadow 0.3s ease;
   backdrop-filter: blur(10px);
+  border: none;
+  padding: 0;
 }
 
 .post-card:hover {
-  transform: translateY(-5px);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  transform: none !important;
+}
+
+/* FULL OVERRIDE: Prevent post movement in all states */
+.post-card, .post-card:hover, .post-card:focus, .post-card:active {
+  border: none !important;
+  border-radius: 20px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  outline: none !important;
+  background: rgba(255,255,255,0.98) !important;
+  transition: box-shadow 0.3s ease !important;
+}
+
+body.dark-mode .post-card {
+  background: #23242a !important;
+  color: #e0e0e0 !important;
 }
 
 /* Post Header */
@@ -36,7 +55,7 @@
 }
 
 .author-link:hover {
-  transform: scale(1.02);
+  /* Removed transform to prevent movement */
 }
 
 .author-avatar {
@@ -161,7 +180,6 @@
 
 .team-btn:hover:not(:disabled) {
   border-color: #667eea;
-  transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
 }
 
@@ -219,8 +237,8 @@
   display: flex;
   justify-content: space-around;
   padding: 15px 25px;
-  border-top: 1px solid #f0f0f0;
-  background: #fafafa;
+  border-top: 1px solid #333;
+  background: linear-gradient(to right, #23242a 0%, #23242a 50%, #23232a 50%, #23232a 100%);
 }
 
 .action-btn {
@@ -241,7 +259,6 @@
 .action-btn:hover {
   background: rgba(102, 126, 234, 0.1);
   color: #667eea;
-  transform: translateY(-1px);
 }
 
 .action-icon {
@@ -269,7 +286,6 @@
 
 .react-btn:hover {
   background: linear-gradient(45deg, #e67e22, #d35400);
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
 }
 
@@ -311,7 +327,6 @@
 }
 
 .reaction-item:hover {
-  transform: translateY(-1px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -373,7 +388,6 @@
 }
 
 .comment-submit:hover {
-  transform: scale(1.1);
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
@@ -571,7 +585,6 @@
 
 .translate-btn:hover {
   background: linear-gradient(45deg, #2980b9, #3498db);
-  transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
@@ -648,7 +661,6 @@
 }
 
 .vote-option:hover:not(.disabled) {
-  transform: translateY(-2px);
   box-shadow: var(--shadow-hover);
   border-color: var(--accent-color);
 }
@@ -771,7 +783,6 @@
 
 .team-a-btn:hover:not(:disabled) {
   background: linear-gradient(45deg, #c0392b, #a93226);
-  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
 }
 
@@ -782,7 +793,6 @@
 
 .team-b-btn:hover:not(:disabled) {
   background: linear-gradient(45deg, #2980b9, #21618c);
-  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
 }
 
@@ -793,7 +803,6 @@
 
 .poll-btn:hover:not(:disabled) {
   background: linear-gradient(45deg, var(--accent-hover), #2d7dd2);
-  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(74, 158, 255, 0.4);
 }
 
@@ -804,7 +813,6 @@
 
 .draw-btn:hover:not(:disabled) {
   background: linear-gradient(45deg, #e67e22, #d35400);
-  transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
 }
 
@@ -968,7 +976,6 @@
 
 .team-option:hover:not(.disabled) {
   border-color: #667eea;
-  transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
 }
 
@@ -1052,7 +1059,6 @@
 
 .draw-option:hover:not(.disabled) {
   border-color: #f39c12;
-  transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(243, 156, 18, 0.2);
 }
 
@@ -1662,7 +1668,6 @@
 .animated-vote-btn:hover, 
 .animated-vote-btn:focus {
   color: #313133;
-  transform: translateY(-6px);
 }
 
 .animated-vote-btn:hover::before, 
@@ -1688,7 +1693,6 @@
 .animated-vote-btn:disabled {
   /* Keep the button raised/active style */
   color: #313133;
-  transform: translateY(-6px);
   box-shadow: 0 0 0 4px #00FFCB33, 12px 12px 24px rgba(79,209,197,.24);
 }
 
@@ -1743,8 +1747,8 @@
   display: flex;
   justify-content: space-around;
   padding: 15px 25px;
-  border-top: 1px solid #f0f0f0;
-  background: #fafafa;
+  border-top: 1px solid #333;
+  background: linear-gradient(to right, #23242a 0%, #23242a 50%, #23232a 50%, #23232a 100%);
 }
 
 .fight-voting-actions .animated-vote-btn {
