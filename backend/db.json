@@ -340,15 +340,15 @@
         "teamB": "Superman (New52), Batman (New52)",
         "votes": {
           "teamA": 0,
-          "teamB": 0,
+          "teamB": 1,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-              "team": "draw",
-              "votedAt": "2025-07-09T03:12:19.713Z"
+              "team": "B",
+              "votedAt": "2025-07-09T04:09:01.647Z"
             }
           ],
-          "draw": 1
+          "draw": 0
         },
         "status": "active",
         "isOfficial": false

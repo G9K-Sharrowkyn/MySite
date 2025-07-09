@@ -153,16 +153,12 @@ const [pollVote, setPollVote] = useState(null);
     const isVoted = userVote === teamKey;
     return (
       <div className="team-column">
-        <div className="team-names">
-          {teamList.map((name, idx) => (
-            <span key={idx} className="team-char-name-text">{name}</span>
-          ))}
-        </div>
         <div className={`team-zone${isVoted ? ' sparkly' : ''}`}> 
           {teamList.map((name, idx) => {
             const char = getCharacterByName(name);
             return (
               <div key={idx} className="character-panel">
+                <div className="character-name-simple">{name}</div>
                 <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                   <img
                     src={replacePlaceholderUrl(char?.image) || placeholderImages.character}

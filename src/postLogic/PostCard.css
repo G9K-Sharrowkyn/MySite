@@ -135,11 +135,7 @@
 
 /* Fight Section */
 .fight-section {
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 15px;
-  padding: 25px;
-  margin: 20px 0;
-  border: 2px solid #e9ecef;
+  background: none;
 }
 
 .fight-teams {
@@ -1526,7 +1522,11 @@
   align-items: flex-end;
   gap: 2.5rem;
   width: 100%;
-  margin-top: 1.5rem;
+  position: relative;
+}
+
+.fight-vote-row-3col::after {
+  display: none !important;
 }
 
 .team-vote-col {
@@ -1544,6 +1544,8 @@
   align-items: center;
   justify-content: flex-end;
   min-width: 140px;
+  position: relative;
+  z-index: 2;
 }
 
 .vote-button,
@@ -1721,4 +1723,8 @@
   left: 50%;
   transform: translate(-50%, -50%);
   animation: ring 1.5s infinite;
+}
+
+.voting-section.fight-voting {
+  background: linear-gradient(to right, #23242a 0%, #23242a 50%, #23232a 50%, #23232a 100%);
 }
