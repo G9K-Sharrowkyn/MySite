@@ -55,7 +55,11 @@
 }
 
 .flag {
-  font-size: 1.2rem;
+  width: 1.5em;
+  height: 1.5em;
+  display: inline-block;
+  vertical-align: middle;
+  object-fit: cover;
 }
 
 .language-code {

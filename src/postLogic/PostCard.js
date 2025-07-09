@@ -392,11 +392,31 @@ const [pollVote, setPollVote] = useState(null);
     return rankColors[rank] || '#666';
   };
 
-  // Simple heuristic: if UI is EN and content contains Polish chars, or vice versa
+  // Show translate button for all languages when content is in a different language
   const needsTranslation = () => {
     if (!post.content) return false;
-    if (currentLanguage === 'en' && /[ąćęłńóśźż]/i.test(post.content)) return true;
-    if (currentLanguage === 'pl' && /[a-z]/i.test(post.content) && !/[ąćęłńóśźż]/i.test(post.content)) return true;
+    
+    // Check if content contains characters from different languages
+    const hasPolishChars = /[ąćęłńóśźż]/i.test(post.content);
+    const hasSpanishChars = /[áéíóúñü]/i.test(post.content);
+    
+    // For English UI: show translate if content has Polish or Spanish characters
+    if (currentLanguage === 'en' && (hasPolishChars || hasSpanishChars)) return true;
+    
+    // For Polish UI: show translate if content has Spanish characters or is clearly English
+    if (currentLanguage === 'pl') {
+      if (hasSpanishChars) return true;
+      // Check if content is clearly English (contains English words but no Polish chars)
+      if (/[a-z]/i.test(post.content) && !hasPolishChars) return true;
+    }
+    
+    // For Spanish UI: show translate if content has Polish characters or is clearly English
+    if (currentLanguage === 'es') {
+      if (hasPolishChars) return true;
+      // Check if content is clearly English (contains English words but no Spanish chars)
+      if (/[a-z]/i.test(post.content) && !hasSpanishChars) return true;
+    }
+    
     return false;
   };
 
@@ -411,8 +431,28 @@ const [pollVote, setPollVote] = useState(null);
 
   const needsCommentTranslation = (text) => {
     if (!text) return false;
-    if (currentLanguage === 'en' && /[ąćęłńóśźż]/i.test(text)) return true;
-    if (currentLanguage === 'pl' && /[a-z]/i.test(text) && !/[ąćęłńóśźż]/i.test(text)) return true;
+    
+    // Check if content contains characters from different languages
+    const hasPolishChars = /[ąćęłńóśźż]/i.test(text);
+    const hasSpanishChars = /[áéíóúñü]/i.test(text);
+    
+    // For English UI: show translate if content has Polish or Spanish characters
+    if (currentLanguage === 'en' && (hasPolishChars || hasSpanishChars)) return true;
+    
+    // For Polish UI: show translate if content has Spanish characters or is clearly English
+    if (currentLanguage === 'pl') {
+      if (hasSpanishChars) return true;
+      // Check if content is clearly English (contains English words but no Polish chars)
+      if (/[a-z]/i.test(text) && !hasPolishChars) return true;
+    }
+    
+    // For Spanish UI: show translate if content has Polish characters or is clearly English
+    if (currentLanguage === 'es') {
+      if (hasPolishChars) return true;
+      // Check if content is clearly English (contains English words but no Spanish chars)
+      if (/[a-z]/i.test(text) && !hasSpanishChars) return true;
+    }
+    
     return false;
   };
 

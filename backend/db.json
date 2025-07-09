@@ -45,14 +45,14 @@
         }
       },
       "activity": {
-        "postsCreated": 7,
+        "postsCreated": 8,
         "likesReceived": 4,
         "commentsPosted": 0,
-        "fightsCreated": 4,
+        "fightsCreated": 5,
         "votesGiven": 0
       },
       "stats": {
-        "experience": 70,
+        "experience": 80,
         "rank": "Rookie",
         "level": 1,
         "points": 0
@@ -295,16 +295,59 @@
         "teamA": "Scarlet King",
         "teamB": "Sentry (Composite)",
         "votes": {
+          "teamA": 0,
+          "teamB": 1,
+          "voters": [
+            {
+              "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+              "team": "B",
+              "votedAt": "2025-07-09T02:14:58.400Z"
+            }
+          ],
+          "draw": 0
+        },
+        "status": "active",
+        "isOfficial": false
+      },
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false
+    },
+    {
+      "id": "917a5d05-4f68-4bfa-ad56-108c68c6817b",
+      "title": "wqdqwdqwdqw",
+      "content": "dqwdqwdqwdqwd",
+      "type": "fight",
+      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "createdAt": "2025-07-09T02:12:30.066Z",
+      "updatedAt": "2025-07-09T02:12:30.066Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Scarlet King, Sentry (Composite)",
+          "Superman (New52), Batman (New52)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Scarlet King, Sentry (Composite)",
+        "teamB": "Superman (New52), Batman (New52)",
+        "votes": {
           "teamA": 1,
           "teamB": 0,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
               "team": "A",
-              "votedAt": "2025-07-09T02:06:21.480Z"
+              "votedAt": "2025-07-09T02:14:03.512Z"
             }
-          ],
-          "draw": 0
+          ]
         },
         "status": "active",
         "isOfficial": false

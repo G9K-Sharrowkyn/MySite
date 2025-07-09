@@ -7,9 +7,9 @@ const LanguageSwitcher = () => {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
 
   const languages = [
-    { code: 'pl', name: 'Polski', flag: '🇵🇱' },
-    { code: 'en', name: 'English', flag: '🇺🇸' },
-    { code: 'es', name: 'Español', flag: '🇪🇸' }
+    { code: 'pl', name: 'Polski', flag: '/flags/pl.svg' },
+    { code: 'en', name: 'English', flag: '/flags/eng.png' },
+    { code: 'es', name: 'Español', flag: '/flags/spa.svg' }
   ];
 
   const currentLang = languages.find(lang => lang.code === currentLanguage);
@@ -37,8 +37,7 @@ const LanguageSwitcher = () => {
           onClick={() => setShowLanguageMenu(!showLanguageMenu)}
           title="Change Language"
         >
-          <span className="flag">{currentLang?.flag}</span>
-          <span className="language-code">{currentLanguage.toUpperCase()}</span>
+          <img className="flag" src={currentLang?.flag} alt={currentLang?.name} />
           <span className="dropdown-arrow">▼</span>
         </button>
 
@@ -50,7 +49,7 @@ const LanguageSwitcher = () => {
                 className={`language-option ${currentLanguage === language.code ? 'active' : ''}`}
                 onClick={() => handleLanguageChange(language.code)}
               >
-                <span className="flag">{language.flag}</span>
+                <img className="flag" src={language.flag} alt={language.name} />
                 <span className="language-name">{language.name}</span>
                 {currentLanguage === language.code && <span className="check">✓</span>}
               </button>

@@ -14,7 +14,7 @@ export const useLanguage = () => {
 };
 
 export const LanguageProvider = ({ children }) => {
-  const [currentLanguage, setCurrentLanguage] = useState('pl');
+  const [currentLanguage, setCurrentLanguage] = useState('en');
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {

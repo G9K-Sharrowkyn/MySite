@@ -10,14 +10,21 @@
 .header-container {
   max-width: 1400px;
   margin: 0 auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: 200px 1fr 200px 300px;
+  grid-template-areas: "logo nav controls user";
   align-items: center;
-  justify-content: space-between;
   padding: 0 20px;
   height: 70px;
+  gap: 20px;
 }
 
 /* Logo */
+.header-logo {
+  grid-area: logo;
+  justify-self: start;
+}
+
 .header-logo h1 {
   color: var(--accent);
   font-size: 1.8em;
@@ -32,9 +39,11 @@
 
 /* Navigation */
 .header-nav {
+  grid-area: nav;
   display: flex;
   gap: 30px;
   align-items: center;
+  justify-self: start;
 }
 
 .nav-link {
@@ -45,6 +54,11 @@
   border-radius: 6px;
   transition: all 0.3s ease;
   position: relative;
+  /* Fixed width to prevent jumping when language changes */
+  width: 120px;
+  text-align: left;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-link:hover {
@@ -67,7 +81,18 @@
   background-color: #e67e22;
 }
 
+/* Header Controls (Language Switcher) */
+.header-controls {
+  grid-area: controls;
+  justify-self: start;
+}
+
 /* User Section */
+.header-user {
+  grid-area: user;
+  justify-self: start;
+}
+
 .user-section {
   display: flex;
   align-items: center;
@@ -326,6 +351,7 @@
   display: flex;
   gap: 15px;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .btn {
@@ -394,6 +420,11 @@
 
 /* Responsive Design */
 @media (max-width: 1024px) {
+  .header-container {
+    grid-template-columns: 180px 1fr 180px 280px;
+    gap: 15px;
+  }
+  
   .header-nav {
     gap: 20px;
   }
@@ -401,6 +432,7 @@
   .nav-link {
     padding: 8px 12px;
     font-size: 0.9em;
+    width: 100px;
   }
   
   .user-name {
@@ -411,6 +443,8 @@
 @media (max-width: 768px) {
   .header-container {
     padding: 0 15px;
+    grid-template-columns: 150px 1fr 150px 200px;
+    gap: 10px;
   }
   
   .header-nav {
@@ -442,6 +476,11 @@
 }
 
 @media (max-width: 480px) {
+  .header-container {
+    grid-template-columns: 120px 1fr 120px 160px;
+    gap: 8px;
+  }
+  
   .header-logo h1 {
     font-size: 1.5em;
   }
@@ -450,6 +489,10 @@
   .user-dropdown {
     width: 250px;
     right: -20px;
+  }
+  
+  .auth-buttons {
+    /* No fixed width needed - will expand naturally */
   }
   
   .icon-button .icon {
