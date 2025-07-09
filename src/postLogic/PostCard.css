@@ -1487,10 +1487,19 @@
   display: flex;
   flex-direction: row;
   justify-content: center;
-  align-items: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
+  align-items: flex-start;
+  gap: 2.5rem;
   width: 100%;
+  margin-top: 1.5rem;
+}
+
+.vote-buttons-row > .team-vote-col,
+.vote-buttons-row > .draw-vote-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 180px;
 }
 
 .vote-button,
@@ -1727,4 +1736,23 @@
 
 .voting-section.fight-voting {
   background: linear-gradient(to right, #23242a 0%, #23242a 50%, #23232a 50%, #23232a 100%);
+}
+
+/* Fight Voting Actions - New frame for fight voting buttons */
+.fight-voting-actions {
+  display: flex;
+  justify-content: space-around;
+  padding: 15px 25px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.fight-voting-actions .animated-vote-btn {
+  margin: 0;
+}
+
+/* Stop pulsing animation when any vote is cast */
+.fight-voting-actions.has-voted .animated-vote-btn::after {
+  display: none !important;
+  animation: none !important;
 }

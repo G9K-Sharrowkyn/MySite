@@ -195,24 +195,10 @@ const [pollVote, setPollVote] = useState(null);
               teamAVotes,
               'A'
             )}
-            <button
-              className={`animated-vote-btn team-a${userVote === 'A' ? ' voted' : ''}`}
-              onClick={() => handleVote('A')}
-              disabled={userVote === 'A'}
-            >
-              {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-            </button>
           </div>
 
           {/* Draw column */}
           <div className="draw-vote-col">
-            <button
-              className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
-              onClick={() => handleVote('draw')}
-              disabled={userVote === 'draw'}
-            >
-              {t('draw')}
-            </button>
           </div>
 
           {/* Team B column */}
@@ -225,13 +211,6 @@ const [pollVote, setPollVote] = useState(null);
               teamBVotes,
               'B'
             )}
-            <button
-              className={`animated-vote-btn team-b${userVote === 'B' ? ' voted' : ''}`}
-              onClick={() => handleVote('B')}
-              disabled={userVote === 'B'}
-            >
-              {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-            </button>
           </div>
         </div>
       </div>
@@ -593,6 +572,32 @@ const [pollVote, setPollVote] = useState(null);
         
         {renderVotingSection()}
       </div>
+
+      {/* Fight Voting Actions - New frame for fight voting buttons */}
+      {post.type === 'fight' && post.fight && (
+        <div className={`fight-voting-actions${userVote ? ' has-voted' : ''}`} onClick={e => e.stopPropagation()}>
+          <button
+            className={`animated-vote-btn team-a${userVote === 'A' ? ' voted' : ''}`}
+            onClick={() => handleVote('A')}
+          >
+            {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+          </button>
+          
+          <button
+            className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
+            onClick={() => handleVote('draw')}
+          >
+            {t('draw')}
+          </button>
+          
+          <button
+            className={`animated-vote-btn team-b${userVote === 'B' ? ' voted' : ''}`}
+            onClick={() => handleVote('B')}
+          >
+            {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+          </button>
+        </div>
+      )}
 
       <div className="post-actions" onClick={e => e.stopPropagation()}>
         <button 
