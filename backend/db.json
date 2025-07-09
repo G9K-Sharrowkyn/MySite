@@ -389,9 +389,10 @@
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
               "team": "A",
-              "votedAt": "2025-07-09T07:09:33.020Z"
+              "votedAt": "2025-07-09T11:11:37.153Z"
             }
-          ]
+          ],
+          "draw": 0
         },
         "status": "active",
         "isOfficial": false
