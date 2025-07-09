@@ -1255,8 +1255,6 @@ body.dark-mode .post-card {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  min-width: 220px;
-  max-width: 260px;
   width: 100%;
   box-sizing: border-box;
   transition: background 0.4s;
@@ -1313,11 +1311,19 @@ body.dark-mode .post-card {
   padding: 0;
 }
 
+/* Center the image/frame inside the now-full-width team-zone */
 .character-panel {
   display: flex;
   flex-direction: column;
   align-items: center;
   margin-bottom: 1.2rem;
+  width: 100%;
+}
+
+.character-frame {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 180px;
 }
 
 @property --α {
@@ -1533,11 +1539,21 @@ body.dark-mode .post-card {
 .fight-vote-row-3col {
   display: flex;
   flex-direction: row;
-  justify-content: center;
-  align-items: flex-end;
-  gap: 2.5rem;
   width: 100%;
-  position: relative;
+  gap: 0;
+}
+
+.fight-vote-row-3col > .team-vote-col {
+  flex: 0 0 50%;
+  max-width: 50%;
+  width: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.fight-vote-row-3col > .draw-vote-col {
+  display: none;
 }
 
 .fight-vote-row-3col::after {
