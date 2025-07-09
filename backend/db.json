@@ -45,14 +45,14 @@
         }
       },
       "activity": {
-        "postsCreated": 8,
+        "postsCreated": 9,
         "likesReceived": 4,
         "commentsPosted": 0,
-        "fightsCreated": 5,
+        "fightsCreated": 6,
         "votesGiven": 0
       },
       "stats": {
-        "experience": 80,
+        "experience": 90,
         "rank": "Rookie",
         "level": 1,
         "points": 0
@@ -301,7 +301,7 @@
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
               "team": "B",
-              "votedAt": "2025-07-09T05:07:58.311Z"
+              "votedAt": "2025-07-09T10:34:17.540Z"
             }
           ],
           "draw": 0
@@ -349,6 +349,49 @@
             }
           ],
           "draw": 0
+        },
+        "status": "active",
+        "isOfficial": false
+      },
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false
+    },
+    {
+      "id": "83ead664-20b9-4bf0-8fff-061dedd512b7",
+      "title": "TESTEST",
+      "content": "TESTEST",
+      "type": "fight",
+      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "createdAt": "2025-07-09T07:08:23.015Z",
+      "updatedAt": "2025-07-09T07:08:23.015Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Anti-Monitor (New52), Azrael (Dark Multiverse), Scarlet King, Sentry (Composite)",
+          "Darkseid (New52), Deadpool (DKMU), Vegeta (SSJ4), Broly (Dragon Ball Z)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Anti-Monitor (New52), Azrael (Dark Multiverse), Scarlet King, Sentry (Composite)",
+        "teamB": "Darkseid (New52), Deadpool (DKMU), Vegeta (SSJ4), Broly (Dragon Ball Z)",
+        "votes": {
+          "teamA": 1,
+          "teamB": 0,
+          "voters": [
+            {
+              "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+              "team": "A",
+              "votedAt": "2025-07-09T07:09:33.020Z"
+            }
+          ]
         },
         "status": "active",
         "isOfficial": false

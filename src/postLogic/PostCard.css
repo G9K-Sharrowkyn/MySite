@@ -1283,7 +1283,7 @@ body.dark-mode .post-card {
   opacity: 0.7;
   background-image: url("https://assets.codepen.io/13471/sparkles.gif");
   background-position: 50% 50%;
-  background-size: cover;
+  background-size: 100;
   background-repeat: no-repeat;
   mix-blend-mode: lighten;
   filter: brightness(1.2) contrast(1.2);
@@ -1775,4 +1775,25 @@ body.dark-mode .post-card {
 .fight-voting-actions.has-voted .animated-vote-btn::after {
   display: none !important;
   animation: none !important;
+}
+
+.team-zone-multiline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+}
+
+.team-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  width: 100%;
+  gap: 1.2rem;
+}
+
+/* For 3 characters: center the single character in the second row */
+.team-row-single {
+  justify-content: center;
 }

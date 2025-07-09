@@ -151,24 +151,71 @@ const [pollVote, setPollVote] = useState(null);
 
   const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey) => {
     const isVoted = userVote === teamKey;
+    // New: multiline layout for 3 or 4 characters
+    const multiline = teamList.length === 3 || teamList.length === 4;
+    let rows = [];
+    if (teamList.length === 4) {
+      rows = [teamList.slice(0, 2), teamList.slice(2, 4)];
+    } else if (teamList.length === 3) {
+      rows = [teamList.slice(0, 2), teamList.slice(2)];
+    }
     return (
       <div className="team-column">
-        <div className={`team-zone${isVoted ? ' sparkly' : ''}`}> 
-          {teamList.map((name, idx) => {
-            const char = getCharacterByName(name);
-            return (
-              <div key={idx} className="character-panel">
-                <div className="character-name-simple">{name}</div>
-                <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
-                  <img
-                    src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
-                    alt={name}
-                    className="team-image-large"
-                  />
-                </div>
+        <div className={`team-zone${isVoted ? ' sparkly' : ''}${multiline ? ' team-zone-multiline' : ''}`}> 
+          {multiline ? (
+            <>
+              <div className="team-row">
+                {rows[0].map((name, idx) => {
+                  const char = getCharacterByName(name);
+                  return (
+                    <div key={idx} className="character-panel">
+                      <div className="character-name-simple">{name}</div>
+                      <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
+                        <img
+                          src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
+                          alt={name}
+                          className="team-image-large"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+              <div className="team-row team-row-bottom{teamList.length === 3 ? ' team-row-single' : ''}">
+                {rows[1].map((name, idx) => {
+                  const char = getCharacterByName(name);
+                  return (
+                    <div key={idx} className="character-panel">
+                      <div className="character-name-simple">{name}</div>
+                      <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
+                        <img
+                          src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
+                          alt={name}
+                          className="team-image-large"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            teamList.map((name, idx) => {
+              const char = getCharacterByName(name);
+              return (
+                <div key={idx} className="character-panel">
+                  <div className="character-name-simple">{name}</div>
+                  <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
+                    <img
+                      src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
+                      alt={name}
+                      className="team-image-large"
+                    />
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
     );
