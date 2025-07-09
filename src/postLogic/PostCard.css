@@ -1307,18 +1307,51 @@
   margin-bottom: 1.2rem;
 }
 
+@property --α {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
 .character-frame {
+  position: relative;
+  display: inline-block;
+  padding: 8px;
+  border-radius: 1em;
+  border: solid 6px #0000;
+  background: #edabab21;
+  box-shadow: 0 0 2em 0 rgba(0,0,0,0.15);
+  /* for stacking the pseudo elements */
+  z-index: 0;
+}
+
+.character-frame::before, .character-frame::after {
+  --full: conic-gradient(red 0 0);
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border: inherit;
+  border-radius: inherit;
+  box-shadow: 0 0 4em rgba(0,0,0,0.01);
+  background:
+    conic-gradient(from var(--α), #f94144, #f3722c, #f8961e, #f9844a, #f9c74f, #90be6d, #43aa8b, #4d908e, #277da1, #577590, #f94144) border-box;
+  mask: var(--full) no-clip subtract, var(--full) padding-box;
+  pointer-events: none;
+  animation: α 4s linear infinite;
+  z-index: 1;
+}
+.character-frame::after { filter: blur(2em); z-index: 0; }
+
+@keyframes α { to { --α: 1turn; } }
+
+.character-frame img {
+  display: block;
   width: 100%;
-  min-width: 112px;
-  max-width: 200px;
-  aspect-ratio: 9/16;
-  border-radius: 16px;
-  background: none !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  box-shadow: none;
+  height: auto;
+  border-radius: 0.75em;
+  position: relative;
+  z-index: 2;
+  background: #111;
 }
 
 .team-image-large {

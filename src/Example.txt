@@ -1,124 +1,83 @@
-HTML
+<div class='card' contenteditable></div>
 
-<section class="demo">
-    <div class="card"></div>
-    <div class="card">
-  </section>
+// the rainbow palette
+$c: #f94144, #f3722c, #f8961e, #f9844a, #f9c74f, #90be6d, #43aa8b, #4d908e, #277da1, #577590;
+$b: 6px; // border-width
+$r: 2em; // blur radius
 
-SCSS
-
-:root {
-  --color1: rgb(0, 231, 255);
-  --color2: rgb(255, 0, 231);
-  --back: url(https://assets.codepen.io/13471/eevee-gx.webp);
-  --mewtwo1: #efb2fb;
-  --mewtwo2: #acc6f8;
-  --mewtwofront: url(https://assets.codepen.io/13471/mewtwo-gx.webp);
+@property --α { /* must register --α to animate it */
+	syntax: '<angle>';
+	initial-value: 0deg;
+	/* used only on pseudo, nowhere to be inherited, 
+	 * better perf if set false, see 
+	 * https://www.bram.us/2024/10/03/benchmarking-the-performance-of-css-property/ */
+	inherits: false
 }
-
-
 
 .card {
-  width: 24vw;
-  height: 33vw;
-  @media screen and (min-width: 600px) {
-    width: clamp(4.3vw, 20vh, 6vw);
-    height: clamp(6vw, 28vh, 8.4vw);
-  }
-  position: relative;
-  overflow: hidden;
-  margin: 20px;
-  z-index: 10;
-  touch-action: none;
-  isolation: isolate;
-  border-radius: 5% / 3.5%;
-  box-shadow: 
-    -2px -2px 2px -2px var(--color1), 
-    2px 2px 2px -2px var(--color2), 
-    -3px -3px 4px -2px transparent, 
-    3px 3px 4px -2px transparent, 
-    0 0 2px 0px rgba(255,255,255,0),
-    0 18px 12px -7px rgba(0, 0, 0, 0.5);
-  transition: transform 0.5s ease, box-shadow 0.2s ease;
-  will-change: transform, filter;
-  background-color: #040712;
-  background-image: var(--front);
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: 50% 50%;
-  transform-origin: center;
+	/* needed for absolutely positioned pseudo */
+	position: relative;
+	/* set dimensions IF even necessary to set, 
+	 * not given by content or parent layout */
+	max-width: 15em;
+	aspect-ratio: 3/ 2;
+	/* transparent, just to reserve the space */
+	border: solid $b #0000;
+	padding: .75em; /* space between border & text */
+	border-radius: 1em; /* round corners */
+	/* (semi)transparent background, can be 
+	 * a gradient with (semi)transparent stops */
+	background: #edabab21;
+		
+	&::before, &::after {
+		/* full opaque coverage of its box */
+		--full: conic-gradient(red 0 0);
+		/* grid doesn't work for stacking 
+		 * when a stacked item is text node */
+		position: absolute;
+		/* equal to the border-width with minus */
+		inset: -1*$b;
+		/* inherit parent box model & rounded corners */
+		border: inherit;
+		border-radius: inherit;
+		/* reserve no-clip space for glow */
+		box-shadow: 0 0 3*$r rgba(0 0 0/ .001);
+		background: 
+			conic-gradient(from var(--α), 
+					#{$c}, #{nth($c, 1)}) border-box;
+		/* make everything inside padding-box transparent
+		 * by subtracting padding-box from no-clip box */
+		mask: var(--full) no-clip subtract, 
+			var(--full) padding-box;
+		/* don't get in the way of selecting text */
+		pointer-events: none;
+		/* animate gradient start angle */
+		animation: α 4s linear infinite;
+		content: ''
+	}
+	
+	/* turn one pseudo layer into glow */
+	&::after { filter: blur($r) }
 }
 
+@keyframes α { to { --α: 1turn } }
 
-.card:before,
-.card:after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  top: 0;
-  background-repeat: no-repeat;
-  opacity: .5;
-  mix-blend-mode: color-dodge;
-  transition: all .33s ease;
+/* layout & prettifying */
+html, body, div {
+	box-sizing: border-box;
+	display: grid;
+	place-items: center
 }
 
-.card:after {
-  opacity: 1;
-  background-image: url("https://assets.codepen.io/13471/sparkles.gif"), 
-    url(https://assets.codepen.io/13471/holo.png), 
-    linear-gradient(125deg, #ff008450 15%, #fca40040 30%, #ffff0030 40%, #00ff8a20 60%, #00cfff40 70%, #cc4cfa50 85%);
-  background-position: 50% 50%;
-  background-size: 160%;
-  background-blend-mode: overlay;
-  z-index: 2;
-  filter: brightness(1) contrast(1);
-  transition: all .33s ease;
-  mix-blend-mode: color-dodge;
-  opacity: .75;
-}
+html { min-height: 100% }
 
-.demo .card:nth-of-type(1) {
-  &:before, &:after { display: none; }
-}
-.demo .card:nth-of-type(2) {
-  background: none;
-  &:before { display: none; }
-}
-.demo .card:nth-of-type(3) {
-  background: none;
-  &:after { display: none; }
-}
-
-.operator {
-  display: inline-block;
-  vertical-align: middle;
-  font-size: 2vh;
-}
-
-html, body {
-  height: 100%;
-  background-color: #333844;
-  padding: 0;
-  z-index: 1;
-  transform: translate3d(0,0,0.1px);
-}
 body {
-  color: white;
-  background-color: #333844;
-  font-family: "Heebo", sans-serif;
-  text-align: center;
+	background: 
+		url(https://images.unsplash.com/photo-1735542214686-a745d3684c39?w=1400) 
+			5%/ cover #212121;
+	background-blend-mode: multiply;
+	color: #dedede;
+	font: 300 clamp(.875em, 5vw, 2.5em) saira, sans-serif;
+	text-align: center;
+	text-wrap: balance
 }
-h1 {
-  display: block;
-  margin: 30px 0;
-}
-p {
-  margin-top: 5px;
-  font-weight: 200;
-}
-#app {
-  position: relative;
-}
-
