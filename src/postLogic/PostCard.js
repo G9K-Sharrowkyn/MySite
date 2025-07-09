@@ -188,7 +188,7 @@ const [pollVote, setPollVote] = useState(null);
 
     return (
       <div className="voting-section fight-voting">
-        <div className="fight-vote-row-3col">
+        <div className={`fight-vote-row-3col${userVote ? ' has-voted' : ''}`}>
           {/* Team A column */}
           <div className="team-vote-col">
             {renderTeamPanel(
@@ -200,7 +200,7 @@ const [pollVote, setPollVote] = useState(null);
               'A'
             )}
             <button
-              className={`vote-button team-a-btn ${userVote === 'A' ? 'voted' : ''}`}
+              className={`animated-vote-btn team-a${userVote === 'A' ? ' voted' : ''}`}
               onClick={() => handleVote('A')}
               disabled={userVote === 'A'}
             >
@@ -211,7 +211,7 @@ const [pollVote, setPollVote] = useState(null);
           {/* Draw column */}
           <div className="draw-vote-col">
             <button
-              className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
+              className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
               onClick={() => handleVote('draw')}
               disabled={userVote === 'draw'}
             >
@@ -230,7 +230,7 @@ const [pollVote, setPollVote] = useState(null);
               'B'
             )}
             <button
-              className={`vote-button team-b-btn ${userVote === 'B' ? 'voted' : ''}`}
+              className={`animated-vote-btn team-b${userVote === 'B' ? ' voted' : ''}`}
               onClick={() => handleVote('B')}
               disabled={userVote === 'B'}
             >

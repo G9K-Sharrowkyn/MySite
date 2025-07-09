@@ -296,15 +296,15 @@
         "teamB": "Sentry (Composite)",
         "votes": {
           "teamA": 0,
-          "teamB": 1,
+          "teamB": 0,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-              "team": "B",
-              "votedAt": "2025-07-09T02:14:58.400Z"
+              "team": "draw",
+              "votedAt": "2025-07-09T03:12:18.257Z"
             }
           ],
-          "draw": 0
+          "draw": 1
         },
         "status": "active",
         "isOfficial": false
@@ -339,15 +339,16 @@
         "teamA": "Scarlet King, Sentry (Composite)",
         "teamB": "Superman (New52), Batman (New52)",
         "votes": {
-          "teamA": 1,
+          "teamA": 0,
           "teamB": 0,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-              "team": "A",
-              "votedAt": "2025-07-09T03:03:34.863Z"
+              "team": "draw",
+              "votedAt": "2025-07-09T03:12:19.713Z"
             }
-          ]
+          ],
+          "draw": 1
         },
         "status": "active",
         "isOfficial": false
