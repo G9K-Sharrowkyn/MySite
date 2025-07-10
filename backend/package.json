@@ -30,7 +30,8 @@
     "morgan": "^1.10.0",
     "csurf": "^1.11.0",
     "i18next": "^23.0.0",
-    "i18next-http-middleware": "^3.2.2"
+    "i18next-http-middleware": "^3.2.2",
+    "swagger-ui-express": "^4.6.3"
   },
   "devDependencies": {
     "jest": "^30.0.4",

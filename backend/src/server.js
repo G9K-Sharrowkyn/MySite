@@ -52,6 +52,10 @@ app.use('/api/donate', csrfProtection, require('./routes/donationRoutes'));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/divisions', require('./routes/divisionRoutes'));
 app.use('/api/fights', require('./routes/fightRoutes'));
+app.use('/api/comments', require('./routes/commentRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/posts', require('./routes/postRoutes'));
+app.use('/api/votes', require('./routes/voteRoutes'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // TODO: add more routes
 
