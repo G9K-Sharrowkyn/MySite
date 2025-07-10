@@ -11,6 +11,30 @@ const getMyProfile = async (req, res) => {
   }
 };
 
+// PUT /api/profile/me
+const updateMyProfile = async (req, res) => {
+  try {
+    const updates = {};
+    const allowedFields = ['description', 'profilePicture', 'selectedCharacters'];
+    
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        if (field === 'description' || field === 'profilePicture') {
+          updates[`profile.${field}`] = req.body[field];
+        } else {
+          updates[field] = req.body[field];
+        }
+      }
+    });
+
+    const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password');
+    res.json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // GET /api/profile/all
 const getAllProfiles = async (req, res) => {
   try {
@@ -33,4 +57,4 @@ const getLeaderboard = async (req, res) => {
   }
 };
 
-module.exports = { getMyProfile, getAllProfiles, getLeaderboard };
+module.exports = { getMyProfile, updateMyProfile, getAllProfiles, getLeaderboard };

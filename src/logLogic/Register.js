@@ -9,13 +9,29 @@ const Register = ({ setIsLoggedIn }) => {
     email: '',
     password: '',
     password2: '',
+    consent: {
+      privacyPolicy: false,
+      termsOfService: false,
+      cookies: false,
+      marketingEmails: false
+    }
   });
   const [notification, setNotification] = useState(null);
 
-  const { username, email, password, password2 } = formData;
+  const { username, email, password, password2, consent } = formData;
 
   const onChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const onConsentChange = (e) => {
+    setFormData({
+      ...formData,
+      consent: {
+        ...formData.consent,
+        [e.target.name]: e.target.checked
+      }
+    });
+  };
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -27,39 +43,47 @@ const Register = ({ setIsLoggedIn }) => {
 
   const onSubmit = async (e) => {
     e.preventDefault();
+    
     if (password !== password2) {
       showNotification('Hasła nie pasują do siebie', 'error');
-    } else {
-      try {
-        const newUser = {
-          username,
-          email,
-          password,
-        };
+      return;
+    }
 
-        const config = {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        };
+    if (!consent.privacyPolicy || !consent.termsOfService || !consent.cookies) {
+      showNotification('Musisz zaakceptować wymagane zgody', 'error');
+      return;
+    }
 
-        const body = JSON.stringify(newUser);
+    try {
+      const newUser = {
+        username,
+        email,
+        password,
+        consent
+      };
 
-        const res = await axios.post('/api/auth/register', body, config);
-        console.log('Register response:', res.data);
-        if (!res.data.userId) {
-          showNotification('Błąd rejestracji: brak userId w odpowiedzi serwera.', 'error');
-          return;
-        }
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('userId', res.data.userId);
-        setIsLoggedIn(true);
-        showNotification('Rejestracja udana!', 'success');
-        // Tutaj można przekierować użytkownika lub zapisać token
-      } catch (err) {
-        console.error(err.response.data);
-        showNotification(err.response.data.msg || 'Błąd rejestracji', 'error');
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      };
+
+      const body = JSON.stringify(newUser);
+
+      const res = await axios.post('/api/auth/register', body, config);
+      console.log('Register response:', res.data);
+      if (!res.data.userId) {
+        showNotification('Błąd rejestracji: brak userId w odpowiedzi serwera.', 'error');
+        return;
       }
+      localStorage.setItem('token', res.data.token);
+      localStorage.setItem('userId', res.data.userId);
+      setIsLoggedIn(true);
+      showNotification('Rejestracja udana!', 'success');
+    } catch (err) {
+      console.error(err.response.data);
+      const errorMsg = err.response?.data?.message || err.response?.data?.msg || 'Błąd rejestracji';
+      showNotification(errorMsg, 'error');
     }
   };
 
@@ -110,6 +134,65 @@ const Register = ({ setIsLoggedIn }) => {
             required
           />
         </div>
+
+        {/* GDPR Consent Section */}
+        <div className="consent-section">
+          <h3>Zgody wymagane</h3>
+          
+          <div className="consent-item">
+            <label>
+              <input
+                type="checkbox"
+                name="privacyPolicy"
+                checked={consent.privacyPolicy}
+                onChange={onConsentChange}
+                required
+              />
+              Akceptuję <a href="/privacy-policy" target="_blank" rel="noopener noreferrer">Politykę Prywatności</a> *
+            </label>
+          </div>
+
+          <div className="consent-item">
+            <label>
+              <input
+                type="checkbox"
+                name="termsOfService"
+                checked={consent.termsOfService}
+                onChange={onConsentChange}
+                required
+              />
+              Akceptuję <a href="/terms-of-service" target="_blank" rel="noopener noreferrer">Regulamin</a> *
+            </label>
+          </div>
+
+          <div className="consent-item">
+            <label>
+              <input
+                type="checkbox"
+                name="cookies"
+                checked={consent.cookies}
+                onChange={onConsentChange}
+                required
+              />
+              Akceptuję wykorzystanie <a href="/cookies" target="_blank" rel="noopener noreferrer">plików cookies</a> *
+            </label>
+          </div>
+
+          <div className="consent-item">
+            <label>
+              <input
+                type="checkbox"
+                name="marketingEmails"
+                checked={consent.marketingEmails}
+                onChange={onConsentChange}
+              />
+              Wyrażam zgodę na otrzymywanie wiadomości marketingowych (opcjonalne)
+            </label>
+          </div>
+
+          <p className="consent-note">* - pola wymagane</p>
+        </div>
+
         <input type="submit" value="Zarejestruj" className="btn btn-primary" />
       </form>
     </div>
