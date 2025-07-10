@@ -59,6 +59,8 @@ app.use('/api/votes', require('./routes/voteRoutes'));
 app.use('/api/characters', require('./routes/characterRoutes'));
 app.use('/api/profile', require('./routes/profileRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
+app.use('/api/tournaments', require('./routes/tournamentRoutes'));
+app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // TODO: add more routes
 

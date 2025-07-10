@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.get('/', protect, notifCtrl.getNotifications);
 router.get('/unread/count', protect, notifCtrl.getUnreadCount);
-router.post('/:id/read', protect, notifCtrl.markAsRead);
+router.put('/:id/read', protect, notifCtrl.markAsRead);
+router.put('/read-all', protect, notifCtrl.markAllAsRead);
 
 module.exports = router;

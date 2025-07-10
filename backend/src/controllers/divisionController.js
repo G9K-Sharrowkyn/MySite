@@ -1,6 +1,7 @@
 const Division = require('../models/divisionModel');
 const Character = require('../models/characterModel');
 const User = require('../models/userModel');
+const Fight = require('../models/fightModel');
 
 // GET /api/divisions
 const getDivisions = async (req, res) => {
@@ -29,55 +30,115 @@ const createDivision = async (req, res) => {
   }
 };
 
-// POST /api/divisions/:id/join  {team: [charId1, charId2]}
+// POST /api/divisions/join - Updated to match frontend format
 const joinDivision = async (req, res) => {
-  const divisionId = req.params.id;
-  const { team } = req.body; // array of two character ids
+  const { divisionId, team } = req.body;
   const userId = req.user._id;
 
-  if (!Array.isArray(team) || team.length !== 2) {
-    return res.status(400).json({ message: 'Team must contain exactly two characters.' });
-  }
-
   try {
-    const division = await Division.findById(divisionId);
-    if (!division) return res.status(404).json({ message: 'Division not found' });
-
-    // Ensure characters are in division roster and not locked
-    const characters = await Character.find({ _id: { $in: team } });
-    if (characters.length !== 2) return res.status(400).json({ message: 'Invalid characters' });
-
-    for (const char of characters) {
-      if (!division.roster.includes(char._id)) {
-        return res.status(400).json({ message: `${char.name} not in this division roster` });
-      }
-      if (char.isLocked) {
-        return res.status(400).json({ message: `${char.name} already picked by another user` });
-      }
-    }
-
-    // Lock characters
-    await Character.updateMany({ _id: { $in: team } }, { isLocked: true, lockedBy: userId });
-
-    // Add to division teams
-    division.teams.push({ user: userId, characters: team });
-    await division.save();
-
-    // Update user divisions
+    // Update user's divisions array
     await User.findByIdAndUpdate(userId, {
       $push: {
         divisions: {
           division: divisionId,
-          team
+          team: [team.mainCharacter, team.secondaryCharacter],
+          joinedAt: new Date(),
+          wins: 0,
+          losses: 0,
+          draws: 0
         }
       }
     });
 
-    res.json({ message: 'Joined division successfully' });
+    res.json({ 
+      message: 'Successfully joined division',
+      division: {
+        joinedAt: new Date(),
+        team: team,
+        wins: 0,
+        losses: 0,
+        draws: 0
+      }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 };
 
-module.exports = { getDivisions, createDivision, joinDivision };
+// GET /api/divisions/user - Get user's divisions
+const getUserDivisions = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id).populate('divisions.division');
+    res.json(user.divisions || []);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/divisions/active-fights
+const getActiveFights = async (req, res) => {
+  try {
+    const fights = await Fight.find({ 
+      status: 'open',
+      isOfficial: true,
+      endsAt: { $gt: new Date() }
+    }).populate('teamA teamB division');
+    res.json(fights);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/divisions/:id/stats
+const getDivisionStats = async (req, res) => {
+  try {
+    const stats = {
+      totalFights: 0,
+      activeFights: 0,
+      totalParticipants: 0
+    };
+    res.json(stats);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/divisions/:id/champion
+const getDivisionChampion = async (req, res) => {
+  try {
+    const division = await Division.findById(req.params.id).populate('champion.user');
+    res.json(division?.champion || null);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// POST /api/divisions/leave
+const leaveDivision = async (req, res) => {
+  const { divisionId } = req.body;
+  try {
+    await User.findByIdAndUpdate(req.user._id, {
+      $pull: { divisions: { division: divisionId } }
+    });
+    res.json({ message: 'Left division successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+module.exports = { 
+  getDivisions, 
+  createDivision, 
+  joinDivision,
+  getUserDivisions,
+  getActiveFights,
+  getDivisionStats,
+  getDivisionChampion,
+  leaveDivision
+};

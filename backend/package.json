@@ -6,6 +6,8 @@
   "scripts": {
     "test": "jest",
     "seed:characters": "node scripts/seedMongoCharacters.js",
+    "seed:divisions": "node scripts/seedDivisions.js",
+    "seed:all": "npm run seed:characters && npm run seed:divisions",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
   },

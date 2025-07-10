@@ -100,7 +100,7 @@ const getUnreadCount = async (req, res) => {
       const c = conv.unreadCounts.get(req.user._id.toString()) || 0;
       total += c;
     });
-    res.json({ count: total });
+    res.json({ unreadCount: total });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

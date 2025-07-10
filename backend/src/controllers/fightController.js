@@ -7,6 +7,38 @@ const closeExpiredFights = async () => {
   await Fight.updateMany({ status: 'open', endsAt: { $lte: new Date() } }, { status: 'closed' });
 };
 
+// GET /api/fights/categories
+const getFightCategories = async (req, res) => {
+  try {
+    const categories = [
+      { id: 'casual', name: 'Casual Fight', description: 'Just for fun' },
+      { id: 'official', name: 'Official Fight', description: 'Counts towards records' },
+      { id: 'tournament', name: 'Tournament Fight', description: 'Part of a tournament' }
+    ];
+    res.json(categories);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// GET /api/fights
+const getAllFights = async (req, res) => {
+  await closeExpiredFights();
+  try {
+    const fights = await Fight.find()
+      .populate('teamA', 'name')
+      .populate('teamB', 'name')
+      .populate('division', 'name')
+      .populate('createdBy', 'username')
+      .sort({ createdAt: -1 });
+    res.json(fights);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 // GET /api/fights/:id
 const getFight = async (req, res) => {
   await closeExpiredFights();
@@ -84,4 +116,4 @@ const voteFight = async (req, res) => {
   }
 };
 
-module.exports = { getFight, createFight, voteFight };
+module.exports = { getFight, createFight, voteFight, getFightCategories, getAllFights };
