@@ -5,6 +5,7 @@ const postCtrl = require('../controllers/postController');
 const router = express.Router();
 
 router.get('/', postCtrl.getAllPosts);
+router.get('/official', postCtrl.getOfficialFights);
 router.get('/:id', postCtrl.getPostById);
 router.post('/', protect, postCtrl.createPost);
 router.post('/:id/like', protect, postCtrl.toggleLike);

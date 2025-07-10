@@ -78,10 +78,24 @@ const voteInFight = async (req, res) => {
   }
 };
 
+const getOfficialFights = async (req, res) => {
+  try {
+    const posts = await Post.find({ fight: { $ne: null } })
+      .populate('fight')
+      .populate('author', 'username avatar');
+    const official = posts.filter(p => p.fight && p.fight.isOfficial);
+    res.json(official);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getAllPosts,
   getPostById,
   createPost,
   toggleLike,
-  voteInFight
+  voteInFight,
+  getOfficialFights
 };

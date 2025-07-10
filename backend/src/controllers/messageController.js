@@ -91,10 +91,27 @@ const markConversationRead = async (req, res) => {
   }
 };
 
+// GET /api/messages/unread/count
+const getUnreadCount = async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ participants: req.user._id });
+    let total = 0;
+    conversations.forEach(conv => {
+      const c = conv.unreadCounts.get(req.user._id.toString()) || 0;
+      total += c;
+    });
+    res.json({ count: total });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
 module.exports = {
   getUserConversations,
   startConversation,
   getConversationMessages,
   sendMessage,
-  markConversationRead
+  markConversationRead,
+  getUnreadCount
 };

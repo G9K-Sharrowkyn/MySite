@@ -56,6 +56,9 @@ app.use('/api/comments', require('./routes/commentRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/posts', require('./routes/postRoutes'));
 app.use('/api/votes', require('./routes/voteRoutes'));
+app.use('/api/characters', require('./routes/characterRoutes'));
+app.use('/api/profile', require('./routes/profileRoutes'));
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // TODO: add more routes
 
