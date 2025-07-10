@@ -1,10 +1,7 @@
 import React from 'react';
-import { useLanguage } from '../i18n/LanguageContext';
 import './Modal.css';
 
 const Modal = ({ children, onClose, title, className = '', size = 'medium' }) => {
-  const { } = useLanguage(); // Remove unused 't'
-
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) {
       onClose();
