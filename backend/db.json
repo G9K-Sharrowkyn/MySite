@@ -42,6 +42,29 @@
           "rank": "Rookie",
           "points": 0,
           "isChampion": false
+        },
+        "metahuman": {
+          "joinedAt": "2025-07-10T06:10:14.468Z",
+          "team": {
+            "mainCharacter": {
+              "id": "char4",
+              "name": "Black Adam (New52)",
+              "universe": "DC",
+              "image": "/characters/Black_Adam(New52).jpg"
+            },
+            "secondaryCharacter": {
+              "id": "char3",
+              "name": "Batman (New52)",
+              "universe": "DC",
+              "image": "/characters/Batman(New52).jpg"
+            }
+          },
+          "wins": 0,
+          "losses": 0,
+          "draws": 0,
+          "rank": "Rookie",
+          "points": 0,
+          "isChampion": false
         }
       },
       "activity": {
@@ -383,13 +406,13 @@
         "teamA": "Anti-Monitor (New52), Azrael (Dark Multiverse), Scarlet King, Sentry (Composite)",
         "teamB": "Darkseid (New52), Deadpool (DKMU), Vegeta (SSJ4), Broly (Dragon Ball Z)",
         "votes": {
-          "teamA": 1,
-          "teamB": 0,
+          "teamA": 0,
+          "teamB": 1,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-              "team": "A",
-              "votedAt": "2025-07-09T11:11:37.153Z"
+              "team": "B",
+              "votedAt": "2025-07-10T06:13:03.631Z"
             }
           ],
           "draw": 0
@@ -449,6 +472,18 @@
       "createdAt": "2025-07-06T05:00:25.158Z",
       "read": false,
       "deleted": false
+    },
+    {
+      "id": "16452924-6c8e-4491-bfba-c13f123b77f6",
+      "senderId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "senderUsername": "ultracode1",
+      "recipientId": "280ec015-edc9-4be3-87ca-b6be62093bf5",
+      "recipientUsername": "testuser",
+      "subject": "Chat message",
+      "content": "dqwdqwd",
+      "createdAt": "2025-07-10T06:11:03.649Z",
+      "read": false,
+      "deleted": false
     }
   ],
   "votes": [],
@@ -466,6 +501,20 @@
       },
       "read": false,
       "createdAt": "2025-07-06T05:00:25.158Z"
+    },
+    {
+      "id": "8d473f4c-c9ca-4d94-8c96-25b08d193e66",
+      "userId": "280ec015-edc9-4be3-87ca-b6be62093bf5",
+      "type": "message",
+      "title": "Nowa wiadomość",
+      "content": "Otrzymałeś nową wiadomość od ultracode1",
+      "data": {
+        "messageId": "16452924-6c8e-4491-bfba-c13f123b77f6",
+        "senderId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+        "senderUsername": "ultracode1"
+      },
+      "read": false,
+      "createdAt": "2025-07-10T06:11:03.649Z"
     }
   ]
 }
