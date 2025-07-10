@@ -50,6 +50,17 @@ const userSchema = new Schema(
       draws: { type: Number, default: 0 },
       noContest: { type: Number, default: 0 }
     },
+    divisions: [
+      {
+        division: { type: Schema.Types.ObjectId, ref: 'Division' },
+        team: [{ type: Schema.Types.ObjectId, ref: 'Character' }],
+        record: {
+          wins: { type: Number, default: 0 },
+          losses: { type: Number, default: 0 }
+        },
+        isChampion: { type: Boolean, default: false }
+      }
+    ],
     consent: consentSchema,
     donationHistory: [
       {

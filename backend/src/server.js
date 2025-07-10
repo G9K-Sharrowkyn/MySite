@@ -6,6 +6,9 @@ const rateLimit = require('express-rate-limit');
 const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const connectDB = require('./config/db');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('./swagger.json');
+const csrf = require('csurf');
 
 // Connect to DB
 connectDB();
@@ -41,8 +44,15 @@ app.use(
   })
 );
 
+// CSRF protection for donation routes
+const csrfProtection = csrf({ cookie: true });
+app.use('/api/donate', csrfProtection, require('./routes/donationRoutes'));
+
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/divisions', require('./routes/divisionRoutes'));
+app.use('/api/fights', require('./routes/fightRoutes'));
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 // TODO: add more routes
 
 // Legal docs (static text for now)
