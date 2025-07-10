@@ -23,7 +23,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "lint": "eslint src",
-    "backend": "cd backend && node server.js",
+    "backend": "cd backend && node src/server.js",
     "dev": "concurrently \"npm run backend\" \"npm start\""
   },
   "proxy": "http://localhost:5000",

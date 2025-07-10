@@ -16,6 +16,17 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('userId');
+    setIsLoggedIn(false);
+    setUser(null);
+    setUnreadMessages(0);
+    setUnreadNotifications(0);
+    setShowUserMenu(false);
+    navigate('/');
+  }, [setIsLoggedIn, navigate]);
+
   const fetchUserData = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -34,7 +45,7 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
         handleLogout();
       }
     }
-  }, [setIsLoggedIn]);
+  }, [setIsLoggedIn, handleLogout]);
 
   const fetchUnreadCounts = useCallback(async () => {
     const token = localStorage.getItem('token');
@@ -66,7 +77,7 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
         setUnreadNotifications(0);
       }
     }
-  }, []);
+  }, [handleLogout]);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -93,17 +104,6 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    setIsLoggedIn(false);
-    setUser(null);
-    setUnreadMessages(0);
-    setUnreadNotifications(0);
-    setShowUserMenu(false);
-    navigate('/');
   };
 
   const toggleNotifications = async () => {
