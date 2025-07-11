@@ -1,0 +1,132 @@
+.fight-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+}
+
+.fight-timer.normal {
+  background-color: rgba(75, 181, 67, 0.1);
+  color: #4bb543;
+  border: 1px solid rgba(75, 181, 67, 0.3);
+}
+
+.fight-timer.warning {
+  background-color: rgba(255, 193, 7, 0.1);
+  color: #ffc107;
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.fight-timer.urgent {
+  background-color: rgba(255, 69, 58, 0.1);
+  color: #ff453a;
+  border: 1px solid rgba(255, 69, 58, 0.3);
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.fight-timer.locked {
+  background-color: rgba(108, 117, 125, 0.1);
+  color: #6c757d;
+  border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.fight-timer.expired {
+  background-color: rgba(255, 69, 58, 0.1);
+  color: #ff453a;
+  border: 1px solid rgba(255, 69, 58, 0.3);
+}
+
+.timer-icon {
+  font-size: 1.2rem;
+}
+
+.timer-display {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.time-segment {
+  display: flex;
+  align-items: baseline;
+  gap: 0.1rem;
+}
+
+.time-value {
+  font-size: 1rem;
+  font-weight: 700;
+  min-width: 1.2rem;
+  text-align: center;
+}
+
+.time-unit {
+  font-size: 0.7rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.timer-text {
+  font-weight: 600;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .fight-timer {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .timer-icon {
+    font-size: 1rem;
+  }
+  
+  .time-value {
+    font-size: 0.9rem;
+  }
+  
+  .time-unit {
+    font-size: 0.6rem;
+  }
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .fight-timer.normal {
+    background-color: rgba(75, 181, 67, 0.2);
+  }
+  
+  .fight-timer.warning {
+    background-color: rgba(255, 193, 7, 0.2);
+  }
+  
+  .fight-timer.urgent {
+    background-color: rgba(255, 69, 58, 0.2);
+  }
+  
+  .fight-timer.locked {
+    background-color: rgba(108, 117, 125, 0.2);
+  }
+  
+  .fight-timer.expired {
+    background-color: rgba(255, 69, 58, 0.2);
+  }
+} 

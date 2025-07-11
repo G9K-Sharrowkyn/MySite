@@ -1799,3 +1799,112 @@ body.dark-mode .post-card {
 .team-row-single {
   justify-content: center;
 }
+
+/* Fight Results Section */
+.fight-results-section {
+  margin: 1rem 0;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+}
+
+.fight-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.fight-result-header h4 {
+  margin: 0;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+.fight-status-badge {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.fight-status-badge.locked {
+  background: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+  border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.fight-result-content {
+  text-align: center;
+}
+
+.result-winner,
+.result-draw {
+  margin: 1.5rem 0;
+}
+
+.winner-icon,
+.draw-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.result-winner h3 {
+  color: #ffd700;
+  font-size: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.result-draw h3 {
+  color: #6c757d;
+  font-size: 1.5rem;
+  margin: 0.5rem 0;
+}
+
+.final-votes-display {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vote-stat {
+  text-align: center;
+}
+
+.team-label {
+  display: block;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 0.5rem;
+}
+
+.vote-count {
+  display: block;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .fight-results-section {
+    padding: 1rem;
+  }
+  
+  .fight-result-header h4 {
+    font-size: 1rem;
+  }
+  
+  .winner-icon,
+  .draw-icon {
+    font-size: 2rem;
+  }
+  
+  .result-winner h3,
+  .result-draw h3 {
+    font-size: 1.2rem;
+  }
+}

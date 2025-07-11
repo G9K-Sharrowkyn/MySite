@@ -5,6 +5,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 import TeamSelection from './TeamSelection';
 import Modal from '../Modal/Modal';
 import HoloCard from '../shared/HoloCard';
+import ChampionshipHistory from './ChampionshipHistory';
+import ContenderMatches from './ContenderMatches';
 import './DivisionsPage.css';
 
 const DivisionsPage = () => {
@@ -21,6 +23,7 @@ const DivisionsPage = () => {
   const [showErrorModal, setShowErrorModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+  const [currentUser, setCurrentUser] = useState(null);
   
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -124,6 +127,17 @@ const DivisionsPage = () => {
     }
   }, [divisionsData]);
 
+  const fetchCurrentUser = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/profile/me', {
+        headers: { 'x-auth-token': token }
+      });
+      setCurrentUser(response.data);
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -131,6 +145,7 @@ const DivisionsPage = () => {
     }
     
     const loadData = async () => {
+      await fetchCurrentUser();
       await fetchUserDivisions();
       await fetchDivisionStats();
       await fetchDivisionChampions();
@@ -139,7 +154,7 @@ const DivisionsPage = () => {
     };
     
     loadData();
-  }, [token, navigate, divisionsData, fetchUserDivisions, fetchDivisionStats, fetchDivisionChampions]);
+  }, [token, navigate, divisionsData, fetchCurrentUser, fetchUserDivisions, fetchDivisionStats, fetchDivisionChampions]);
 
   const handleJoinDivision = (division) => {
     setSelectedDivision(division);
@@ -303,6 +318,20 @@ const DivisionsPage = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Championship History */}
+              <ChampionshipHistory 
+                divisionId={division.id}
+                divisionName={division.name}
+              />
+
+              {/* Contender Matches */}
+              {isJoined && (
+                <ContenderMatches 
+                  divisionId={division.id}
+                  currentUser={currentUser}
+                />
               )}
 
               {isJoined && userTeam?.team ? (

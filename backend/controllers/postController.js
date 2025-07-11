@@ -152,10 +152,15 @@ exports.createPost = async (req, res) => {
       isOfficial: isOfficial || false,
       moderatorCreated: moderatorCreated || false,
       category: category || null,
-      featured: false
+      featured: false,
+      tags: [] // Will be populated below
     };
 
     if (type === 'fight') {
+      // Calculate lock time (72 hours from creation)
+      const lockTime = new Date();
+      lockTime.setHours(lockTime.getHours() + 72);
+      
       newPost.fight = {
         teamA: teamA || null,
         teamB: teamB || null,
@@ -164,8 +169,11 @@ exports.createPost = async (req, res) => {
           teamB: 0,
           voters: []
         },
-        status: 'active', // active, completed
-        isOfficial: isOfficial || false
+        status: 'active', // active, completed, locked
+        isOfficial: isOfficial || false,
+        lockTime: lockTime.toISOString(), // When the fight will be locked
+        winner: null, // Will be set when fight is locked
+        winnerTeam: null // 'teamA', 'teamB', or 'draw'
       };
       // For fight posts, pollOptions are mandatory and correspond to teamA and teamB
       newPost.poll = {
@@ -182,6 +190,11 @@ exports.createPost = async (req, res) => {
           voters: []
         }
       };
+    }
+    
+    // Generate tags if the function is provided
+    if (req.generateTagsFromPost) {
+      newPost.tags = req.generateTagsFromPost(newPost);
     }
 
     db.data.posts.push(newPost);
@@ -500,6 +513,16 @@ exports.voteInFight = async (req, res) => {
     // Check if post is a fight post
     if (post.type !== 'fight' || !post.fight) {
       return res.status(400).json({ msg: 'Post is not a fight post' });
+    }
+    
+    // Check if fight is locked
+    if (post.fight.status === 'locked' || post.fight.status === 'completed') {
+      return res.status(400).json({ msg: 'This fight has ended and is no longer accepting votes' });
+    }
+    
+    // Check if lock time has passed
+    if (post.fight.lockTime && new Date() > new Date(post.fight.lockTime)) {
+      return res.status(400).json({ msg: 'This fight has exceeded the 72-hour voting period and is now locked' });
     }
     
     // Check if team is valid

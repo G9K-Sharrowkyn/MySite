@@ -303,3 +303,158 @@ button:disabled {
   font-style: italic;
   color: var(--text-secondary);
 }
+
+/* Champion Username Styles */
+.username-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.champion-user {
+  color: #FFD700 !important;
+  font-weight: bold;
+  text-shadow: 
+    0 0 10px rgba(255, 215, 0, 0.8),
+    0 0 20px rgba(255, 215, 0, 0.6),
+    0 0 30px rgba(255, 215, 0, 0.4);
+  animation: golden-pulse 2s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes golden-pulse {
+  0%, 100% {
+    text-shadow: 
+      0 0 10px rgba(255, 215, 0, 0.8),
+      0 0 20px rgba(255, 215, 0, 0.6),
+      0 0 30px rgba(255, 215, 0, 0.4);
+  }
+  50% {
+    text-shadow: 
+      0 0 15px rgba(255, 215, 0, 1),
+      0 0 25px rgba(255, 215, 0, 0.8),
+      0 0 35px rgba(255, 215, 0, 0.6);
+  }
+}
+
+.champion-crown-icon {
+  font-size: 0.8em;
+  animation: crown-float 3s ease-in-out infinite;
+}
+
+@keyframes crown-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* Division-specific champion colors */
+.champion-regular {
+  background: linear-gradient(45deg, #6c757d, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.champion-metahuman {
+  background: linear-gradient(45deg, #28a745, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.champion-planetBusters {
+  background: linear-gradient(45deg, #fd7e14, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.champion-godTier {
+  background: linear-gradient(45deg, #6f42c1, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.champion-universalThreat {
+  background: linear-gradient(45deg, #dc3545, #FFD700);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.champion-omnipotent {
+  background: linear-gradient(45deg, #FFD700, #fff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: omnipotent-shine 3s linear infinite;
+}
+
+@keyframes omnipotent-shine {
+  0% {
+    filter: hue-rotate(0deg);
+  }
+  100% {
+    filter: hue-rotate(360deg);
+  }
+}
+
+/* Champion profile backgrounds */
+.champion-profile-background {
+  background: linear-gradient(135deg, 
+    rgba(255, 215, 0, 0.1) 0%, 
+    rgba(255, 215, 0, 0.05) 50%, 
+    transparent 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.champion-profile-background::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, 
+    rgba(255, 215, 0, 0.1) 0%, 
+    transparent 70%);
+  animation: champion-glow-rotate 10s linear infinite;
+}
+
+@keyframes champion-glow-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Champion badges in lists */
+.champion-badge-small {
+  display: inline-block;
+  background: #FFD700;
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  margin-left: 8px;
+}
+
+/* Mobile responsive champion styles */
+@media (max-width: 768px) {
+  .champion-user {
+    font-size: 0.95em;
+  }
+  
+  .champion-crown-icon {
+    font-size: 0.7em;
+  }
+}

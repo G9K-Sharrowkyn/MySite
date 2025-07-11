@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import { ChampionUsername } from '../utils/championUtils';
 import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import HoloCard from '../shared/HoloCard';
+import TagList from './TagList';
+import ChampionUsername from '../utils/ChampionUsername';
+import FightTimer from './FightTimer';
 
 const PostCard = ({ post, onUpdate }) => {
   const [comments, setComments] = useState([]);
@@ -569,29 +573,30 @@ const [pollVote, setPollVote] = useState(null);
   }
 
   return (
-    <div className="post-card">
+    <div className={`post-card ${post.isOfficial ? 'official' : ''}`}>
       <div className="post-header">
-        <div className="author-info">
-          <Link to={`/profile/${post.author?.id}`} className="author-link">
-            <img 
-              src={post.author?.profilePicture || placeholderImages.userSmall} 
-              alt={post.author?.username}
-              className="author-avatar"
-            />
-            <div className="author-details">
-              <span className="author-name">{post.author?.username || 'Anonim'}</span>
-              <span 
-                className="author-rank"
-                style={{ color: getRankColor(post.author?.rank) }}
-              >
-                {post.author?.rank || 'Rookie'}
-              </span>
-            </div>
-          </Link>
-        </div>
+        <Link to={`/profile/${post.author?.id}`} className="author-link">
+          <img 
+            src={replacePlaceholderUrl(post.author?.profilePicture) || '/placeholder-character.png'} 
+            alt={post.author?.username} 
+            className="author-avatar"
+          />
+          <div className="author-info">
+            <ChampionUsername user={post.author} />
+            <span className="post-meta">
+              {post.author?.rank || 'Rookie'} • {formatTimeAgo(post.createdAt)}
+            </span>
+          </div>
+        </Link>
         <div className="post-meta">
           <span className="post-type">{getPostTypeIcon(post.type)}</span>
           <span className="post-time">{formatTimeAgo(post.createdAt)}</span>
+          {post.type === 'fight' && post.fight && (
+            <FightTimer 
+              lockTime={post.fight.lockTime} 
+              status={post.fight.status} 
+            />
+          )}
         </div>
       </div>
 
@@ -621,7 +626,7 @@ const [pollVote, setPollVote] = useState(null);
       </div>
 
       {/* Fight Voting Actions - New frame for fight voting buttons */}
-      {post.type === 'fight' && post.fight && (
+      {post.type === 'fight' && post.fight && post.fight.status !== 'locked' && post.fight.status !== 'completed' && (
         <div className={`fight-voting-actions${userVote ? ' has-voted' : ''}`} onClick={e => e.stopPropagation()}>
           <button
             className={`animated-vote-btn team-a${userVote === 'A' ? ' voted' : ''}`}
@@ -643,6 +648,39 @@ const [pollVote, setPollVote] = useState(null);
           >
             {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
           </button>
+        </div>
+      )}
+
+      {/* Fight Results - Show when fight is locked */}
+      {post.type === 'fight' && post.fight && (post.fight.status === 'locked' || post.fight.status === 'completed') && (
+        <div className="fight-results-section">
+          <div className="fight-result-header">
+            <h4>⚔️ Fight Results</h4>
+            <span className="fight-status-badge locked">Fight Ended</span>
+          </div>
+          <div className="fight-result-content">
+            {post.fight.winnerTeam === 'draw' ? (
+              <div className="result-draw">
+                <span className="draw-icon">🤝</span>
+                <h3>It's a Draw!</h3>
+              </div>
+            ) : (
+              <div className="result-winner">
+                <span className="winner-icon">🏆</span>
+                <h3>Winner: {post.fight.winnerTeam === 'teamA' ? post.fight.teamA : post.fight.teamB}</h3>
+              </div>
+            )}
+            <div className="final-votes-display">
+              <div className="vote-stat">
+                <span className="team-label">Team A</span>
+                <span className="vote-count">{post.fight.finalVotes?.teamA || post.fight.votes?.teamA || 0} votes</span>
+              </div>
+              <div className="vote-stat">
+                <span className="team-label">Team B</span>
+                <span className="vote-count">{post.fight.finalVotes?.teamB || post.fight.votes?.teamB || 0} votes</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

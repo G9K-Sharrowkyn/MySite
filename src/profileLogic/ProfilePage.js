@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import { ChampionUsername, getChampionTitle } from '../utils/championUtils';
 import ImageUpload from '../ImageUpload/ImageUpload';
+import ProfileBackgroundUpload from './ProfileBackgroundUpload';
+import UserBadges from './UserBadges';
 import PostCard from '../postLogic/PostCard';
 import './ProfilePage.css';
 
@@ -19,6 +22,7 @@ const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(initialProfile?.description || '');
   const [profilePicture, setProfilePicture] = useState(initialProfile?.profilePicture || '');
+  const [backgroundImage, setBackgroundImage] = useState(initialProfile?.profile?.backgroundImage || '');
   const [loading, setLoading] = useState(initialProfile === null); // only true if no profile yet
   const [isFetching, setIsFetching] = useState(false); // new state for background fetching
   const [error, setError] = useState(null);
@@ -70,6 +74,7 @@ const ProfilePage = () => {
       setProfile(res.data);
       setDescription(res.data.description || '');
       setProfilePicture(res.data.profilePicture || '');
+      setBackgroundImage(res.data.profile?.backgroundImage || '');
       setLoading(false);
       setIsFetching(false);
       // Update localStorage cache
@@ -157,7 +162,11 @@ const ProfilePage = () => {
       return;
     }
     try {
-      await axios.put('/api/profile/me', { description, profilePicture }, {
+      await axios.put('/api/profile/me', { 
+        description, 
+        profilePicture,
+        backgroundImage 
+      }, {
         headers: {
           'x-auth-token': token,
         },
@@ -169,15 +178,39 @@ const ProfilePage = () => {
     }
   };
 
+  const handleBackgroundUpdate = (newBackgroundPath) => {
+    setBackgroundImage(newBackgroundPath);
+    setProfile(prev => ({
+      ...prev,
+      profile: {
+        ...prev.profile,
+        backgroundImage: newBackgroundPath
+      }
+    }));
+  };
+
+  const isChampion = profile?.divisions && Object.values(profile.divisions).some(d => d.isChampion);
+  const championTitle = getChampionTitle(profile?.divisions);
+
   if (loading && profile === null) return <div className="profile-page"><p>Ładowanie profilu...</p></div>;
   if (error) return <div className="profile-page"><p style={{color: 'red'}}>{error}</p><button onClick={() => navigate('/login')}>Zaloguj się ponownie</button></div>;
 
   return (
     <div className="profile-page">
-      <div className="profile-header">
+      <div className={`profile-header ${isChampion ? 'champion-profile-background' : ''}`}
+           style={backgroundImage ? {
+             backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${backgroundImage})`,
+             backgroundSize: 'cover',
+             backgroundPosition: 'center'
+           } : {}}>
         <img src={replacePlaceholderUrl(profile.profilePicture) || placeholderImages.user} alt="Profilowe" className="profile-picture" />
         <div className="profile-info">
-          <h2>{profile.username}</h2>
+          <h2>
+            <ChampionUsername user={profile} showCrown={true} />
+          </h2>
+          {championTitle && (
+            <p className="champion-title-display">{championTitle}</p>
+          )}
           <p className="profile-rank">Punkty: {profile.points || 0} | Ranga: {profile.rank}</p>
           <div className="fight-stats">
             <div className="stat-item">
@@ -217,6 +250,10 @@ const ProfilePage = () => {
 
       {isEditing && userId === 'me' ? (
         <form onSubmit={handleProfileUpdate} className="edit-profile-form">
+          <ProfileBackgroundUpload 
+            currentBackground={backgroundImage}
+            onBackgroundUpdate={handleBackgroundUpdate}
+          />
           <div className="form-group">
             <label>Zdjęcie profilowe:</label>
             <ImageUpload 
@@ -237,6 +274,11 @@ const ProfilePage = () => {
           <p>{profile.description || 'Brak opisu.'}</p>
         </div>
       )}
+
+      <UserBadges 
+        userId={actualUserId}
+        isOwner={userId === 'me'}
+      />
 
       <div className="profile-posts">
         <h3>Posty:</h3>

@@ -1,107 +1,123 @@
+I am creating a facebook-like site for nerds, where there will be divisions, tournaments, daily fights, by moderator and by users. This is a voting site, where users create their own fights in feed section and moderator creates official matches in division section! Users vote for the winner! 
 
-When creating a division, nothing pops up in the console. Nothing happens. I just go back to the division site, and active teams are zero, despite me creating one.
+Everybody knows these characters, like superman or Goku, but people differ when it comes to opinions! So, people vote, who wins! Some will vote for one team, other vote for other team! This is how characters win battle, by users engagement!
 
-One user can have only one team in the official fights. He can pick any character, that wasn't picked by another user. Picked character is blocked, and should be greyed out on the character list.
+There are comments under each post, where people share opinions on this particular fight, exchange opinions, argue and so on!
 
-There are several divisions. In official fights users from one division fight against people from the same division. It will naturally create a ranking system, as in the ufc, or boxing.
+We need a real facebook-like mechanics. Messages, good comment system, system of counting votes for each post, great profile editing, leaving comments at each other profiles. 
 
-We need a working system of official fights. Only moderator can post them, and those are only on the main page. Winning in them gives user an official record. There are several divisions, and each user can participate in any division! Moderator sets up the fights, they land on the main screen, users vote, winner gets a fight with someone else next time. At some point, moderator gives someone a rank of division champion. That man will have a unique Title under his nickname, and a golden frame on his title.
+Also, the division system is crucial! Divisions, if ufc-like system of voting fights, that will be "official" fights of the site. 
+Each user has his official record, like in any mma. User can join one, two, or all divisions. When joining a division, user picks his team of two fighters. Each division has it's unique characters, and once picked, these two characters are locked, and no other user can pick them.
 
-Also! In official and regular fights, there should be a poll underneath, where people can vote, for one team, or another, or another. User, or moderator, while creating a fight, writes a post, with some explanation or backstory, and fullfills the poll settings. Every user who sees the post, sees the message in the post, and has an option to vote in the poll under the post, where he can choose a winner, of a fight in the post.
+Then, the moderator sees what users with what teams have applied for the division, and prepares official matches, that will appear on the main site, and the division menu.
 
+In regular fights, when user posts any fight on feed, he does that just for curiosity, there are no records changes for that.
 
-Meanwhile, on feed, anyone can post a fight, with any fighters. It's a true facebook-like feed, where anyone can post. Winning fights in feed gives a regular record to the user, which counts separately from the official record in main fights.
+After moderator posts official fights, users vote in these, and there are 72 hours before the fight is done. After 72 hours fight is locked, no more votes can be added, and the winner of the fight gets a win in his record, loser gets a loss. Then, moderator can create new fights, letting winners fight with winners, and so on. 
 
-Also we need a better posting system. When creating a post, person should have an option to choose "discussion" tag, "fight" tag or "other" tag. Discussion post will give him option to write title, post itself, and send a photo from a pc, or choose a pic from the site database.
-Fight tag, will contain title, post itself, and also an option to choose photo from pc or from the database. But this tag will also require person to fullfill "poll" settings. If it's superman vs batman fight, the user will need to fill one pool with superman and the other with batman. Then, the other users will be able to vote in such fight poll, react and write comments.
-Other tag will have title, post itself, pictures from pc or database and an optional poll. Fight has a mandatory poll!
+The thing is, divisions do not merge. Each division has their own rooster and fights. Every user can vote in any fight, but moderator cannot pick team from one division against team from other division. Division system is like weights system in UFC, and cannot allow for cross fights!
 
-Posts are devided to 3 categories, but there is no way to pick a photo for the team members from the database or to upload pictures from pc.
-Also, we need tome buttons like "Vote!", under the teams. This should be the way to vote!
-Also, fight post where user inputs heros who will fight, should look like this: "User chooses fight post, there he clicks "Add fighters" button, where a single line gets added to the post, where he implements a single hero in one bracket and another one in the other bracket. He can click again "Add fighters" button, to introduce another line, to make it a 2vs2 fight, or 9vs9, whatever. Not used brackets count as empty spot, so 9 brackets, where there are 9 people on left team and 4 people in right team, with 5 brackets empty, will show up as 9 vs 4 fight.
+Moderator will have also an ability to create a "Title fight" if some users team gets good results. If he wins this fight, he becomes division champion, and will defend this title in every fight he will participate. 
 
-This is done quite well... But we need picking characters in the brackets remade! When user picks first character, it has to look like a plain, empty bracket. When he types first character, like "s", he sees propositions like "superman","spider-man","sinestro". When he continues with "su", he will see "superman", "surtur", "sunfire", whatever.
+Division champion gets a unique title under his nickname, unique profile background, and a Golden color of nickname, as long as he is the champion!
 
-For now, we can see propositions of characters at once, and it spoils site layout badly... Propositions need to appear when user starts typing!
-Also, "picked characters" should not be picked on the profile site, but on the divisions site. When someone picks his team in one of the divisions, this team is shown on his profile, as his chosen team.
+Divisions are already implemented, just as post creation, feed, messages, comments... Very important is, that you DO NOT swap post layout. It took me a very long time to make it look like this, and it looks perfect for now! 
 
-First thing... Language settings, that are on the page, change only UI language. That should change all text on the page!
+First thing for you should be scanning whole project completely, understanding what is done and in what way, and then implementing new features, fixing bugs in the older code, maybe upgrading the UI, so it is like "ultra modern facebook", scalable and usable on all devices? You know, all should be flexible, so everything is always visible, even on mobile phones! 
 
-Second thing... True dark mode. Current dark mode has some whites too... It should be much darker.
+And please, I once again ask, to do not touch post layout! There is a great looking frame and a background for chosen team, that took a lot of work to do, and I wouldn't like to lose it!
 
-Third thing... Main screen should show firstly "Official Fights", posted by moderator. Lower, under all the main Fights, there should be latest posts from feed, from normal users.
+Create a full-featured, secure backend for a modern web application that allows users from all around the world (Europe, the Americas, Asia, etc.) to register, log in, and interact with the platform.
 
-----
+### Main Requirements:
+1. **Authentication:**
+- Use email + password registration
+- Passwords must be securely hashed (bcrypt or argon2)
+- JSON Web Tokens (JWT) or secure cookie-based sessions
+- Rate-limiting for login attempts
+- HTTPS enforcement
 
-There are still some minor tweaks to be done... 
-First thing... We have "GeekFights" logo and "Main Site" on the header that both lead to the same place... Why? Make logo uncklickable, and leave only main site, as a way to go to the main site. 
-Also... When I create a post, and try to edit it, I should see all the options that were previously insterted. For now, all that user inserted is gone, when trying to edit it. Writing long post, all over again simply because user wanted to fix one word mistake in the post will be iritating as hell! 
-Thirdly... Fight post... Needs a major rework... User selects title, and the whole post story... This is good. But lower, we got option to add pictures from pc, select pictures from database, add warriors, and a mandatory poll, where user needs to fill the brackets. This is both too complicated and irritating.
-System should work like this: User writes post content, or doesn't, and then first thing below post content, there is "Teams" menu. In there, user picks warriors to the teams, he can add warriors to one team, or add more teams, whatever. With every chosen character, this character picture appears below the character name, representing the character. Then, below created teams, there should be a notification title, that "If you want to swap images, click on selected character!". Then, if user wants another pictures of some character, he can click on the database picture, that automatically is shown after selecting the character, and he can upload his own picture. 
-Fourth thing, there is no need for poll, or poll brackets to be there. Creating 2 teams, should assign two options to choose from, when the post is posted. User created 2 teams fights? Post will contain these two teams, one of the left, the other on the right. One team would have a dark-red background, the other would have dark-blue background. There should be some animated hover, that when user moves mouse over a team, that background, and character frames start to shine, and when clicked, some magic sparkles appear, and the vote is counted as one vote for the clicked team! No need for poll then! 
-Poll could be transfered to regular discussion posts, but it should be optional. Some button, that allows adding poll, if someone wants it.
+2. **User Data Protection:**
+- Fully GDPR (EU) and CCPA (California) compliant
+- Add user consent mechanisms during registration
+- Add a clear and accessible Privacy Policy and Terms of Use endpoint
+- Allow users to request data deletion or modification (via API)
 
-Fifth thing... We can't have basic internet explorer-like popups, statying "Are you sure you want to leave this division?"... It's not 1998. It should be a nice popup, that suits the page layout and doesn't brake immersion. All such pop ups should be reworked!
+3. **Cookie Consent:**
+- Implement cookie policy logic (accept/deny tracking cookies)
+- Store cookie consent in user preferences (DB + client)
 
-Sixth thing. When on leaderboard, when I click on a user profile, I don't see his profile. I am sending you a picture how it looks. A blank, grey page. This looks bad. It should take us to real profile page.
+4. **Legal Documents:**
+- Auto-generate endpoints (e.g. `/privacy-policy`, `/terms-of-service`, `/cookies`)
+- Content must comply with international laws for user data collection
 
-Seventh... Some things are not translated correctly. Like edit or delete post menu. It stays polish, despite all site being translated to spanish, after changing language. 
+5. **Donation System Integration:**
+- Add support for **BuyMeACoffee** and **PayPal** donation links
+- Secure the payment links using CSRF protection and metadata handling
+- Store basic donation history in backend (if user is logged in)
 
-Eight... Messages menu. "No conversations", "choose conversation", "insert name of a user" are almost invisible. They are whitish on a white background. 
+6. **Technology Stack:**
+- Node.js with Express.js (or Fastify)
+- PostgreSQL or MongoDB (with user schema + GDPR metadata)
+- OpenAPI 3.0-compliant documentation
+- REST API or GraphQL (either is fine)
+- Include CORS config and helmet.js for security
 
-Ninth... Notificaitons. When I enter notifications menu, I change languages, but whole notification menu stays Polish, no matter what.
+7. **Logging & Monitoring:**
+- Add middleware for request logging (e.g. morgan or pino)
+- Add global error handler (with status codes)
+- Sanitize all incoming data (e.g. using express-validator)
 
-Lastly... When voting in the post, I get "PostCard.js:70 
- POST http://localhost:3000/api/votes 404 (Not Found)
-handleVote	@	PostCard.js:70
-onClick	@	PostCard.js:199
-<button>		
-renderFightVoting	@	PostCard.js:194
-renderVotingSection	@	PostCard.js:123
-PostCard	@	PostCard.js:469
-<PostCard>		
-(anonymous)	@	Feed.js:97
-Feed	@	Feed.js:97
-<Feed>		
-FeedPage	@	FeedPage.js:5
-PostCard.js:81 Error voting: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-code
-: 
-"ERR_BAD_REQUEST"
-config
-: 
-{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
-message
-: 
-"Request failed with status code 404"
-name
-: 
-"AxiosError"
-request
-: 
-XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}
-response
-: 
-{data: {…}, status: 404, statusText: 'Not Found', headers: AxiosHeaders, config: {…}, …}
-status
-: 
-404
-stack
-: 
-"AxiosError: Request failed with status code 404\n    at settle (http://localhost:3000/static/js/bundle.js:2197:12)\n    at XMLHttpRequest.onloadend (http://localhost:3000/static/js/bundle.js:824:66)\n    at Axios.request (http://localhost:3000/static/js/bundle.js:1323:41)\n    at async handleVote (http://localhost:3000/static/js/bundle.js:62229:7)"
-[[Prototype]]
-: 
-Error
-handleVote	@	PostCard.js:81
-await in handleVote		
-onClick	@	PostCard.js:199
-<button>		
-renderFightVoting	@	PostCard.js:194
-renderVotingSection	@	PostCard.js:123
-PostCard	@	PostCard.js:469
-<PostCard>		
-(anonymous)	@	Feed.js:97
-Feed	@	Feed.js:97
-<Feed>		
-FeedPage	@	FeedPage.js:5" in the console log.
+8. **Internationalization:**
+- Backend must support international user base (UTF-8, timezone-safe)
+- Responses and legal policies should support i18n (starting with English)
+
+### Output:
+- Full backend folder structure (`src/`, `routes/`, `controllers/`, `models/`, etc.)
+- Prebuilt API routes: register, login, logout, profile, consent, donate
+- Static endpoint pages for /privacy-policy, /terms, /cookies
+- Include example `.env` with placeholders
+- Dockerfile (optional)
+- All required dependencies in package.json
+
+Optional: Include scripts to seed initial user or admin.
+
+Please generate everything needed to make the site legally compliant, secure, and integrate it with React. Implement everything correctly, no need to rush. Make sure there are no problems like "is defined but never used ", "missing dependency" or "INVALID_CREDENTIALS" when trying to log in... If you can, please prepare fully working, safe website, with new features I mentioned! I do not have a lot of experience in programming, so the less work you leave for me, the better! I am unsure how to use SQL, how to set the whole backend up... So I trust you on this. Create working instance of such website, and if it's needed, write some simple, step by step, instructions, on how to opearate this site correctly! 
+
+Divisions are: Regular People, Metahuman, Planet Busters, God Tier, Universal Threat, Omnipotent. 
+
+Regular people are fighters like Jim Ross, Louis Lane, Ivan Drago. Metahuman is for example Spider-Man or Cyclops. Planet Busters are guys like Hulk or Krillan from Dragon Ball. God Tier is for people like Thor, Zeus, Cell. Universal Threat is like Anti-Monitor, Fused Zamasu. Omnipotent is for peopel like Living Tribunal, Beyonder, Cosmic Armour Superman. 
+
+Remember, that can be a draw in a fight!
+
+Yea, each champion title should have it's history to see, who was champion in what order, who was champion the longest, and so on.
+
+Yes, we need leaderboards! By the leaderboards, moderator will produce official matches! 
+
+Contender System... Maybe moderator should have an option to make a specific match a "contender" match. Anyone who wins it, gets a title shot in next fight!
+
+Division stats, like average votes, active teams, hell yea!
+
+For now, no season stuff. Maybe later!
+
+We need custom profile background that user can upload from their pc's, that any other user will see, if they visit their profile. 
+
+And some badge system on profile, that user cannot control, that shows their achievements, like "Champion in God Division from 25.05.2026-30.06.2026", or anything like it.
+
+We could introduce tag system for posts. Someone wants to see just posts that contain Dragon Ball characters? He can pick it! If user picks characters, from the character database on the site, post is automatically tagged, and posts can be sorted by these tags like "superman", "dc", "marvel", "spider-man", "goku", whatever.
+
+Oh, virtual coins prediction system! Sounds nice! Each user gets coins, for posting, commenting, voting, winning in official fights. Then, he can bet these coins in official fights.
+
+It should work like this: Moderator creates official division matches. Matches are published on the main site and division menu, but are locked for 24 hours! These 24 hours are for comments under the incoming matches and for bets! Anyone can bet any match, and win or lose coins!
+
+If the next division fights night has 10 matches in total, user can bet on each match separately, with low risk, gaining or loosing small bits of coins. Or he can bet on many matches, or even all of them, and then, if he bets right, his reward should be multiplied heavily! Users will be able to buy custom titles, custom nickname colors, or a contender fight chance for these coins!
+
+Also, we need a fighter proposal system. If user wants to post a fight on feed, and he wants to pick a character, that isn't in the database, he should have an option to tick, that "I wish my fighter to be included in the rooster!". 
+
+Then, such fighter, with exactly same name that user has typed and with that specific image he used (imge will be mandatory. This field will not be clickable without an image), will be sent to moderator mail on the site. Moderator will be able to introduce such fighter, along with the image to the rooster, so other users can user them from the fighters list! Of course, moderator should be able to do some changes in the fighter approval screen, just in case anyone uses badly cropped photo or makes a typo in the name.
+
+Yes... If it's possible we could use a "global" chat, where anyone can write in real time, with other users. There would be a theme rooms, like "divisions", "feed", "help", whatever. Anyone can open such global chat, that will look like a button in the lower left corner of the website, open the chat, that will expand from the button, pick a room, and chat with other users in real time!
+
+PWA, for mobile users would be great! I would like this whole app to be perfectly scalable and usable on all devices!
+
+Notifications for fight results of users posts, his team division fights, would be great! Like, if someone leaves a reaction or a comment, under someone's post, that user should see a notification. The same thing, for his team fights in the divisions!

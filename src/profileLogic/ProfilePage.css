@@ -8,15 +8,44 @@
   margin: 0 auto;
 }
 
+/* Profile Header with Background */
 .profile-header {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
   margin-bottom: 30px;
-  background-color: var(--bg-light);
   padding: 30px;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  background-color: #1a1a1a;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  min-height: 250px;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+.profile-header.champion-profile-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, 
+    rgba(255, 215, 0, 0.1) 0%, 
+    transparent 50%, 
+    rgba(255, 215, 0, 0.1) 100%);
+  pointer-events: none;
+}
+
+/* Champion Title Display */
+.champion-title-display {
+  color: #FFD700;
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 5px 0;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
 }
 
 .profile-picture {

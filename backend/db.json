@@ -467,5 +467,70 @@
       "read": false,
       "createdAt": "2025-07-06T05:00:25.158Z"
     }
-  ]
+  ],
+  "divisions": {
+    "regularPeople": {
+      "id": "regularPeople",
+      "name": "Regular People",
+      "description": "For street-level fighters and normal humans",
+      "minPower": 0,
+      "maxPower": 10,
+      "members": [],
+      "champion": null
+    },
+    "metahuman": {
+      "id": "metahuman",
+      "name": "Metahuman",
+      "description": "For enhanced humans and mutants",
+      "minPower": 11,
+      "maxPower": 50,
+      "members": [],
+      "champion": null
+    },
+    "planetBusters": {
+      "id": "planetBusters",
+      "name": "Planet Busters",
+      "description": "For planet-level threats",
+      "minPower": 51,
+      "maxPower": 100,
+      "members": [],
+      "champion": null
+    },
+    "godTier": {
+      "id": "godTier",
+      "name": "God Tier",
+      "description": "For cosmic entities and gods",
+      "minPower": 101,
+      "maxPower": 500,
+      "members": [],
+      "champion": null
+    },
+    "universalThreat": {
+      "id": "universalThreat",
+      "name": "Universal Threat",
+      "description": "For universal-level beings",
+      "minPower": 501,
+      "maxPower": 1000,
+      "members": [],
+      "champion": null
+    },
+    "omnipotent": {
+      "id": "omnipotent",
+      "name": "Omnipotent",
+      "description": "For beings beyond comprehension",
+      "minPower": 1001,
+      "maxPower": null,
+      "members": [],
+      "champion": null
+    }
+  },
+  "championshipHistory": {
+    "regularPeople": [],
+    "metahuman": [],
+    "planetBusters": [],
+    "godTier": [],
+    "universalThreat": [],
+    "omnipotent": []
+  },
+  "chatMessages": []
 }

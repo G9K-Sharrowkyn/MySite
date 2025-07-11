@@ -367,6 +367,29 @@ router.get('/:divisionId/stats', async (req, res) => {
   }
 });
 
+// Get division champion history
+router.get('/:divisionId/championship-history', async (req, res) => {
+  try {
+    await req.db.read();
+    const { divisionId } = req.params;
+    
+    // Initialize championship history if it doesn't exist
+    if (!req.db.data.championshipHistory) {
+      req.db.data.championshipHistory = {};
+    }
+    
+    const history = req.db.data.championshipHistory[divisionId] || [];
+    
+    // Sort by startDate descending (most recent first)
+    const sortedHistory = history.sort((a, b) => new Date(b.startDate) - new Date(a.startDate));
+    
+    res.json(sortedHistory);
+  } catch (error) {
+    console.error('Error fetching championship history:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Assign division champion (moderator only)
 router.post('/:divisionId/assign-champion', auth, roleMiddleware(['moderator']), async (req, res) => {
   try {
@@ -385,12 +408,54 @@ router.post('/:divisionId/assign-champion', auth, roleMiddleware(['moderator']),
       return res.status(400).json({ message: 'User is not in this division' });
     }
     
-    // Remove champion status from all users in this division
+    // Initialize championship history if it doesn't exist
+    if (!req.db.data.championshipHistory) {
+      req.db.data.championshipHistory = {};
+    }
+    if (!req.db.data.championshipHistory[divisionId]) {
+      req.db.data.championshipHistory[divisionId] = [];
+    }
+    
+    // Find current champion and end their reign
+    const currentChampIndex = req.db.data.users.findIndex(user => 
+      user.divisions && 
+      user.divisions[divisionId] && 
+      user.divisions[divisionId].isChampion
+    );
+    
+    if (currentChampIndex !== -1) {
+      const currentChamp = req.db.data.users[currentChampIndex];
+      
+      // Add to history
+      const reignStart = currentChamp.divisions[divisionId].championSince;
+      const reignEnd = new Date().toISOString();
+      const defenses = currentChamp.divisions[divisionId].titleDefenses || 0;
+      
+      req.db.data.championshipHistory[divisionId].push({
+        userId: currentChamp.id,
+        username: currentChamp.username,
+        team: currentChamp.divisions[divisionId].team,
+        startDate: reignStart,
+        endDate: reignEnd,
+        reignDuration: Math.floor((new Date(reignEnd) - new Date(reignStart)) / (1000 * 60 * 60 * 24)), // days
+        titleDefenses: defenses,
+        totalFights: currentChamp.divisions[divisionId].wins + currentChamp.divisions[divisionId].losses + currentChamp.divisions[divisionId].draws
+      });
+      
+      // Remove champion status from previous champion
+      req.db.data.users[currentChampIndex].divisions[divisionId].isChampion = false;
+      req.db.data.users[currentChampIndex].divisions[divisionId].championTitle = null;
+      req.db.data.users[currentChampIndex].divisions[divisionId].championSince = null;
+      req.db.data.users[currentChampIndex].divisions[divisionId].titleDefenses = 0;
+    }
+    
+    // Remove champion status from all users in this division (safety check)
     req.db.data.users.forEach(user => {
       if (user.divisions && user.divisions[divisionId]) {
         user.divisions[divisionId].isChampion = false;
         user.divisions[divisionId].championTitle = null;
         user.divisions[divisionId].championSince = null;
+        user.divisions[divisionId].titleDefenses = 0;
       }
     });
     
@@ -398,6 +463,7 @@ router.post('/:divisionId/assign-champion', auth, roleMiddleware(['moderator']),
     req.db.data.users[userIndex].divisions[divisionId].isChampion = true;
     req.db.data.users[userIndex].divisions[divisionId].championTitle = `${divisionId.charAt(0).toUpperCase() + divisionId.slice(1)} Champion`;
     req.db.data.users[userIndex].divisions[divisionId].championSince = new Date().toISOString();
+    req.db.data.users[userIndex].divisions[divisionId].titleDefenses = 0;
     
     // Update user's global title if they don't have a higher one
     const currentTitle = req.db.data.users[userIndex].title || '';
@@ -437,7 +503,7 @@ router.post('/:divisionId/update-ranking', auth, async (req, res) => {
   try {
     await req.db.read();
     const { divisionId } = req.params;
-    const { winnerId, loserId, isDraw = false } = req.body;
+    const { winnerId, loserId, isDraw = false, isTitle = false } = req.body;
     
     // Update winner stats
     if (winnerId && !isDraw) {
@@ -446,6 +512,12 @@ router.post('/:divisionId/update-ranking', auth, async (req, res) => {
         req.db.data.users[winnerIndex].divisions[divisionId].wins += 1;
         req.db.data.users[winnerIndex].divisions[divisionId].points += 10;
         req.db.data.users[winnerIndex].divisions[divisionId].streak = (req.db.data.users[winnerIndex].divisions[divisionId].streak || 0) + 1;
+        
+        // If this was a title defense, increment defenses
+        if (isTitle && req.db.data.users[winnerIndex].divisions[divisionId].isChampion) {
+          req.db.data.users[winnerIndex].divisions[divisionId].titleDefenses = 
+            (req.db.data.users[winnerIndex].divisions[divisionId].titleDefenses || 0) + 1;
+        }
         
         // Update rank based on points
         updateUserRank(req.db.data.users[winnerIndex].divisions[divisionId]);
@@ -459,6 +531,12 @@ router.post('/:divisionId/update-ranking', auth, async (req, res) => {
         req.db.data.users[loserIndex].divisions[divisionId].losses += 1;
         req.db.data.users[loserIndex].divisions[divisionId].points = Math.max(0, req.db.data.users[loserIndex].divisions[divisionId].points - 2);
         req.db.data.users[loserIndex].divisions[divisionId].streak = 0;
+        
+        // If champion lost a title fight, they lose the title
+        if (isTitle && req.db.data.users[loserIndex].divisions[divisionId].isChampion) {
+          // Pass the championship to the winner
+          await req.app.post(`/api/divisions/${divisionId}/assign-champion`, { userId: winnerId });
+        }
         
         // Update rank based on points
         updateUserRank(req.db.data.users[loserIndex].divisions[divisionId]);
@@ -612,5 +690,266 @@ function updateUserRank(divisionData) {
     divisionData.rank = 'Rookie';
   }
 }
+
+// @desc    Create a contender match for a division
+// @route   POST api/divisions/:divisionId/contender-match
+// @access  Private (Moderator only)
+router.post('/:divisionId/contender-match', auth, async (req, res) => {
+  try {
+    const { divisionId } = req.params;
+    const { challenger1Id, challenger2Id, description } = req.body;
+    
+    await req.db.read();
+    
+    // Check if user is moderator
+    const currentUser = req.db.data.users.find(u => u.id === req.user.id);
+    if (!currentUser || currentUser.role !== 'moderator') {
+      return res.status(403).json({ msg: 'Only moderators can create contender matches' });
+    }
+    
+    // Validate division exists
+    if (!req.db.data.divisions[divisionId]) {
+      return res.status(404).json({ msg: 'Division not found' });
+    }
+    
+    // Get challenger users
+    const challenger1 = req.db.data.users.find(u => u.id === challenger1Id);
+    const challenger2 = req.db.data.users.find(u => u.id === challenger2Id);
+    
+    if (!challenger1 || !challenger2) {
+      return res.status(404).json({ msg: 'One or both challengers not found' });
+    }
+    
+    // Check if challengers are in the division
+    if (!challenger1.divisions?.[divisionId] || !challenger2.divisions?.[divisionId]) {
+      return res.status(400).json({ msg: 'Both challengers must be in the division' });
+    }
+    
+    // Create contender match as an official fight post
+    const newContenderMatch = {
+      id: require('uuid').v4(),
+      title: `#1 Contender Match: ${challenger1.username} vs ${challenger2.username}`,
+      content: description || `Winner becomes the #1 contender for the ${req.db.data.divisions[divisionId].name} Championship`,
+      type: 'fight',
+      authorId: req.user.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      likes: [],
+      comments: [],
+      views: 0,
+      photos: [],
+      poll: {
+        options: [
+          `${challenger1.username} (${challenger1.divisions[divisionId].team.mainCharacter.name})`,
+          `${challenger2.username} (${challenger2.divisions[divisionId].team.mainCharacter.name})`
+        ],
+        votes: {
+          voters: []
+        }
+      },
+      fight: {
+        teamA: `${challenger1.username} (${challenger1.divisions[divisionId].team.mainCharacter.name})`,
+        teamB: `${challenger2.username} (${challenger2.divisions[divisionId].team.mainCharacter.name})`,
+        votes: {
+          teamA: 0,
+          teamB: 0,
+          voters: []
+        },
+        status: 'active',
+        isOfficial: true,
+        lockTime: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours
+        winner: null,
+        winnerTeam: null
+      },
+      isOfficial: true,
+      moderatorCreated: true,
+      category: divisionId,
+      featured: true,
+      isContenderMatch: true,
+      contenderMatchData: {
+        divisionId,
+        challenger1Id,
+        challenger2Id,
+        winnerGetsShot: true
+      },
+      tags: [`${divisionId}-division`, 'contender-match', 'title-shot']
+    };
+    
+    req.db.data.posts.push(newContenderMatch);
+    
+    // Store reference in divisions data
+    if (!req.db.data.divisions[divisionId].contenderMatches) {
+      req.db.data.divisions[divisionId].contenderMatches = [];
+    }
+    req.db.data.divisions[divisionId].contenderMatches.push({
+      matchId: newContenderMatch.id,
+      challenger1Id,
+      challenger2Id,
+      createdAt: newContenderMatch.createdAt,
+      status: 'active'
+    });
+    
+    await req.db.write();
+    
+    res.json({ 
+      msg: 'Contender match created successfully',
+      match: newContenderMatch
+    });
+  } catch (error) {
+    console.error('Error creating contender match:', error);
+    res.status(500).json({ msg: 'Server error', error: error.message });
+  }
+});
+
+// @desc    Get active contender matches for a division
+// @route   GET api/divisions/:divisionId/contender-matches
+// @access  Public
+router.get('/:divisionId/contender-matches', async (req, res) => {
+  try {
+    const { divisionId } = req.params;
+    
+    await req.db.read();
+    
+    // Get all contender matches for this division
+    const contenderMatches = req.db.data.posts.filter(post => 
+      post.isContenderMatch && 
+      post.contenderMatchData?.divisionId === divisionId
+    );
+    
+    // Add user info to matches
+    const matchesWithUserInfo = contenderMatches.map(match => {
+      const challenger1 = req.db.data.users.find(u => u.id === match.contenderMatchData.challenger1Id);
+      const challenger2 = req.db.data.users.find(u => u.id === match.contenderMatchData.challenger2Id);
+      
+      return {
+        ...match,
+        challenger1: {
+          id: challenger1?.id,
+          username: challenger1?.username,
+          profilePicture: challenger1?.profile?.profilePicture,
+          divisionStats: challenger1?.divisions?.[divisionId]
+        },
+        challenger2: {
+          id: challenger2?.id,
+          username: challenger2?.username,
+          profilePicture: challenger2?.profile?.profilePicture,
+          divisionStats: challenger2?.divisions?.[divisionId]
+        }
+      };
+    });
+    
+    res.json(matchesWithUserInfo);
+  } catch (error) {
+    console.error('Error fetching contender matches:', error);
+    res.status(500).json({ msg: 'Server error', error: error.message });
+  }
+});
+
+// @desc    Create title match after contender wins
+// @route   POST api/divisions/:divisionId/title-match
+// @access  Private (Moderator only)
+router.post('/:divisionId/title-match', auth, async (req, res) => {
+  try {
+    const { divisionId } = req.params;
+    const { challengerId, description } = req.body;
+    
+    await req.db.read();
+    
+    // Check if user is moderator
+    const currentUser = req.db.data.users.find(u => u.id === req.user.id);
+    if (!currentUser || currentUser.role !== 'moderator') {
+      return res.status(403).json({ msg: 'Only moderators can create title matches' });
+    }
+    
+    // Get division and champion
+    const division = req.db.data.divisions[divisionId];
+    if (!division || !division.champion) {
+      return res.status(400).json({ msg: 'Division has no champion' });
+    }
+    
+    const champion = req.db.data.users.find(u => u.id === division.champion);
+    const challenger = req.db.data.users.find(u => u.id === challengerId);
+    
+    if (!champion || !challenger) {
+      return res.status(404).json({ msg: 'Champion or challenger not found' });
+    }
+    
+    // Create title match
+    const newTitleMatch = {
+      id: require('uuid').v4(),
+      title: `${division.name} Championship: ${champion.username} (c) vs ${challenger.username}`,
+      content: description || `Championship match for the ${division.name} title!`,
+      type: 'fight',
+      authorId: req.user.id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      likes: [],
+      comments: [],
+      views: 0,
+      photos: [],
+      poll: {
+        options: [
+          `${champion.username} (c) - ${champion.divisions[divisionId].team.mainCharacter.name}`,
+          `${challenger.username} - ${challenger.divisions[divisionId].team.mainCharacter.name}`
+        ],
+        votes: {
+          voters: []
+        }
+      },
+      fight: {
+        teamA: `${champion.username} (c) - ${champion.divisions[divisionId].team.mainCharacter.name}`,
+        teamB: `${challenger.username} - ${challenger.divisions[divisionId].team.mainCharacter.name}`,
+        votes: {
+          teamA: 0,
+          teamB: 0,
+          voters: []
+        },
+        status: 'active',
+        isOfficial: true,
+        lockTime: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours
+        winner: null,
+        winnerTeam: null
+      },
+      isOfficial: true,
+      moderatorCreated: true,
+      category: divisionId,
+      featured: true,
+      isTitleMatch: true,
+      titleMatchData: {
+        divisionId,
+        championId: champion.id,
+        challengerId,
+        titleOnTheLine: true
+      },
+      tags: [`${divisionId}-division`, 'title-match', 'championship']
+    };
+    
+    req.db.data.posts.push(newTitleMatch);
+    
+    // Store reference in champion's data
+    const champIndex = req.db.data.users.findIndex(u => u.id === champion.id);
+    if (champIndex !== -1) {
+      if (!req.db.data.users[champIndex].divisions[divisionId].titleDefenses) {
+        req.db.data.users[champIndex].divisions[divisionId].titleDefenses = [];
+      }
+      req.db.data.users[champIndex].divisions[divisionId].titleDefenses.push({
+        matchId: newTitleMatch.id,
+        challengerId,
+        date: newTitleMatch.createdAt,
+        status: 'scheduled'
+      });
+    }
+    
+    await req.db.write();
+    
+    res.json({ 
+      msg: 'Title match created successfully',
+      match: newTitleMatch
+    });
+  } catch (error) {
+    console.error('Error creating title match:', error);
+    res.status(500).json({ msg: 'Server error', error: error.message });
+  }
+});
 
 module.exports = router;
