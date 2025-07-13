@@ -1,6 +1,6 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
-const calculateRank = (victories, totalFights, winRate) => {
+export const calculateRank = (victories, totalFights, winRate) => {
   // Base rank calculation on victories
   let baseRank = 'Rookie';
   if (victories >= 100) baseRank = 'Mythic';
@@ -38,12 +38,10 @@ const calculatePoints = (victories, losses, draws, winRate) => {
   return Math.max(0, points); // Never go below 0
 };
 
-exports.calculateRank = calculateRank;
-
 // @desc    Get current user's profile
 // @route   GET /api/profile/me
 // @access  Private
-exports.getMyProfile = async (req, res) => {
+export const getMyProfile = async (req, res) => {
   try {
     console.log('Get my profile request received:', {
       userId: req.user.id
@@ -132,7 +130,7 @@ exports.getMyProfile = async (req, res) => {
 // @desc    Get user profile
 // @route   GET /api/profile/:userId
 // @access  Public
-exports.getProfile = async (req, res) => {
+export const getProfile = async (req, res) => {
   const db = req.db;
   await db.read();
   const user = db.data.users.find(u => u.id === req.params.userId);
@@ -210,7 +208,7 @@ exports.getProfile = async (req, res) => {
 // @desc    Get all user profiles (public data only)
 // @route   GET /api/profile/all
 // @access  Public
-exports.getAllProfiles = async (req, res) => {
+export const getAllProfiles = async (req, res) => {
   const db = req.db;
   await db.read();
   const users = db.data.users.map(user => ({
@@ -223,7 +221,7 @@ exports.getAllProfiles = async (req, res) => {
 // @desc    Update user profile
 // @route   PUT /api/profile/me
 // @access  Private
-exports.updateProfile = async (req, res) => {
+export const updateProfile = async (req, res) => {
   const { description, profilePicture, selectedCharacters } = req.body;
   const db = req.db;
   await db.read();
@@ -271,7 +269,7 @@ exports.updateProfile = async (req, res) => {
 // @desc    Search user profiles by username
 // @route   GET /api/profile/search
 // @access  Public
-exports.searchProfiles = async (req, res) => {
+export const searchProfiles = async (req, res) => {
   const db = req.db;
   await db.read();
   const { query } = req.query;
@@ -294,7 +292,7 @@ exports.searchProfiles = async (req, res) => {
 // @desc    Get user leaderboard
 // @route   GET /api/profile/leaderboard
 // @access  Public
-exports.getLeaderboard = async (req, res) => {
+export const getLeaderboard = async (req, res) => {
   const db = req.db;
   await db.read();
 

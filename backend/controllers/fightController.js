@@ -1,9 +1,9 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 // @desc    Create a new fight
 // @route   POST /api/fights
 // @access  Private (Moderator only for main fights, users for feed fights)
-exports.createFight = async (req, res) => {
+export const createFight = async (req, res) => {
   const { 
     title, 
     description, 
@@ -58,7 +58,7 @@ exports.createFight = async (req, res) => {
 // @desc    Get all fights
 // @route   GET /api/fights
 // @access  Public
-exports.getFights = async (req, res) => {
+export const getFights = async (req, res) => {
   const { type, category, status, page = 1, limit = 10 } = req.query;
   const db = req.db;
   await db.read();
@@ -121,7 +121,7 @@ exports.getFights = async (req, res) => {
 // @desc    Get single fight
 // @route   GET /api/fights/:id
 // @access  Public
-exports.getFight = async (req, res) => {
+export const getFight = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -159,7 +159,7 @@ exports.getFight = async (req, res) => {
 // @desc    Update fight (moderator only)
 // @route   PUT /api/fights/:id
 // @access  Private (Moderator only)
-exports.updateFight = async (req, res) => {
+export const updateFight = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -190,7 +190,7 @@ exports.updateFight = async (req, res) => {
 // @desc    Delete fight (moderator only)
 // @route   DELETE /api/fights/:id
 // @access  Private (Moderator only)
-exports.deleteFight = async (req, res) => {
+export const deleteFight = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -218,7 +218,7 @@ exports.deleteFight = async (req, res) => {
 // @desc    Get fight categories
 // @route   GET /api/fights/categories
 // @access  Public
-exports.getCategories = async (req, res) => {
+export const getCategories = async (req, res) => {
   const categories = [
     'Anime',
     'Marvel',
@@ -238,7 +238,7 @@ exports.getCategories = async (req, res) => {
 // @desc    End fight and determine winner (moderator only)
 // @route   POST /api/fights/:id/end
 // @access  Private (Moderator only)
-exports.endFight = async (req, res) => {
+export const endFight = async (req, res) => {
   const db = req.db;
   await db.read();
 

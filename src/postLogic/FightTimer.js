@@ -102,4 +102,4 @@ const FightTimer = ({ lockTime, status }) => {
   );
 };
 
-export default FightTimer; 
+export default FightTimer;

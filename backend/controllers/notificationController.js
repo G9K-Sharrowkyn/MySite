@@ -1,9 +1,9 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
 // @access  Private
-exports.getNotifications = async (req, res) => {
+export const getNotifications = async (req, res) => {
   try {
     console.log('Get notifications request received:', {
       userId: req.user.id,
@@ -51,7 +51,7 @@ exports.getNotifications = async (req, res) => {
 // @desc    Mark notification as read
 // @route   PUT /api/notifications/:id/read
 // @access  Private
-exports.markAsRead = async (req, res) => {
+export const markAsRead = async (req, res) => {
   try {
     console.log('Mark notification as read request received:', {
       userId: req.user.id,
@@ -84,7 +84,7 @@ exports.markAsRead = async (req, res) => {
 // @desc    Mark all notifications as read
 // @route   PUT /api/notifications/read-all
 // @access  Private
-exports.markAllAsRead = async (req, res) => {
+export const markAllAsRead = async (req, res) => {
   try {
     console.log('Mark all notifications as read request received:', {
       userId: req.user.id
@@ -116,7 +116,7 @@ exports.markAllAsRead = async (req, res) => {
 // @desc    Delete notification
 // @route   DELETE /api/notifications/:id
 // @access  Private
-exports.deleteNotification = async (req, res) => {
+export const deleteNotification = async (req, res) => {
   try {
     console.log('Delete notification request received:', {
       userId: req.user.id,
@@ -148,7 +148,7 @@ exports.deleteNotification = async (req, res) => {
 // @desc    Get unread notification count
 // @route   GET /api/notifications/unread/count
 // @access  Private
-exports.getUnreadCount = async (req, res) => {
+export const getUnreadCount = async (req, res) => {
   try {
     console.log('Get unread notification count request received:', {
       userId: req.user.id
@@ -169,7 +169,7 @@ exports.getUnreadCount = async (req, res) => {
 };
 
 // @desc    Create notification (internal function)
-exports.createNotification = async (db, userId, type, title, content, data = {}) => {
+export const createNotification = async (db, userId, type, title, content, data = {}) => {
   try {
     console.log('Create notification called:', {
       userId,

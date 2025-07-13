@@ -1,51 +1,32 @@
-const express = require('express');
+import express from 'express';
+import { getPostComments, addPostComment, updateComment, deleteComment, toggleCommentLike } from '../controllers/commentController.js';
+import auth from '../middleware/auth.js';
+
 const router = express.Router();
-const commentController = require('../controllers/commentController');
-const auth = require('../middleware/authMiddleware');
 
-// @route   POST api/comments/user/:userId
-// @desc    Add comment to user profile
-// @access  Private
-router.post('/user/:userId', auth, commentController.addUserComment);
-
-// @route   POST api/comments/fight/:fightId
-// @desc    Add comment to fight
-// @access  Private
-router.post('/fight/:fightId', auth, commentController.addFightComment);
-
-// @route   GET api/comments/user/:userId
-// @desc    Get comments for user profile
+// @route   GET api/comments/:postId
+// @desc    Get comments for a post
 // @access  Public
-router.get('/user/:userId', commentController.getUserComments);
+router.get('/:postId', getPostComments);
 
-// @route   GET api/comments/fight/:fightId
-// @desc    Get comments for fight
-// @access  Public
-router.get('/fight/:fightId', commentController.getFightComments);
-
-// @route   POST api/comments/:id/like
-// @desc    Like/unlike comment
+// @route   POST api/comments
+// @desc    Create a new comment
 // @access  Private
-router.post('/:id/like', auth, commentController.toggleCommentLike);
+router.post('/', auth, addPostComment);
 
 // @route   PUT api/comments/:id
-// @desc    Update comment
+// @desc    Update a comment
 // @access  Private
-router.put('/:id', auth, commentController.updateComment);
-
-// @route   POST api/comments/post/:postId
-// @desc    Add comment to post
-// @access  Private
-router.post('/post/:postId', auth, commentController.addPostComment);
-
-// @route   GET api/comments/post/:postId
-// @desc    Get comments for post
-// @access  Public
-router.get('/post/:postId', commentController.getPostComments);
+router.put('/:id', auth, updateComment);
 
 // @route   DELETE api/comments/:id
-// @desc    Delete comment
+// @desc    Delete a comment
 // @access  Private
-router.delete('/:id', auth, commentController.deleteComment);
+router.delete('/:id', auth, deleteComment);
 
-module.exports = router;
+// @route   POST api/comments/:id/like
+// @desc    Like/unlike a comment
+// @access  Private
+router.post('/:id/like', auth, toggleCommentLike);
+
+export default router;

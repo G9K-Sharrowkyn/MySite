@@ -8,8 +8,6 @@ import ReactionMenu from './ReactionMenu';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import HoloCard from '../shared/HoloCard';
-import TagList from './TagList';
-import ChampionUsername from '../utils/ChampionUsername';
 import FightTimer from './FightTimer';
 
 const PostCard = ({ post, onUpdate }) => {

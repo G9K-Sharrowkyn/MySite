@@ -52,10 +52,10 @@
         "votesGiven": 0
       },
       "stats": {
-        "experience": 90,
+        "experience": 150,
+        "points": 100,
         "rank": "Rookie",
-        "level": 1,
-        "points": 0
+        "level": 2
       }
     },
     {
@@ -123,6 +123,72 @@
         "favoriteCharacters": [],
         "joinDate": "2025-07-06T04:24:32.782Z",
         "lastActive": "2025-07-06T04:24:32.782Z"
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Rookie",
+        "points": 0,
+        "level": 1,
+        "experience": 0
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      }
+    },
+    {
+      "id": "b9acba58-a5ea-42ae-9bb4-56dc39b26dbd",
+      "username": "ultracode",
+      "email": "aafanasik@wp.pw",
+      "password": "$2b$10$AAADy0I3niv4Ahzr5jJ5LuSDVvVDPd8m05DxKOxoFsD8Gj6sIUD1u",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-07-12T15:27:11.800Z",
+        "lastActive": "2025-07-12T15:27:11.800Z"
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Rookie",
+        "points": 0,
+        "level": 1,
+        "experience": 0
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      }
+    },
+    {
+      "id": "deda9815-9f26-4dbb-bbb8-e5e520b50996",
+      "username": "asdqwe",
+      "email": "asdqwe@asdqwe.pl",
+      "password": "$2b$10$hZ29lLb8Mv1Bmtbi/ZkqCeOEaPQZ9FsiD6G3kN13zeFHfEFDi2BqC",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-07-12T15:33:44.136Z",
+        "lastActive": "2025-07-12T15:33:44.136Z"
       },
       "stats": {
         "fightsWon": 0,
@@ -271,6 +337,25 @@
   "tournaments": [],
   "posts": [
     {
+      "id": "official-1",
+      "title": "Welcome to the Official Feed!",
+      "content": "This is the first official post.",
+      "type": "discussion",
+      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "createdAt": "2024-07-09T10:00:00.000Z",
+      "updatedAt": "2024-07-09T10:00:00.000Z",
+      "likes": [],
+      "comments": [],
+      "views": 10,
+      "photos": [],
+      "poll": null,
+      "fight": null,
+      "isOfficial": true,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": true
+    },
+    {
       "id": "9de9a21e-64e5-4011-a2be-b8a776bf2b8e",
       "title": "wdqwdqwdqwdqwd",
       "content": "qwdqwdqwdqwdqwdqwd",
@@ -401,6 +486,47 @@
       "moderatorCreated": false,
       "category": null,
       "featured": false
+    },
+    {
+      "id": "af4c52e2-5409-43e4-8e72-828442560826",
+      "title": "wqdqwdqwd",
+      "content": "qwdqwd",
+      "type": "fight",
+      "authorId": "deda9815-9f26-4dbb-bbb8-e5e520b50996",
+      "createdAt": "2025-07-12T15:34:21.758Z",
+      "updatedAt": "2025-07-12T15:34:21.758Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Anti-Monitor (New52)",
+          "Scarlet King"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Anti-Monitor (New52)",
+        "teamB": "Scarlet King",
+        "votes": {
+          "teamA": 0,
+          "teamB": 0,
+          "voters": []
+        },
+        "status": "active",
+        "isOfficial": false,
+        "lockTime": "2025-07-15T15:34:21.758Z",
+        "winner": null,
+        "winnerTeam": null
+      },
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": []
     }
   ],
   "comments": [

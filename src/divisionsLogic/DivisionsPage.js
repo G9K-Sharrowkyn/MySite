@@ -396,6 +396,8 @@ const DivisionsPage = () => {
 
               <div className="division-participants">
                 <span>👥 {t('activeTeams')}: {divisionStats[division.id]?.activeTeams || 0}</span>
+                <span style={{ marginLeft: 16 }}>🥊 {t('officialFights') || 'Official Fights'}: {divisionStats[division.id]?.totalOfficialFights || 0}</span>
+                <span style={{ marginLeft: 16 }}>🗳️ {t('averageVotes') || 'Avg. Votes/Fight'}: {divisionStats[division.id]?.averageVotes || 0}</span>
               </div>
             </div>
           );

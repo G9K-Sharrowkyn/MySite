@@ -1,13 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './i18n/LanguageContext';
 import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
 import LanguageSwitcher from './LanguageSwitcher/LanguageSwitcher';
+import { AuthContext } from './auth/AuthContext';
 import './Header.css';
 
-const Header = ({ isLoggedIn, setIsLoggedIn }) => {
-  const [user, setUser] = useState(null);
+const Header = () => {
+  const { user, token, logout } = useContext(AuthContext);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -15,11 +16,10 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const isLoggedIn = !!user;
 
   const fetchUserData = useCallback(async () => {
-    const token = localStorage.getItem('token');
     if (!token) {
-      setIsLoggedIn(false);
       return;
     }
 
@@ -27,17 +27,16 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
       const response = await axios.get('/api/profile/me', {
         headers: { 'x-auth-token': token }
       });
-      setUser(response.data);
+      // User data is already managed by AuthContext, so we don't need to set it here
     } catch (error) {
       console.error('Error fetching user data:', error);
       if (error.response?.status === 401) {
         handleLogout();
       }
     }
-  }, [setIsLoggedIn]);
+  }, [token]);
 
   const fetchUnreadCounts = useCallback(async () => {
-    const token = localStorage.getItem('token');
     if (!token) {
       setUnreadMessages(0);
       setUnreadNotifications(0);
@@ -66,7 +65,7 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
         setUnreadNotifications(0);
       }
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -82,7 +81,6 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   }, [isLoggedIn, fetchUserData, fetchUnreadCounts]);
 
   const fetchNotifications = async () => {
-    const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -96,10 +94,7 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('userId');
-    setIsLoggedIn(false);
-    setUser(null);
+    logout();
     setUnreadMessages(0);
     setUnreadNotifications(0);
     setShowUserMenu(false);
@@ -114,7 +109,6 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   };
 
   const markNotificationAsRead = async (notificationId) => {
-    const token = localStorage.getItem('token');
     if (!token) return;
 
     try {
@@ -129,7 +123,6 @@ const Header = ({ isLoggedIn, setIsLoggedIn }) => {
   };
 
   const markAllNotificationsAsRead = async () => {
-    const token = localStorage.getItem('token');
     if (!token) return;
 
     try {

@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 // Achievement definitions
 const ACHIEVEMENTS = {
@@ -255,7 +255,7 @@ async function checkStreakAchievements(db, userId, currentStreak) {
 // @desc    Get site statistics
 // @route   GET /api/stats/site
 // @access  Public
-exports.getSiteStats = async (req, res) => {
+export const getSiteStats = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -314,7 +314,7 @@ exports.getSiteStats = async (req, res) => {
 // @desc    Get user statistics
 // @route   GET /api/stats/user/:userId
 // @access  Public
-exports.getUserStats = async (req, res) => {
+export const getUserStats = async (req, res) => {
   const db = req.db;
   const { userId } = req.params;
   
@@ -362,7 +362,7 @@ exports.getUserStats = async (req, res) => {
 // @desc    Get fight statistics
 // @route   GET /api/stats/fight/:fightId
 // @access  Public
-exports.getFightStats = async (req, res) => {
+export const getFightStats = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -425,7 +425,7 @@ exports.getFightStats = async (req, res) => {
   });
 };
 
-exports.getUserAchievements = async (req, res) => {
+export const getUserAchievements = async (req, res) => {
   const db = req.db;
   const { userId } = req.params;
   
@@ -491,7 +491,7 @@ exports.getUserAchievements = async (req, res) => {
   }
 };
 
-exports.awardAchievement = async (req, res) => {
+export const awardAchievement = async (req, res) => {
   const db = req.db;
   const { userId, achievementType, currentCount } = req.body;
   
@@ -514,7 +514,7 @@ exports.awardAchievement = async (req, res) => {
   }
 };
 
-exports.awardStreakAchievement = async (req, res) => {
+export const awardStreakAchievement = async (req, res) => {
   const db = req.db;
   const { userId, currentStreak } = req.body;
   
@@ -537,48 +537,70 @@ exports.awardStreakAchievement = async (req, res) => {
   }
 };
 
-exports.getLeaderboard = async (req, res) => {
+export const getLeaderboard = async (req, res) => {
   const db = req.db;
   const { type = 'experience', limit = 10 } = req.query;
   
   try {
     await db.read();
     
-    let users = db.data.users.filter(user => user.stats);
+    // Get all users and calculate their stats
+    let users = db.data.users.map(user => {
+      // Calculate user fights and wins
+      const userFights = db.data.fights.filter(f => 
+        f.participants && f.participants.some(p => p.userId === user.id)
+      );
+      const userWins = userFights.filter(f => f.winner === user.id);
+      
+      // Get user posts for activity
+      const userPosts = db.data.posts.filter(p => p.authorId === user.id);
+      
+      // Combine stats from different sources
+      const combinedStats = {
+        experience: user.stats?.experience || user.profile?.stats?.experience || 0,
+        points: user.stats?.points || user.profile?.stats?.points || user.profile?.score || 0,
+        level: user.stats?.level || Math.floor((user.stats?.experience || 0) / 100) + 1,
+        victories: userWins.length,
+        fights: userFights.length,
+        posts: userPosts.length
+      };
+      
+      return {
+        id: user.id,
+        username: user.username,
+        profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
+        rank: user.stats?.rank || user.profile?.rank || 'Rookie',
+        points: combinedStats.points,
+        victories: combinedStats.victories,
+        level: combinedStats.level,
+        experience: combinedStats.experience,
+        achievements: user.achievements?.length || 0,
+        ...combinedStats
+      };
+    });
     
     // Sort by the specified type
     switch (type) {
       case 'experience':
-        users.sort((a, b) => (b.stats.experience || 0) - (a.stats.experience || 0));
+        users.sort((a, b) => (b.experience || 0) - (a.experience || 0));
         break;
       case 'points':
-        users.sort((a, b) => (b.stats.points || 0) - (a.stats.points || 0));
+        users.sort((a, b) => (b.points || 0) - (a.points || 0));
         break;
       case 'achievements':
-        users.sort((a, b) => (b.achievements?.length || 0) - (a.achievements?.length || 0));
+        users.sort((a, b) => (b.achievements || 0) - (a.achievements || 0));
         break;
       case 'fights':
-        const fightCounts = users.map(user => {
-          const userFights = db.data.fights.filter(f => 
-            f.participants.some(p => p.userId === user.id)
-          );
-          return { user, fightCount: userFights.length };
-        });
-        fightCounts.sort((a, b) => b.fightCount - a.fightCount);
-        users = fightCounts.slice(0, limit).map(item => item.user);
+        users.sort((a, b) => (b.fights || 0) - (a.fights || 0));
+        break;
+      case 'victories':
+        users.sort((a, b) => (b.victories || 0) - (a.victories || 0));
         break;
       default:
-        users.sort((a, b) => (b.stats.experience || 0) - (a.stats.experience || 0));
+        users.sort((a, b) => (b.experience || 0) - (a.experience || 0));
     }
     
-    const leaderboard = users.slice(0, limit).map((user, index) => ({
-      rank: index + 1,
-      userId: user.id,
-      username: user.username,
-      stats: user.stats,
-      achievements: user.achievements?.length || 0,
-      level: Math.floor((user.stats?.experience || 0) / 100) + 1
-    }));
+    const leaderboard = users.slice(0, limit);
     
     res.json(leaderboard);
   } catch (err) {

@@ -1,0 +1,428 @@
+.enhanced-betting {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border: 2px solid #0f3460;
+  border-radius: 15px;
+  padding: 25px;
+  margin: 20px 0;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.betting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #0f3460;
+}
+
+.betting-header h2 {
+  color: #e94560;
+  margin: 0;
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.bet-type-selector {
+  display: flex;
+  gap: 10px;
+}
+
+.bet-type-btn {
+  padding: 10px 20px;
+  border: 2px solid #0f3460;
+  background: transparent;
+  color: #f0f0f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.bet-type-btn:hover {
+  border-color: #e94560;
+  background: rgba(233, 69, 96, 0.1);
+}
+
+.bet-type-btn.active {
+  background: linear-gradient(135deg, #e94560 0%, #c44569 100%);
+  border-color: #e94560;
+  color: white;
+}
+
+.user-balance-section {
+  margin-bottom: 20px;
+}
+
+.betting-error {
+  background: rgba(220, 53, 69, 0.2);
+  border: 1px solid #dc3545;
+  color: #ff6b6b;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.betting-success {
+  background: rgba(40, 167, 69, 0.2);
+  border: 1px solid #28a745;
+  color: #51cf66;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+}
+
+.betting-content {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 25px;
+}
+
+.available-fights h3 {
+  color: #e94560;
+  margin: 0 0 20px 0;
+  font-size: 1.3rem;
+  font-weight: bold;
+}
+
+.fights-grid {
+  display: grid;
+  gap: 15px;
+}
+
+.fight-card {
+  background: rgba(15, 52, 96, 0.2);
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.fight-card:hover {
+  border-color: #e94560;
+  box-shadow: 0 5px 15px rgba(233, 69, 96, 0.2);
+}
+
+.fight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.fight-header h4 {
+  color: #f0f0f0;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.fight-time {
+  color: #b0b0b0;
+  font-size: 0.8rem;
+}
+
+.betting-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.bet-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  border: 2px solid #0f3460;
+  background: transparent;
+  color: #f0f0f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+}
+
+.bet-option:hover {
+  border-color: #e94560;
+  background: rgba(233, 69, 96, 0.1);
+}
+
+.bet-option.selected {
+  background: linear-gradient(135deg, #e94560 0%, #c44569 100%);
+  border-color: #e94560;
+  color: white;
+  transform: scale(1.02);
+}
+
+.team-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.odds {
+  font-size: 0.8rem;
+  opacity: 0.9;
+}
+
+.betting-sidebar {
+  background: rgba(15, 52, 96, 0.3);
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+  padding: 20px;
+  height: fit-content;
+}
+
+.selected-bets h3,
+.bet-amount-section h3,
+.bet-summary h3 {
+  color: #e94560;
+  margin: 0 0 15px 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.no-bets {
+  color: #b0b0b0;
+  font-style: italic;
+  text-align: center;
+  margin: 20px 0;
+}
+
+.bets-list {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.selected-bet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: rgba(15, 52, 96, 0.2);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+
+.bet-fight {
+  color: #f0f0f0;
+  font-weight: 500;
+  flex: 1;
+}
+
+.bet-prediction {
+  color: #e94560;
+  font-weight: bold;
+  margin: 0 10px;
+}
+
+.bet-odds {
+  color: #b0b0b0;
+  font-weight: bold;
+}
+
+.amount-input-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.amount-input {
+  flex: 1;
+  padding: 12px;
+  border: 2px solid #0f3460;
+  background: rgba(15, 52, 96, 0.2);
+  color: #f0f0f0;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-right: 10px;
+}
+
+.amount-input:focus {
+  outline: none;
+  border-color: #e94560;
+}
+
+.coins-label {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.quick-amounts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.quick-amount-btn {
+  padding: 8px 12px;
+  border: 1px solid #0f3460;
+  background: transparent;
+  color: #f0f0f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.8rem;
+  min-width: 40px;
+}
+
+.quick-amount-btn:hover:not(:disabled) {
+  border-color: #e94560;
+  background: rgba(233, 69, 96, 0.1);
+}
+
+.quick-amount-btn.selected {
+  background: linear-gradient(135deg, #e94560 0%, #c44569 100%);
+  border-color: #e94560;
+  color: white;
+}
+
+.quick-amount-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.bet-summary {
+  background: rgba(15, 52, 96, 0.2);
+  border: 1px solid #0f3460;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  color: #f0f0f0;
+  font-size: 0.9rem;
+}
+
+.summary-row:last-child {
+  margin-bottom: 0;
+}
+
+.total-odds {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.potential-winnings {
+  color: #e94560;
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.system-bets {
+  margin-top: 15px;
+  padding-top: 15px;
+  border-top: 1px solid #0f3460;
+}
+
+.system-bets h4 {
+  color: #e94560;
+  margin: 0 0 10px 0;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.system-bet {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background: rgba(15, 52, 96, 0.2);
+  border-radius: 6px;
+  margin-bottom: 5px;
+  font-size: 0.8rem;
+  color: #b0b0b0;
+}
+
+.place-bet-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #e94560 0%, #c44569 100%);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 1rem;
+}
+
+.place-bet-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #c44569 0%, #a55eea 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+}
+
+.place-bet-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.betting-login-required {
+  text-align: center;
+  padding: 40px;
+  color: #b0b0b0;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 1024px) {
+  .betting-content {
+    grid-template-columns: 1fr;
+  }
+  
+  .betting-sidebar {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .enhanced-betting {
+    padding: 15px;
+  }
+  
+  .betting-header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .bet-type-selector {
+    justify-content: center;
+  }
+  
+  .betting-options {
+    grid-template-columns: 1fr;
+  }
+  
+  .bet-option {
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  
+  .team-name {
+    margin-bottom: 0;
+  }
+  
+  .selected-bet {
+    flex-direction: column;
+    gap: 5px;
+    text-align: center;
+  }
+  
+  .bet-prediction {
+    margin: 0;
+  }
+}

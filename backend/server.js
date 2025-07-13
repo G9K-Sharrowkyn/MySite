@@ -1,12 +1,40 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { Low } = require('lowdb');
-const { JSONFile } = require('lowdb/node');
-const path = require('path');
-const { startScheduler } = require('./services/fightScheduler');
-const http = require('http');
-const { Server } = require('socket.io');
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
+import express from 'express';
+import cors from 'cors';
+import { Low } from 'lowdb';
+import { JSONFile } from 'lowdb/node';
+import path from 'path';
+import { startScheduler } from './services/fightScheduler.js';
+import http from 'http';
+import { Server } from 'socket.io';
+
+import authRoutes from './routes/auth.js';
+import profileRoutes from './routes/profile.js';
+import fightRoutes from './routes/fights.js';
+import commentRoutes from './routes/comments.js';
+import postRoutes from './routes/posts.js';
+import characterRoutes from './routes/characters.js';
+import messageRoutes from './routes/messages.js';
+import voteRoutes from './routes/votes.js';
+import divisionsRoutes from './routes/divisions.js';
+import notificationRoutes from './routes/notifications.js';
+import tournamentRoutes from './routes/tournaments.js';
+import statsRoutes from './routes/stats.js';
+import badgeRoutes from './routes/badges.js';
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+
+// Connect to MongoDB
+const mongoUri = process.env.MONGODB_URI;
+if (mongoUri) {
+  mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('✅ Connected to MongoDB'))
+    .catch((err) => console.error('❌ MongoDB connection error:', err));
+} else {
+  console.warn('⚠️  No MONGODB_URI found in .env, MongoDB will not be used.');
+}
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,7 +70,7 @@ const db = new Low(adapter, {
 });
 
 // Read data from JSON file
-db.read();
+await db.read();
 
 // Middleware
 app.use(cors());
@@ -57,19 +85,6 @@ app.use((req, res, next) => {
 });
 
 // Import routes
-const authRoutes = require('./routes/auth');
-const profileRoutes = require('./routes/profile');
-const fightRoutes = require('./routes/fights');
-const commentRoutes = require('./routes/comments');
-const postRoutes = require('./routes/posts');
-const characterRoutes = require('./routes/characters');
-const messageRoutes = require('./routes/messages');
-const voteRoutes = require('./routes/votes');
-const divisionsRoutes = require('./routes/divisions');
-const notificationRoutes = require('./routes/notifications');
-const tournamentRoutes = require('./routes/tournaments');
-const statsRoutes = require('./routes/stats');
-const { router: badgeRoutes } = require('./routes/badges');
 
 // Use routes
 app.use('/api/auth', authRoutes);
@@ -237,5 +252,7 @@ server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   
   // Start the fight scheduler
-  startScheduler();
+  (async () => {
+    await startScheduler();
+  })();
 });

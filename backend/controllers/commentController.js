@@ -1,11 +1,11 @@
 
-const { v4: uuidv4 } = require('uuid');
-const { createNotification } = require('./notificationController');
+import { v4 as uuidv4 } from 'uuid';
+import { createNotification } from './notificationController.js';
 
 // @desc    Add comment to user profile
 // @route   POST /api/comments/user/:userId
 // @access  Private
-exports.addUserComment = async (req, res) => {
+export const addUserComment = async (req, res) => {
   try {
     console.log('Add user profile comment request received:', {
       userId: req.user.id,
@@ -64,7 +64,7 @@ exports.addUserComment = async (req, res) => {
   }
 };
 
-exports.addFightComment = async (req, res) => {
+export const addFightComment = async (req, res) => {
   try {
     console.log('Add fight comment request received:', {
       userId: req.user.id,
@@ -128,7 +128,7 @@ exports.addFightComment = async (req, res) => {
 // @desc    Get comments for user profile
 // @route   GET /api/comments/user/:userId
 // @access  Public
-exports.getUserComments = async (req, res) => {
+export const getUserComments = async (req, res) => {
   const { page = 1, limit = 20 } = req.query;
   const db = req.db;
   await db.read();
@@ -160,7 +160,7 @@ exports.getUserComments = async (req, res) => {
 // @desc    Get comments for fight
 // @route   GET /api/comments/fight/:fightId
 // @access  Public
-exports.getFightComments = async (req, res) => {
+export const getFightComments = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
   const db = req.db;
   await db.read();
@@ -192,7 +192,7 @@ exports.getFightComments = async (req, res) => {
 // @desc    Like/unlike comment
 // @route   POST /api/comments/:id/like
 // @access  Private
-exports.toggleCommentLike = async (req, res) => {
+export const toggleCommentLike = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -250,7 +250,7 @@ exports.toggleCommentLike = async (req, res) => {
 // @desc    Delete comment
 // @route   DELETE /api/comments/:id
 // @access  Private
-exports.deleteComment = async (req, res) => {
+export const deleteComment = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -276,7 +276,7 @@ exports.deleteComment = async (req, res) => {
 // @desc    Update comment
 // @route   PUT /api/comments/:id
 // @access  Private
-exports.updateComment = async (req, res) => {
+export const updateComment = async (req, res) => {
   const { text } = req.body;
   const db = req.db;
   await db.read();
@@ -304,7 +304,7 @@ exports.updateComment = async (req, res) => {
 // @desc    Add comment to post
 // @route   POST /api/comments/post/:postId
 // @access  Private
-exports.addPostComment = async (req, res) => {
+export const addPostComment = async (req, res) => {
   const { text } = req.body;
   const db = req.db;
   await db.read();
@@ -361,7 +361,7 @@ exports.addPostComment = async (req, res) => {
 // @desc    Get comments for post
 // @route   GET /api/comments/post/:postId
 // @access  Public
-exports.getPostComments = async (req, res) => {
+export const getPostComments = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
   const db = req.db;
   await db.read();

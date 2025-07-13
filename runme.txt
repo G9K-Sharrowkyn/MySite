@@ -1,0 +1,82 @@
+# How to Run Your Nerd Social Voting Platform
+
+---
+
+## 1. First-Time Setup (Do This Only Once)
+
+### a) Install Backend Dependencies
+Open Command Prompt and run:
+  cd F:\Teksty\Programming\Site1\my-site\backend
+  npm install
+
+### b) Install Frontend Dependencies
+Open a second Command Prompt and run:
+  cd F:\Teksty\Programming\Site1\my-site
+  npm install
+
+### c) Set Up Environment Variables
+- In backend/, create a file called .env (if it doesn't exist)
+- Example contents:
+  PORT=5000
+  MONGODB_URI=mongodb://localhost:27017/nerdsite
+  JWT_SECRET=your_super_secret_key
+  NODE_ENV=development
+- If using MongoDB Atlas, replace MONGODB_URI with your Atlas connection string.
+
+### d) Start MongoDB
+- If installed locally, run:
+  "C:\Program Files\MongoDB\Server\6.0\bin\mongod.exe"
+  (Or use MongoDB Compass to start the server)
+
+### e) Seed the Database (Optional, for demo data)
+In backend/scripts/:
+  cd F:\Teksty\Programming\Site1\my-site\backend
+  node scripts/seedCompleteSystem.js
+
+### f) Start the Backend Server
+In backend/:
+  npm start
+- You should see: Server running on port 5000
+
+### g) Start the Frontend (React) App
+In the main project folder:
+  npm start
+- This will open your app in the browser at http://localhost:3000
+
+### h) Register and Use the App
+- Open http://localhost:3000 in your browser.
+- Register a new user, log in, and explore all features!
+
+---
+
+## 2. Quick Start (For Every Next Time)
+
+### a) Start MongoDB
+- If not already running, start MongoDB:
+  "C:\Program Files\MongoDB\Server\6.0\bin\mongod.exe"
+  (Or use MongoDB Compass)
+
+### b) Start the Backend Server
+Open Command Prompt:
+  cd F:\Teksty\Programming\Site1\my-site\backend
+  npm start
+
+### c) Start the Frontend (React) App
+Open a second Command Prompt:
+  cd F:\Teksty\Programming\Site1\my-site
+  npm start
+
+### d) Use the App
+- Go to http://localhost:3000 in your browser.
+
+---
+
+## Troubleshooting
+- Port already in use? Close any other app using port 5000 or 3000, or restart your computer.
+- MongoDB errors? Make sure MongoDB is running.
+- .env issues? Double-check your .env file for typos.
+
+---
+
+# You’re Done!
+If you get stuck, just copy the error and ask for help! 

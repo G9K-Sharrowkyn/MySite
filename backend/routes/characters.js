@@ -1,27 +1,28 @@
-const express = require('express');
+import express from 'express';
+import { getCharacters, addCharacter, updateCharacter, suggestCharacter } from '../controllers/characterController.js';
+import auth from '../middleware/auth.js';
+import authorize from '../middleware/roleMiddleware.js';
+
 const router = express.Router();
-const characterController = require('../controllers/characterController');
-const auth = require('../middleware/authMiddleware');
-const authorize = require('../middleware/roleMiddleware');
 
 // @route   GET api/characters
 // @desc    Get all characters
 // @access  Public
-router.get('/', characterController.getCharacters);
+router.get('/', getCharacters);
 
 // @route   POST api/characters
 // @desc    Add a new character
 // @access  Private (Moderator)
-router.post('/', auth, authorize(['moderator', 'admin']), characterController.addCharacter);
+router.post('/', auth, authorize(['moderator', 'admin']), addCharacter);
 
 // @route   PUT api/characters/:id
 // @desc    Update character availability
 // @access  Private (Moderator)
-router.put('/:id', auth, authorize(['moderator', 'admin']), characterController.updateCharacter);
+router.put('/:id', auth, authorize(['moderator', 'admin']), updateCharacter);
 
 // @route   POST api/characters/suggest
 // @desc    Suggest a new character (User suggestion)
 // @access  Private
-router.post('/suggest', auth, characterController.suggestCharacter);
+router.post('/suggest', auth, suggestCharacter);
 
-module.exports = router;
+export default router;

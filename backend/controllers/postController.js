@@ -1,55 +1,42 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
+import Post from '../models/Post.js';
+import User from '../models/User.js';
 
-exports.getAllPosts = async (req, res) => {
-  const db = req.db;
+export const getAllPosts = async (req, res) => {
   const { page = 1, limit = 10, sortBy = 'createdAt' } = req.query;
-  
   try {
-    console.log('Fetching all posts with params:', { page, limit, sortBy });
-    await db.read();
-    let posts = db.data.posts || [];
-    
-    // Sort posts
-    posts.sort((a, b) => {
-      if (sortBy === 'likes') {
-        return b.likes.length - a.likes.length;
-      }
-      return new Date(b.createdAt) - new Date(a.createdAt);
-    });
-    
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedPosts = posts.slice(startIndex, endIndex);
-    
-    // Add user info to posts
-    const postsWithUserInfo = paginatedPosts.map(post => {
-      const author = db.data.users.find(u => u.id === post.authorId);
+    const sortObj = sortBy === 'likes' ? { likes: -1 } : { createdAt: -1 };
+    const posts = await Post.find()
+      .sort(sortObj)
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+    const totalPosts = await Post.countDocuments();
+    // Populate author info
+    const postsWithUserInfo = await Promise.all(posts.map(async post => {
+      const author = await User.findById(post.authorId);
       return {
-        ...post,
+        ...post.toObject(),
         author: author ? {
-          id: author.id,
+          id: author._id,
           username: author.username,
           profilePicture: author.profile?.profilePicture || '',
           rank: author.stats?.rank || 'Rookie'
         } : null
       };
-    });
-    
-    console.log(`Returning ${postsWithUserInfo.length} posts out of ${posts.length}`);
+    }));
     res.json({
       posts: postsWithUserInfo,
-      totalPosts: posts.length,
+      totalPosts,
       currentPage: parseInt(page),
-      totalPages: Math.ceil(posts.length / limit)
+      totalPages: Math.ceil(totalPosts / limit)
     });
   } catch (err) {
-    console.error('Error fetching all posts:', err.message);
+    console.error('Error fetching all posts from MongoDB:', err.message);
     res.status(500).send('Server Error');
   }
 };
 
-exports.getPostsByUser = async (req, res) => {
+export const getPostsByUser = async (req, res) => {
   const db = req.db;
   const { userId } = req.params;
   const { page = 1, limit = 10 } = req.query;
@@ -91,7 +78,7 @@ exports.getPostsByUser = async (req, res) => {
   }
 };
 
-exports.getPostById = async (req, res) => {
+export const getPostById = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   
@@ -122,7 +109,7 @@ exports.getPostById = async (req, res) => {
   }
 };
 
-exports.createPost = async (req, res) => {
+export const createPost = async (req, res) => {
   const db = req.db;
   const { title, content, type, teamA, teamB, photos, pollOptions, isOfficial, moderatorCreated, category } = req.body;
   
@@ -198,64 +185,28 @@ exports.createPost = async (req, res) => {
     }
 
     db.data.posts.push(newPost);
-    
-    // Update user stats safely
-    const userIndex = db.data.users.findIndex(u => u.id === req.user.id);
-    if (userIndex !== -1) {
-      // Initialize activity and stats if they don't exist
-      if (!db.data.users[userIndex].activity) {
-        db.data.users[userIndex].activity = {
-          postsCreated: 0,
-          likesReceived: 0,
-          commentsPosted: 0,
-          fightsCreated: 0,
-          votesGiven: 0,
-          officialFightsCreated: 0
-        };
-      }
-      if (!db.data.users[userIndex].stats) {
-        db.data.users[userIndex].stats = {
-          experience: 0,
-          rank: 'Rookie',
-          level: 1,
-          points: 0
-        };
-      }
-      
-      db.data.users[userIndex].activity.postsCreated += 1;
-      db.data.users[userIndex].stats.experience += 10; // Award experience for posting
-      
-      if (type === 'fight') {
-        db.data.users[userIndex].activity.fightsCreated += 1;
-        if (isOfficial) {
-          db.data.users[userIndex].activity.officialFightsCreated += 1;
-          db.data.users[userIndex].stats.experience += 50; // Extra experience for official fights
-        }
-      }
-    }
-    
     await db.write();
-    
-    // Return post with author info
+
+    // Add author info to response
     const author = db.data.users.find(u => u.id === req.user.id);
     const postWithAuthor = {
       ...newPost,
-      author: {
+      author: author ? {
         id: author.id,
         username: author.username,
         profilePicture: author.profile?.profilePicture || '',
         rank: author.stats?.rank || 'Rookie'
-      }
+      } : null
     };
-    
-    res.json(postWithAuthor);
+
+    res.status(201).json(postWithAuthor);
   } catch (err) {
-    console.error('Error creating post:', err.message);
-    res.status(500).json({ message: 'Server Error', error: err.message });
+    console.error(err.message);
+    res.status(500).send('Server Error');
   }
 };
 
-exports.updatePost = async (req, res) => {
+export const updatePost = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   const updates = req.body;
@@ -290,7 +241,7 @@ exports.updatePost = async (req, res) => {
   }
 };
 
-exports.deletePost = async (req, res) => {
+export const deletePost = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   
@@ -320,7 +271,7 @@ exports.deletePost = async (req, res) => {
   }
 };
 
-exports.toggleLike = async (req, res) => {
+export const toggleLike = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   
@@ -373,7 +324,7 @@ exports.toggleLike = async (req, res) => {
   }
 };
 
-exports.voteInPoll = async (req, res) => {
+export const voteInPoll = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   const { optionIndex } = req.body;
@@ -450,7 +401,7 @@ exports.voteInPoll = async (req, res) => {
   }
 };
 
-exports.getOfficialFights = async (req, res) => {
+export const getOfficialFights = async (req, res) => {
   const db = req.db;
   const { limit = 10 } = req.query;
   
@@ -495,7 +446,7 @@ exports.getOfficialFights = async (req, res) => {
   }
 };
 
-exports.voteInFight = async (req, res) => {
+export const voteInFight = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   const { team } = req.body; // team: 'A' or 'B'
@@ -565,7 +516,7 @@ exports.voteInFight = async (req, res) => {
   }
 };
 
-exports.addReaction = async (req, res) => {
+export const addReaction = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   const { reactionId, reactionIcon, reactionName } = req.body;

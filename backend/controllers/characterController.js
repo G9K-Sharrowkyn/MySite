@@ -1,11 +1,11 @@
 
-const { v4: uuidv4 } = require('uuid');
-const { createNotification } = require('./notificationController');
+import { v4 as uuidv4 } from 'uuid';
+import { createNotification } from './notificationController.js';
 
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
-exports.getCharacters = async (req, res) => {
+export const getCharacters = async (req, res) => {
   const db = req.db;
   await db.read();
   res.json(db.data.characters);
@@ -14,7 +14,7 @@ exports.getCharacters = async (req, res) => {
 // @desc    Add a new character (Moderator only)
 // @route   POST /api/characters
 // @access  Private (Moderator)
-exports.addCharacter = async (req, res) => {
+export const addCharacter = async (req, res) => {
   const { name } = req.body;
   const db = req.db;
   await db.read();
@@ -28,7 +28,7 @@ exports.addCharacter = async (req, res) => {
 // @desc    Update character availability (Moderator only)
 // @route   PUT /api/characters/:id
 // @access  Private (Moderator)
-exports.updateCharacter = async (req, res) => {
+export const updateCharacter = async (req, res) => {
   const { id } = req.params;
   const { available } = req.body;
   const db = req.db;
@@ -48,7 +48,7 @@ exports.updateCharacter = async (req, res) => {
 // @desc    Suggest a new character (User suggestion)
 // @route   POST /api/characters/suggest
 // @access  Private
-exports.suggestCharacter = async (req, res) => {
+export const suggestCharacter = async (req, res) => {
   const { name, photo } = req.body;
   const db = req.db;
   await db.read();

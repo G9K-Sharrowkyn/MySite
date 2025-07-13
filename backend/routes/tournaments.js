@@ -1,61 +1,32 @@
-const express = require('express');
+import express from 'express';
+import { getAllTournaments, createTournament, getTournamentById, updateTournament, deleteTournament } from '../controllers/tournamentController.js';
+import auth from '../middleware/auth.js';
+
 const router = express.Router();
-const tournamentController = require('../controllers/tournamentController');
-const auth = require('../middleware/auth');
 
 // @route   GET api/tournaments
 // @desc    Get all tournaments
 // @access  Public
-router.get('/', tournamentController.getAllTournaments);
+router.get('/', getAllTournaments);
+
+// @route   POST api/tournaments
+// @desc    Create a new tournament
+// @access  Private
+router.post('/', auth, createTournament);
 
 // @route   GET api/tournaments/:id
 // @desc    Get tournament by ID
 // @access  Public
-router.get('/:id', tournamentController.getTournamentById);
-
-// @route   POST api/tournaments
-// @desc    Create new tournament (moderator only)
-// @access  Private
-router.post('/', auth, tournamentController.createTournament);
+router.get('/:id', getTournamentById);
 
 // @route   PUT api/tournaments/:id
-// @desc    Update tournament (moderator only)
+// @desc    Update tournament
 // @access  Private
-router.put('/:id', auth, tournamentController.updateTournament);
+router.put('/:id', auth, updateTournament);
 
 // @route   DELETE api/tournaments/:id
-// @desc    Delete tournament (moderator only)
+// @desc    Delete tournament
 // @access  Private
-router.delete('/:id', auth, tournamentController.deleteTournament);
+router.delete('/:id', auth, deleteTournament);
 
-// @route   POST api/tournaments/:id/join
-// @desc    Join tournament
-// @access  Private
-router.post('/:id/join', auth, tournamentController.joinTournament);
-
-// @route   POST api/tournaments/:id/leave
-// @desc    Leave tournament
-// @access  Private
-router.post('/:id/leave', auth, tournamentController.leaveTournament);
-
-// @route   POST api/tournaments/:id/start
-// @desc    Start tournament (moderator only)
-// @access  Private
-router.post('/:id/start', auth, tournamentController.startTournament);
-
-// @route   POST api/tournaments/:id/matches/:matchId/advance
-// @desc    Advance match (moderator only)
-// @access  Private
-router.post('/:id/matches/:matchId/advance', auth, tournamentController.advanceMatch);
-
-// @route   POST api/tournaments/:id/matches/:matchId/vote
-// @desc    Vote in tournament match
-// @access  Private
-router.post('/:id/matches/:matchId/vote', auth, tournamentController.voteInTournament);
-
-// @route   GET api/tournaments/:id/brackets
-// @desc    Get tournament brackets
-// @access  Public
-router.get('/:id/brackets', tournamentController.getTournamentBrackets);
-
-module.exports = router;
+export default router;

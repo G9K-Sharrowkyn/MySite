@@ -1,7 +1,9 @@
-const express = require('express');
+import express from 'express';
+import { v4 as uuidv4 } from 'uuid';
+import auth from '../middleware/auth.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+
 const router = express.Router();
-const auth = require('../middleware/authMiddleware');
-const roleMiddleware = require('../middleware/roleMiddleware');
 
 // Get all divisions
 router.get('/', async (req, res) => {
@@ -347,23 +349,101 @@ router.get('/:divisionId/stats', async (req, res) => {
   try {
     await req.db.read();
     const { divisionId } = req.params;
-    
+    // Defensive: ensure users and fights arrays exist
+    const users = Array.isArray(req.db.data.users) ? req.db.data.users : [];
+    const fights = Array.isArray(req.db.data.fights) ? req.db.data.fights : [];
     // Count active teams in this division
-    const activeTeams = req.db.data.users.filter(user => 
+    const activeTeams = users.filter(user =>
       user.divisions && user.divisions[divisionId]
     ).length;
-    
-    // Get division info
-    const divisionInfo = {
-      id: divisionId,
+    // Get all fights for this division
+    const divisionFights = fights.filter(fight =>
+      fight.divisionId === divisionId
+    );
+    // Calculate average votes per fight
+    const totalVotes = divisionFights.reduce((sum, fight) => {
+      const v1 = fight.votes && typeof fight.votes.fighter1 === 'number' ? fight.votes.fighter1 : 0;
+      const v2 = fight.votes && typeof fight.votes.fighter2 === 'number' ? fight.votes.fighter2 : 0;
+      return sum + v1 + v2;
+    }, 0);
+    const averageVotes = divisionFights.length > 0 ? Math.round(totalVotes / divisionFights.length) : 0;
+    // Get completed and active fights
+    const completedFights = divisionFights.filter(fight => fight.status === 'ended').length;
+    const activeFights = divisionFights.filter(fight => fight.status === 'active').length;
+    // Calculate average win rate
+    const divisionUsers = users.filter(user =>
+      user.divisions && user.divisions[divisionId]
+    );
+    const totalWins = divisionUsers.reduce((sum, user) => {
+      return sum + (user.divisions[divisionId]?.wins || 0);
+    }, 0);
+    const totalLosses = divisionUsers.reduce((sum, user) => {
+      return sum + (user.divisions[divisionId]?.losses || 0);
+    }, 0);
+    const averageWinRate = (totalWins + totalLosses) > 0 ?
+      Math.round((totalWins / (totalWins + totalLosses)) * 100) : 0;
+    // Get recent activity (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentFights = divisionFights.filter(fight => {
+      const createdAt = fight.createdAt ? new Date(fight.createdAt) : null;
+      return createdAt && createdAt > sevenDaysAgo;
+    }).length;
+    // Get champion info
+    const champion = divisionUsers.find(user =>
+      user.divisions?.[divisionId]?.isChampion
+    );
+    // Get top teams by wins
+    const topTeams = divisionUsers
+      .map(user => ({
+        username: user.username,
+        profilePicture: user.profilePicture,
+        wins: user.divisions[divisionId]?.wins || 0,
+        losses: user.divisions[divisionId]?.losses || 0,
+        winRate: user.divisions[divisionId]?.wins + user.divisions[divisionId]?.losses > 0 ?
+          Math.round((user.divisions[divisionId].wins / (user.divisions[divisionId].wins + user.divisions[divisionId].losses)) * 100) : 0
+      }))
+      .sort((a, b) => b.wins - a.wins)
+      .slice(0, 5);
+    // Get division history - handle both array and object formats
+    const championshipHistory = req.db.data.championshipHistory;
+    let divisionHistory = [];
+    if (Array.isArray(championshipHistory)) {
+      divisionHistory = championshipHistory.filter(history =>
+        history.divisionId === divisionId
+      );
+    } else if (championshipHistory && typeof championshipHistory === 'object') {
+      divisionHistory = Array.isArray(championshipHistory[divisionId]) ? championshipHistory[divisionId] : [];
+    } else {
+      // If championshipHistory doesn't exist, initialize it as an empty object
+      if (!req.db.data.championshipHistory) {
+        req.db.data.championshipHistory = {};
+      }
+      divisionHistory = [];
+    }
+    res.json({
+      divisionId,
       activeTeams,
-      totalUsers: req.db.data.users.length
-    };
-    
-    res.json(divisionInfo);
+      totalFights: divisionFights.length,
+      completedFights,
+      activeFights,
+      averageVotes,
+      averageWinRate,
+      recentActivity: recentFights,
+      champion: champion ? {
+        username: champion.username,
+        profilePicture: champion.profilePicture,
+        wins: champion.divisions[divisionId]?.wins || 0,
+        losses: champion.divisions[divisionId]?.losses || 0,
+        team: champion.divisions[divisionId]?.team
+      } : null,
+      topTeams,
+      totalChampions: divisionHistory.length,
+      lastUpdated: new Date().toISOString()
+    });
   } catch (error) {
     console.error('Error fetching division stats:', error);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 });
 
@@ -727,7 +807,7 @@ router.post('/:divisionId/contender-match', auth, async (req, res) => {
     
     // Create contender match as an official fight post
     const newContenderMatch = {
-      id: require('uuid').v4(),
+      id: uuidv4(),
       title: `#1 Contender Match: ${challenger1.username} vs ${challenger2.username}`,
       content: description || `Winner becomes the #1 contender for the ${req.db.data.divisions[divisionId].name} Championship`,
       type: 'fight',
@@ -876,7 +956,7 @@ router.post('/:divisionId/title-match', auth, async (req, res) => {
     
     // Create title match
     const newTitleMatch = {
-      id: require('uuid').v4(),
+      id: uuidv4(),
       title: `${division.name} Championship: ${champion.username} (c) vs ${challenger.username}`,
       content: description || `Championship match for the ${division.name} title!`,
       type: 'fight',
@@ -952,4 +1032,4 @@ router.post('/:divisionId/title-match', auth, async (req, res) => {
   }
 });
 
-module.exports = router;
+export default router;

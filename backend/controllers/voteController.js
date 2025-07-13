@@ -1,9 +1,9 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 // @desc    Vote on a fight
 // @route   POST /api/votes
 // @access  Private
-exports.vote = async (req, res) => {
+export const vote = async (req, res) => {
   try {
     console.log('Vote request received:', {
       userId: req.user.id,
@@ -60,7 +60,7 @@ exports.vote = async (req, res) => {
 // @desc    Get user's vote for a fight
 // @route   GET /api/votes/fight/:fightId/user
 // @access  Private
-exports.getUserVote = async (req, res) => {
+export const getUserVote = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -76,7 +76,7 @@ exports.getUserVote = async (req, res) => {
 // @desc    Get vote statistics for a fight
 // @route   GET /api/votes/fight/:fightId/stats
 // @access  Public
-exports.getFightVoteStats = async (req, res) => {
+export const getFightVoteStats = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -101,7 +101,7 @@ exports.getFightVoteStats = async (req, res) => {
 // @desc    Remove vote
 // @route   DELETE /api/votes/fight/:fightId
 // @access  Private
-exports.removeVote = async (req, res) => {
+export const removeVote = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -126,7 +126,7 @@ exports.removeVote = async (req, res) => {
 // @desc    Get all votes by user
 // @route   GET /api/votes/user/me
 // @access  Private
-exports.getUserVotes = async (req, res) => {
+export const getUserVotes = async (req, res) => {
   const db = req.db;
   await db.read();
 

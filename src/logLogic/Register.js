@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import Notification from '../notificationLogic/Notification';
+import { AuthContext } from '../auth/AuthContext';
 import '../Auth.css'; // Wspólny plik CSS dla autentykacji
 
-const Register = ({ setIsLoggedIn }) => {
+const Register = () => {
+  const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -51,9 +53,7 @@ const Register = ({ setIsLoggedIn }) => {
           showNotification('Błąd rejestracji: brak userId w odpowiedzi serwera.', 'error');
           return;
         }
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('userId', res.data.userId);
-        setIsLoggedIn(true);
+        login(res.data.token, res.data.userId);
         showNotification('Rejestracja udana!', 'success');
         // Tutaj można przekierować użytkownika lub zapisać token
       } catch (err) {

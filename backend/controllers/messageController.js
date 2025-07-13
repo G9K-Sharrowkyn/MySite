@@ -1,9 +1,9 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 // @desc    Send a message
 // @route   POST /api/messages
 // @access  Private
-exports.sendMessage = async (req, res) => {
+export const sendMessage = async (req, res) => {
   try {
     console.log('Send message request received:', {
       userId: req.user.id,
@@ -69,7 +69,7 @@ exports.sendMessage = async (req, res) => {
 // @desc    Get user's messages
 // @route   GET /api/messages
 // @access  Private
-exports.getMessages = async (req, res) => {
+export const getMessages = async (req, res) => {
   const { type = 'received', page = 1, limit = 20 } = req.query;
   const db = req.db;
   await db.read();
@@ -106,7 +106,7 @@ exports.getMessages = async (req, res) => {
 // @desc    Get single message
 // @route   GET /api/messages/:id
 // @access  Private
-exports.getMessage = async (req, res) => {
+export const getMessage = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -137,7 +137,7 @@ exports.getMessage = async (req, res) => {
 // @desc    Delete message
 // @route   DELETE /api/messages/:id
 // @access  Private
-exports.deleteMessage = async (req, res) => {
+export const deleteMessage = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -166,7 +166,7 @@ exports.deleteMessage = async (req, res) => {
 // @desc    Mark message as read
 // @route   PUT /api/messages/:id/read
 // @access  Private
-exports.markAsRead = async (req, res) => {
+export const markAsRead = async (req, res) => {
   const db = req.db;
   await db.read();
 
@@ -193,7 +193,7 @@ exports.markAsRead = async (req, res) => {
 // @desc    Get conversation between two users
 // @route   GET /api/messages/conversation/:userId
 // @access  Private
-exports.getConversation = async (req, res) => {
+export const getConversation = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
   const db = req.db;
   await db.read();
@@ -255,7 +255,7 @@ exports.getConversation = async (req, res) => {
 // @desc    Get unread message count
 // @route   GET /api/messages/unread/count
 // @access  Private
-exports.getUnreadCount = async (req, res) => {
+export const getUnreadCount = async (req, res) => {
   const db = req.db;
   await db.read();
 

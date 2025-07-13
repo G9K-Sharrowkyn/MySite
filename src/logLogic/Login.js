@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
 import Notification from '../notificationLogic/Notification';
 import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../auth/AuthContext';
 import '../Auth.css'; // Wspólny plik CSS dla autentykacji
 
-const Login = ({ setIsLoggedIn }) => {
+const Login = () => {
+  const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -47,9 +49,7 @@ const Login = ({ setIsLoggedIn }) => {
         showNotification('Błąd logowania: brak userId w odpowiedzi serwera.', 'error');
         return;
       }
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('userId', res.data.userId);
-      setIsLoggedIn(true);
+      login(res.data.token, res.data.userId);
       showNotification('Logowanie udane!', 'success');
       setTimeout(() => navigate('/'), 1000); // Przekieruj po krótkim opóźnieniu, aby powiadomienie było widoczne
     } catch (err) {

@@ -1,4 +1,4 @@
-module.exports = (roles) => (req, res, next) => {
+export default (roles) => (req, res, next) => {
   // Sprawdź, czy użytkownik jest zalogowany i ma rolę
   if (!req.user || !req.user.role) {
     return res.status(403).json({ msg: 'Brak autoryzacji: brak roli użytkownika' });

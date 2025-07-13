@@ -1,11 +1,40 @@
-const path = require('path');
-const { Low } = require('lowdb');
-const { JSONFile } = require('lowdb/node');
+import path from 'path';
+import { Low } from 'lowdb';
+import { JSONFile } from 'lowdb/node';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configure lowdb
 const file = path.join(__dirname, '..', 'db.json');
 const adapter = new JSONFile(file);
-const db = new Low(adapter);
+const db = new Low(adapter, {
+  users: [],
+  posts: [],
+  divisions: {},
+  championshipHistory: {},
+  chatMessages: []
+});
+
+// Initialize with default data if empty
+async function initializeDB() {
+  try {
+    await db.read();
+    if (!db.data) {
+      db.data = {
+        users: [],
+        posts: [],
+        divisions: {},
+        championshipHistory: {},
+        chatMessages: []
+      };
+      await db.write();
+    }
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+}
 
 // Check and lock expired fights
 async function checkAndLockExpiredFights() {
@@ -399,17 +428,17 @@ async function handleTitleMatchResult(fight, winnerTeam, db) {
 }
 
 // Run the scheduler every 5 minutes
-function startScheduler() {
+async function startScheduler() {
   console.log('Starting fight scheduler...');
   
+  // Initialize database first
+  await initializeDB();
+  
   // Run immediately on start
-  checkAndLockExpiredFights();
+  await checkAndLockExpiredFights();
   
   // Then run every 5 minutes
   setInterval(checkAndLockExpiredFights, 5 * 60 * 1000);
 }
 
-module.exports = {
-  startScheduler,
-  checkAndLockExpiredFights
-}; 
+export { startScheduler, checkAndLockExpiredFights }; 

@@ -37,15 +37,16 @@ const FighterProposalSystem = ({ user, isModerator }) => {
   ];
 
   useEffect(() => {
-    fetchProposals();
+    if (isModerator) {
+      fetchProposals();
+    }
     fetchUserProposals();
-  }, []);
+  }, [isModerator]);
 
   const fetchProposals = async () => {
+    if (!isModerator) return;
     try {
-      const response = await axios.get('/api/fighter-proposals', {
-        params: { status: filterStatus, powerTier: filterPowerTier }
-      });
+      const response = await axios.get('/api/fighter-proposals');
       setProposals(response.data || []);
     } catch (error) {
       console.error('Error fetching proposals:', error);
@@ -54,7 +55,7 @@ const FighterProposalSystem = ({ user, isModerator }) => {
 
   const fetchUserProposals = async () => {
     try {
-      const response = await axios.get(`/api/fighter-proposals/user/${user?.id}`);
+      const response = await axios.get('/api/fighter-proposals/user');
       setUserProposals(response.data || []);
     } catch (error) {
       console.error('Error fetching user proposals:', error);
@@ -98,16 +99,14 @@ const FighterProposalSystem = ({ user, isModerator }) => {
 
   const moderatorAction = async (proposalId, action, feedback = '') => {
     if (!isModerator) return;
-
     try {
-      await axios.post(`/api/fighter-proposals/${proposalId}/moderate`, {
-        action, // 'approve', 'reject', 'request_changes'
-        feedback,
-        moderatedBy: user.id
-      });
-
+      if (action === 'approve') {
+        await axios.put(`/api/fighter-proposals/${proposalId}/approve`, { reviewNotes: feedback });
+      } else if (action === 'reject') {
+        await axios.put(`/api/fighter-proposals/${proposalId}/reject`, { reviewNotes: feedback });
+      }
       fetchProposals();
-      alert(`Proposal ${action}ed successfully!`);
+      alert(`Proposal ${action}d successfully!`);
     } catch (error) {
       console.error('Error moderating proposal:', error);
       alert('Failed to moderate proposal.');

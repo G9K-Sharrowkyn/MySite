@@ -1,20 +1,21 @@
-require('dotenv').config();
-const mongoose = require('mongoose');
-const { connectDB } = require('../src/config/db');
+import dotenv from 'dotenv';
+dotenv.config();
+import mongoose from 'mongoose';
+import { connectDB } from '../src/config/db.js';
 
 // Import models
-const User = require('../src/models/userModel');
-const Character = require('../src/models/characterModel');
-const Division = require('../src/models/divisionModel');
-const Fight = require('../src/models/fightModel');
-const Post = require('../src/models/postModel');
-const Comment = require('../src/models/commentModel');
-const Message = require('../src/models/messageModel');
-const Conversation = require('../src/models/conversationModel');
-const Notification = require('../src/models/notificationModel');
-const Tournament = require('../src/models/tournamentModel');
-const Badge = require('../src/models/badgeModel');
-const { ChatRoom } = require('../src/models/chatModel');
+import User from '../src/models/userModel.js';
+import Character from '../src/models/characterModel.js';
+import Division from '../src/models/divisionModel.js';
+import Fight from '../src/models/fightModel.js';
+import Post from '../src/models/postModel.js';
+import Comment from '../src/models/commentModel.js';
+import Message from '../src/models/messageModel.js';
+import Conversation from '../src/models/conversationModel.js';
+import Notification from '../src/models/notificationModel.js';
+import Tournament from '../src/models/tournamentModel.js';
+import Badge from '../src/models/badgeModel.js';
+import { ChatRoom } from '../src/models/chatModel.js';
 
 const seedCompleteSystem = async () => {
   try {

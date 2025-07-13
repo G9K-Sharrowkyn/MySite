@@ -1,22 +1,71 @@
-WARNING in [eslint]
-src\ProfilePage.js
-  Line 23:10:  'isFetching' is assigned a value but never used                                                                  no-unused-vars
-  Line 41:6:   React Hook useEffect has a missing dependency: 'fetchProfile'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+AuthContext.js:34 Error fetching user: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+LeaderboardPage.js:42 
+ GET http://localhost:3000/api/stats/user/b9acba58-a5ea-42ae-9bb4-56dc39b26dbd/achievements 404 (Not Found)
+LeaderboardPage.js:45 Error fetching user achievements: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+LeaderboardPage.js:42 
+ GET http://localhost:3000/api/stats/user/b9acba58-a5ea-42ae-9bb4-56dc39b26dbd/achievements 404 (Not Found)
+LeaderboardPage.js:45 Error fetching user achievements: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+Login.js:46 
+ POST http://localhost:3000/api/auth/login 400 (Bad Request)
+Login.js:56 
+{msg: 'Nieprawidłowe dane uwierzytelniające'}
+Login.js:46 
+ POST http://localhost:3000/api/auth/login 400 (Bad Request)
+Login.js:56 
+{msg: 'Nieprawidłowe dane uwierzytelniające'}
+Register.js:51 Register response: 
+{token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7I…wMjR9.6Sk63aZetFFH9X8hia6sRKQenyWhbvmmsWsRpI9XatM', userId: 'deda9815-9f26-4dbb-bbb8-e5e520b50996'}
+AuthContext.js:21 
+ GET http://localhost:3000/api/profile/me 404 (Not Found)
+AuthContext.js:34 Error fetching user: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+AuthContext.js:21 
+ GET http://localhost:3000/api/profile/me 404 (Not Found)
+AuthContext.js:34 Error fetching user: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+Login.js:47 Login response: 
+{token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7I…wMzR9.RM4IHrlww9Y_Sb7XTL8-iXpiIj-6h4vv7uH3nHXuEN0', userId: 'deda9815-9f26-4dbb-bbb8-e5e520b50996'}
+AuthContext.js:21 
+ GET http://localhost:3000/api/profile/me 404 (Not Found)
+AuthContext.js:34 Error fetching user: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+AuthContext.js:21 
+ GET http://localhost:3000/api/profile/me 404 (Not Found)
+AuthContext.js:34 Error fetching user: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+Home.js:29 
+ GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
+Home.js:68 Error fetching home data: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+Home.js:29 
+ GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)
+Home.js:29 
+ GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
+Home.js:29 
+ GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)
+Home.js:68 Error fetching home data: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+DivisionsPage.js:132 
+ GET http://localhost:3000/api/profile/me 404 (Not Found)
+DivisionsPage.js:137 Error fetching current user: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+DivisionsPage.js:132 
+ GET http://localhost:3000/api/profile/me 404 (Not Found)
+DivisionsPage.js:137 Error fetching current user: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+Home.js:29 
+ GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)
+Home.js:29 
+ GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
+Home.js:68 Error fetching home data: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
 
-src\components\Feed\PostCard.js
-  Line 5:8:    'CreatePost' is defined but never used            
-      no-unused-vars
-  Line 100:9:  'handleDelete' is assigned a value but never used 
-      no-unused-vars
-  Line 116:9:  'handleEditToggle' is assigned a value but never used   no-unused-vars
-  Line 120:9:  'handlePostUpdated' is assigned a value but never used  no-unused-vars
-
-webpack compiled with 1 warning
-
-[eslint] 
-src\components\Feed\PostCard.js
-  Line 115:5:   'setIsEditing' is not defined  no-undef
-  Line 115:19:  'isEditing' is not defined     no-undef
-  Line 119:5:   'setIsEditing' is not defined  no-undef
-
-Search for the keywords to learn more about each error.
+Home.js:29 
+ GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
+Home.js:68 Error fetching home data: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+Home.js:29 
+ GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)

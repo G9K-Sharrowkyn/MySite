@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import auth from '../middleware/auth.js';
+import { v4 as uuidv4 } from 'uuid';
+
 const router = express.Router();
-const auth = require('../middleware/auth');
-const { v4: uuidv4 } = require('uuid');
 
 // Badge definitions (same as frontend)
 const BADGE_DEFINITIONS = {
@@ -227,10 +228,4 @@ const checkSocialBadges = async (db, userId) => {
 };
 
 // Export functions for use in other routes
-module.exports = {
-  router,
-  awardBadge,
-  checkFightBadges,
-  checkChampionshipBadges,
-  checkSocialBadges
-}; 
+export default router;

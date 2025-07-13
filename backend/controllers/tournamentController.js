@@ -1,4 +1,4 @@
-const { v4: uuidv4 } = require('uuid');
+import { v4 as uuidv4 } from 'uuid';
 
 // Helper function to generate tournament brackets
 function generateBrackets(participants, tournamentType = 'single_elimination') {
@@ -93,7 +93,7 @@ function advanceTournament(tournament, matchId, winnerId) {
   return tournament;
 }
 
-exports.getAllTournaments = async (req, res) => {
+export const getAllTournaments = async (req, res) => {
   const db = req.db;
   
   try {
@@ -116,7 +116,7 @@ exports.getAllTournaments = async (req, res) => {
   }
 };
 
-exports.getTournamentById = async (req, res) => {
+export const getTournamentById = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   
@@ -141,7 +141,7 @@ exports.getTournamentById = async (req, res) => {
   }
 };
 
-exports.createTournament = async (req, res) => {
+export const createTournament = async (req, res) => {
   const db = req.db;
   const { 
     title, 
@@ -203,7 +203,7 @@ exports.createTournament = async (req, res) => {
   }
 };
 
-exports.startTournament = async (req, res) => {
+export const startTournament = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   
@@ -251,7 +251,7 @@ exports.startTournament = async (req, res) => {
   }
 };
 
-exports.advanceMatch = async (req, res) => {
+export const advanceMatch = async (req, res) => {
   const db = req.db;
   const { id, matchId } = req.params;
   const { winnerId } = req.body;
@@ -314,7 +314,7 @@ exports.advanceMatch = async (req, res) => {
   }
 };
 
-exports.voteInTournament = async (req, res) => {
+export const voteInTournament = async (req, res) => {
   const db = req.db;
   const { id, matchId } = req.params;
   const { winnerId } = req.body;
@@ -380,7 +380,7 @@ exports.voteInTournament = async (req, res) => {
   }
 };
 
-exports.getTournamentBrackets = async (req, res) => {
+export const getTournamentBrackets = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   
@@ -407,7 +407,7 @@ exports.getTournamentBrackets = async (req, res) => {
   }
 };
 
-exports.updateTournament = async (req, res) => {
+export const updateTournament = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   const updates = req.body;
@@ -440,7 +440,7 @@ exports.updateTournament = async (req, res) => {
   }
 };
 
-exports.deleteTournament = async (req, res) => {
+export const deleteTournament = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   
@@ -468,7 +468,7 @@ exports.deleteTournament = async (req, res) => {
   }
 };
 
-exports.joinTournament = async (req, res) => {
+export const joinTournament = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   const { characterId } = req.body;
@@ -518,7 +518,7 @@ exports.joinTournament = async (req, res) => {
   }
 };
 
-exports.leaveTournament = async (req, res) => {
+export const leaveTournament = async (req, res) => {
   const db = req.db;
   const { id } = req.params;
   

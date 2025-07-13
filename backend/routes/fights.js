@@ -1,42 +1,44 @@
-const express = require('express');
-const router = express.Router();
-const fightController = require('../controllers/fightController');
-const auth = require('../middleware/authMiddleware');
-const authorize = require('../middleware/roleMiddleware');
+import express from 'express';
+import { createFight, getFights, getFight, updateFight, deleteFight, endFight } from '../controllers/fightController.js';
+import auth from '../middleware/auth.js';
 
-// @route   GET api/fights/categories
-// @desc    Get fight categories
-// @access  Public
-router.get('/categories', fightController.getCategories);
+const router = express.Router();
 
 // @route   GET api/fights
 // @desc    Get all fights
 // @access  Public
-router.get('/', fightController.getFights);
-
-// @route   GET api/fights/:id
-// @desc    Get single fight
-// @access  Public
-router.get('/:id', fightController.getFight);
+router.get('/', getFights);
 
 // @route   POST api/fights
 // @desc    Create a new fight
 // @access  Private
-router.post('/', auth, fightController.createFight);
+router.post('/', auth, createFight);
+
+// @route   GET api/fights/:id
+// @desc    Get fight by ID
+// @access  Public
+router.get('/:id', getFight);
 
 // @route   PUT api/fights/:id
-// @desc    Update a fight
-// @access  Private (Moderator)
-router.put('/:id', auth, authorize(['moderator', 'admin']), fightController.updateFight);
+// @desc    Update fight
+// @access  Private
+router.put('/:id', auth, updateFight);
 
 // @route   DELETE api/fights/:id
-// @desc    Delete a fight
-// @access  Private (Moderator)
-router.delete('/:id', auth, authorize(['moderator', 'admin']), fightController.deleteFight);
+// @desc    Delete fight
+// @access  Private
+router.delete('/:id', auth, deleteFight);
 
-// @route   POST api/fights/:id/end
-// @desc    End fight and determine winner
-// @access  Private (Moderator)
-router.post('/:id/end', auth, authorize(['moderator', 'admin']), fightController.endFight);
+// @route   POST api/fights/:id/vote
+// @desc    Vote on a fight
+// @access  Private
+router.post('/:id/vote', auth, (req, res) => {
+  res.status(501).json({ message: 'Vote functionality not implemented yet' });
+});
 
-module.exports = router;
+// @route   POST api/fights/:id/result
+// @desc    Set fight result
+// @access  Private
+router.post('/:id/result', auth, endFight);
+
+export default router;
