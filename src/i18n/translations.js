@@ -9,6 +9,7 @@ export const translations = {
     characters: 'Postacie',
     tournaments: 'Turnieje',
     moderator: 'Panel Moderatora',
+    donate: 'Wesprzyj',
     login: 'Zaloguj',
     register: 'Zarejestruj',
     logout: 'Wyloguj',
@@ -39,6 +40,7 @@ export const translations = {
     
     // Divisions
     divisions: 'Dywizje',
+    divisionStats: 'Statystyki Dywizji',
     regularPeople: 'Zwykli Ludzie',
     metahuman: 'Metaludzie',
     planetBusters: 'Niszczyciele Planet',
@@ -286,6 +288,7 @@ export const translations = {
     characters: 'Characters',
     tournaments: 'Tournaments',
     moderator: 'Moderator Panel',
+    donate: 'Donate',
     login: 'Login',
     register: 'Register',
     logout: 'Logout',
@@ -316,6 +319,7 @@ export const translations = {
     
     // Divisions
     divisions: 'Divisions',
+    divisionStats: 'Division Stats',
     regularPeople: 'Regular People',
     metahuman: 'Metahuman',
     planetBusters: 'Planet Busters',
@@ -559,6 +563,7 @@ export const translations = {
     characters: 'Personajes',
     tournaments: 'Torneos',
     moderator: 'Panel de Moderador',
+    donate: 'Donar',
     login: 'Iniciar sesión',
     register: 'Registrarse',
     logout: 'Cerrar sesión',
@@ -589,6 +594,7 @@ export const translations = {
     
     // Divisions
     divisions: 'Divisiones',
+    divisionStats: 'Estadísticas de División',
     regularPeople: 'Gente Normal',
     metahuman: 'Metahumano',
     planetBusters: 'Destructores de Planetas',

@@ -66,7 +66,7 @@ const BADGE_DEFINITIONS = {
 };
 
 // Get user badges
-router.get('/:userId', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     await req.db.read();
     const { userId } = req.params;
@@ -228,4 +228,5 @@ const checkSocialBadges = async (db, userId) => {
 };
 
 // Export functions for use in other routes
+export { awardBadge, checkFightBadges, checkChampionshipBadges, checkSocialBadges };
 export default router;

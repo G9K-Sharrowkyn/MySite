@@ -3,35 +3,53 @@ import Post from '../models/Post.js';
 import User from '../models/User.js';
 
 export const getAllPosts = async (req, res) => {
-  const { page = 1, limit = 10, sortBy = 'createdAt' } = req.query;
+  const { page = 1, limit = 10, sortBy = 'createdAt', tags } = req.query;
+  const db = req.db;
   try {
-    const sortObj = sortBy === 'likes' ? { likes: -1 } : { createdAt: -1 };
-    const posts = await Post.find()
-      .sort(sortObj)
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
-    const totalPosts = await Post.countDocuments();
+    await db.read();
+    let posts = db.data.posts || [];
+
+    // Filter by tags
+    if (tags) {
+      const tagArray = tags.split(',');
+      posts = posts.filter(post =>
+        tagArray.every(tag => post.tags && post.tags.includes(tag))
+      );
+    }
+
+    // Sorting
+    if (sortBy === 'likes') {
+      posts.sort((a, b) => (b.likes?.length || 0) - (a.likes?.length || 0));
+    } else {
+      posts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
+
+    const totalPosts = posts.length;
+    const totalPages = Math.ceil(totalPosts / limit);
+    const paginatedPosts = posts.slice((page - 1) * limit, page * limit);
+
     // Populate author info
-    const postsWithUserInfo = await Promise.all(posts.map(async post => {
-      const author = await User.findById(post.authorId);
+    const postsWithUserInfo = paginatedPosts.map(post => {
+      const author = db.data.users.find(u => u.id === post.authorId);
       return {
-        ...post.toObject(),
+        ...post,
         author: author ? {
-          id: author._id,
+          id: author.id,
           username: author.username,
           profilePicture: author.profile?.profilePicture || '',
           rank: author.stats?.rank || 'Rookie'
         } : null
       };
-    }));
+    });
+
     res.json({
       posts: postsWithUserInfo,
       totalPosts,
       currentPage: parseInt(page),
-      totalPages: Math.ceil(totalPosts / limit)
+      totalPages
     });
   } catch (err) {
-    console.error('Error fetching all posts from MongoDB:', err.message);
+    console.error('Error fetching all posts:', err.message);
     res.status(500).send('Server Error');
   }
 };
@@ -76,6 +94,28 @@ export const getPostsByUser = async (req, res) => {
     console.error('Error fetching user posts:', err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
+};
+
+export const getPopularTags = async (req, res) => {
+  const db = req.db;
+  await db.read();
+  const allTags = db.data.posts.flatMap(p => p.tags || []);
+  const tagCounts = allTags.reduce((acc, tag) => {
+    acc[tag] = (acc[tag] || 0) + 1;
+    return acc;
+  }, {});
+  const sortedTags = Object.entries(tagCounts)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 10)
+    .map(([tag, count]) => ({ tag, count }));
+  res.json(sortedTags);
+};
+
+export const getAllTags = async (req, res) => {
+  const db = req.db;
+  await db.read();
+  const allTags = new Set(db.data.posts.flatMap(p => p.tags || []));
+  res.json(Array.from(allTags));
 };
 
 export const getPostById = async (req, res) => {
@@ -179,9 +219,12 @@ export const createPost = async (req, res) => {
       };
     }
     
-    // Generate tags if the function is provided
-    if (req.generateTagsFromPost) {
-      newPost.tags = req.generateTagsFromPost(newPost);
+    // Generate tags from characters
+    if (type === 'fight' && teamA && teamB) {
+      const teamAChars = teamA.split(',').map(s => s.trim());
+      const teamBChars = teamB.split(',').map(s => s.trim());
+      const allChars = [...teamAChars, ...teamBChars];
+      newPost.tags = allChars.map(char => char.toLowerCase().replace(/ /g, '-'));
     }
 
     db.data.posts.push(newPost);

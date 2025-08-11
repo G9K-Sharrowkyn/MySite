@@ -19,6 +19,10 @@ import NotificationsPage from './notificationLogic/NotificationsPage';
 import DivisionsPage from './divisionsLogic/DivisionsPage';
 import PostPage from './postLogic/PostPage';
 import GlobalChatSystem from './chat/GlobalChatSystem';
+import CookieConsent from './legal/CookieConsent';
+import DonationSystem from './legal/DonationSystem';
+import DivisionStatsPage from './divisionsLogic/DivisionStatsPage';
+import FighterProposalSystem from './features/FighterProposalSystem';
 import './App.css';
 
 function AppContent() {
@@ -48,9 +52,13 @@ function AppContent() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/tournaments" element={<TournamentPage />} />
         <Route path="/post/:postId" element={<PostPage />} />
+        <Route path="/divisions/stats" element={<DivisionStatsPage />} />
+        <Route path="/propose-fighter" element={<FighterProposalSystem />} />
+        <Route path="/donate" element={<DonationSystem />} />
       </Routes>
       {/* Global Chat System - only show when logged in */}
       {isLoggedIn && <GlobalChatSystem />}
+      <CookieConsent />
     </div>
   );
 }

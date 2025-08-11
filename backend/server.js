@@ -23,6 +23,8 @@ import notificationRoutes from './routes/notifications.js';
 import tournamentRoutes from './routes/tournaments.js';
 import statsRoutes from './routes/stats.js';
 import badgeRoutes from './routes/badges.js';
+import legalRoutes from './routes/legal.js';
+import donationRoutes from './routes/donations.js';
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
@@ -100,6 +102,8 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/users/:userId/badges', badgeRoutes);
+app.use('/api/legal', legalRoutes);
+app.use('/api/donations', donationRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -114,20 +118,23 @@ io.on('connection', (socket) => {
 
   // User joins the global chat
   socket.on('join-chat', async (userData) => {
-    if (!userData || !userData.userId) {
+    if (!userData || !userData.userId || !userData.room) {
       console.error('Invalid user data for join-chat');
       return;
     }
+
+    socket.join(userData.room);
 
     // Store user info
     activeUsers.set(socket.id, {
       userId: userData.userId,
       username: userData.username,
-      profilePicture: userData.profilePicture
+      profilePicture: userData.profilePicture,
+      room: userData.room
     });
 
-    // Notify others that user joined
-    socket.broadcast.emit('user-joined', {
+    // Notify others in the same room that user joined
+    socket.to(userData.room).emit('user-joined', {
       userId: userData.userId,
       username: userData.username
     });
@@ -176,8 +183,8 @@ io.on('connection', (socket) => {
     
     await db.write();
 
-    // Broadcast to all clients
-    io.emit('new-message', newMessage);
+    // Broadcast to all clients in the same room
+    io.to(user.room).emit('new-message', newMessage);
   });
 
   // Handle reactions
@@ -224,7 +231,7 @@ io.on('connection', (socket) => {
     if (!activeUsers.has(socket.id)) return;
     
     const user = activeUsers.get(socket.id);
-    socket.broadcast.emit('user-typing', {
+    socket.to(user.room).emit('user-typing', {
       userId: user.userId,
       username: user.username,
       isTyping
@@ -237,8 +244,8 @@ io.on('connection', (socket) => {
     if (user) {
       activeUsers.delete(socket.id);
       
-      // Notify others that user left
-      socket.broadcast.emit('user-left', {
+      // Notify others in the same room that user left
+      socket.to(user.room).emit('user-left', {
         userId: user.userId,
         username: user.username
       });

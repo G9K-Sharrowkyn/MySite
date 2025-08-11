@@ -148,7 +148,9 @@ const Header = () => {
         <nav className="header-nav">
           <Link to="/" className="nav-link">{t('home')}</Link>
           <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
+          <Link to="/divisions/stats" className="nav-link">{t('divisionStats')}</Link>
           <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
+          <Link to="/donate" className="nav-link">{t('donate')}</Link>
           {user && user.role === 'moderator' && (
             <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
           )}

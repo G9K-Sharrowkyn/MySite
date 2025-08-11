@@ -621,6 +621,16 @@ const [pollVote, setPollVote] = useState(null);
         )}
         
         {renderVotingSection()}
+
+        {post.tags && post.tags.length > 0 && (
+          <div className="post-tags">
+            {post.tags.map(tag => (
+              <Link key={tag} to={`/tags/${tag}`} className="tag">
+                #{tag}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Fight Voting Actions - New frame for fight voting buttons */}

@@ -14,6 +14,8 @@ const GlobalChatSystem = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [isMinimized, setIsMinimized] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [currentRoom, setCurrentRoom] = useState('general');
+  const rooms = ['general', 'divisions', 'feed', 'help'];
   
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -38,7 +40,8 @@ const GlobalChatSystem = () => {
       newSocket.emit('join-chat', {
         userId: user.id,
         username: user.username,
-        profilePicture: user.profilePicture || null
+        profilePicture: user.profilePicture || null,
+        room: currentRoom
       });
     });
 
@@ -208,6 +211,9 @@ const GlobalChatSystem = () => {
         <div className="chat-header-left">
           <span className="chat-icon">💬</span>
           <h3>Global Chat</h3>
+          <select value={currentRoom} onChange={e => setCurrentRoom(e.target.value)} onClick={e => e.stopPropagation()}>
+            {rooms.map(room => <option key={room} value={room}>{room}</option>)}
+          </select>
           {isMinimized && unreadCount > 0 && (
             <span className="unread-badge">{unreadCount}</span>
           )}

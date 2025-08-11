@@ -1,5 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import { getDivisionStats } from '../controllers/divisionsController.js';
 import auth from '../middleware/auth.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
 
@@ -61,6 +62,9 @@ router.get('/', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// Get division stats
+router.get('/stats', getDivisionStats);
 
 // Get user's divisions
 router.get('/user', auth, async (req, res) => {

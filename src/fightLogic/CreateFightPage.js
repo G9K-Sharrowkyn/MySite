@@ -13,7 +13,8 @@ const CreateFightPage = () => {
     fighter2Image: '',
     category: 'Mixed',
     type: 'feed',
-    endDate: ''
+    endDate: '',
+    isContender: false
   });
   const [categories, setCategories] = useState([]);
   const [characters, setCharacters] = useState([]);
@@ -223,6 +224,19 @@ const CreateFightPage = () => {
               </label>
             )}
           </div>
+          {user.role === 'moderator' && (
+            <div className="form-group">
+              <label>
+                <input
+                  type="checkbox"
+                  name="isContender"
+                  checked={formData.isContender}
+                  onChange={e => handleInputChange({ target: { name: 'isContender', value: e.target.checked } })}
+                />
+                Walka o status pretendenta
+              </label>
+            </div>
+          )}
         </div>
 
         {/* Basic Info */}

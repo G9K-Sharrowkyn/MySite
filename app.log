@@ -1,0 +1,12 @@
+
+> my-site@0.1.0 dev
+> concurrently "npm run backend" "npm start"
+
+[0]
+[0] > my-site@0.1.0 backend
+[0] > cd backend && node server.js
+[0]
+[1]
+[1] > my-site@0.1.0 start
+[1] > react-scripts start
+[1]

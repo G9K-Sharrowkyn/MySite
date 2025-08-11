@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllPosts, createPost, getPostById, updatePost, deletePost, toggleLike, addReaction } from '../controllers/postController.js';
+import { getAllPosts, createPost, getPostById, updatePost, deletePost, toggleLike, addReaction, getPopularTags, getAllTags } from '../controllers/postController.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
@@ -59,6 +59,16 @@ router.post('/:id/like', auth, toggleLike);
 // @desc    Add reaction to post
 // @access  Private
 router.post('/:id/react', auth, addReaction);
+
+// @route   GET api/posts/tags/popular
+// @desc    Get popular tags
+// @access  Public
+router.get('/tags/popular', getPopularTags);
+
+// @route   GET api/posts/tags/all
+// @desc    Get all tags
+// @access  Public
+router.get('/tags/all', getAllTags);
 
 // @route   DELETE api/posts/:id/react/:reactionId
 // @desc    Remove reaction from post

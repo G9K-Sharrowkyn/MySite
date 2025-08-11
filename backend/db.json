@@ -516,11 +516,17 @@
           "teamB": 0,
           "voters": []
         },
-        "status": "active",
+        "status": "locked",
         "isOfficial": false,
         "lockTime": "2025-07-15T15:34:21.758Z",
         "winner": null,
-        "winnerTeam": null
+        "winnerTeam": "draw",
+        "lockedAt": "2025-08-11T08:20:40.770Z",
+        "finalVotes": {
+          "teamA": 0,
+          "teamB": 0,
+          "total": 0
+        }
       },
       "isOfficial": false,
       "moderatorCreated": false,

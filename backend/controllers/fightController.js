@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { checkFightBadges } from '../routes/badges.js';
 
 // @desc    Create a new fight
 // @route   POST /api/fights
@@ -11,9 +12,12 @@ export const createFight = async (req, res) => {
     fighter2, 
     fighter1Image, 
     fighter2Image,
+    fighter1UserId,
+    fighter2UserId,
     category, 
     type = 'feed', // 'main' or 'feed'
-    endDate 
+    endDate,
+    isContender = false
   } = req.body;
   
   const db = req.db;
@@ -29,8 +33,8 @@ export const createFight = async (req, res) => {
     id: uuidv4(),
     title,
     description,
-    fighter1,
-    fighter2,
+    fighter1: type === 'main' ? { name: fighter1, userId: fighter1UserId } : fighter1,
+    fighter2: type === 'main' ? { name: fighter2, userId: fighter2UserId } : fighter2,
     fighter1Image: fighter1Image || 'https://via.placeholder.com/150',
     fighter2Image: fighter2Image || 'https://via.placeholder.com/150',
     category,
@@ -46,7 +50,8 @@ export const createFight = async (req, res) => {
       total: 0
     },
     winner: null,
-    comments: []
+    comments: [],
+    isContender
   };
 
   db.data.fights.push(newFight);
@@ -173,13 +178,14 @@ export const updateFight = async (req, res) => {
     return res.status(404).json({ msg: 'Walka nie znaleziona' });
   }
 
-  const { title, description, status, winner, endDate } = req.body;
+  const { title, description, status, winner, endDate, isContender } = req.body;
 
   if (title) db.data.fights[fightIndex].title = title;
   if (description) db.data.fights[fightIndex].description = description;
   if (status) db.data.fights[fightIndex].status = status;
   if (winner) db.data.fights[fightIndex].winner = winner;
   if (endDate) db.data.fights[fightIndex].endDate = endDate;
+  if (isContender !== undefined) db.data.fights[fightIndex].isContender = isContender;
 
   db.data.fights[fightIndex].updatedAt = new Date().toISOString();
 
@@ -288,6 +294,15 @@ export const endFight = async (req, res) => {
         db.data.users[userIndex].stats.points = (db.data.users[userIndex].stats.points || 0) + 10;
       }
     });
+  }
+
+  // Check for badges
+  if (fight.type === 'main') {
+    const winnerId = winner === 'fighter1' ? fight.fighter1.userId : fight.fighter2.userId;
+    const loserId = winner === 'fighter1' ? fight.fighter2.userId : fight.fighter1.userId;
+    if (winner !== 'draw') {
+      await checkFightBadges(db, winnerId, loserId);
+    }
   }
 
   await db.write();

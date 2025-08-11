@@ -81,21 +81,21 @@ export const getMyProfile = async (req, res) => {
     );
 
     // Calculate fight statistics
-    const victories = fights.filter(fight => 
-      fight.winnerId === user.id || 
+    const victories = fights.filter(fight =>
+      fight.winnerId === user.id ||
       (fight.winner && fight.winner === user.id)
     ).length;
-    
-    const losses = fights.filter(fight => 
-      (fight.winnerId && fight.winnerId !== user.id) ||
+
+    const losses = fights.filter(fight =>
+      (fight.winnerId && fight.winnerId !== user.id && (fight.winner && fight.winner !== 'draw')) ||
       (fight.winner && fight.winner !== user.id && fight.winner !== 'draw')
     ).length;
-    
-    const draws = fights.filter(fight => 
+
+    const draws = fights.filter(fight =>
       fight.winner === 'draw' || fight.result === 'draw'
     ).length;
 
-    const totalFights = fights.length;
+    const totalFights = victories + losses + draws;
     const winRate = totalFights > 0 ? ((victories / totalFights) * 100).toFixed(1) : 0;
     const calculatedRank = calculateRank(victories, totalFights, parseFloat(winRate));
     const calculatedPoints = calculatePoints(victories, losses, draws, parseFloat(winRate));
@@ -287,6 +287,55 @@ export const searchProfiles = async (req, res) => {
   }));
 
   res.json(filteredUsers);
+};
+
+// @desc    Upload profile background
+// @route   POST /api/profile/background-upload
+// @access  Private
+export const uploadProfileBackground = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ message: 'No file uploaded.' });
+  }
+
+  const db = req.db;
+  await db.read();
+  const userIndex = db.data.users.findIndex(u => u.id === req.user.id);
+
+  if (userIndex === -1) {
+    return res.status(404).json({ msg: 'User not found' });
+  }
+
+  const backgroundPath = `/backgrounds/${req.file.filename}`;
+
+  if (!db.data.users[userIndex].profile) {
+    db.data.users[userIndex].profile = {};
+  }
+  db.data.users[userIndex].profile.backgroundImage = backgroundPath;
+
+  await db.write();
+
+  res.json({ backgroundPath });
+};
+
+// @desc    Remove profile background
+// @route   DELETE /api/profile/background
+// @access  Private
+export const removeProfileBackground = async (req, res) => {
+  const db = req.db;
+  await db.read();
+  const userIndex = db.data.users.findIndex(u => u.id === req.user.id);
+
+  if (userIndex === -1) {
+    return res.status(404).json({ msg: 'User not found' });
+  }
+
+  if (db.data.users[userIndex].profile) {
+    db.data.users[userIndex].profile.backgroundImage = null;
+  }
+
+  await db.write();
+
+  res.json({ message: 'Background removed successfully' });
 };
 
 // @desc    Get user leaderboard

@@ -1,9 +1,23 @@
 import express from 'express';
-import { getMyProfile, getProfile, updateProfile } from '../controllers/profileController.js';
+import express from 'express';
+import multer from 'multer';
+import path from 'path';
+import { getMyProfile, getProfile, updateProfile, uploadProfileBackground, removeProfileBackground } from '../controllers/profileController.js';
 import { getLeaderboard } from '../controllers/statsController.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'public/backgrounds/');
+  },
+  filename: function (req, file, cb) {
+    cb(null, req.user.id + '-' + Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 // @route   GET api/profile
 // @desc    Get current user's profile
@@ -32,12 +46,15 @@ router.post('/avatar', auth, (req, res) => {
   res.status(501).json({ message: 'Avatar upload not implemented yet' });
 });
 
-// @route   POST api/profile/background
+// @route   POST api/profile/background-upload
 // @desc    Upload profile background
 // @access  Private
-router.post('/background', auth, (req, res) => {
-  res.status(501).json({ message: 'Background upload not implemented yet' });
-});
+router.post('/background-upload', [auth, upload.single('background')], uploadProfileBackground);
+
+// @route   DELETE api/profile/background
+// @desc    Remove profile background
+// @access  Private
+router.delete('/background', auth, removeProfileBackground);
 
 // @route   GET api/profile/:userId
 // @desc    Get profile by user ID

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PostCard from './PostCard';
 import CreatePost from './CreatePost';
+import TagFilter from './TagFilter';
 import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './Feed.css';
@@ -13,11 +14,13 @@ const Feed = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState('createdAt');
+  const [selectedTags, setSelectedTags] = useState([]);
 
   const fetchPosts = async (pageNum = 1, sort = 'createdAt', reset = false) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/posts?page=${pageNum}&limit=10&sortBy=${sort}`);
+      const tagsQuery = selectedTags.length > 0 ? `&tags=${selectedTags.join(',')}` : '';
+      const response = await axios.get(`/api/posts?page=${pageNum}&limit=10&sortBy=${sort}${tagsQuery}`);
       const newPosts = response.data.posts.map(post => ({
         ...post,
         author: {
@@ -70,6 +73,16 @@ const handlePostUpdate = (updatedPost, isDeleted) => {
     setSortBy(newSort);
   };
 
+  const handleTagsChange = (tags) => {
+    setSelectedTags(tags);
+    fetchPosts(1, sortBy, true);
+    setPage(1);
+  };
+
+  console.log('Rendering Feed component...');
+  console.log('Posts:', posts);
+  console.log('Loading:', loading);
+
   return (
     <div className="feed-container">
       <div className="feed-header">
@@ -93,6 +106,8 @@ const handlePostUpdate = (updatedPost, isDeleted) => {
       </div>
 
       <CreatePost onPostCreated={handlePostCreated} />
+
+      <TagFilter onTagsChange={handleTagsChange} selectedTags={selectedTags} />
 
       <div className="posts-feed">
         {posts.map(post => (

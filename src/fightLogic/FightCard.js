@@ -107,6 +107,7 @@ const FightCard = ({ fight }) => {
         <div className="fight-type-badge">
           {fight.type === 'main' ? '🏆 Główna' : '🔥 Feed'}
         </div>
+        {fight.isContender && <div className="contender-badge">Contender Fight</div>}
         <div className="fight-status">
           {fight.status === 'active' ? (
             <span className="status-active">⏰ {getTimeRemaining()}</span>

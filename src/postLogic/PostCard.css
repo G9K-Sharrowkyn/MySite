@@ -152,6 +152,27 @@ body.dark-mode .post-card {
   display: block;
 }
 
+.post-tags {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tag {
+  background-color: #eee;
+  color: #333;
+  padding: 5px 10px;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  text-decoration: none;
+  transition: background-color 0.3s;
+}
+
+.tag:hover {
+  background-color: #ddd;
+}
+
 /* Fight Section */
 .fight-section {
   background: none;
