@@ -1,4 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
+import Vote from '../models/Vote.js';
+import Fight from '../models/Fight.js';
 
 // @desc    Vote on a fight
 // @route   POST /api/votes
@@ -10,12 +11,10 @@ export const vote = async (req, res) => {
       body: req.body
     });
 
-    const { fightId, choice } = req.body; // choice: 'fighter1' or 'fighter2'
-    const db = req.db;
-    await db.read();
+    const { fightId, choice } = req.body; // choice: 'fighter1' or 'fighter2' or 'A' or 'B'
 
     // Check if fight exists
-    const fight = db.data.fights.find(f => f.id === fightId);
+    const fight = await Fight.findById(fightId);
     if (!fight) {
       console.error('Fight not found:', fightId);
       return res.status(404).json({ msg: 'Walka nie znaleziona' });
@@ -26,28 +25,53 @@ export const vote = async (req, res) => {
       return res.status(400).json({ msg: 'Nie można głosować na zakończoną walkę' });
     }
 
+    // Convert old choice format to new format
+    let team;
+    if (choice === 'fighter1' || choice === 'teamA' || choice === 'A') {
+      team = 'A';
+    } else if (choice === 'fighter2' || choice === 'teamB' || choice === 'B') {
+      team = 'B';
+    } else if (choice === 'draw') {
+      team = 'draw';
+    } else {
+      return res.status(400).json({ msg: 'Nieprawidłowy wybór' });
+    }
+
     // Check if user already voted
-    const existingVote = db.data.votes.find(v => v.fightId === fightId && v.userId === req.user.id);
+    const existingVote = await Vote.findOne({ fightId: fight._id, userId: req.user.id });
+
     if (existingVote) {
       // Update existing vote
-      existingVote.choice = choice;
-      existingVote.updatedAt = new Date().toISOString();
-      await db.write();
+      existingVote.team = team;
+      existingVote.updatedAt = new Date();
+      await existingVote.save();
+
+      // Update fight vote counts
+      const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
+      const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
+      fight.votesA = teamAVotes;
+      fight.votesB = teamBVotes;
+      await fight.save();
+
       console.log('Vote updated:', existingVote);
       return res.json({ msg: 'Głos zaktualizowany', vote: existingVote });
     }
 
     // Create new vote
-    const newVote = {
-      id: uuidv4(),
-      fightId,
+    const newVote = await Vote.create({
+      fightId: fight._id,
       userId: req.user.id,
-      choice,
-      createdAt: new Date().toISOString()
-    };
+      team,
+      ip: req.ip,
+      userAgent: req.get('user-agent')
+    });
 
-    db.data.votes.push(newVote);
-    await db.write();
+    // Update fight vote counts
+    const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
+    const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
+    fight.votesA = teamAVotes;
+    fight.votesB = teamBVotes;
+    await fight.save();
 
     console.log('Vote created:', newVote);
     res.json({ msg: 'Głos oddany', vote: newVote });
@@ -61,92 +85,114 @@ export const vote = async (req, res) => {
 // @route   GET /api/votes/fight/:fightId/user
 // @access  Private
 export const getUserVote = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const vote = await Vote.findOne({
+      fightId: req.params.fightId,
+      userId: req.user.id
+    });
 
-  const vote = db.data.votes.find(v => v.fightId === req.params.fightId && v.userId === req.user.id);
-  
-  if (!vote) {
-    return res.status(404).json({ msg: 'Nie znaleziono głosu' });
+    if (!vote) {
+      return res.status(404).json({ msg: 'Nie znaleziono głosu' });
+    }
+
+    res.json(vote);
+  } catch (error) {
+    console.error('Error fetching user vote:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  res.json(vote);
 };
 
 // @desc    Get vote statistics for a fight
 // @route   GET /api/votes/fight/:fightId/stats
 // @access  Public
 export const getFightVoteStats = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const totalVotes = await Vote.countDocuments({ fightId: req.params.fightId });
+    const teamAVotes = await Vote.countDocuments({ fightId: req.params.fightId, team: { $in: ['A', 'teamA'] } });
+    const teamBVotes = await Vote.countDocuments({ fightId: req.params.fightId, team: { $in: ['B', 'teamB'] } });
 
-  const fightVotes = db.data.votes.filter(v => v.fightId === req.params.fightId);
-  
-  const fighter1Votes = fightVotes.filter(v => v.choice === 'fighter1').length;
-  const fighter2Votes = fightVotes.filter(v => v.choice === 'fighter2').length;
-  const totalVotes = fightVotes.length;
+    const fighter1Percentage = totalVotes > 0 ? ((teamAVotes / totalVotes) * 100).toFixed(1) : 0;
+    const fighter2Percentage = totalVotes > 0 ? ((teamBVotes / totalVotes) * 100).toFixed(1) : 0;
 
-  const fighter1Percentage = totalVotes > 0 ? ((fighter1Votes / totalVotes) * 100).toFixed(1) : 0;
-  const fighter2Percentage = totalVotes > 0 ? ((fighter2Votes / totalVotes) * 100).toFixed(1) : 0;
-
-  res.json({
-    fighter1Votes,
-    fighter2Votes,
-    totalVotes,
-    fighter1Percentage: parseFloat(fighter1Percentage),
-    fighter2Percentage: parseFloat(fighter2Percentage)
-  });
+    res.json({
+      fighter1Votes: teamAVotes,
+      fighter2Votes: teamBVotes,
+      teamAVotes,
+      teamBVotes,
+      totalVotes,
+      fighter1Percentage: parseFloat(fighter1Percentage),
+      fighter2Percentage: parseFloat(fighter2Percentage)
+    });
+  } catch (error) {
+    console.error('Error fetching vote stats:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 };
 
 // @desc    Remove vote
 // @route   DELETE /api/votes/fight/:fightId
 // @access  Private
 export const removeVote = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const vote = await Vote.findOne({
+      fightId: req.params.fightId,
+      userId: req.user.id
+    });
 
-  const voteIndex = db.data.votes.findIndex(v => v.fightId === req.params.fightId && v.userId === req.user.id);
-  
-  if (voteIndex === -1) {
-    return res.status(404).json({ msg: 'Nie znaleziono głosu' });
+    if (!vote) {
+      return res.status(404).json({ msg: 'Nie znaleziono głosu' });
+    }
+
+    // Check if fight is still active
+    const fight = await Fight.findById(req.params.fightId);
+    if (fight && fight.status !== 'active') {
+      return res.status(400).json({ msg: 'Nie można usunąć głosu z zakończonej walki' });
+    }
+
+    await Vote.findByIdAndDelete(vote._id);
+
+    // Update fight vote counts
+    if (fight) {
+      const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
+      const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
+      fight.votesA = teamAVotes;
+      fight.votesB = teamBVotes;
+      await fight.save();
+    }
+
+    res.json({ msg: 'Głos usunięty' });
+  } catch (error) {
+    console.error('Error removing vote:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  // Check if fight is still active
-  const fight = db.data.fights.find(f => f.id === req.params.fightId);
-  if (fight && fight.status !== 'active') {
-    return res.status(400).json({ msg: 'Nie można usunąć głosu z zakończonej walki' });
-  }
-
-  db.data.votes.splice(voteIndex, 1);
-  await db.write();
-
-  res.json({ msg: 'Głos usunięty' });
 };
 
 // @desc    Get all votes by user
 // @route   GET /api/votes/user/me
 // @access  Private
 export const getUserVotes = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const userVotes = await Vote.find({ userId: req.user.id });
 
-  const userVotes = db.data.votes.filter(v => v.userId === req.user.id);
-  
-  // Add fight details to each vote
-  const votesWithFights = userVotes.map(vote => {
-    const fight = db.data.fights.find(f => f.id === vote.fightId);
-    return {
-      ...vote,
-      fight: fight ? {
-        id: fight.id,
-        title: fight.title,
-        fighter1: fight.fighter1,
-        fighter2: fight.fighter2,
-        status: fight.status,
-        winner: fight.winner
-      } : null
-    };
-  });
+    // Add fight details to each vote
+    const votesWithFights = await Promise.all(userVotes.map(async (vote) => {
+      const fight = await Fight.findById(vote.fightId);
+      return {
+        ...vote.toObject(),
+        fight: fight ? {
+          id: fight._id,
+          title: fight.title,
+          fighter1: fight.teamA?.[0]?.characterName || 'Fighter 1',
+          fighter2: fight.teamB?.[0]?.characterName || 'Fighter 2',
+          status: fight.status,
+          winner: fight.result?.winner
+        } : null
+      };
+    }));
 
-  res.json(votesWithFights);
+    res.json(votesWithFights);
+  } catch (error) {
+    console.error('Error fetching user votes:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 };

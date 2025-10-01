@@ -1,31 +1,32 @@
-import { v4 as uuidv4 } from 'uuid';
+import Tournament from '../models/Tournament.js';
+import User from '../models/User.js';
 
 // Helper function to generate tournament brackets
 function generateBrackets(participants, tournamentType = 'single_elimination') {
   const numParticipants = participants.length;
   const rounds = Math.ceil(Math.log2(numParticipants));
   const totalSlots = Math.pow(2, rounds);
-  
+
   // Seed participants based on their ranking/points
   const seededParticipants = participants.sort((a, b) => (b.points || 0) - (a.points || 0));
-  
+
   // Fill remaining slots with byes
   while (seededParticipants.length < totalSlots) {
     seededParticipants.push({ type: 'bye', userId: null, characterId: null });
   }
-  
+
   const brackets = [];
-  
+
   if (tournamentType === 'single_elimination') {
     // Generate single elimination brackets
     for (let round = 0; round < rounds; round++) {
       const roundMatches = [];
       const matchesInRound = Math.pow(2, rounds - round - 1);
-      
+
       for (let match = 0; match < matchesInRound; match++) {
         const matchId = `${round}-${match}`;
         let player1, player2;
-        
+
         if (round === 0) {
           // First round - use seeding
           const player1Index = match;
@@ -37,7 +38,7 @@ function generateBrackets(participants, tournamentType = 'single_elimination') {
           player1 = { type: 'tbd', matchId: `${round-1}-${match*2}` };
           player2 = { type: 'tbd', matchId: `${round-1}-${match*2+1}` };
         }
-        
+
         roundMatches.push({
           id: matchId,
           player1,
@@ -49,14 +50,14 @@ function generateBrackets(participants, tournamentType = 'single_elimination') {
           voters: []
         });
       }
-      
+
       brackets.push({
         round: round + 1,
         matches: roundMatches
       });
     }
   }
-  
+
   return brackets;
 }
 
@@ -65,23 +66,23 @@ function advanceTournament(tournament, matchId, winnerId) {
   const [roundIndex, matchIndex] = matchId.split('-').map(Number);
   const currentRound = tournament.brackets[roundIndex];
   const currentMatch = currentRound.matches[matchIndex];
-  
+
   // Set winner for current match
   currentMatch.winner = winnerId;
   currentMatch.status = 'completed';
-  
+
   // Advance winner to next round
   if (roundIndex < tournament.brackets.length - 1) {
     const nextRound = tournament.brackets[roundIndex + 1];
     const nextMatchIndex = Math.floor(matchIndex / 2);
     const nextMatch = nextRound.matches[nextMatchIndex];
-    
+
     if (matchIndex % 2 === 0) {
       nextMatch.player1 = { userId: winnerId, type: 'player' };
     } else {
       nextMatch.player2 = { userId: winnerId, type: 'player' };
     }
-    
+
     nextMatch.status = 'ready';
   } else {
     // Tournament finished
@@ -89,26 +90,26 @@ function advanceTournament(tournament, matchId, winnerId) {
     tournament.status = 'completed';
     tournament.completedAt = new Date().toISOString();
   }
-  
+
   return tournament;
 }
 
 export const getAllTournaments = async (req, res) => {
-  const db = req.db;
-  
   try {
-    await db.read();
-    const tournaments = db.data.tournaments || [];
-    
+    const tournaments = await Tournament.find()
+      .populate('createdBy', 'username')
+      .populate('participants', 'username profile.profilePicture')
+      .sort({ createdAt: -1 });
+
     // Add participant count and status info
     const enhancedTournaments = tournaments.map(tournament => ({
-      ...tournament,
+      ...tournament.toObject(),
       participantCount: tournament.participants?.length || 0,
       isFull: tournament.participants?.length >= tournament.maxParticipants,
-      canJoin: tournament.status === 'upcoming' && 
+      canJoin: tournament.status === 'upcoming' &&
                (tournament.participants?.length || 0) < tournament.maxParticipants
     }));
-    
+
     res.json(enhancedTournaments);
   } catch (err) {
     console.error(err.message);
@@ -117,24 +118,28 @@ export const getAllTournaments = async (req, res) => {
 };
 
 export const getTournamentById = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    const tournament = db.data.tournaments.find(t => t.id === id);
-    
+    const tournament = await Tournament.findById(id)
+      .populate('createdBy', 'username')
+      .populate('participants', 'username profile.profilePicture')
+      .populate('winner', 'username');
+
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
+
     // Add user participation info if authenticated
+    const tournamentObj = tournament.toObject();
     if (req.user) {
-      const userParticipation = tournament.participants?.find(p => p.userId === req.user.id);
-      tournament.userParticipation = userParticipation || null;
+      const userParticipation = tournament.participants?.find(
+        p => p._id.toString() === req.user.id
+      );
+      tournamentObj.userParticipation = userParticipation || null;
     }
-    
-    res.json(tournament);
+
+    res.json(tournamentObj);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -142,32 +147,28 @@ export const getTournamentById = async (req, res) => {
 };
 
 export const createTournament = async (req, res) => {
-  const db = req.db;
-  const { 
-    title, 
-    description, 
-    startDate, 
-    endDate, 
-    maxParticipants, 
-    rules, 
+  const {
+    title,
+    description,
+    startDate,
+    endDate,
+    maxParticipants,
+    rules,
     tournamentType,
     divisionId,
     prizePool,
     entryFee
   } = req.body;
-  
+
   try {
-    await db.read();
-    
     // Check if user is moderator
-    const user = db.data.users.find(u => u.id === req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user || user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
     }
-    
-    const newTournament = {
-      id: uuidv4(),
-      title,
+
+    const newTournament = new Tournament({
+      name: title,
       description,
       startDate,
       endDate,
@@ -175,27 +176,28 @@ export const createTournament = async (req, res) => {
       rules: rules || '',
       tournamentType: tournamentType || 'single_elimination',
       divisionId: divisionId || null,
-      prizePool: prizePool || 0,
-      entryFee: entryFee || 0,
-      status: 'upcoming', // upcoming, active, completed, cancelled
-      participants: [],
-      brackets: [],
-      fights: [],
+      prize: prizePool || '0',
       createdBy: req.user.id,
-      createdAt: new Date().toISOString(),
-      winner: null,
-      runnerUp: null,
-      thirdPlace: null,
-      stats: {
-        totalMatches: 0,
-        completedMatches: 0,
-        totalVotes: 0
+      status: 'upcoming',
+      participants: [],
+      fights: [],
+      settings: {
+        publicJoin: true,
+        votingDuration: 24,
+        requireApproval: false
       }
+    });
+
+    // Store additional fields not in schema as metadata
+    newTournament.brackets = [];
+    newTournament.stats = {
+      totalMatches: 0,
+      completedMatches: 0,
+      totalVotes: 0
     };
-    
-    db.data.tournaments.push(newTournament);
-    await db.write();
-    
+
+    await newTournament.save();
+
     res.json(newTournament);
   } catch (err) {
     console.error(err.message);
@@ -204,46 +206,57 @@ export const createTournament = async (req, res) => {
 };
 
 export const startTournament = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    
     // Check if user is moderator
-    const user = db.data.users.find(u => u.id === req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user || user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
     }
-    
-    const tournament = db.data.tournaments.find(t => t.id === id);
+
+    const tournament = await Tournament.findById(id);
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
+
     if (tournament.status !== 'upcoming') {
       return res.status(400).json({ msg: 'Tournament cannot be started' });
     }
-    
+
     if (tournament.participants.length < 2) {
       return res.status(400).json({ msg: 'Need at least 2 participants to start tournament' });
     }
-    
+
+    // Get participant details for seeding
+    const participants = await User.find({
+      _id: { $in: tournament.participants }
+    }).select('_id stats.points');
+
+    const participantsWithPoints = participants.map(p => ({
+      userId: p._id,
+      points: p.stats?.points || 0
+    }));
+
     // Generate brackets
-    const brackets = generateBrackets(tournament.participants, tournament.tournamentType);
-    
+    const brackets = generateBrackets(participantsWithPoints, 'single_elimination');
+
     // Update tournament
-    tournament.brackets = brackets;
     tournament.status = 'active';
-    tournament.startedAt = new Date().toISOString();
-    tournament.stats.totalMatches = brackets.reduce((total, round) => total + round.matches.length, 0);
-    
-    await db.write();
-    
-    res.json({ 
-      msg: 'Tournament started successfully', 
+    tournament.startDate = new Date();
+    tournament.brackets = brackets;
+    tournament.stats = {
+      totalMatches: brackets.reduce((total, round) => total + round.matches.length, 0),
+      completedMatches: 0,
+      totalVotes: 0
+    };
+
+    await tournament.save();
+
+    res.json({
+      msg: 'Tournament started successfully',
       tournament,
-      brackets 
+      brackets
     });
   } catch (err) {
     console.error(err.message);
@@ -252,61 +265,59 @@ export const startTournament = async (req, res) => {
 };
 
 export const advanceMatch = async (req, res) => {
-  const db = req.db;
   const { id, matchId } = req.params;
   const { winnerId } = req.body;
-  
+
   try {
-    await db.read();
-    
     // Check if user is moderator
-    const user = db.data.users.find(u => u.id === req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user || user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
     }
-    
-    const tournament = db.data.tournaments.find(t => t.id === id);
+
+    const tournament = await Tournament.findById(id);
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
+
     if (tournament.status !== 'active') {
       return res.status(400).json({ msg: 'Tournament is not active' });
     }
-    
+
     // Advance the tournament
     const updatedTournament = advanceTournament(tournament, matchId, winnerId);
-    
+
     // Update stats
-    updatedTournament.stats.completedMatches += 1;
-    
-    // Update user stats for winner
-    const winnerIndex = db.data.users.findIndex(u => u.id === winnerId);
-    if (winnerIndex !== -1) {
-      if (!db.data.users[winnerIndex].activity) {
-        db.data.users[winnerIndex].activity = {
-          postsCreated: 0,
-          likesReceived: 0,
-          commentsPosted: 0,
-          fightsCreated: 0,
-          votesGiven: 0,
-          tournamentsParticipated: 0,
-          tournamentsWon: 0
-        };
-      }
-      db.data.users[winnerIndex].activity.tournamentsWon += 1;
-      db.data.users[winnerIndex].stats.experience += 20; // Award experience for tournament win
+    if (!updatedTournament.stats) {
+      updatedTournament.stats = { totalMatches: 0, completedMatches: 0, totalVotes: 0 };
     }
-    
-    // Update tournament in database
-    const tournamentIndex = db.data.tournaments.findIndex(t => t.id === id);
-    db.data.tournaments[tournamentIndex] = updatedTournament;
-    
-    await db.write();
-    
-    res.json({ 
-      msg: 'Match advanced successfully', 
-      tournament: updatedTournament 
+    updatedTournament.stats.completedMatches += 1;
+
+    // Update user stats for winner if tournament is completed
+    if (updatedTournament.status === 'completed') {
+      const winner = await User.findById(winnerId);
+      if (winner) {
+        if (!winner.activity) {
+          winner.activity = {
+            postsCreated: 0,
+            likesReceived: 0,
+            commentsPosted: 0,
+            tournamentsWon: 0,
+            tournamentsParticipated: 0
+          };
+        }
+        winner.activity.tournamentsWon = (winner.activity.tournamentsWon || 0) + 1;
+        if (!winner.stats) winner.stats = {};
+        winner.stats.experience = (winner.stats.experience || 0) + 20;
+        await winner.save();
+      }
+    }
+
+    await tournament.save();
+
+    res.json({
+      msg: 'Match advanced successfully',
+      tournament: updatedTournament
     });
   } catch (err) {
     console.error(err.message);
@@ -315,62 +326,62 @@ export const advanceMatch = async (req, res) => {
 };
 
 export const voteInTournament = async (req, res) => {
-  const db = req.db;
   const { id, matchId } = req.params;
   const { winnerId } = req.body;
-  
+
   try {
-    await db.read();
-    
-    const tournament = db.data.tournaments.find(t => t.id === id);
+    const tournament = await Tournament.findById(id);
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
+
     if (tournament.status !== 'active') {
       return res.status(400).json({ msg: 'Tournament is not active' });
     }
-    
+
     // Find the match
     const [roundIndex, matchIndex] = matchId.split('-').map(Number);
     const round = tournament.brackets[roundIndex];
     const match = round.matches[matchIndex];
-    
+
     if (!match) {
       return res.status(404).json({ msg: 'Match not found' });
     }
-    
+
     if (match.status !== 'active') {
       return res.status(400).json({ msg: 'Match is not active for voting' });
     }
-    
+
     // Check if user already voted
     const hasVoted = match.voters.some(v => v.userId === req.user.id);
     if (hasVoted) {
       return res.status(400).json({ msg: 'You have already voted in this match' });
     }
-    
+
     // Add vote
     match.voters.push({
       userId: req.user.id,
       votedFor: winnerId,
       votedAt: new Date().toISOString()
     });
-    
+
     // Update vote counts
     if (winnerId === match.player1.userId) {
       match.votes.player1 += 1;
     } else if (winnerId === match.player2.userId) {
       match.votes.player2 += 1;
     }
-    
+
     // Update tournament stats
-    tournament.stats.totalVotes += 1;
-    
-    await db.write();
-    
-    res.json({ 
-      msg: 'Vote recorded successfully', 
+    if (!tournament.stats) {
+      tournament.stats = { totalMatches: 0, completedMatches: 0, totalVotes: 0 };
+    }
+    tournament.stats.totalVotes = (tournament.stats.totalVotes || 0) + 1;
+
+    await tournament.save();
+
+    res.json({
+      msg: 'Vote recorded successfully',
       match,
       totalVotes: match.votes.player1 + match.votes.player2
     });
@@ -381,21 +392,19 @@ export const voteInTournament = async (req, res) => {
 };
 
 export const getTournamentBrackets = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    const tournament = db.data.tournaments.find(t => t.id === id);
-    
+    const tournament = await Tournament.findById(id);
+
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
+
     res.json({
       tournament: {
-        id: tournament.id,
-        title: tournament.title,
+        id: tournament._id,
+        title: tournament.name,
         status: tournament.status,
         winner: tournament.winner
       },
@@ -408,32 +417,32 @@ export const getTournamentBrackets = async (req, res) => {
 };
 
 export const updateTournament = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
   const updates = req.body;
-  
+
   try {
-    await db.read();
-    
     // Check if user is moderator
-    const user = db.data.users.find(u => u.id === req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user || user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
     }
-    
-    const tournamentIndex = db.data.tournaments.findIndex(t => t.id === id);
-    if (tournamentIndex === -1) {
+
+    const tournament = await Tournament.findById(id);
+    if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
-    db.data.tournaments[tournamentIndex] = {
-      ...db.data.tournaments[tournamentIndex],
-      ...updates,
-      updatedAt: new Date().toISOString()
-    };
-    
-    await db.write();
-    res.json(db.data.tournaments[tournamentIndex]);
+
+    // Update fields
+    Object.keys(updates).forEach(key => {
+      if (updates[key] !== undefined && key !== '_id' && key !== 'createdBy') {
+        tournament[key] = updates[key];
+      }
+    });
+
+    tournament.updatedAt = new Date();
+
+    await tournament.save();
+    res.json(tournament);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -441,26 +450,22 @@ export const updateTournament = async (req, res) => {
 };
 
 export const deleteTournament = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    
     // Check if user is moderator
-    const user = db.data.users.find(u => u.id === req.user.id);
+    const user = await User.findById(req.user.id);
     if (!user || user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
     }
-    
-    const tournamentIndex = db.data.tournaments.findIndex(t => t.id === id);
-    if (tournamentIndex === -1) {
+
+    const tournament = await Tournament.findById(id);
+    if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
-    db.data.tournaments.splice(tournamentIndex, 1);
-    await db.write();
-    
+
+    await Tournament.findByIdAndDelete(id);
+
     res.json({ msg: 'Tournament deleted successfully' });
   } catch (err) {
     console.error(err.message);
@@ -469,48 +474,51 @@ export const deleteTournament = async (req, res) => {
 };
 
 export const joinTournament = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
   const { characterId } = req.body;
-  
+
   try {
-    await db.read();
-    
-    const tournament = db.data.tournaments.find(t => t.id === id);
+    const tournament = await Tournament.findById(id);
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
+
     if (tournament.status !== 'upcoming') {
       return res.status(400).json({ msg: 'Cannot join tournament that has already started' });
     }
-    
+
     if (tournament.participants.length >= tournament.maxParticipants) {
       return res.status(400).json({ msg: 'Tournament is full' });
     }
-    
+
     // Check if user is already participating
-    const isAlreadyParticipating = tournament.participants.some(p => p.userId === req.user.id);
+    const isAlreadyParticipating = tournament.participants.some(
+      p => p.toString() === req.user.id
+    );
     if (isAlreadyParticipating) {
       return res.status(400).json({ msg: 'You are already participating in this tournament' });
     }
-    
-    const participant = {
-      userId: req.user.id,
-      characterId,
-      joinedAt: new Date().toISOString(),
-      status: 'active'
-    };
-    
-    tournament.participants.push(participant);
-    
+
+    // Add participant
+    tournament.participants.push(req.user.id);
+
     // Update user stats
-    const userIndex = db.data.users.findIndex(u => u.id === req.user.id);
-    if (userIndex !== -1) {
-      db.data.users[userIndex].activity.tournamentsParticipated += 1;
+    const user = await User.findById(req.user.id);
+    if (user) {
+      if (!user.activity) {
+        user.activity = {
+          postsCreated: 0,
+          likesReceived: 0,
+          commentsPosted: 0,
+          tournamentsWon: 0,
+          tournamentsParticipated: 0
+        };
+      }
+      user.activity.tournamentsParticipated = (user.activity.tournamentsParticipated || 0) + 1;
+      await user.save();
     }
-    
-    await db.write();
+
+    await tournament.save();
     res.json({ msg: 'Successfully joined tournament', tournament });
   } catch (err) {
     console.error(err.message);
@@ -519,35 +527,39 @@ export const joinTournament = async (req, res) => {
 };
 
 export const leaveTournament = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    
-    const tournament = db.data.tournaments.find(t => t.id === id);
+    const tournament = await Tournament.findById(id);
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    
+
     if (tournament.status !== 'upcoming') {
       return res.status(400).json({ msg: 'Cannot leave tournament that has already started' });
     }
-    
-    const participantIndex = tournament.participants.findIndex(p => p.userId === req.user.id);
+
+    const participantIndex = tournament.participants.findIndex(
+      p => p.toString() === req.user.id
+    );
     if (participantIndex === -1) {
       return res.status(400).json({ msg: 'You are not participating in this tournament' });
     }
-    
+
+    // Remove participant
     tournament.participants.splice(participantIndex, 1);
-    
+
     // Update user stats
-    const userIndex = db.data.users.findIndex(u => u.id === req.user.id);
-    if (userIndex !== -1) {
-      db.data.users[userIndex].activity.tournamentsParticipated -= 1;
+    const user = await User.findById(req.user.id);
+    if (user && user.activity) {
+      user.activity.tournamentsParticipated = Math.max(
+        0,
+        (user.activity.tournamentsParticipated || 0) - 1
+      );
+      await user.save();
     }
-    
-    await db.write();
+
+    await tournament.save();
     res.json({ msg: 'Successfully left tournament', tournament });
   } catch (err) {
     console.error(err.message);

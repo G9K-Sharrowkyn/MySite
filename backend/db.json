@@ -516,9 +516,104 @@
           "teamB": 0,
           "voters": []
         },
-        "status": "active",
+        "status": "locked",
         "isOfficial": false,
         "lockTime": "2025-07-15T15:34:21.758Z",
+        "winner": null,
+        "winnerTeam": "draw",
+        "lockedAt": "2025-07-16T18:33:03.938Z",
+        "finalVotes": {
+          "teamA": 0,
+          "teamB": 0,
+          "total": 0
+        }
+      },
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": []
+    },
+    {
+      "id": "7a44ceb2-7798-4af9-a133-3ddf774e5660",
+      "type": "discussion",
+      "authorId": "68dcfc8ead953264842dabc0",
+      "createdAt": "2025-10-01T10:04:27.374Z",
+      "updatedAt": "2025-10-01T10:04:27.374Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": null,
+      "fight": null,
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": [],
+      "autoTags": {
+        "universes": [],
+        "characters": [],
+        "powerTiers": [],
+        "categories": []
+      }
+    },
+    {
+      "id": "e2109121-a137-49a9-b2ba-dca06460cdb9",
+      "title": "Batman vs Black Adam",
+      "content": "Who would win?",
+      "type": "fight",
+      "authorId": "68dcfc8ead953264842dabc0",
+      "createdAt": "2025-10-01T10:04:49.884Z",
+      "updatedAt": "2025-10-01T10:04:49.884Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          [
+            {
+              "id": "char3",
+              "name": "Batman (New52)",
+              "image": "/characters/Batman(New52).jpg"
+            }
+          ],
+          [
+            {
+              "id": "char4",
+              "name": "Black Adam (New52)",
+              "image": "/characters/Black_Adam(New52).jpg"
+            }
+          ]
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": [
+          {
+            "id": "char3",
+            "name": "Batman (New52)",
+            "image": "/characters/Batman(New52).jpg"
+          }
+        ],
+        "teamB": [
+          {
+            "id": "char4",
+            "name": "Black Adam (New52)",
+            "image": "/characters/Black_Adam(New52).jpg"
+          }
+        ],
+        "votes": {
+          "teamA": 0,
+          "teamB": 0,
+          "voters": []
+        },
+        "status": "active",
+        "isOfficial": false,
+        "lockTime": "2025-10-04T10:04:49.884Z",
         "winner": null,
         "winnerTeam": null
       },
@@ -526,7 +621,17 @@
       "moderatorCreated": false,
       "category": null,
       "featured": false,
-      "tags": []
+      "tags": [
+        "DC"
+      ],
+      "autoTags": {
+        "universes": [
+          "DC"
+        ],
+        "characters": [],
+        "powerTiers": [],
+        "categories": []
+      }
     }
   ],
   "comments": [

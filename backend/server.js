@@ -3,12 +3,17 @@ import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
 import cors from 'cors';
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
-import path from 'path';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
+// import mongoSanitize from 'express-mongo-sanitize'; // Incompatible with Express 5.x
+import hpp from 'hpp';
 import { startScheduler } from './services/fightScheduler.js';
+import { startBettingService } from './services/bettingService.js';
+import { startFightAutoLockJob } from './jobs/fightAutoLock.js';
 import http from 'http';
 import { Server } from 'socket.io';
+import ChatMessage from './models/ChatMessage.js';
 
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
@@ -23,13 +28,15 @@ import notificationRoutes from './routes/notifications.js';
 import tournamentRoutes from './routes/tournaments.js';
 import statsRoutes from './routes/stats.js';
 import badgeRoutes from './routes/badges.js';
-
-const __dirname = path.dirname(new URL(import.meta.url).pathname);
+import bettingRoutes from './routes/betting.js';
+import fighterProposalRoutes from './routes/fighterProposals.js';
+import tagRoutes from './routes/tags.js';
+import privacyRoutes from './routes/privacy.js';
 
 // Connect to MongoDB
 const mongoUri = process.env.MONGODB_URI;
 if (mongoUri) {
-  mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
+  mongoose.connect(mongoUri)
     .then(() => console.log('✅ Connected to MongoDB'))
     .catch((err) => console.error('❌ MongoDB connection error:', err));
 } else {
@@ -51,35 +58,59 @@ const io = new Server(server, {
   }
 });
 
-// Configure lowdb to write to JSONFile
-const file = path.join(__dirname, 'db.json');
-const adapter = new JSONFile(file);
-const db = new Low(adapter, { 
-  users: [], 
-  fights: [], 
-  characters: [], 
-  tournaments: [],
-  posts: [],
-  comments: [],
-  messages: [],
-  votes: [],
-  notifications: [],
-  officialFights: [],
-  divisions: [],
-  chatMessages: [] // Add chat messages storage
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable for development, enable in production
+  crossOriginEmbedderPolicy: false
+}));
+
+// Rate limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// Read data from JSON file
-await db.read();
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 login requests per windowMs
+  message: 'Too many login attempts, please try again later.',
+  skipSuccessfulRequests: true,
+});
 
-// Middleware
-app.use(cors());
+app.use('/api/', limiter);
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+
+// Data sanitization against NoSQL query injection
+// Note: express-mongo-sanitize has compatibility issues with Express 5.x
+// Using custom sanitization in validation middleware instead
+// app.use(mongoSanitize());
+
+// Prevent HTTP Parameter Pollution
+app.use(hpp());
+
+// Request logging middleware
+if (process.env.NODE_ENV === 'production') {
+  app.use(morgan('combined')); // Apache-style combined logging for production
+} else {
+  app.use(morgan('dev')); // Concise colored output for development
+}
+
+// CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
+// Body parser
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
 
-// Make db and io accessible to routes
+// Make io accessible to routes
 app.use((req, res, next) => {
-  req.db = db;
   req.io = io; // Make Socket.io available to routes
   next();
 });
@@ -99,7 +130,11 @@ app.use('/api/divisions', divisionsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/stats', statsRoutes);
-app.use('/api/users/:userId/badges', badgeRoutes);
+app.use('/api/badges', badgeRoutes);
+app.use('/api/betting', bettingRoutes);
+app.use('/api/fighter-proposals', fighterProposalRoutes);
+app.use('/api/tags', tagRoutes);
+app.use('/api/privacy', privacyRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -135,16 +170,30 @@ io.on('connection', (socket) => {
     // Send active users list
     socket.emit('active-users', Array.from(activeUsers.values()));
 
-    // Load recent chat messages
-    await db.read();
-    const recentMessages = db.data.chatMessages
-      .slice(-50) // Last 50 messages
-      .map(msg => ({
-        ...msg,
-        isOwn: msg.userId === userData.userId
-      }));
-    
-    socket.emit('message-history', recentMessages);
+    // Load recent chat messages from MongoDB
+    try {
+      const recentMessages = await ChatMessage.find()
+        .sort({ createdAt: -1 })
+        .limit(50)
+        .lean();
+
+      const formattedMessages = recentMessages
+        .reverse()
+        .map(msg => ({
+          id: msg._id.toString(),
+          userId: msg.userId,
+          username: msg.username,
+          profilePicture: msg.profilePicture,
+          text: msg.text,
+          timestamp: msg.createdAt,
+          reactions: msg.reactions || [],
+          isOwn: msg.userId === userData.userId
+        }));
+
+      socket.emit('message-history', formattedMessages);
+    } catch (error) {
+      console.error('Error loading chat history:', error);
+    }
   });
 
   // Handle sending messages
@@ -155,29 +204,44 @@ io.on('connection', (socket) => {
     }
 
     const user = activeUsers.get(socket.id);
-    const newMessage = {
-      id: Date.now().toString(),
-      userId: user.userId,
-      username: user.username,
-      profilePicture: user.profilePicture,
-      text: messageData.text,
-      timestamp: new Date().toISOString(),
-      reactions: []
-    };
 
-    // Save to database
-    await db.read();
-    db.data.chatMessages.push(newMessage);
-    
-    // Keep only last 1000 messages
-    if (db.data.chatMessages.length > 1000) {
-      db.data.chatMessages = db.data.chatMessages.slice(-1000);
+    try {
+      // Save to MongoDB
+      const newMessage = await ChatMessage.create({
+        userId: user.userId,
+        username: user.username,
+        profilePicture: user.profilePicture,
+        text: messageData.text,
+        reactions: []
+      });
+
+      // Clean up old messages - keep only last 1000
+      const messageCount = await ChatMessage.countDocuments();
+      if (messageCount > 1000) {
+        const oldMessages = await ChatMessage.find()
+          .sort({ createdAt: 1 })
+          .limit(messageCount - 1000)
+          .select('_id');
+        const idsToDelete = oldMessages.map(msg => msg._id);
+        await ChatMessage.deleteMany({ _id: { $in: idsToDelete } });
+      }
+
+      // Format message for broadcast
+      const formattedMessage = {
+        id: newMessage._id.toString(),
+        userId: newMessage.userId,
+        username: newMessage.username,
+        profilePicture: newMessage.profilePicture,
+        text: newMessage.text,
+        timestamp: newMessage.createdAt,
+        reactions: []
+      };
+
+      // Broadcast to all clients
+      io.emit('new-message', formattedMessage);
+    } catch (error) {
+      console.error('Error saving chat message:', error);
     }
-    
-    await db.write();
-
-    // Broadcast to all clients
-    io.emit('new-message', newMessage);
   });
 
   // Handle reactions
@@ -187,35 +251,35 @@ io.on('connection', (socket) => {
     }
 
     const user = activeUsers.get(socket.id);
-    
-    await db.read();
-    const messageIndex = db.data.chatMessages.findIndex(m => m.id === data.messageId);
-    
-    if (messageIndex !== -1) {
-      if (!db.data.chatMessages[messageIndex].reactions) {
-        db.data.chatMessages[messageIndex].reactions = [];
+
+    try {
+      // Find message and update reactions
+      const message = await ChatMessage.findById(data.messageId);
+
+      if (message) {
+        // Check if user already reacted with this emoji
+        const existingReaction = message.reactions.find(
+          r => r.userId === user.userId && r.emoji === data.emoji
+        );
+
+        if (!existingReaction) {
+          message.reactions.push({
+            userId: user.userId,
+            username: user.username,
+            emoji: data.emoji
+          });
+
+          await message.save();
+
+          // Broadcast reaction update
+          io.emit('reaction-added', {
+            messageId: data.messageId,
+            reactions: message.reactions
+          });
+        }
       }
-      
-      // Check if user already reacted with this emoji
-      const existingReaction = db.data.chatMessages[messageIndex].reactions.find(
-        r => r.userId === user.userId && r.emoji === data.emoji
-      );
-      
-      if (!existingReaction) {
-        db.data.chatMessages[messageIndex].reactions.push({
-          userId: user.userId,
-          username: user.username,
-          emoji: data.emoji
-        });
-        
-        await db.write();
-        
-        // Broadcast reaction update
-        io.emit('reaction-added', {
-          messageId: data.messageId,
-          reactions: db.data.chatMessages[messageIndex].reactions
-        });
-      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
     }
   });
 
@@ -254,5 +318,15 @@ server.listen(PORT, () => {
   // Start the fight scheduler
   (async () => {
     await startScheduler();
+  })();
+  
+  // Start the betting service
+  (async () => {
+    await startBettingService();
+  })();
+  
+  // Start the fight auto-lock job
+  (async () => {
+    await startFightAutoLockJob(io);
   })();
 });

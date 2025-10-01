@@ -1,72 +1,106 @@
-
-import { v4 as uuidv4 } from 'uuid';
-import { createNotification } from './notificationController.js';
+import Character from '../models/Character.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
 export const getCharacters = async (req, res) => {
-  const db = req.db;
-  await db.read();
-  res.json(db.data.characters);
+  try {
+    const characters = await Character.find({ status: 'active' });
+    res.json(characters);
+  } catch (error) {
+    console.error('Error fetching characters:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
 };
 
 // @desc    Add a new character (Moderator only)
 // @route   POST /api/characters
 // @access  Private (Moderator)
 export const addCharacter = async (req, res) => {
-  const { name } = req.body;
-  const db = req.db;
-  await db.read();
+  try {
+    const { name, universe, image, powerTier, category } = req.body;
 
-  const newCharacter = { id: uuidv4(), name, available: true };
-  db.data.characters.push(newCharacter);
-  await db.write();
-  res.status(201).json(newCharacter);
+    const newCharacter = await Character.create({
+      name,
+      universe: universe || 'Other',
+      image,
+      images: {
+        primary: image,
+        gallery: [],
+        thumbnail: image
+      },
+      powerTier: powerTier || 'Metahuman',
+      category: category || 'Other',
+      addedBy: req.user.id,
+      status: 'active',
+      moderation: {
+        approved: true,
+        approvedBy: req.user.id,
+        approvedAt: new Date()
+      }
+    });
+
+    res.status(201).json(newCharacter);
+  } catch (error) {
+    console.error('Error adding character:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
 };
 
 // @desc    Update character availability (Moderator only)
 // @route   PUT /api/characters/:id
 // @access  Private (Moderator)
 export const updateCharacter = async (req, res) => {
-  const { id } = req.params;
-  const { available } = req.body;
-  const db = req.db;
-  await db.read();
+  try {
+    const { id } = req.params;
+    const { available, status } = req.body;
 
-  const index = db.data.characters.findIndex(c => c.id === id);
+    const character = await Character.findById(id);
 
-  if (index === -1) {
-    return res.status(404).json({ msg: 'Postać nie znaleziona' });
+    if (!character) {
+      return res.status(404).json({ msg: 'Postać nie znaleziona' });
+    }
+
+    // Update status based on available field
+    if (available !== undefined) {
+      character.status = available ? 'active' : 'inactive';
+    }
+
+    if (status !== undefined) {
+      character.status = status;
+    }
+
+    await character.save();
+    res.json(character);
+  } catch (error) {
+    console.error('Error updating character:', error);
+    res.status(500).json({ msg: 'Server error' });
   }
-
-  db.data.characters[index].available = available;
-  await db.write();
-  res.json(db.data.characters[index]);
 };
 
 // @desc    Suggest a new character (User suggestion)
 // @route   POST /api/characters/suggest
 // @access  Private
 export const suggestCharacter = async (req, res) => {
-  const { name, photo } = req.body;
-  const db = req.db;
-  await db.read();
-
-  // Create notification for moderators
   try {
-    const moderators = db.data.users.filter(u => u.role === 'moderator');
+    const { name, photo, universe, powerTier } = req.body;
+
+    // Create notification for moderators
+    const moderators = await User.find({ role: 'moderator' });
+
     for (const mod of moderators) {
-      await createNotification(
-        db,
-        mod.id,
-        'character_suggestion',
-        'New Character Suggestion',
-        `User suggested a new character: ${name}`,
-        { name, photo }
-      );
+      await Notification.create({
+        userId: mod._id,
+        type: 'character_suggestion',
+        title: 'New Character Suggestion',
+        message: `User suggested a new character: ${name}`,
+        data: { name, photo, universe, powerTier, suggestedBy: req.user.id },
+        read: false
+      });
     }
-    await db.write();
+
     res.status(200).json({ msg: 'Character suggestion sent to moderators' });
   } catch (error) {
     console.error('Error sending character suggestion notification:', error);

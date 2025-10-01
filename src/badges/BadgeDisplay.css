@@ -1,0 +1,310 @@
+.badge-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.badge-display:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.badge-display.earned {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: #cbd5e1;
+}
+
+.badge-display.unearned {
+  opacity: 0.7;
+  background: #f9fafb;
+}
+
+/* Size variants */
+.badge-display.small {
+  padding: 8px;
+  gap: 8px;
+}
+
+.badge-display.medium {
+  padding: 12px;
+  gap: 12px;
+}
+
+.badge-display.large {
+  padding: 16px;
+  gap: 16px;
+}
+
+/* Badge icon */
+.badge-icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.badge-display.small .badge-icon {
+  width: 32px;
+  height: 32px;
+  border-width: 2px;
+}
+
+.badge-display.large .badge-icon {
+  width: 64px;
+  height: 64px;
+  border-width: 4px;
+}
+
+.badge-emoji {
+  font-size: 24px;
+  filter: grayscale(0);
+  transition: all 0.3s ease;
+}
+
+.badge-display.small .badge-emoji {
+  font-size: 16px;
+}
+
+.badge-display.large .badge-emoji {
+  font-size: 32px;
+}
+
+.badge-display.unearned .badge-emoji {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+/* Special effects for high rarity badges */
+.legendary-glow {
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #f59e0b, #fbbf24, #f59e0b);
+  animation: legendaryPulse 2s ease-in-out infinite;
+  z-index: -1;
+}
+
+.mythic-glow {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #ef4444, #f87171, #ef4444, #dc2626);
+  animation: mythicPulse 1.5s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes legendaryPulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes mythicPulse {
+  0%, 100% { opacity: 0.8; transform: scale(1) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(180deg); }
+}
+
+/* Badge info */
+.badge-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.badge-name {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 4px;
+  line-height: 1.2;
+}
+
+.badge-display.small .badge-name {
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.badge-display.large .badge-name {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.badge-description {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.badge-display.large .badge-description {
+  font-size: 15px;
+}
+
+/* Progress bar */
+.badge-progress {
+  margin-top: 8px;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #3b82f6;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* Earned status */
+.badge-earned {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #059669;
+}
+
+.earned-icon {
+  width: 16px;
+  height: 16px;
+  background: #10b981;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.championship-date {
+  font-size: 11px;
+  color: #f59e0b;
+  margin-top: 2px;
+}
+
+/* Rarity badge */
+.badge-rarity {
+  margin-top: 8px;
+}
+
+.rarity-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rarity-badge.common {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.rarity-badge.uncommon {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.rarity-badge.rare {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.rarity-badge.epic {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.rarity-badge.legendary {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.rarity-badge.mythic {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .badge-display {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .badge-icon {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .badge-emoji {
+    font-size: 20px;
+  }
+  
+  .badge-name {
+    font-size: 15px;
+  }
+  
+  .badge-description {
+    font-size: 13px;
+  }
+}
+
+/* Grid layout for badge collections */
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  padding: 16px;
+}
+
+.badges-grid.small {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.badges-grid.large {
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .badges-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 12px;
+  }
+}

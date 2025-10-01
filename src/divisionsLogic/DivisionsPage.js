@@ -7,6 +7,7 @@ import Modal from '../Modal/Modal';
 import HoloCard from '../shared/HoloCard';
 import ChampionshipHistory from './ChampionshipHistory';
 import ContenderMatches from './ContenderMatches';
+import TitleFightNotification from './TitleFightNotification';
 import './DivisionsPage.css';
 
 const DivisionsPage = () => {
@@ -24,6 +25,8 @@ const DivisionsPage = () => {
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [currentUser, setCurrentUser] = useState(null);
+  const [titleFights, setTitleFights] = useState({});
+  const [activeFights, setActiveFights] = useState({});
   
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -127,6 +130,40 @@ const DivisionsPage = () => {
     }
   }, [divisionsData]);
 
+  const fetchTitleFights = useCallback(async () => {
+    try {
+      const titleFightPromises = divisionsData.map(division =>
+        axios.get(`/api/divisions/${division.id}/title-fights`)
+      );
+      const titleFightResponses = await Promise.all(titleFightPromises);
+      const fights = {};
+      titleFightResponses.forEach((response, index) => {
+        fights[divisionsData[index].id] = response.data.titleFights || [];
+      });
+      setTitleFights(fights);
+    } catch (error) {
+      console.error('Error fetching title fights:', error);
+      setTitleFights({});
+    }
+  }, [divisionsData]);
+
+  const fetchActiveFights = useCallback(async () => {
+    try {
+      const activeFightPromises = divisionsData.map(division =>
+        axios.get(`/api/divisions/${division.id}/active-fights`)
+      );
+      const activeFightResponses = await Promise.all(activeFightPromises);
+      const fights = {};
+      activeFightResponses.forEach((response, index) => {
+        fights[divisionsData[index].id] = response.data.activeFights || [];
+      });
+      setActiveFights(fights);
+    } catch (error) {
+      console.error('Error fetching active fights:', error);
+      setActiveFights({});
+    }
+  }, [divisionsData]);
+
   const fetchCurrentUser = useCallback(async () => {
     try {
       const response = await axios.get('/api/profile/me', {
@@ -149,12 +186,14 @@ const DivisionsPage = () => {
       await fetchUserDivisions();
       await fetchDivisionStats();
       await fetchDivisionChampions();
+      await fetchTitleFights();
+      await fetchActiveFights();
       setDivisions(divisionsData);
       setLoading(false);
     };
     
     loadData();
-  }, [token, navigate, divisionsData, fetchCurrentUser, fetchUserDivisions, fetchDivisionStats, fetchDivisionChampions]);
+  }, [token, navigate, divisionsData, fetchCurrentUser, fetchUserDivisions, fetchDivisionStats, fetchDivisionChampions, fetchTitleFights, fetchActiveFights]);
 
   const handleJoinDivision = (division) => {
     setSelectedDivision(division);
@@ -188,7 +227,7 @@ const DivisionsPage = () => {
 
       // Refresh user divisions and stats
       console.log('🔄 Refreshing user divisions and stats...');
-      await Promise.all([fetchUserDivisions(), fetchDivisionStats()]);
+      await Promise.all([fetchUserDivisions(), fetchDivisionStats(), fetchTitleFights(), fetchActiveFights()]);
       setShowTeamSelection(false);
       setSelectedDivision(null);
       console.log('✅ Division join process completed');
@@ -215,7 +254,7 @@ const DivisionsPage = () => {
         headers: { 'x-auth-token': token }
       });
 
-      await Promise.all([fetchUserDivisions(), fetchDivisionStats()]);
+      await Promise.all([fetchUserDivisions(), fetchDivisionStats(), fetchTitleFights(), fetchActiveFights()]);
       setShowLeaveModal(false);
       setDivisionToLeave(null);
     } catch (error) {
@@ -320,15 +359,61 @@ const DivisionsPage = () => {
                 </div>
               )}
 
+              {/* Title Fight Notification */}
+              {titleFights[division.id] && titleFights[division.id].length > 0 && (
+                <TitleFightNotification
+                  titleFights={titleFights[division.id]}
+                  divisionName={division.name}
+                  currentUser={currentUser}
+                />
+              )}
+
+              {/* Active Fights Display */}
+              {activeFights[division.id] && activeFights[division.id].length > 0 && (
+                <div className="active-fights-section">
+                  <h4 className="active-fights-title">🔥 {t('activeFights') || 'Active Fights'}</h4>
+                  <div className="active-fights-list">
+                    {activeFights[division.id].slice(0, 3).map(fight => (
+                      <div key={fight._id} className="active-fight-item">
+                        <div className="fight-participants">
+                          <span className="participant">{fight.character1?.name}</span>
+                          <span className="vs-text">vs</span>
+                          <span className="participant">{fight.character2?.name}</span>
+                        </div>
+                        <div className="fight-info">
+                          <span className="fight-type">
+                            {fight.fightType === 'title' ? '👑 Title Fight' :
+                             fight.fightType === 'contender' ? '🥊 Contender Match' :
+                             '⚔️ Official Fight'}
+                          </span>
+                          <span className="fight-votes">🗳️ {fight.votes?.length || 0} votes</span>
+                        </div>
+                        <div className="fight-timer">
+                          ⏰ {new Date(fight.endTime).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {activeFights[division.id].length > 3 && (
+                    <button
+                      className="view-all-fights-btn"
+                      onClick={() => navigate(`/divisions/${division.id}/fights`)}
+                    >
+                      {t('viewAllFights') || 'View All Fights'} ({activeFights[division.id].length})
+                    </button>
+                  )}
+                </div>
+              )}
+
               {/* Championship History */}
-              <ChampionshipHistory 
+              <ChampionshipHistory
                 divisionId={division.id}
                 divisionName={division.name}
               />
 
               {/* Contender Matches */}
               {isJoined && (
-                <ContenderMatches 
+                <ContenderMatches
                   divisionId={division.id}
                   currentUser={currentUser}
                 />
@@ -398,6 +483,7 @@ const DivisionsPage = () => {
                 <span>👥 {t('activeTeams')}: {divisionStats[division.id]?.activeTeams || 0}</span>
                 <span style={{ marginLeft: 16 }}>🥊 {t('officialFights') || 'Official Fights'}: {divisionStats[division.id]?.totalOfficialFights || 0}</span>
                 <span style={{ marginLeft: 16 }}>🗳️ {t('averageVotes') || 'Avg. Votes/Fight'}: {divisionStats[division.id]?.averageVotes || 0}</span>
+                <span style={{ marginLeft: 16 }}>⏰ {t('activeFights') || 'Active Fights'}: {activeFights[division.id]?.length || 0}</span>
               </div>
             </div>
           );
@@ -422,8 +508,9 @@ const DivisionsPage = () => {
             <li>Each character can only be used by one player per division</li>
             <li>Official fights affect your overall ranking and stats</li>
             <li>You can change your team, but it will reset your division record</li>
-            <li>Moderators schedule fights up to 7 days in advance</li>
-            <li>Missing scheduled fights counts as a forfeit</li>
+            <li>Official fights have a 72-hour voting period with automatic closure</li>
+            <li>Title fights are created by moderators for championship contention</li>
+            <li>Contender matches determine who gets the next title shot</li>
           </ul>
         </div>
       </div>

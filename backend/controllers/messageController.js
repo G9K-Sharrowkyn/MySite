@@ -1,4 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
+import Message from '../models/Message.js';
+import User from '../models/User.js';
+import Notification from '../models/Notification.js';
 
 // @desc    Send a message
 // @route   POST /api/messages
@@ -11,52 +13,38 @@ export const sendMessage = async (req, res) => {
     });
 
     const { recipientId, content, subject } = req.body;
-    const db = req.db;
-    await db.read();
 
     // Check if recipient exists
-    const recipient = db.data.users.find(u => u.id === recipientId);
+    const recipient = await User.findById(recipientId);
     if (!recipient) {
       console.error('Recipient not found:', recipientId);
       return res.status(404).json({ msg: 'Odbiorca nie znaleziony' });
     }
 
     // Get sender info
-    const sender = db.data.users.find(u => u.id === req.user.id);
+    const sender = await User.findById(req.user.id);
 
-    const newMessage = {
-      id: uuidv4(),
-      senderId: req.user.id,
-      senderUsername: sender.username,
-      recipientId,
-      recipientUsername: recipient.username,
-      subject: subject || 'Brak tematu',
-      content,
-      createdAt: new Date().toISOString(),
+    const newMessage = await Message.create({
+      from: req.user.id,
+      to: recipientId,
+      content: `${subject ? `[${subject}] ` : ''}${content}`,
       read: false,
       deleted: false
-    };
+    });
 
-    db.data.messages.push(newMessage);
-    
     // Create notification for recipient
-    const notification = {
-      id: uuidv4(),
+    await Notification.create({
       userId: recipientId,
       type: 'message',
       title: 'Nowa wiadomość',
-      content: `Otrzymałeś nową wiadomość od ${sender.username}`,
+      message: `Otrzymałeś nową wiadomość od ${sender.username}`,
       data: {
-        messageId: newMessage.id,
+        messageId: newMessage._id.toString(),
         senderId: req.user.id,
         senderUsername: sender.username
       },
-      read: false,
-      createdAt: new Date().toISOString()
-    };
-
-    db.data.notifications.push(notification);
-    await db.write();
+      read: false
+    });
 
     console.log('Message sent successfully:', newMessage);
     res.json({ msg: 'Wiadomość wysłana', message: newMessage });
@@ -70,198 +58,196 @@ export const sendMessage = async (req, res) => {
 // @route   GET /api/messages
 // @access  Private
 export const getMessages = async (req, res) => {
-  const { type = 'received', page = 1, limit = 20 } = req.query;
-  const db = req.db;
-  await db.read();
+  try {
+    const { type = 'received', page = 1, limit = 20 } = req.query;
 
-  let messages;
-  
-  if (type === 'sent') {
-    messages = db.data.messages.filter(m => m.senderId === req.user.id && !m.deleted);
-  } else {
-    messages = db.data.messages.filter(m => m.recipientId === req.user.id && !m.deleted);
+    let query;
+    if (type === 'sent') {
+      query = { from: req.user.id, deleted: false };
+    } else {
+      query = { to: req.user.id, deleted: false };
+    }
+
+    const totalMessages = await Message.countDocuments(query);
+    const messages = await Message.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .populate('from', 'username')
+      .populate('to', 'username');
+
+    const unreadCount = await Message.countDocuments({ to: req.user.id, read: false, deleted: false });
+
+    res.json({
+      messages,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalMessages / limit),
+        totalMessages,
+        hasNext: page * limit < totalMessages,
+        hasPrev: page > 1
+      },
+      unreadCount
+    });
+  } catch (error) {
+    console.error('Error fetching messages:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  // Sort by creation date (newest first)
-  messages.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-  // Pagination
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
-  const paginatedMessages = messages.slice(startIndex, endIndex);
-
-  res.json({
-    messages: paginatedMessages,
-    pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(messages.length / limit),
-      totalMessages: messages.length,
-      hasNext: endIndex < messages.length,
-      hasPrev: startIndex > 0
-    },
-    unreadCount: messages.filter(m => !m.read && m.recipientId === req.user.id).length
-  });
 };
 
 // @desc    Get single message
 // @route   GET /api/messages/:id
 // @access  Private
 export const getMessage = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const message = await Message.findById(req.params.id)
+      .populate('from', 'username')
+      .populate('to', 'username');
 
-  const message = db.data.messages.find(m => m.id === req.params.id);
-  
-  if (!message) {
-    return res.status(404).json({ msg: 'Wiadomość nie znaleziona' });
+    if (!message) {
+      return res.status(404).json({ msg: 'Wiadomość nie znaleziona' });
+    }
+
+    // Check if user is sender or recipient
+    if (message.from._id.toString() !== req.user.id && message.to._id.toString() !== req.user.id) {
+      return res.status(403).json({ msg: 'Brak dostępu do tej wiadomości' });
+    }
+
+    // Mark as read if user is recipient
+    if (message.to._id.toString() === req.user.id && !message.read) {
+      message.read = true;
+      message.readAt = new Date();
+      await message.save();
+    }
+
+    res.json(message);
+  } catch (error) {
+    console.error('Error fetching message:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  // Check if user is sender or recipient
-  if (message.senderId !== req.user.id && message.recipientId !== req.user.id) {
-    return res.status(403).json({ msg: 'Brak dostępu do tej wiadomości' });
-  }
-
-  // Mark as read if user is recipient
-  if (message.recipientId === req.user.id && !message.read) {
-    const messageIndex = db.data.messages.findIndex(m => m.id === req.params.id);
-    db.data.messages[messageIndex].read = true;
-    db.data.messages[messageIndex].readAt = new Date().toISOString();
-    await db.write();
-    message.read = true;
-    message.readAt = db.data.messages[messageIndex].readAt;
-  }
-
-  res.json(message);
 };
 
 // @desc    Delete message
 // @route   DELETE /api/messages/:id
 // @access  Private
 export const deleteMessage = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const message = await Message.findById(req.params.id);
 
-  const messageIndex = db.data.messages.findIndex(m => m.id === req.params.id);
-  
-  if (messageIndex === -1) {
-    return res.status(404).json({ msg: 'Wiadomość nie znaleziona' });
+    if (!message) {
+      return res.status(404).json({ msg: 'Wiadomość nie znaleziona' });
+    }
+
+    // Check if user is sender or recipient
+    if (message.from.toString() !== req.user.id && message.to.toString() !== req.user.id) {
+      return res.status(403).json({ msg: 'Brak dostępu do tej wiadomości' });
+    }
+
+    // Mark as deleted instead of actually deleting
+    message.deleted = true;
+    await message.save();
+
+    res.json({ msg: 'Wiadomość usunięta' });
+  } catch (error) {
+    console.error('Error deleting message:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  const message = db.data.messages[messageIndex];
-
-  // Check if user is sender or recipient
-  if (message.senderId !== req.user.id && message.recipientId !== req.user.id) {
-    return res.status(403).json({ msg: 'Brak dostępu do tej wiadomości' });
-  }
-
-  // Mark as deleted instead of actually deleting
-  db.data.messages[messageIndex].deleted = true;
-  db.data.messages[messageIndex].deletedAt = new Date().toISOString();
-  db.data.messages[messageIndex].deletedBy = req.user.id;
-
-  await db.write();
-  res.json({ msg: 'Wiadomość usunięta' });
 };
 
 // @desc    Mark message as read
 // @route   PUT /api/messages/:id/read
 // @access  Private
 export const markAsRead = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const message = await Message.findById(req.params.id);
 
-  const messageIndex = db.data.messages.findIndex(m => m.id === req.params.id);
-  
-  if (messageIndex === -1) {
-    return res.status(404).json({ msg: 'Wiadomość nie znaleziona' });
+    if (!message) {
+      return res.status(404).json({ msg: 'Wiadomość nie znaleziona' });
+    }
+
+    // Check if user is recipient
+    if (message.to.toString() !== req.user.id) {
+      return res.status(403).json({ msg: 'Brak dostępu do tej wiadomości' });
+    }
+
+    message.read = true;
+    message.readAt = new Date();
+    await message.save();
+
+    res.json({ msg: 'Wiadomość oznaczona jako przeczytana' });
+  } catch (error) {
+    console.error('Error marking message as read:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  const message = db.data.messages[messageIndex];
-
-  // Check if user is recipient
-  if (message.recipientId !== req.user.id) {
-    return res.status(403).json({ msg: 'Brak dostępu do tej wiadomości' });
-  }
-
-  db.data.messages[messageIndex].read = true;
-  db.data.messages[messageIndex].readAt = new Date().toISOString();
-
-  await db.write();
-  res.json({ msg: 'Wiadomość oznaczona jako przeczytana' });
 };
 
 // @desc    Get conversation between two users
 // @route   GET /api/messages/conversation/:userId
 // @access  Private
 export const getConversation = async (req, res) => {
-  const { page = 1, limit = 50 } = req.query;
-  const db = req.db;
-  await db.read();
+  try {
+    const { page = 1, limit = 50 } = req.query;
+    const otherUserId = req.params.userId;
 
-  const otherUserId = req.params.userId;
-  
-  // Get all messages between the two users
-  const messages = db.data.messages.filter(m => 
-    !m.deleted && (
-      (m.senderId === req.user.id && m.recipientId === otherUserId) ||
-      (m.senderId === otherUserId && m.recipientId === req.user.id)
-    )
-  );
+    // Get all messages between the two users
+    const query = {
+      deleted: false,
+      $or: [
+        { from: req.user.id, to: otherUserId },
+        { from: otherUserId, to: req.user.id }
+      ]
+    };
 
-  // Sort by creation date (oldest first for conversation view)
-  messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    const totalMessages = await Message.countDocuments(query);
+    const messages = await Message.find(query)
+      .sort({ createdAt: 1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
 
-  // Pagination
-  const startIndex = (page - 1) * limit;
-  const endIndex = page * limit;
-  const paginatedMessages = messages.slice(startIndex, endIndex);
+    // Mark received messages as read
+    await Message.updateMany(
+      { from: otherUserId, to: req.user.id, read: false },
+      { read: true, readAt: new Date() }
+    );
 
-  // Mark received messages as read
-  const unreadMessages = messages.filter(m => 
-    m.recipientId === req.user.id && !m.read
-  );
+    // Get other user info
+    const otherUser = await User.findById(otherUserId);
 
-  if (unreadMessages.length > 0) {
-    unreadMessages.forEach(message => {
-      const messageIndex = db.data.messages.findIndex(m => m.id === message.id);
-      if (messageIndex !== -1) {
-        db.data.messages[messageIndex].read = true;
-        db.data.messages[messageIndex].readAt = new Date().toISOString();
+    res.json({
+      messages,
+      otherUser: otherUser ? {
+        id: otherUser._id,
+        username: otherUser.username,
+        profilePicture: otherUser.profile?.profilePicture || otherUser.profile?.avatar || ''
+      } : null,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(totalMessages / limit),
+        totalMessages,
+        hasNext: page * limit < totalMessages,
+        hasPrev: page > 1
       }
     });
-    await db.write();
+  } catch (error) {
+    console.error('Error fetching conversation:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
-
-  // Get other user info
-  const otherUser = db.data.users.find(u => u.id === otherUserId);
-
-  res.json({
-    messages: paginatedMessages,
-    otherUser: otherUser ? {
-      id: otherUser.id,
-      username: otherUser.username,
-      profilePicture: otherUser.profilePicture || otherUser.profile?.avatar || ''
-    } : null,
-    pagination: {
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(messages.length / limit),
-      totalMessages: messages.length,
-      hasNext: endIndex < messages.length,
-      hasPrev: startIndex > 0
-    }
-  });
 };
 
 // @desc    Get unread message count
 // @route   GET /api/messages/unread/count
 // @access  Private
 export const getUnreadCount = async (req, res) => {
-  const db = req.db;
-  await db.read();
+  try {
+    const unreadCount = await Message.countDocuments({
+      to: req.user.id,
+      read: false,
+      deleted: false
+    });
 
-  const unreadCount = db.data.messages.filter(m => 
-    m.recipientId === req.user.id && !m.read && !m.deleted
-  ).length;
-
-  res.json({ unreadCount });
+    res.json({ unreadCount });
+  } catch (error) {
+    console.error('Error fetching unread count:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
 };

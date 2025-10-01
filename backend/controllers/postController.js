@@ -1,6 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
+import taggingService from '../services/taggingService.js';
 
 export const getAllPosts = async (req, res) => {
   const { page = 1, limit = 10, sortBy = 'createdAt' } = req.query;
@@ -37,41 +38,35 @@ export const getAllPosts = async (req, res) => {
 };
 
 export const getPostsByUser = async (req, res) => {
-  const db = req.db;
   const { userId } = req.params;
   const { page = 1, limit = 10 } = req.query;
-  
+
   try {
-    await db.read();
-    
-    if (!db.data.posts) {
-      return res.json([]);
-    }
-    
-    // Filter posts by user ID
-    let userPosts = db.data.posts.filter(post => post.authorId === userId);
-    
-    // Sort by creation date (newest first)
-    userPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedPosts = userPosts.slice(startIndex, endIndex);
-    
-    // Add author info to posts
-    const author = db.data.users.find(u => u.id === userId);
-    const postsWithUserInfo = paginatedPosts.map(post => ({
-      ...post,
+    const posts = await Post.find({ authorId: userId })
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const totalPosts = await Post.countDocuments({ authorId: userId });
+
+    // Populate author info
+    const author = await User.findById(userId);
+    const postsWithUserInfo = posts.map(post => ({
+      ...post.toObject(),
       author: author ? {
-        id: author.id,
+        id: author._id,
         username: author.username,
-        profilePicture: author.profile?.profilePicture || author.profilePicture || '',
-        rank: author.stats?.rank || author.rank || 'Rookie'
+        profilePicture: author.profile?.profilePicture || '',
+        rank: author.stats?.rank || 'Rookie'
       } : null
     }));
-    
-    res.json(postsWithUserInfo);
+
+    res.json({
+      posts: postsWithUserInfo,
+      totalPosts,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(totalPosts / limit)
+    });
   } catch (err) {
     console.error('Error fetching user posts:', err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
@@ -79,29 +74,27 @@ export const getPostsByUser = async (req, res) => {
 };
 
 export const getPostById = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    const post = db.data.posts.find(p => p.id === id);
-    
+    const post = await Post.findById(id);
+
     if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
     
     // Add author info
-    const author = db.data.users.find(u => u.id === post.authorId);
+    const author = await User.findById(post.authorId);
     const postWithAuthor = {
-      ...post,
+      ...post.toObject(),
       author: author ? {
-        id: author.id,
+        id: author._id,
         username: author.username,
         profilePicture: author.profile?.profilePicture || '',
         rank: author.stats?.rank || 'Rookie'
       } : null
     };
-    
+
     res.json(postWithAuthor);
   } catch (err) {
     console.error(err.message);
@@ -110,26 +103,24 @@ export const getPostById = async (req, res) => {
 };
 
 export const createPost = async (req, res) => {
-  const db = req.db;
   const { title, content, type, teamA, teamB, photos, pollOptions, isOfficial, moderatorCreated, category } = req.body;
-  
+
   try {
-    await db.read();
-    
     // Check if user is moderator for official fights
-    const user = db.data.users.find(u => u.id === req.user.id);
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     if (isOfficial && user.role !== 'moderator') {
       return res.status(403).json({ message: 'Only moderators can create official fights' });
     }
-    
-    const newPost = {
-      id: uuidv4(),
+
+    const postData = {
       title,
       content,
       type: type || 'discussion', // discussion, fight, other
       authorId: req.user.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
       likes: [],
       comments: [],
       views: 0,
@@ -147,8 +138,8 @@ export const createPost = async (req, res) => {
       // Calculate lock time (72 hours from creation)
       const lockTime = new Date();
       lockTime.setHours(lockTime.getHours() + 72);
-      
-      newPost.fight = {
+
+      postData.fight = {
         teamA: teamA || null,
         teamB: teamB || null,
         votes: {
@@ -158,12 +149,12 @@ export const createPost = async (req, res) => {
         },
         status: 'active', // active, completed, locked
         isOfficial: isOfficial || false,
-        lockTime: lockTime.toISOString(), // When the fight will be locked
+        lockTime: lockTime, // When the fight will be locked
         winner: null, // Will be set when fight is locked
         winnerTeam: null // 'teamA', 'teamB', or 'draw'
       };
       // For fight posts, pollOptions are mandatory and correspond to teamA and teamB
-      newPost.poll = {
+      postData.poll = {
         options: [teamA, teamB],
         votes: {
           voters: []
@@ -171,136 +162,128 @@ export const createPost = async (req, res) => {
       };
     } else if (type === 'other' && pollOptions && pollOptions.some(opt => opt.trim() !== '')) {
       // For other posts, optional poll
-      newPost.poll = {
+      postData.poll = {
         options: pollOptions.filter(opt => opt.trim() !== ''),
         votes: {
           voters: []
         }
       };
     }
-    
-    // Generate tags if the function is provided
-    if (req.generateTagsFromPost) {
-      newPost.tags = req.generateTagsFromPost(newPost);
+
+    // Create post in MongoDB
+    const newPost = await Post.create(postData);
+
+    // Automatyczne tagowanie posta
+    try {
+      const taggingResult = await taggingService.autoTagPost(newPost.toObject());
+      newPost.tags = taggingResult.tags;
+      newPost.autoTags = taggingResult.autoTags;
+      await newPost.save();
+
+      // Aktualizuj statystyki tagów
+      await taggingService.updateTagStats(taggingResult.tags);
+    } catch (tagError) {
+      console.error('Error auto-tagging post:', tagError);
+      // Kontynuuj bez tagowania jeśli wystąpi błąd
     }
 
-    db.data.posts.push(newPost);
-    await db.write();
-
     // Add author info to response
-    const author = db.data.users.find(u => u.id === req.user.id);
     const postWithAuthor = {
-      ...newPost,
-      author: author ? {
-        id: author.id,
-        username: author.username,
-        profilePicture: author.profile?.profilePicture || '',
-        rank: author.stats?.rank || 'Rookie'
-      } : null
+      ...newPost.toObject(),
+      author: {
+        id: user._id,
+        username: user.username,
+        profilePicture: user.profile?.profilePicture || '',
+        rank: user.stats?.rank || 'Rookie'
+      }
     };
 
     res.status(201).json(postWithAuthor);
   } catch (err) {
-    console.error(err.message);
+    console.error('Error creating post:', err.message);
     res.status(500).send('Server Error');
   }
 };
 
 export const updatePost = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
   const updates = req.body;
-  
+
   try {
-    await db.read();
-    
-    const postIndex = db.data.posts.findIndex(p => p.id === id);
-    if (postIndex === -1) {
+    const post = await Post.findById(id);
+    if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    
-    const post = db.data.posts[postIndex];
-    
+
     // Check if user is the author or moderator
-    const user = db.data.users.find(u => u.id === req.user.id);
-    if (post.authorId !== req.user.id && user.role !== 'moderator') {
+    const user = await User.findById(req.user.id);
+    if (post.authorId.toString() !== req.user.id && user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied' });
     }
-    
-    db.data.posts[postIndex] = {
-      ...post,
-      ...updates,
-      updatedAt: new Date().toISOString()
-    };
-    
-    await db.write();
-    res.json(db.data.posts[postIndex]);
+
+    // Update post
+    Object.assign(post, updates);
+    post.updatedAt = new Date();
+    await post.save();
+
+    res.json(post.toObject());
   } catch (err) {
-    console.error(err.message);
+    console.error('Error updating post:', err.message);
     res.status(500).send('Server Error');
   }
 };
 
 export const deletePost = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    
-    const postIndex = db.data.posts.findIndex(p => p.id === id);
-    if (postIndex === -1) {
+    const post = await Post.findById(id);
+    if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    
-    const post = db.data.posts[postIndex];
-    
+
     // Check if user is the author or moderator
-    const user = db.data.users.find(u => u.id === req.user.id);
-    if (post.authorId !== req.user.id && user.role !== 'moderator') {
+    const user = await User.findById(req.user.id);
+    if (post.authorId.toString() !== req.user.id && user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied' });
     }
-    
-    db.data.posts.splice(postIndex, 1);
-    await db.write();
-    
+
+    await Post.findByIdAndDelete(id);
+
     res.json({ msg: 'Post deleted successfully' });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error deleting post:', err.message);
     res.status(500).send('Server Error');
   }
 };
 
 export const toggleLike = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
-  
+
   try {
-    await db.read();
-    
-    const postIndex = db.data.posts.findIndex(p => p.id === id);
-    if (postIndex === -1) {
+    const post = await Post.findById(id);
+    if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    
-    const post = db.data.posts[postIndex];
+
     const userLikeIndex = post.likes.findIndex(like => like.userId === req.user.id);
-    
-    if (userLikeIndex > -1) {
+    const wasLiked = userLikeIndex > -1;
+
+    if (wasLiked) {
       // Unlike
       post.likes.splice(userLikeIndex, 1);
     } else {
       // Like
       post.likes.push({
         userId: req.user.id,
-        likedAt: new Date().toISOString()
+        likedAt: new Date()
       });
-      
-      // Update post author's stats safely
-      const authorIndex = db.data.users.findIndex(u => u.id === post.authorId);
-      if (authorIndex !== -1) {
-        if (!db.data.users[authorIndex].activity) {
-          db.data.users[authorIndex].activity = {
+
+      // Update post author's stats
+      const author = await User.findById(post.authorId);
+      if (author) {
+        if (!author.activity) {
+          author.activity = {
             postsCreated: 0,
             likesReceived: 0,
             commentsPosted: 0,
@@ -308,70 +291,69 @@ export const toggleLike = async (req, res) => {
             votesGiven: 0
           };
         }
-        db.data.users[authorIndex].activity.likesReceived += 1;
+        author.activity.likesReceived += 1;
+        await author.save();
       }
     }
-    
-    await db.write();
-    res.json({ 
-      msg: userLikeIndex > -1 ? 'Post unliked' : 'Post liked',
+
+    await post.save();
+
+    res.json({
+      msg: wasLiked ? 'Post unliked' : 'Post liked',
       likesCount: post.likes.length,
-      isLiked: userLikeIndex === -1
+      isLiked: !wasLiked
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('Error toggling like:', err.message);
     res.status(500).send('Server Error');
   }
 };
 
 export const voteInPoll = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
   const { optionIndex } = req.body;
-  
+
   try {
-    await db.read();
-    
-    const postIndex = db.data.posts.findIndex(p => p.id === id);
-    if (postIndex === -1) {
+    const post = await Post.findById(id);
+    if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    
-    const post = db.data.posts[postIndex];
-    
+
     // Check if post has a poll
     if (!post.poll || !post.poll.options) {
       return res.status(400).json({ msg: 'Post does not have a poll' });
     }
-    
+
     // Check if option index is valid
     if (optionIndex < 0 || optionIndex >= post.poll.options.length) {
       return res.status(400).json({ msg: 'Invalid option index' });
     }
-    
+
     // Initialize poll votes if not exists
     if (!post.poll.votes) {
       post.poll.votes = { voters: [] };
     }
-    
+
     // Check if user already voted
     const existingVoteIndex = post.poll.votes.voters.findIndex(v => v.userId === req.user.id);
     if (existingVoteIndex > -1) {
       return res.status(400).json({ msg: 'User already voted in this poll' });
     }
-    
+
     // Add vote
     post.poll.votes.voters.push({
       userId: req.user.id,
       optionIndex: optionIndex,
-      votedAt: new Date().toISOString()
+      votedAt: new Date()
     });
-    
+
+    await post.save();
+
     // Update user stats
-    const userIndex = db.data.users.findIndex(u => u.id === req.user.id);
-    if (userIndex !== -1) {
-      if (!db.data.users[userIndex].activity) {
-        db.data.users[userIndex].activity = {
+    const user = await User.findById(req.user.id);
+    if (user) {
+      if (!user.activity) {
+        user.activity = {
           postsCreated: 0,
           likesReceived: 0,
           commentsPosted: 0,
@@ -379,16 +361,15 @@ export const voteInPoll = async (req, res) => {
           votesGiven: 0
         };
       }
-      db.data.users[userIndex].activity.votesGiven += 1;
-      db.data.users[userIndex].stats.experience += 5; // Award experience for voting
+      user.activity.votesGiven += 1;
+      user.stats.experience = (user.stats.experience || 0) + 5; // Award experience for voting
+      await user.save();
     }
-    
-    await db.write();
-    
+
     // Return updated poll data
     const optionVotes = post.poll.votes.voters.filter(v => v.optionIndex === optionIndex).length;
     const totalVotes = post.poll.votes.voters.length;
-    
+
     res.json({
       msg: 'Vote recorded successfully',
       optionVotes,
@@ -402,43 +383,46 @@ export const voteInPoll = async (req, res) => {
 };
 
 export const getOfficialFights = async (req, res) => {
-  const db = req.db;
   const { limit = 10 } = req.query;
-  
+
   try {
     console.log('Fetching official fights');
-    await db.read();
-    let posts = db.data.posts || [];
-    
+
     // Filter only official fights
-    let officialFights = posts.filter(post => 
-      post.isOfficial && post.type === 'fight' && post.fight?.status === 'active'
-    );
-    
-    // Sort by creation date (newest first)
-    officialFights.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    
-    // Limit results
-    const limitedFights = officialFights.slice(0, parseInt(limit));
-    
-    // Add user info to posts
-    const fightsWithUserInfo = limitedFights.map(post => {
-      const author = db.data.users.find(u => u.id === post.authorId);
-      return {
-        ...post,
-        author: author ? {
-          id: author.id,
-          username: author.username,
-          profilePicture: author.profile?.profilePicture || '',
-          rank: author.stats?.rank || 'Rookie'
-        } : null
-      };
+    const officialFights = await Post.find({
+      isOfficial: true,
+      type: 'fight',
+      'fight.status': 'active'
+    })
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit));
+
+    const totalFights = await Post.countDocuments({
+      isOfficial: true,
+      type: 'fight',
+      'fight.status': 'active'
     });
-    
+
+    // Add user info to posts
+    const fightsWithUserInfo = await Promise.all(
+      officialFights.map(async post => {
+        const author = await User.findById(post.authorId);
+        return {
+          ...post.toObject(),
+          author: author ? {
+            id: author._id,
+            username: author.username,
+            profilePicture: author.profile?.profilePicture || '',
+            rank: author.stats?.rank || 'Rookie'
+          } : null
+        };
+      })
+    );
+
     console.log(`Returning ${fightsWithUserInfo.length} official fights`);
     res.json({
       fights: fightsWithUserInfo,
-      totalFights: officialFights.length
+      totalFights
     });
   } catch (err) {
     console.error('Error fetching official fights:', err.message);
@@ -447,40 +431,35 @@ export const getOfficialFights = async (req, res) => {
 };
 
 export const voteInFight = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
   const { team } = req.body; // team: 'A' or 'B'
-  
+
   try {
-    await db.read();
-    
-    const postIndex = db.data.posts.findIndex(p => p.id === id);
-    if (postIndex === -1) {
+    const post = await Post.findById(id);
+    if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    
-    const post = db.data.posts[postIndex];
-    
+
     // Check if post is a fight post
     if (post.type !== 'fight' || !post.fight) {
       return res.status(400).json({ msg: 'Post is not a fight post' });
     }
-    
+
     // Check if fight is locked
     if (post.fight.status === 'locked' || post.fight.status === 'completed') {
       return res.status(400).json({ msg: 'This fight has ended and is no longer accepting votes' });
     }
-    
+
     // Check if lock time has passed
     if (post.fight.lockTime && new Date() > new Date(post.fight.lockTime)) {
       return res.status(400).json({ msg: 'This fight has exceeded the 72-hour voting period and is now locked' });
     }
-    
+
     // Check if team is valid
     if (team !== 'A' && team !== 'B' && team !== 'draw') {
       return res.status(400).json({ msg: 'Invalid team choice' });
     }
-    
+
     // Check if user already voted
     const existingVoteIndex = post.fight.votes.voters.findIndex(v => v.userId === req.user.id);
     if (existingVoteIndex > -1) {
@@ -492,21 +471,23 @@ export const voteInFight = async (req, res) => {
       if (prevTeam === 'draw') post.fight.votes.draw = Math.max(0, (post.fight.votes.draw || 0) - 1);
       // Update to new team
       post.fight.votes.voters[existingVoteIndex].team = team;
-      post.fight.votes.voters[existingVoteIndex].votedAt = new Date().toISOString();
+      post.fight.votes.voters[existingVoteIndex].votedAt = new Date();
     } else {
       // Add vote
       post.fight.votes.voters.push({
         userId: req.user.id,
         team: team,
-        votedAt: new Date().toISOString()
+        votedAt: new Date()
       });
     }
     // Increment new vote count
     if (team === 'A') post.fight.votes.teamA = (post.fight.votes.teamA || 0) + 1;
     if (team === 'B') post.fight.votes.teamB = (post.fight.votes.teamB || 0) + 1;
     if (team === 'draw') post.fight.votes.draw = (post.fight.votes.draw || 0) + 1;
-    await db.write();
-    res.json({ 
+
+    await post.save();
+
+    res.json({
       msg: 'Vote recorded successfully',
       votes: post.fight.votes
     });
@@ -517,25 +498,20 @@ export const voteInFight = async (req, res) => {
 };
 
 export const addReaction = async (req, res) => {
-  const db = req.db;
   const { id } = req.params;
   const { reactionId, reactionIcon, reactionName } = req.body;
-  
+
   try {
-    await db.read();
-    
-    const postIndex = db.data.posts.findIndex(p => p.id === id);
-    if (postIndex === -1) {
+    const post = await Post.findById(id);
+    if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    
-    const post = db.data.posts[postIndex];
-    
+
     // Initialize reactions array if it doesn't exist
     if (!post.reactions) {
       post.reactions = [];
     }
-    
+
     // Check if user already reacted
     const existingReactionIndex = post.reactions.findIndex(r => r.userId === req.user.id);
     if (existingReactionIndex > -1) {
@@ -545,7 +521,7 @@ export const addReaction = async (req, res) => {
         reactionId,
         reactionIcon,
         reactionName,
-        reactedAt: new Date().toISOString()
+        reactedAt: new Date()
       };
     } else {
       // Add new reaction
@@ -554,26 +530,26 @@ export const addReaction = async (req, res) => {
         reactionId,
         reactionIcon,
         reactionName,
-        reactedAt: new Date().toISOString()
+        reactedAt: new Date()
       });
     }
-    
+
+    await post.save();
+
     // Count reactions by type
     const reactionCounts = {};
     post.reactions.forEach(reaction => {
       const key = `${reaction.reactionIcon}-${reaction.reactionName}`;
       reactionCounts[key] = (reactionCounts[key] || 0) + 1;
     });
-    
+
     // Convert to array format for frontend
     const reactionsArray = Object.entries(reactionCounts).map(([key, count]) => {
       const [icon, name] = key.split('-', 2);
       return { icon, name, count };
     });
-    
-    await db.write();
-    
-    res.json({ 
+
+    res.json({
       msg: 'Reaction added successfully',
       reactions: reactionsArray
     });

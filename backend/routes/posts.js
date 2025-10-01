@@ -1,6 +1,7 @@
 import express from 'express';
 import { getAllPosts, createPost, getPostById, updatePost, deletePost, toggleLike, addReaction } from '../controllers/postController.js';
 import auth from '../middleware/auth.js';
+import Post from '../models/Post.js';
 
 const router = express.Router();
 
@@ -19,16 +20,37 @@ router.post('/', auth, createPost);
 // @access  Public
 router.get('/official', async (req, res) => {
   try {
-    await req.db.read();
     const { limit = 20, page = 1, sortBy = 'createdAt' } = req.query;
-    let posts = req.db.data.posts || [];
-    posts = posts.filter(post => post.isOfficial);
-    // Sort and paginate
-    posts = posts.sort((a, b) => new Date(b[sortBy]) - new Date(a[sortBy]));
-    const start = (page - 1) * limit;
-    const end = start + parseInt(limit);
-    const paginated = posts.slice(start, end);
-    res.json({ fights: paginated, posts: paginated, totalPosts: posts.length, currentPage: Number(page), totalPages: Math.ceil(posts.length / limit) });
+
+    // Build sort object
+    const sortOrder = {};
+    sortOrder[sortBy] = -1; // descending order
+
+    // Get total count for pagination
+    const totalPosts = await Post.countDocuments({ isOfficial: true });
+
+    // Fetch official posts with pagination
+    const posts = await Post.find({ isOfficial: true })
+      .populate('authorId', 'username profilePicture role')
+      .sort(sortOrder)
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit))
+      .lean();
+
+    // Format response
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      id: post._id.toString(),
+      author: post.authorId
+    }));
+
+    res.json({
+      fights: formattedPosts,
+      posts: formattedPosts,
+      totalPosts,
+      currentPage: Number(page),
+      totalPages: Math.ceil(totalPosts / limit)
+    });
   } catch (error) {
     console.error('Error fetching official posts:', error);
     res.status(500).json({ message: 'Server error' });

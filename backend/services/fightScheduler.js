@@ -1,63 +1,27 @@
-import path from 'path';
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Configure lowdb
-const file = path.join(__dirname, '..', 'db.json');
-const adapter = new JSONFile(file);
-const db = new Low(adapter, {
-  users: [],
-  posts: [],
-  divisions: {},
-  championshipHistory: {},
-  chatMessages: []
-});
-
-// Initialize with default data if empty
-async function initializeDB() {
-  try {
-    await db.read();
-    if (!db.data) {
-      db.data = {
-        users: [],
-        posts: [],
-        divisions: {},
-        championshipHistory: {},
-        chatMessages: []
-      };
-      await db.write();
-    }
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  }
-}
+import Post from '../models/Post.js';
+import User from '../models/User.js';
+import Badge from '../models/Badge.js';
+import UserBadge from '../models/UserBadge.js';
+import Notification from '../models/Notification.js';
 
 // Check and lock expired fights
 async function checkAndLockExpiredFights() {
   try {
-    await db.read();
-    
     const now = new Date();
     let updatedCount = 0;
-    
+
     // Find all active fight posts that have exceeded their lock time
-    const activeFights = db.data.posts.filter(post => 
-      post.type === 'fight' && 
-      post.fight && 
-      post.fight.status === 'active' &&
-      post.fight.lockTime &&
-      new Date(post.fight.lockTime) <= now
-    );
-    
+    const activeFights = await Post.find({
+      type: 'fight',
+      'fight.status': 'active',
+      'fight.lockTime': { $lte: now }
+    }).populate('authorId');
+
     for (const fight of activeFights) {
       // Calculate winner
-      const teamAVotes = fight.fight.votes.teamA || 0;
-      const teamBVotes = fight.fight.votes.teamB || 0;
-      
+      const teamAVotes = fight.fight?.votes?.teamA || 0;
+      const teamBVotes = fight.fight?.votes?.teamB || 0;
+
       let winnerTeam;
       if (teamAVotes > teamBVotes) {
         winnerTeam = 'teamA';
@@ -66,66 +30,87 @@ async function checkAndLockExpiredFights() {
       } else {
         winnerTeam = 'draw';
       }
-      
+
       // Update fight status
       fight.fight.status = 'locked';
       fight.fight.winnerTeam = winnerTeam;
-      fight.fight.lockedAt = now.toISOString();
+      fight.fight.lockedAt = now;
       fight.fight.finalVotes = {
         teamA: teamAVotes,
         teamB: teamBVotes,
         total: teamAVotes + teamBVotes
       };
-      
+
+      await fight.save();
+
       // Update user records for official fights
       if (fight.isOfficial) {
-        await updateUserRecords(fight, db);
+        await updateUserRecords(fight);
       }
-      
+
       // Award points to users who voted for the winner
-      if (winnerTeam !== 'draw') {
-        await awardPointsToWinners(fight, winnerTeam, db);
+      if (winnerTeam !== 'draw' && fight.fight.votes?.voters) {
+        await awardPointsToWinners(fight, winnerTeam);
       }
-      
+
       // Award badges for achievements
-      await checkAndAwardBadges(fight, db);
-      
+      if (fight.fight.votes?.voters) {
+        await checkAndAwardBadges(fight);
+      }
+
       // Handle special match types
       if (fight.isContenderMatch) {
-        await handleContenderMatchResult(fight, winnerTeam, db);
+        await handleContenderMatchResult(fight, winnerTeam);
       }
-      
+
       if (fight.isTitleMatch) {
-        await handleTitleMatchResult(fight, winnerTeam, db);
+        await handleTitleMatchResult(fight, winnerTeam);
       }
-      
+
+      // Create notification for fight author
+      if (fight.authorId) {
+        await Notification.create({
+          userId: fight.authorId._id,
+          type: 'fight_result',
+          message: `Your fight "${fight.title}" has ended. Result: ${winnerTeam === 'draw' ? 'Draw' : `Team ${winnerTeam === 'teamA' ? 'A' : 'B'} wins!`}`,
+          relatedPost: fight._id,
+          read: false
+        });
+      }
+
       updatedCount++;
     }
-    
+
     if (updatedCount > 0) {
-      await db.write();
       console.log(`Locked ${updatedCount} expired fights at ${now.toISOString()}`);
     }
-    
+
   } catch (error) {
     console.error('Error in fight scheduler:', error);
   }
 }
 
 // Update user records based on fight results
-async function updateUserRecords(fight, db) {
-  // Get all voters
-  const teamAVoters = fight.fight.votes.voters.filter(v => v.team === 'A').map(v => v.userId);
-  const teamBVoters = fight.fight.votes.voters.filter(v => v.team === 'B').map(v => v.userId);
-  
-  const winnerTeam = fight.fight.winnerTeam;
-  
-  // Update stats for team A voters
-  for (const userId of teamAVoters) {
-    const userIndex = db.data.users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-      if (!db.data.users[userIndex].stats) {
-        db.data.users[userIndex].stats = {
+async function updateUserRecords(fight) {
+  try {
+    if (!fight.fight?.votes?.voters) return;
+
+    const teamAVoters = fight.fight.votes.voters
+      .filter(v => v.team === 'A' || v.team === 'teamA')
+      .map(v => v.userId);
+    const teamBVoters = fight.fight.votes.voters
+      .filter(v => v.team === 'B' || v.team === 'teamB')
+      .map(v => v.userId);
+
+    const winnerTeam = fight.fight.winnerTeam;
+
+    // Update stats for team A voters
+    for (const userId of teamAVoters) {
+      const user = await User.findById(userId);
+      if (!user) continue;
+
+      if (!user.stats) {
+        user.stats = {
           fightsWon: 0,
           fightsLost: 0,
           fightsDrawn: 0,
@@ -136,35 +121,36 @@ async function updateUserRecords(fight, db) {
           points: 0
         };
       }
-      
-      db.data.users[userIndex].stats.totalFights += 1;
-      
+
+      user.stats.totalFights += 1;
+
       if (winnerTeam === 'teamA') {
-        db.data.users[userIndex].stats.fightsWon += 1;
-        db.data.users[userIndex].stats.experience += 25; // Win XP
-        db.data.users[userIndex].stats.points += 15; // Win points
+        user.stats.fightsWon += 1;
+        user.stats.experience += 25;
+        user.stats.points += 15;
       } else if (winnerTeam === 'teamB') {
-        db.data.users[userIndex].stats.fightsLost += 1;
-        db.data.users[userIndex].stats.experience += 10; // Loss XP
+        user.stats.fightsLost += 1;
+        user.stats.experience += 10;
       } else {
-        db.data.users[userIndex].stats.fightsDrawn += 1;
-        db.data.users[userIndex].stats.experience += 15; // Draw XP
-        db.data.users[userIndex].stats.points += 5; // Draw points
+        user.stats.fightsDrawn += 1;
+        user.stats.experience += 15;
+        user.stats.points += 5;
       }
-      
+
       // Update win rate
-      const stats = db.data.users[userIndex].stats;
-      stats.winRate = stats.totalFights > 0 ? 
-        ((stats.fightsWon / stats.totalFights) * 100).toFixed(1) : 0;
+      user.stats.winRate = user.stats.totalFights > 0 ?
+        (user.stats.fightsWon / user.stats.totalFights) * 100 : 0;
+
+      await user.save();
     }
-  }
-  
-  // Update stats for team B voters
-  for (const userId of teamBVoters) {
-    const userIndex = db.data.users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-      if (!db.data.users[userIndex].stats) {
-        db.data.users[userIndex].stats = {
+
+    // Update stats for team B voters
+    for (const userId of teamBVoters) {
+      const user = await User.findById(userId);
+      if (!user) continue;
+
+      if (!user.stats) {
+        user.stats = {
           fightsWon: 0,
           fightsLost: 0,
           fightsDrawn: 0,
@@ -175,270 +161,243 @@ async function updateUserRecords(fight, db) {
           points: 0
         };
       }
-      
-      db.data.users[userIndex].stats.totalFights += 1;
-      
+
+      user.stats.totalFights += 1;
+
       if (winnerTeam === 'teamB') {
-        db.data.users[userIndex].stats.fightsWon += 1;
-        db.data.users[userIndex].stats.experience += 25; // Win XP
-        db.data.users[userIndex].stats.points += 15; // Win points
+        user.stats.fightsWon += 1;
+        user.stats.experience += 25;
+        user.stats.points += 15;
       } else if (winnerTeam === 'teamA') {
-        db.data.users[userIndex].stats.fightsLost += 1;
-        db.data.users[userIndex].stats.experience += 10; // Loss XP
+        user.stats.fightsLost += 1;
+        user.stats.experience += 10;
       } else {
-        db.data.users[userIndex].stats.fightsDrawn += 1;
-        db.data.users[userIndex].stats.experience += 15; // Draw XP
-        db.data.users[userIndex].stats.points += 5; // Draw points
+        user.stats.fightsDrawn += 1;
+        user.stats.experience += 15;
+        user.stats.points += 5;
       }
-      
+
       // Update win rate
-      const stats = db.data.users[userIndex].stats;
-      stats.winRate = stats.totalFights > 0 ? 
-        ((stats.fightsWon / stats.totalFights) * 100).toFixed(1) : 0;
+      user.stats.winRate = user.stats.totalFights > 0 ?
+        (user.stats.fightsWon / user.stats.totalFights) * 100 : 0;
+
+      await user.save();
     }
+  } catch (error) {
+    console.error('Error updating user records:', error);
   }
 }
 
 // Award points to users who voted for the winning team
-async function awardPointsToWinners(fight, winnerTeam, db) {
-  const winningVoters = fight.fight.votes.voters.filter(v => 
-    (winnerTeam === 'teamA' && v.team === 'A') || 
-    (winnerTeam === 'teamB' && v.team === 'B')
-  );
-  
-  for (const voter of winningVoters) {
-    const userIndex = db.data.users.findIndex(u => u.id === voter.userId);
-    if (userIndex !== -1) {
-      if (!db.data.users[userIndex].stats) {
-        db.data.users[userIndex].stats = { points: 0, experience: 0 };
+async function awardPointsToWinners(fight, winnerTeam) {
+  try {
+    const winningVoters = fight.fight.votes.voters.filter(v =>
+      (winnerTeam === 'teamA' && (v.team === 'A' || v.team === 'teamA')) ||
+      (winnerTeam === 'teamB' && (v.team === 'B' || v.team === 'teamB'))
+    );
+
+    for (const voter of winningVoters) {
+      const user = await User.findById(voter.userId);
+      if (!user) continue;
+
+      if (!user.stats) {
+        user.stats = { points: 0, experience: 0 };
       }
-      
+
       // Award bonus points for correct prediction
-      db.data.users[userIndex].stats.points = (db.data.users[userIndex].stats.points || 0) + 5;
-      db.data.users[userIndex].stats.experience = (db.data.users[userIndex].stats.experience || 0) + 5;
+      user.stats.points = (user.stats.points || 0) + 5;
+      user.stats.experience = (user.stats.experience || 0) + 5;
+
+      await user.save();
     }
+  } catch (error) {
+    console.error('Error awarding points:', error);
   }
 }
 
 // Check and award badges based on achievements
-async function checkAndAwardBadges(fight, db) {
-  // This will be used by the badge system to award fight-related badges
-  const allVoters = fight.fight.votes.voters.map(v => v.userId);
-  
-  for (const userId of allVoters) {
-    const userIndex = db.data.users.findIndex(u => u.id === userId);
-    if (userIndex === -1) continue;
-    
-    const user = db.data.users[userIndex];
-    if (!user.badges) user.badges = [];
-    
-    // Check for fight milestones
-    const totalFights = user.stats?.totalFights || 0;
-    const wins = user.stats?.fightsWon || 0;
-    
-    // First Blood - First official fight
-    if (totalFights === 1 && !user.badges.some(b => b.id === 'first-blood')) {
-      user.badges.push({
-        id: 'first-blood',
-        awardedAt: new Date().toISOString()
-      });
+async function checkAndAwardBadges(fight) {
+  try {
+    const allVoters = fight.fight.votes.voters.map(v => v.userId);
+
+    for (const userId of allVoters) {
+      const user = await User.findById(userId);
+      if (!user) continue;
+
+      if (!user.achievements) user.achievements = [];
+
+      const totalFights = user.stats?.totalFights || 0;
+      const wins = user.stats?.fightsWon || 0;
+
+      // Check for fight milestones
+      const badgesToAward = [];
+
+      if (totalFights === 1 && !user.achievements.includes('first-blood')) {
+        badgesToAward.push('first-blood');
+        user.achievements.push('first-blood');
+      }
+
+      if (totalFights >= 10 && !user.achievements.includes('gladiator')) {
+        badgesToAward.push('gladiator');
+        user.achievements.push('gladiator');
+      }
+
+      if (wins >= 10 && user.stats?.fightsLost === 0 && !user.achievements.includes('undefeated')) {
+        badgesToAward.push('undefeated');
+        user.achievements.push('undefeated');
+      }
+
+      if (badgesToAward.length > 0) {
+        await user.save();
+
+        // Create notifications for new badges
+        for (const badgeId of badgesToAward) {
+          await Notification.create({
+            userId: user._id,
+            type: 'badge_earned',
+            message: `You've earned a new badge: ${badgeId}!`,
+            read: false
+          });
+        }
+      }
     }
-    
-    // Gladiator - 10 official fights
-    if (totalFights >= 10 && !user.badges.some(b => b.id === 'gladiator')) {
-      user.badges.push({
-        id: 'gladiator',
-        awardedAt: new Date().toISOString()
-      });
-    }
-    
-    // Undefeated - 10 wins, 0 losses
-    if (wins >= 10 && user.stats?.fightsLost === 0 && !user.badges.some(b => b.id === 'undefeated')) {
-      user.badges.push({
-        id: 'undefeated',
-        awardedAt: new Date().toISOString()
-      });
-    }
+  } catch (error) {
+    console.error('Error awarding badges:', error);
   }
 }
 
 // Handle contender match results
-async function handleContenderMatchResult(fight, winnerTeam, db) {
-  const { divisionId, challenger1Id, challenger2Id } = fight.contenderMatchData;
-  const winnerId = winnerTeam === 'teamA' ? challenger1Id : challenger2Id;
-  
-  // Update the contender match status in division
-  const divisionIndex = Object.keys(db.data.divisions).indexOf(divisionId);
-  if (divisionIndex !== -1) {
-    const contenderMatch = db.data.divisions[divisionId].contenderMatches?.find(
-      cm => cm.matchId === fight.id
-    );
-    if (contenderMatch) {
-      contenderMatch.status = 'completed';
-      contenderMatch.winnerId = winnerId;
-      contenderMatch.completedAt = new Date().toISOString();
-    }
-    
+async function handleContenderMatchResult(fight, winnerTeam) {
+  try {
+    const { divisionId, challenger1Id, challenger2Id } = fight.contenderMatchData || {};
+    if (!divisionId) return;
+
+    const winnerId = winnerTeam === 'teamA' ? challenger1Id : challenger2Id;
+
     // Mark winner as #1 contender
-    const winnerIndex = db.data.users.findIndex(u => u.id === winnerId);
-    if (winnerIndex !== -1) {
-      if (!db.data.users[winnerIndex].divisions[divisionId].contenderStatus) {
-        db.data.users[winnerIndex].divisions[divisionId].contenderStatus = {};
-      }
-      db.data.users[winnerIndex].divisions[divisionId].contenderStatus = {
-        isNumberOneContender: true,
-        earnedAt: new Date().toISOString(),
-        fromMatchId: fight.id
-      };
-      
-      // Award badge
-      if (!db.data.users[winnerIndex].badges) {
-        db.data.users[winnerIndex].badges = [];
-      }
-      if (!db.data.users[winnerIndex].badges.some(b => b.id === 'contender')) {
-        db.data.users[winnerIndex].badges.push({
-          id: 'contender',
-          awardedAt: new Date().toISOString()
-        });
+    const winner = await User.findById(winnerId);
+    if (winner && winner.divisions) {
+      const divisionData = winner.divisions.get(divisionId);
+      if (divisionData) {
+        divisionData.contenderStatus = {
+          isNumberOneContender: true,
+          earnedAt: new Date(),
+          fromMatchId: fight._id
+        };
+        winner.divisions.set(divisionId, divisionData);
+        await winner.save();
+
+        // Award contender achievement
+        if (!winner.achievements) winner.achievements = [];
+        if (!winner.achievements.includes('contender')) {
+          winner.achievements.push('contender');
+          await winner.save();
+
+          await Notification.create({
+            userId: winner._id,
+            type: 'contender_status',
+            message: `You are now the #1 contender in the ${divisionId} division!`,
+            read: false
+          });
+        }
       }
     }
+  } catch (error) {
+    console.error('Error handling contender match:', error);
   }
 }
 
 // Handle title match results
-async function handleTitleMatchResult(fight, winnerTeam, db) {
-  const { divisionId, championId, challengerId } = fight.titleMatchData;
-  const winnerId = winnerTeam === 'teamA' ? championId : challengerId;
-  const loserId = winnerId === championId ? challengerId : championId;
-  
-  // Update title defense record
-  const champIndex = db.data.users.findIndex(u => u.id === championId);
-  if (champIndex !== -1) {
-    const defenseRecord = db.data.users[champIndex].divisions[divisionId].titleDefenses?.find(
-      td => td.matchId === fight.id
-    );
-    if (defenseRecord) {
-      defenseRecord.status = 'completed';
-      defenseRecord.result = winnerId === championId ? 'defended' : 'lost';
-      defenseRecord.completedAt = new Date().toISOString();
-    }
-  }
-  
-  // If challenger won, transfer the title
-  if (winnerId === challengerId) {
-    // Record previous champion's reign in history
-    const previousChamp = db.data.users.find(u => u.id === championId);
-    if (previousChamp) {
-      const reignStart = previousChamp.divisions[divisionId].championSince;
-      const reignEnd = new Date().toISOString();
-      const defenses = previousChamp.divisions[divisionId].titleDefenses?.filter(
-        td => td.result === 'defended'
-      ).length || 0;
-      
-      if (!db.data.championshipHistory[divisionId]) {
-        db.data.championshipHistory[divisionId] = [];
-      }
-      
-      db.data.championshipHistory[divisionId].push({
-        userId: championId,
-        username: previousChamp.username,
-        team: previousChamp.divisions[divisionId].team,
-        startDate: reignStart,
-        endDate: reignEnd,
-        reignDuration: Math.floor((new Date(reignEnd) - new Date(reignStart)) / (1000 * 60 * 60 * 24)),
-        titleDefenses: defenses,
-        totalFights: previousChamp.divisions[divisionId].wins + 
-                     previousChamp.divisions[divisionId].losses + 
-                     previousChamp.divisions[divisionId].draws,
-        lostToUserId: challengerId,
-        lostToUsername: db.data.users.find(u => u.id === challengerId)?.username
-      });
-      
+async function handleTitleMatchResult(fight, winnerTeam) {
+  try {
+    const { divisionId, championId, challengerId } = fight.titleMatchData || {};
+    if (!divisionId) return;
+
+    const winnerId = winnerTeam === 'teamA' ? championId : challengerId;
+    const loserId = winnerId === championId ? challengerId : championId;
+
+    // If challenger won, transfer the title
+    if (winnerId === challengerId) {
       // Remove champion status from previous champion
-      previousChamp.divisions[divisionId].isChampion = false;
-      previousChamp.divisions[divisionId].championTitle = null;
-      previousChamp.divisions[divisionId].championSince = null;
-      previousChamp.divisions[divisionId].titleDefenses = [];
-    }
-    
-    // Crown new champion
-    const newChampIndex = db.data.users.findIndex(u => u.id === challengerId);
-    if (newChampIndex !== -1) {
-      db.data.users[newChampIndex].divisions[divisionId].isChampion = true;
-      db.data.users[newChampIndex].divisions[divisionId].championTitle = 
-        `${divisionId.charAt(0).toUpperCase() + divisionId.slice(1)} Champion`;
-      db.data.users[newChampIndex].divisions[divisionId].championSince = new Date().toISOString();
-      db.data.users[newChampIndex].divisions[divisionId].titleDefenses = [];
-      
-      // Update division champion reference
-      db.data.divisions[divisionId].champion = challengerId;
-      
-      // Award championship badge
-      if (!db.data.users[newChampIndex].badges) {
-        db.data.users[newChampIndex].badges = [];
+      const previousChamp = await User.findById(championId);
+      if (previousChamp && previousChamp.divisions) {
+        const divisionData = previousChamp.divisions.get(divisionId);
+        if (divisionData) {
+          divisionData.isChampion = false;
+          divisionData.championTitle = null;
+          divisionData.championSince = null;
+          previousChamp.divisions.set(divisionId, divisionData);
+          await previousChamp.save();
+        }
       }
-      
-      const championBadgeId = `${divisionId}-champion`;
-      if (!db.data.users[newChampIndex].badges.some(b => b.id === championBadgeId)) {
-        db.data.users[newChampIndex].badges.push({
-          id: championBadgeId,
-          awardedAt: new Date().toISOString()
+
+      // Crown new champion
+      const newChamp = await User.findById(challengerId);
+      if (newChamp && newChamp.divisions) {
+        const divisionData = newChamp.divisions.get(divisionId) || {};
+        divisionData.isChampion = true;
+        divisionData.championTitle = `${divisionId.charAt(0).toUpperCase() + divisionId.slice(1)} Champion`;
+        divisionData.championSince = new Date();
+        divisionData.titleDefenses = 0;
+        newChamp.divisions.set(divisionId, divisionData);
+
+        // Award championship achievement
+        if (!newChamp.achievements) newChamp.achievements = [];
+        const championAchievement = `${divisionId}-champion`;
+        if (!newChamp.achievements.includes(championAchievement)) {
+          newChamp.achievements.push(championAchievement);
+        }
+
+        await newChamp.save();
+
+        await Notification.create({
+          userId: newChamp._id,
+          type: 'championship_won',
+          message: `Congratulations! You are now the ${divisionId} Champion!`,
+          read: false
         });
       }
-      
-      // Remove contender status
-      if (db.data.users[newChampIndex].divisions[divisionId].contenderStatus) {
-        db.data.users[newChampIndex].divisions[divisionId].contenderStatus.isNumberOneContender = false;
-      }
-    }
-  } else {
-    // Champion retained, increment defense count
-    const champUser = db.data.users[champIndex];
-    if (champUser && champUser.divisions[divisionId].isChampion) {
-      if (!champUser.divisions[divisionId].titleDefenses) {
-        champUser.divisions[divisionId].titleDefenses = [];
-      }
-      champUser.divisions[divisionId].titleDefenseCount = 
-        (champUser.divisions[divisionId].titleDefenseCount || 0) + 1;
-        
-      // Award defense milestone badges
-      const defenseCount = champUser.divisions[divisionId].titleDefenseCount;
-      if (!champUser.badges) champUser.badges = [];
-      
-      if (defenseCount >= 3 && !champUser.badges.some(b => b.id === 'defender-bronze')) {
-        champUser.badges.push({
-          id: 'defender-bronze',
-          awardedAt: new Date().toISOString()
-        });
-      }
-      if (defenseCount >= 5 && !champUser.badges.some(b => b.id === 'defender-silver')) {
-        champUser.badges.push({
-          id: 'defender-silver',
-          awardedAt: new Date().toISOString()
-        });
-      }
-      if (defenseCount >= 10 && !champUser.badges.some(b => b.id === 'defender-gold')) {
-        champUser.badges.push({
-          id: 'defender-gold',
-          awardedAt: new Date().toISOString()
-        });
+    } else {
+      // Champion retained, increment defense count
+      const champ = await User.findById(championId);
+      if (champ && champ.divisions) {
+        const divisionData = champ.divisions.get(divisionId);
+        if (divisionData && divisionData.isChampion) {
+          divisionData.titleDefenses = (divisionData.titleDefenses || 0) + 1;
+          champ.divisions.set(divisionId, divisionData);
+
+          // Award defense milestone achievements
+          const defenseCount = divisionData.titleDefenses;
+          if (!champ.achievements) champ.achievements = [];
+
+          if (defenseCount >= 3 && !champ.achievements.includes('defender-bronze')) {
+            champ.achievements.push('defender-bronze');
+          }
+          if (defenseCount >= 5 && !champ.achievements.includes('defender-silver')) {
+            champ.achievements.push('defender-silver');
+          }
+          if (defenseCount >= 10 && !champ.achievements.includes('defender-gold')) {
+            champ.achievements.push('defender-gold');
+          }
+
+          await champ.save();
+        }
       }
     }
+  } catch (error) {
+    console.error('Error handling title match:', error);
   }
 }
 
 // Run the scheduler every 5 minutes
 async function startScheduler() {
   console.log('Starting fight scheduler...');
-  
-  // Initialize database first
-  await initializeDB();
-  
+
   // Run immediately on start
   await checkAndLockExpiredFights();
-  
+
   // Then run every 5 minutes
   setInterval(checkAndLockExpiredFights, 5 * 60 * 1000);
 }
 
-export { startScheduler, checkAndLockExpiredFights }; 
+export { startScheduler, checkAndLockExpiredFights };

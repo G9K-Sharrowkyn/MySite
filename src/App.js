@@ -18,6 +18,8 @@ import FightDetailPage from './fightLogic/FightDetailPage';
 import NotificationsPage from './notificationLogic/NotificationsPage';
 import DivisionsPage from './divisionsLogic/DivisionsPage';
 import PostPage from './postLogic/PostPage';
+import BettingSystem from './betting/BettingSystem';
+import FighterProposalForm from './fighterProposal/FighterProposalForm';
 import GlobalChatSystem from './chat/GlobalChatSystem';
 import './App.css';
 
@@ -47,6 +49,8 @@ function AppContent() {
         <Route path="/fight/:fightId" element={<FightDetailPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/tournaments" element={<TournamentPage />} />
+        <Route path="/betting" element={<BettingSystem />} />
+        <Route path="/propose-fighter" element={<FighterProposalForm />} />
         <Route path="/post/:postId" element={<PostPage />} />
       </Routes>
       {/* Global Chat System - only show when logged in */}

@@ -149,6 +149,12 @@ const Header = () => {
           <Link to="/" className="nav-link">{t('home')}</Link>
           <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
           <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
+          {isLoggedIn && (
+            <>
+              <Link to="/betting" className="nav-link betting-link">💰 {t('betting')}</Link>
+              <Link to="/propose-fighter" className="nav-link propose-fighter-link">⚔️ {t('proposeFighter')}</Link>
+            </>
+          )}
           {user && user.role === 'moderator' && (
             <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
           )}

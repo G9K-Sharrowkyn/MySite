@@ -945,3 +945,984 @@
   background: #c82333;
   transform: translateY(-1px);
 }
+
+/* Betting Section */
+.betting-section {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.betting-section h3 {
+  margin: 0 0 25px 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.betting-section h4 {
+  margin: 30px 0 20px 0;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.betting-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.betting-stats .stat-card {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  border-radius: 15px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+  transition: all 0.3s ease;
+}
+
+.betting-stats .stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+}
+
+.betting-stats .stat-card:nth-child(2) {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
+}
+
+.betting-stats .stat-card:nth-child(2):hover {
+  box-shadow: 0 12px 35px rgba(255, 193, 7, 0.4);
+}
+
+.betting-stats .stat-card:nth-child(3) {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+}
+
+.betting-stats .stat-card:nth-child(3):hover {
+  box-shadow: 0 12px 35px rgba(40, 167, 69, 0.4);
+}
+
+.betting-stats .stat-card:nth-child(4) {
+  background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+}
+
+.betting-stats .stat-card:nth-child(4):hover {
+  box-shadow: 0 12px 35px rgba(220, 53, 69, 0.4);
+}
+
+.bets-list {
+  margin-top: 20px;
+}
+
+.bets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.bet-card {
+  background: #fafafa;
+  border-radius: 15px;
+  padding: 20px;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.bet-card:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+}
+
+.bet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.bet-info h5 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.bet-status {
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-pending {
+  background: linear-gradient(45deg, #ffc107, #fd7e14);
+  color: white;
+}
+
+.status-won {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+}
+
+.status-lost {
+  background: linear-gradient(45deg, #dc3545, #e74c3c);
+  color: white;
+}
+
+.status-refunded {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+}
+
+.bet-amounts {
+  text-align: right;
+}
+
+.bet-amount,
+.potential-winnings {
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.bet-amount {
+  color: #666;
+  font-weight: 500;
+}
+
+.potential-winnings {
+  color: #28a745;
+  font-weight: 600;
+}
+
+.bet-details {
+  margin-bottom: 15px;
+}
+
+.bet-details > div {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.bet-user,
+.bet-date {
+  color: #666;
+}
+
+.single-bet-details,
+.parlay-bet-details {
+  background: #f8f9fa;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 10px;
+}
+
+.fight-info,
+.selected-team,
+.odds {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.parlay-fights {
+  margin-bottom: 10px;
+}
+
+.parlay-fight {
+  padding: 5px 0;
+  font-size: 0.85rem;
+  color: #555;
+}
+
+.total-odds {
+  font-weight: 600;
+  color: #333;
+  padding-top: 8px;
+  border-top: 1px solid #e9ecef;
+}
+
+.insurance-info {
+  margin-top: 10px;
+}
+
+.insurance-badge {
+  background: linear-gradient(45deg, #17a2b8, #20c997);
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.bet-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.settle-btn,
+.refund-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.win-btn {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+}
+
+.win-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.lose-btn {
+  background: linear-gradient(45deg, #dc3545, #e74c3c);
+  color: white;
+}
+
+.lose-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.refund-btn {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: white;
+}
+
+.refund-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.actual-winnings {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+  padding: 10px 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.no-bets {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 15px;
+  border: 2px dashed #dee2e6;
+  color: #6c757d;
+}
+
+.no-bets p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Responsive Design for Betting Section */
+@media (max-width: 768px) {
+  .betting-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .bets-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .bet-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .bet-amounts {
+    text-align: left;
+  }
+  
+  .bet-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .betting-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .bet-actions {
+    flex-direction: column;
+  }
+  
+  .settle-btn,
+  .refund-btn {
+    width: 100%;
+  }
+}
+/* Fighter Proposals Management */
+.proposals-section {
+  margin-top: 2rem;
+}
+
+.proposals-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.proposals-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.proposals-table th,
+.proposals-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.proposals-table th {
+  background: #f8f9fa;
+  font-weight: 600;
+  color: #333;
+}
+
+.proposal-row.pending {
+  background: #fff9e6;
+}
+
+.proposal-row.approved {
+  background: #f0f9f0;
+}
+
+.proposal-row.rejected {
+  background: #fdf2f2;
+}
+
+.proposal-image {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 2px solid #ddd;
+}
+
+.proposal-name strong {
+  display: block;
+  color: #333;
+  margin-bottom: 4px;
+}
+
+.proposal-description {
+  font-size: 0.85em;
+  color: #666;
+  line-height: 1.3;
+}
+
+.power-level {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.power-level.regular-people {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.power-level.metahuman {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+
+.power-level.planet-busters {
+  background: #fff3e0;
+  color: #f57c00;
+}
+
+.power-level.god-tier {
+  background: #ffebee;
+  color: #d32f2f;
+}
+
+.power-level.universal-threat {
+  background: #fce4ec;
+  color: #c2185b;
+}
+
+.power-level.omnipotent {
+  background: #f1f8e9;
+  color: #388e3c;
+}
+
+.status-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8em;
+  font-weight: 500;
+}
+
+.status-badge.pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-badge.approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-badge.rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 4px;
+}
+
+.action-buttons .btn {
+  padding: 4px 8px;
+  font-size: 0.8em;
+  min-width: auto;
+}
+
+.btn-success {
+  background: #28a745;
+  color: white;
+  border: none;
+}
+
+.btn-success:hover {
+  background: #218838;
+}
+
+.btn-danger {
+  background: #dc3545;
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: #c82333;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border: none;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.proposals-table .no-data {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  font-style: italic;
+}
+
+/* Responsive design for proposals table */
+@media (max-width: 1200px) {
+  .proposals-table {
+    overflow-x: auto;
+  }
+  
+  .proposals-table table {
+    min-width: 800px;
+  }
+}
+
+/* Divisions Section */
+.divisions-section {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.divisions-section h3 {
+  margin: 0 0 25px 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.divisions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.lock-fights-btn {
+  padding: 12px 24px;
+  background: linear-gradient(45deg, #dc3545, #e74c3c);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.lock-fights-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+}
+
+.division-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.divisions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.division-card {
+  background: #fafafa;
+  border-radius: 15px;
+  padding: 25px;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.division-card:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+}
+
+.division-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.division-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.division-tier {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.division-champion {
+  margin-bottom: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+}
+
+.champion-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.champion-label {
+  font-weight: 600;
+  color: #ffd700;
+  font-size: 1rem;
+}
+
+.champion-name {
+  font-weight: 700;
+  color: #333;
+  font-size: 1.1rem;
+}
+
+.reign-duration {
+  font-size: 0.85rem;
+  color: #666;
+  font-style: italic;
+}
+
+.no-champion {
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+.division-stats-mini {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.division-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.title-fight-btn,
+.contender-match-btn {
+  flex: 1;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.title-fight-btn {
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  color: #333;
+}
+
+.title-fight-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.contender-match-btn {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+}
+
+.contender-match-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.recent-fights {
+  border-top: 1px solid #e9ecef;
+  padding-top: 15px;
+}
+
+.recent-fights h5 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.recent-fight {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.85rem;
+}
+
+.recent-fight:last-child {
+  border-bottom: none;
+}
+
+.fight-teams {
+  color: #333;
+  font-weight: 500;
+}
+
+.fight-status {
+  font-size: 1rem;
+}
+
+.no-divisions {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 15px;
+  border: 2px dashed #dee2e6;
+  color: #6c757d;
+}
+
+.no-divisions p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* Proposals Section Enhancements */
+.proposals-section {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+
+.proposals-section h3 {
+  margin: 0 0 25px 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.proposal-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.proposals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(450px, 1fr));
+  gap: 20px;
+}
+
+.proposal-card {
+  background: #fafafa;
+  border-radius: 15px;
+  padding: 25px;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.proposal-card:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
+}
+
+.proposal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.proposal-header h4 {
+  margin: 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.proposal-status {
+  padding: 6px 15px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.proposal-details {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.proposal-image {
+  flex-shrink: 0;
+}
+
+.proposal-image img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 2px solid #e9ecef;
+}
+
+.proposal-info {
+  flex: 1;
+}
+
+.proposal-field {
+  margin-bottom: 10px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.proposal-field strong {
+  color: #333;
+  font-weight: 600;
+}
+
+.proposal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.approve-btn,
+.reject-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.approve-btn {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: white;
+}
+
+.approve-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.reject-btn {
+  background: linear-gradient(45deg, #dc3545, #e74c3c);
+  color: white;
+}
+
+.reject-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(220, 53, 69, 0.3);
+}
+
+.no-proposals {
+  text-align: center;
+  padding: 40px 20px;
+  background: #f8f9fa;
+  border-radius: 15px;
+  border: 2px dashed #dee2e6;
+  color: #6c757d;
+}
+
+.no-proposals p {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+/* Responsive Design for New Sections */
+@media (max-width: 768px) {
+  .divisions-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .divisions-grid,
+  .proposals-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .division-stats,
+  .proposal-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .division-actions {
+    flex-direction: column;
+  }
+  
+  .proposal-details {
+    flex-direction: column;
+  }
+  
+  .proposal-image {
+    align-self: center;
+  }
+  
+  .proposal-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .division-stats,
+  .proposal-stats {
+    grid-template-columns: 1fr;
+  }
+  
+  .division-header {
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+  
+  .division-stats-mini {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+  .proposal-actions {
+    flex-direction: column;
+  }
+  
+  .approve-btn,
+  .reject-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .proposal-image {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .proposals-table th,
+  .proposals-table td {
+    padding: 8px;
+    font-size: 0.9em;
+  }
+  
+  .proposal-description {
+    display: none;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 2px;
+  }
+}

@@ -1,39 +1,38 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+import User from '../models/User.js';
 
 export const register = async (req, res) => {
   const { username, email, password } = req.body;
-  const db = req.db; // Dostęp do lowdb z obiektu request
 
   try {
-    await db.read(); // Upewnij się, że dane są aktualne
-
-    let user = db.data.users.find(u => u.email === email);
+    // Check if user already exists
+    let user = await User.findOne({ email });
     if (user) {
       return res.status(400).json({ msg: 'Użytkownik o podanym adresie email już istnieje' });
     }
 
-    user = db.data.users.find(u => u.username === username);
+    user = await User.findOne({ username });
     if (user) {
       return res.status(400).json({ msg: 'Nazwa użytkownika jest już zajęta' });
     }
 
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newUser = {
-      id: uuidv4(), // Generowanie unikalnego ID
+    // Create new user
+    const newUser = new User({
       username,
       email,
       password: hashedPassword,
-      role: 'user', // Domyślna rola dla nowego użytkownika
+      role: 'user',
       profile: {
         bio: '',
         profilePicture: '',
         favoriteCharacters: [],
-        joinDate: new Date().toISOString(),
-        lastActive: new Date().toISOString()
+        joinDate: new Date(),
+        lastActive: new Date()
       },
       stats: {
         fightsWon: 0,
@@ -53,69 +52,100 @@ export const register = async (req, res) => {
         likesReceived: 0,
         tournamentsWon: 0,
         tournamentsParticipated: 0
-      }
-    };
+      },
+      coins: {
+        balance: 1000,
+        totalEarned: 1000,
+        totalSpent: 0,
+        lastBonusDate: new Date()
+      },
+      achievements: [],
+      divisions: new Map()
+    });
 
-    db.data.users.push(newUser);
-    await db.write(); // Zapisz zmiany do pliku JSON
+    await newUser.save();
 
     const payload = {
       user: {
-        id: newUser.id,
-        role: newUser.role, // Dodaj rolę do payloadu JWT
+        id: newUser._id,
+        role: newUser.role,
       },
     };
 
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '24h' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, userId: newUser.id });
+        res.json({
+          token,
+          userId: newUser._id,
+          user: {
+            id: newUser._id,
+            username: newUser.username,
+            email: newUser.email,
+            role: newUser.role,
+            profile: newUser.profile
+          }
+        });
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Błąd serwera');
+    console.error('Registration error:', err.message);
+    res.status(500).json({ msg: 'Błąd serwera' });
   }
 };
 
 export const login = async (req, res) => {
   const { email, password } = req.body;
-  const db = req.db; // Dostęp do lowdb z obiektu request
 
   try {
-    await db.read(); // Upewnij się, że dane są aktualne
-
-    let user = db.data.users.find(u => u.email === email);
+    // Find user by email
+    let user = await User.findOne({ email });
     if (!user) {
       return res.status(400).json({ msg: 'Nieprawidłowe dane uwierzytelniające' });
     }
 
+    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ msg: 'Nieprawidłowe dane uwierzytelniające' });
     }
 
+    // Update last active
+    user.profile.lastActive = new Date();
+    await user.save();
+
     const payload = {
       user: {
-        id: user.id,
-        role: user.role, // Dodaj rolę do payloadu JWT
+        id: user._id,
+        role: user.role,
       },
     };
 
     jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1h' },
+      { expiresIn: '24h' },
       (err, token) => {
         if (err) throw err;
-        res.json({ token, userId: user.id });
+        res.json({
+          token,
+          userId: user._id,
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            role: user.role,
+            profile: user.profile,
+            coins: user.coins
+          }
+        });
       }
     );
   } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Błąd serwera');
+    console.error('Login error:', err.message);
+    res.status(500).json({ msg: 'Błąd serwera' });
   }
 };

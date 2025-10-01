@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
+import Notification from '../models/Notification.js';
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
@@ -11,36 +11,32 @@ export const getNotifications = async (req, res) => {
     });
 
     const { page = 1, limit = 20, type } = req.query;
-    const db = req.db;
-    await db.read();
 
-    let notifications = db.data.notifications.filter(n => n.userId === req.user.id);
-
-    // Filter by type if specified
+    const query = { userId: req.user.id };
     if (type) {
-      notifications = notifications.filter(n => n.type === type);
+      query.type = type;
     }
 
-    // Sort by creation date (newest first)
-    notifications.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    const totalNotifications = await Notification.countDocuments(query);
+    const notifications = await Notification.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
 
-    // Pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
-    const paginatedNotifications = notifications.slice(startIndex, endIndex);
+    const unreadCount = await Notification.countDocuments({ userId: req.user.id, read: false });
 
-    console.log(`Returning ${paginatedNotifications.length} notifications out of ${notifications.length}`);
+    console.log(`Returning ${notifications.length} notifications out of ${totalNotifications}`);
 
     res.json({
-      notifications: paginatedNotifications,
+      notifications,
       pagination: {
         currentPage: parseInt(page),
-        totalPages: Math.ceil(notifications.length / limit),
-        totalNotifications: notifications.length,
-        hasNext: endIndex < notifications.length,
-        hasPrev: startIndex > 0
+        totalPages: Math.ceil(totalNotifications / limit),
+        totalNotifications,
+        hasNext: page * limit < totalNotifications,
+        hasPrev: page > 1
       },
-      unreadCount: notifications.filter(n => !n.read).length
+      unreadCount
     });
   } catch (error) {
     console.error('Error fetching notifications:', error.message);
@@ -58,22 +54,20 @@ export const markAsRead = async (req, res) => {
       notificationId: req.params.id
     });
 
-    const db = req.db;
-    await db.read();
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      userId: req.user.id
+    });
 
-    const notificationIndex = db.data.notifications.findIndex(n => 
-      n.id === req.params.id && n.userId === req.user.id
-    );
-
-    if (notificationIndex === -1) {
+    if (!notification) {
       console.error('Notification not found:', req.params.id);
       return res.status(404).json({ msg: 'Powiadomienie nie znalezione' });
     }
 
-    db.data.notifications[notificationIndex].read = true;
-    db.data.notifications[notificationIndex].readAt = new Date().toISOString();
+    notification.read = true;
+    notification.readAt = new Date();
+    await notification.save();
 
-    await db.write();
     res.json({ msg: 'Powiadomienie oznaczone jako przeczytane' });
   } catch (error) {
     console.error('Error marking notification as read:', error.message);
@@ -90,22 +84,11 @@ export const markAllAsRead = async (req, res) => {
       userId: req.user.id
     });
 
-    const db = req.db;
-    await db.read();
-
-    const userNotifications = db.data.notifications.filter(n => 
-      n.userId === req.user.id && !n.read
+    await Notification.updateMany(
+      { userId: req.user.id, read: false },
+      { read: true, readAt: new Date() }
     );
 
-    userNotifications.forEach(notification => {
-      const notificationIndex = db.data.notifications.findIndex(n => n.id === notification.id);
-      if (notificationIndex !== -1) {
-        db.data.notifications[notificationIndex].read = true;
-        db.data.notifications[notificationIndex].readAt = new Date().toISOString();
-      }
-    });
-
-    await db.write();
     res.json({ msg: 'Wszystkie powiadomienia oznaczone jako przeczytane' });
   } catch (error) {
     console.error('Error marking all notifications as read:', error.message);
@@ -123,20 +106,15 @@ export const deleteNotification = async (req, res) => {
       notificationId: req.params.id
     });
 
-    const db = req.db;
-    await db.read();
+    const notification = await Notification.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user.id
+    });
 
-    const notificationIndex = db.data.notifications.findIndex(n => 
-      n.id === req.params.id && n.userId === req.user.id
-    );
-
-    if (notificationIndex === -1) {
+    if (!notification) {
       console.error('Notification not found:', req.params.id);
       return res.status(404).json({ msg: 'Powiadomienie nie znalezione' });
     }
-
-    db.data.notifications.splice(notificationIndex, 1);
-    await db.write();
 
     res.json({ msg: 'Powiadomienie usunięte' });
   } catch (error) {
@@ -154,12 +132,10 @@ export const getUnreadCount = async (req, res) => {
       userId: req.user.id
     });
 
-    const db = req.db;
-    await db.read();
-
-    const unreadCount = db.data.notifications.filter(n => 
-      n.userId === req.user.id && !n.read
-    ).length;
+    const unreadCount = await Notification.countDocuments({
+      userId: req.user.id,
+      read: false
+    });
 
     res.json({ unreadCount });
   } catch (error) {
@@ -169,9 +145,11 @@ export const getUnreadCount = async (req, res) => {
 };
 
 // @desc    Create notification (internal function)
+// This function is no longer needed as we use Notification.create directly
+// Keeping it for backward compatibility
 export const createNotification = async (db, userId, type, title, content, data = {}) => {
   try {
-    console.log('Create notification called:', {
+    console.log('Create notification called (deprecated):', {
       userId,
       type,
       title,
@@ -179,18 +157,15 @@ export const createNotification = async (db, userId, type, title, content, data 
       data
     });
 
-    const notification = {
-      id: uuidv4(),
+    const notification = await Notification.create({
       userId,
-      type, // 'message', 'fight_result', 'comment', 'like', 'tournament', 'system'
+      type,
       title,
-      content,
+      message: content,
       data,
-      read: false,
-      createdAt: new Date().toISOString()
-    };
+      read: false
+    });
 
-    db.data.notifications.push(notification);
     return notification;
   } catch (error) {
     console.error('Error creating notification:', error.message);

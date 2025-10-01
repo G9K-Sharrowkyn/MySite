@@ -1,231 +1,281 @@
 import express from 'express';
+import badgeService from '../services/badgeService.js';
+import Badge from '../models/Badge.js';
+import UserBadge from '../models/UserBadge.js';
+import User from '../models/User.js';
 import auth from '../middleware/auth.js';
-import { v4 as uuidv4 } from 'uuid';
+import moderatorAuth from '../middleware/moderatorAuth.js';
 
 const router = express.Router();
 
-// Badge definitions (same as frontend)
-const BADGE_DEFINITIONS = {
-  // Championship badges
-  DIVISION_CHAMPION: {
-    id: 'division_champion',
-    name: 'Division Champion',
-    description: 'Current champion in at least one division',
-    category: 'championship'
-  },
-  MULTI_DIVISION_CHAMPION: {
-    id: 'multi_division_champion',
-    name: 'Multi-Division Champion',
-    description: 'Champion in multiple divisions simultaneously',
-    category: 'championship'
-  },
-  LONGEST_REIGN: {
-    id: 'longest_reign',
-    name: 'Iron Throne',
-    description: 'Held a championship for over 30 days',
-    category: 'championship'
-  },
-  // Fight badges
-  FIRST_WIN: {
-    id: 'first_win',
-    name: 'First Victory',
-    description: 'Won your first official fight',
-    category: 'combat'
-  },
-  WINNING_STREAK_5: {
-    id: 'winning_streak_5',
-    name: 'Hot Streak',
-    description: 'Won 5 official fights in a row',
-    category: 'combat'
-  },
-  WINNING_STREAK_10: {
-    id: 'winning_streak_10',
-    name: 'Unstoppable',
-    description: 'Won 10 official fights in a row',
-    category: 'combat'
-  },
-  // Social badges
-  POPULAR_FIGHTER: {
-    id: 'popular_fighter',
-    name: 'Fan Favorite',
-    description: 'Received over 1000 votes in your fights',
-    category: 'social'
-  },
-  COMMUNITY_HERO: {
-    id: 'community_hero',
-    name: 'Community Hero',
-    description: 'Created 50+ fights for the community',
-    category: 'social'
-  },
-  DEBATE_MASTER: {
-    id: 'debate_master',
-    name: 'Debate Master',
-    description: 'Posted 100+ comments on fights',
-    category: 'social'
-  }
-};
-
-// Get user badges
-router.get('/:userId', async (req, res) => {
+// Get all available badges
+router.get('/available', async (req, res) => {
   try {
-    await req.db.read();
-    const { userId } = req.params;
+    const { category, rarity } = req.query;
+    const filter = { isActive: true };
     
-    const user = req.db.data.users.find(u => u.id === userId);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    
-    const badges = user.badges || [];
+    if (category) filter.category = category;
+    if (rarity) filter.rarity = rarity;
+
+    const badges = await Badge.find(filter).sort({ category: 1, rarity: 1 });
     res.json(badges);
   } catch (error) {
-    console.error('Error fetching badges:', error);
+    console.error('Error fetching available badges:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Award badge (internal function)
-const awardBadge = async (db, userId, badgeId, details = null) => {
-  const userIndex = db.data.users.findIndex(u => u.id === userId);
-  if (userIndex === -1) return false;
-  
-  if (!db.data.users[userIndex].badges) {
-    db.data.users[userIndex].badges = [];
-  }
-  
-  // Check if badge already exists
-  const existingBadge = db.data.users[userIndex].badges.find(b => b.badgeId === badgeId);
-  if (existingBadge) return false;
-  
-  // Award badge
-  const newBadge = {
-    id: uuidv4(),
-    badgeId,
-    earnedAt: new Date().toISOString(),
-    details
-  };
-  
-  db.data.users[userIndex].badges.push(newBadge);
-  
-  // Create notification
-  if (!db.data.notifications) db.data.notifications = [];
-  db.data.notifications.push({
-    id: uuidv4(),
-    userId,
-    type: 'badge_earned',
-    message: `You earned a new badge: ${BADGE_DEFINITIONS[badgeId]?.name || badgeId}!`,
-    read: false,
-    createdAt: new Date().toISOString(),
-    badgeId
-  });
-  
-  await db.write();
-  return true;
-};
+// Get user's badges
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { displayed } = req.query;
+    
+    const options = {};
+    if (displayed === 'true') options.displayed = true;
 
-// Check and award badges after fight result
-const checkFightBadges = async (db, winnerId, loserId) => {
-  // Check winner badges
-  if (winnerId) {
-    const winnerIndex = db.data.users.findIndex(u => u.id === winnerId);
-    if (winnerIndex !== -1) {
-      const winner = db.data.users[winnerIndex];
-      
-      // First win badge
-      const totalWins = Object.values(winner.divisions || {})
-        .reduce((sum, div) => sum + (div.wins || 0), 0);
-      
-      if (totalWins === 1) {
-        await awardBadge(db, winnerId, 'FIRST_WIN');
-      }
-      
-      // Winning streak badges
-      const currentStreak = Math.max(
-        ...Object.values(winner.divisions || {}).map(div => div.streak || 0)
-      );
-      
-      if (currentStreak === 5) {
-        await awardBadge(db, winnerId, 'WINNING_STREAK_5');
-      }
-      if (currentStreak === 10) {
-        await awardBadge(db, winnerId, 'WINNING_STREAK_10');
+    const userBadges = await badgeService.getUserBadges(userId, options);
+    res.json(userBadges);
+  } catch (error) {
+    console.error('Error fetching user badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get current user's badges
+router.get('/my-badges', auth, async (req, res) => {
+  try {
+    const { displayed } = req.query;
+    const options = {};
+    if (displayed === 'true') options.displayed = true;
+
+    const userBadges = await badgeService.getUserBadges(req.user.id, options);
+    res.json(userBadges);
+  } catch (error) {
+    console.error('Error fetching user badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Update badge display settings
+router.put('/display/:badgeId', auth, async (req, res) => {
+  try {
+    const { badgeId } = req.params;
+    const { isDisplayed } = req.body;
+
+    const result = await badgeService.updateBadgeDisplay(req.user.id, badgeId, isDisplayed);
+    
+    if (result.success) {
+      res.json({ message: 'Badge display updated successfully' });
+    } else {
+      res.status(400).json({ message: 'Failed to update badge display' });
+    }
+  } catch (error) {
+    console.error('Error updating badge display:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get badge leaderboard
+router.get('/leaderboard/:badgeId', async (req, res) => {
+  try {
+    const { badgeId } = req.params;
+    const { limit = 10 } = req.query;
+
+    const leaderboard = await badgeService.getBadgeLeaderboard(badgeId, parseInt(limit));
+    res.json(leaderboard);
+  } catch (error) {
+    console.error('Error fetching badge leaderboard:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get badge statistics
+router.get('/stats', async (req, res) => {
+  try {
+    const stats = await badgeService.getBadgeStats();
+    res.json(stats);
+  } catch (error) {
+    console.error('Error fetching badge stats:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Check and award badges for user (manual trigger)
+router.post('/check-awards', auth, async (req, res) => {
+  try {
+    await badgeService.checkAndAwardBadges(req.user.id);
+    res.json({ message: 'Badge check completed' });
+  } catch (error) {
+    console.error('Error checking badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// MODERATOR ROUTES
+
+// Award badge to user (moderator only)
+router.post('/award', moderatorAuth, async (req, res) => {
+  try {
+    const { userId, badgeId, metadata } = req.body;
+
+    if (!userId || !badgeId) {
+      return res.status(400).json({ message: 'User ID and Badge ID are required' });
+    }
+
+    const result = await badgeService.awardBadge(userId, badgeId, metadata);
+    
+    if (result.success) {
+      res.json({ 
+        message: 'Badge awarded successfully',
+        badge: result.badge
+      });
+    } else {
+      res.status(400).json({ message: result.message });
+    }
+  } catch (error) {
+    console.error('Error awarding badge:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Create new badge (moderator only)
+router.post('/create', moderatorAuth, async (req, res) => {
+  try {
+    const badgeData = req.body;
+
+    // Validate required fields
+    const requiredFields = ['id', 'name', 'description', 'icon', 'category', 'rarity', 'color', 'requirements'];
+    for (const field of requiredFields) {
+      if (!badgeData[field]) {
+        return res.status(400).json({ message: `${field} is required` });
       }
     }
-  }
-};
 
-// Check and award championship badges
-const checkChampionshipBadges = async (db, userId) => {
-  const userIndex = db.data.users.findIndex(u => u.id === userId);
-  if (userIndex === -1) return;
-  
-  const user = db.data.users[userIndex];
-  const championDivisions = Object.entries(user.divisions || {})
-    .filter(([_, div]) => div.isChampion)
-    .map(([divId, div]) => ({
-      divisionId: divId,
-      since: div.championSince
-    }));
-  
-  // Division champion badge
-  if (championDivisions.length >= 1) {
-    await awardBadge(db, userId, 'DIVISION_CHAMPION');
-  }
-  
-  // Multi-division champion badge
-  if (championDivisions.length >= 2) {
-    await awardBadge(db, userId, 'MULTI_DIVISION_CHAMPION');
-  }
-  
-  // Longest reign badge
-  const now = new Date();
-  const hasLongReign = championDivisions.some(champ => {
-    const reignDays = (now - new Date(champ.since)) / (1000 * 60 * 60 * 24);
-    return reignDays >= 30;
-  });
-  
-  if (hasLongReign) {
-    await awardBadge(db, userId, 'LONGEST_REIGN');
-  }
-};
+    const badge = new Badge(badgeData);
+    await badge.save();
 
-// Check social badges
-const checkSocialBadges = async (db, userId) => {
-  const userIndex = db.data.users.findIndex(u => u.id === userId);
-  if (userIndex === -1) return;
-  
-  const user = db.data.users[userIndex];
-  
-  // Community hero badge
-  const fightsCreated = db.data.posts?.filter(p => 
-    p.authorId === userId && p.type === 'fight'
-  ).length || 0;
-  
-  if (fightsCreated >= 50) {
-    await awardBadge(db, userId, 'COMMUNITY_HERO');
+    res.status(201).json({
+      message: 'Badge created successfully',
+      badge
+    });
+  } catch (error) {
+    if (error.code === 11000) {
+      res.status(400).json({ message: 'Badge ID already exists' });
+    } else {
+      console.error('Error creating badge:', error);
+      res.status(500).json({ message: 'Server error' });
+    }
   }
-  
-  // Debate master badge
-  const commentsPosted = db.data.comments?.filter(c => 
-    c.authorId === userId
-  ).length || 0;
-  
-  if (commentsPosted >= 100) {
-    await awardBadge(db, userId, 'DEBATE_MASTER');
-  }
-  
-  // Popular fighter badge
-  const totalVotesReceived = db.data.posts
-    ?.filter(p => p.authorId === userId && p.type === 'fight')
-    .reduce((sum, post) => {
-      const votes = (post.fight?.votes?.teamA || 0) + (post.fight?.votes?.teamB || 0);
-      return sum + votes;
-    }, 0) || 0;
-  
-  if (totalVotesReceived >= 1000) {
-    await awardBadge(db, userId, 'POPULAR_FIGHTER');
-  }
-};
+});
 
-// Export functions for use in other routes
+// Update badge (moderator only)
+router.put('/:badgeId', moderatorAuth, async (req, res) => {
+  try {
+    const { badgeId } = req.params;
+    const updateData = req.body;
+
+    const badge = await Badge.findOneAndUpdate(
+      { id: badgeId },
+      updateData,
+      { new: true, runValidators: true }
+    );
+
+    if (!badge) {
+      return res.status(404).json({ message: 'Badge not found' });
+    }
+
+    res.json({
+      message: 'Badge updated successfully',
+      badge
+    });
+  } catch (error) {
+    console.error('Error updating badge:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete badge (moderator only)
+router.delete('/:badgeId', moderatorAuth, async (req, res) => {
+  try {
+    const { badgeId } = req.params;
+
+    // Soft delete - set isActive to false
+    const badge = await Badge.findOneAndUpdate(
+      { id: badgeId },
+      { isActive: false },
+      { new: true }
+    );
+
+    if (!badge) {
+      return res.status(404).json({ message: 'Badge not found' });
+    }
+
+    // Also deactivate all user badges with this ID
+    await UserBadge.updateMany(
+      { badgeId },
+      { isActive: false }
+    );
+
+    res.json({ message: 'Badge deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting badge:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get all badges for management (moderator only)
+router.get('/manage/all', moderatorAuth, async (req, res) => {
+  try {
+    const badges = await Badge.find().sort({ category: 1, createdAt: -1 });
+    res.json(badges);
+  } catch (error) {
+    console.error('Error fetching all badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get user badge history (moderator only)
+router.get('/manage/user/:userId/history', moderatorAuth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    const userBadges = await UserBadge.find({ userId })
+      .populate('badge')
+      .sort({ earnedAt: -1 });
+
+    res.json(userBadges);
+  } catch (error) {
+    console.error('Error fetching user badge history:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Revoke badge from user (moderator only)
+router.delete('/revoke/:userId/:badgeId', moderatorAuth, async (req, res) => {
+  try {
+    const { userId, badgeId } = req.params;
+
+    const userBadge = await UserBadge.findOneAndUpdate(
+      { userId, badgeId },
+      { isActive: false },
+      { new: true }
+    );
+
+    if (!userBadge) {
+      return res.status(404).json({ message: 'User badge not found' });
+    }
+
+    // Remove from user's achievements array
+    await User.findByIdAndUpdate(userId, {
+      $pull: { achievements: badgeId }
+    });
+
+    res.json({ message: 'Badge revoked successfully' });
+  } catch (error) {
+    console.error('Error revoking badge:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;

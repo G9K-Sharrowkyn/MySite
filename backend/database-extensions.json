@@ -1,0 +1,255 @@
+{
+  "description": "Rozszerzenia struktury bazy danych dla nowych funkcji GeekFights",
+  "version": "2.0",
+  "extensions": {
+    "posts": {
+      "new_fields": {
+        "tags": {
+          "type": "array",
+          "description": "Automatyczne tagi na podstawie postaci (DC, Marvel, Dragon Ball, etc.)",
+          "example": ["DC", "Marvel", "Superman", "Batman"]
+        },
+        "autoTags": {
+          "type": "object",
+          "description": "Automatycznie wygenerowane tagi",
+          "structure": {
+            "universes": ["DC", "Marvel", "Dragon Ball"],
+            "characters": ["Superman", "Goku"],
+            "powerTiers": ["God Tier", "Universal Threat"],
+            "categories": ["Heroes", "Villains"]
+          }
+        },
+        "bettingWindow": {
+          "type": "object",
+          "description": "Okno zakładów dla oficjalnych walk",
+          "structure": {
+            "bettingOpenTime": "ISO string",
+            "bettingCloseTime": "ISO string",
+            "bettingActive": "boolean",
+            "bettingLocked": "boolean"
+          }
+        }
+      }
+    },
+    "users": {
+      "new_fields": {
+        "customBackgrounds": {
+          "type": "array",
+          "description": "Niestandardowe tła profilu",
+          "structure": {
+            "id": "string",
+            "imageUrl": "string",
+            "purchaseDate": "ISO string",
+            "active": "boolean",
+            "cost": "number"
+          }
+        },
+        "backgroundSlots": {
+          "type": "number",
+          "description": "Liczba dostępnych slotów na tła",
+          "default": 1
+        },
+        "notificationSettings": {
+          "type": "object",
+          "description": "Ustawienia powiadomień",
+          "structure": {
+            "fightResults": "boolean",
+            "divisionFights": "boolean",
+            "reactions": "boolean",
+            "comments": "boolean",
+            "mentions": "boolean",
+            "pushEnabled": "boolean"
+          }
+        },
+        "tagPreferences": {
+          "type": "array",
+          "description": "Preferowane tagi do filtrowania",
+          "example": ["DC", "Marvel", "Dragon Ball"]
+        }
+      }
+    },
+    "fighterProposals": {
+      "description": "System już istnieje - sprawdzić completeness",
+      "required_fields": [
+        "imageUpload",
+        "moderatorNotifications",
+        "autoApproval"
+      ]
+    },
+    "bets": {
+      "new_fields": {
+        "parlayBets": {
+          "type": "array",
+          "description": "Zakłady parlay (wielokrotne)",
+          "structure": {
+            "id": "string",
+            "userId": "string",
+            "fights": ["array of fight IDs"],
+            "predictions": ["array of predictions"],
+            "totalOdds": "number",
+            "multiplier": "number",
+            "amount": "number",
+            "potentialWinnings": "number",
+            "status": "active|won|lost",
+            "placedAt": "ISO string"
+          }
+        },
+        "dynamicOdds": {
+          "type": "object",
+          "description": "Dynamiczne kursy na podstawie wzorców",
+          "structure": {
+            "fightId": "string",
+            "teamAOdds": "number",
+            "teamBOdds": "number",
+            "totalBets": "number",
+            "lastUpdated": "ISO string"
+          }
+        },
+        "bettingInsurance": {
+          "type": "object",
+          "description": "Ubezpieczenie zakładów",
+          "structure": {
+            "betId": "string",
+            "insuranceAmount": "number",
+            "refundPercentage": "number",
+            "active": "boolean"
+          }
+        }
+      }
+    },
+    "notifications": {
+      "new_fields": {
+        "category": {
+          "type": "string",
+          "enum": ["fight_result", "division_fight", "reaction", "comment", "mention", "system"],
+          "description": "Kategoria powiadomienia"
+        },
+        "priority": {
+          "type": "string",
+          "enum": ["low", "medium", "high", "urgent"],
+          "description": "Priorytet powiadomienia"
+        },
+        "actionUrl": {
+          "type": "string",
+          "description": "URL do akcji związanej z powiadomieniem"
+        },
+        "metadata": {
+          "type": "object",
+          "description": "Dodatkowe dane powiadomienia"
+        }
+      }
+    },
+    "divisions": {
+      "new_fields": {
+        "extendedStats": {
+          "type": "object",
+          "description": "Rozszerzone statystyki dywizji",
+          "structure": {
+            "averageVotesPerFight": "number",
+            "mostActiveHours": "array",
+            "popularMatchups": "array",
+            "seasonStats": "object",
+            "monthlyActivity": "object"
+          }
+        },
+        "titleFightQueue": {
+          "type": "array",
+          "description": "Kolejka do walk o tytuł",
+          "structure": {
+            "userId": "string",
+            "queuePosition": "number",
+            "qualificationDate": "ISO string",
+            "wins": "number",
+            "losses": "number"
+          }
+        }
+      }
+    },
+    "tags": {
+      "description": "Nowa kolekcja dla systemu tagów",
+      "structure": {
+        "id": "string",
+        "name": "string",
+        "category": "universe|character|power_tier|genre",
+        "color": "string",
+        "icon": "string",
+        "postCount": "number",
+        "trending": "boolean",
+        "createdAt": "ISO string"
+      }
+    },
+    "backgroundImages": {
+      "description": "Kolekcja dla niestandardowych teł",
+      "structure": {
+        "id": "string",
+        "userId": "string",
+        "originalName": "string",
+        "fileName": "string",
+        "fileSize": "number",
+        "mimeType": "string",
+        "dimensions": {
+          "width": "number",
+          "height": "number"
+        },
+        "compressed": "boolean",
+        "approved": "boolean",
+        "moderatorReview": {
+          "reviewedBy": "string",
+          "reviewedAt": "ISO string",
+          "notes": "string"
+        },
+        "uploadedAt": "ISO string"
+      }
+    },
+    "analytics": {
+      "description": "Kolekcja dla analytics i statystyk",
+      "structure": {
+        "id": "string",
+        "type": "daily|weekly|monthly",
+        "date": "ISO string",
+        "data": {
+          "activeUsers": "number",
+          "newPosts": "number",
+          "totalVotes": "number",
+          "newRegistrations": "number",
+          "popularTags": "array",
+          "topFights": "array",
+          "divisionActivity": "object"
+        }
+      }
+    }
+  },
+  "indexes": {
+    "posts": [
+      "tags",
+      "autoTags.universes",
+      "bettingWindow.bettingActive"
+    ],
+    "users": [
+      "tagPreferences",
+      "customBackgrounds.active"
+    ],
+    "tags": [
+      "category",
+      "trending",
+      "postCount"
+    ],
+    "notifications": [
+      "category",
+      "priority",
+      "userId"
+    ]
+  },
+  "migrations": {
+    "v1_to_v2": {
+      "description": "Migracja z obecnej struktury do rozszerzonej",
+      "steps": [
+        "Dodaj nowe pola do istniejących kolekcji",
+        "Stwórz nowe kolekcje (tags, backgroundImages, analytics)",
+        "Zmigruj istniejące dane",
+        "Stwórz indeksy",
+        "Zaktualizuj API endpoints"
+      ]
+    }
+  }
+}

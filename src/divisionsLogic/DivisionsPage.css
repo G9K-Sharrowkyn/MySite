@@ -705,3 +705,189 @@ body.dark-mode .info-card li {
   background: rgba(255,255,255,0.2);
   margin: 0 auto;
 }
+/* Active Fights Section */
+.active-fights-section {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.active-fights-title {
+  margin: 0 0 12px 0;
+  color: #495057;
+  font-size: 1.1rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.active-fights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.active-fight-item {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  padding: 12px;
+  transition: all 0.3s ease;
+}
+
+.active-fight-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-color: #007bff;
+}
+
+.fight-participants {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.participant {
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.vs-text {
+  color: #6c757d;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.fight-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fight-type {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: bold;
+}
+
+.fight-votes {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.fight-timer {
+  font-size: 0.8rem;
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.view-all-fights-btn {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.view-all-fights-btn:hover {
+  background: linear-gradient(135deg, #495057, #343a40);
+  transform: translateY(-1px);
+}
+
+/* Enhanced Division Participants */
+.division-participants span {
+  font-size: 0.85rem;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Dark mode support for new elements */
+body.dark-mode .active-fights-section {
+  background: linear-gradient(135deg, rgba(45, 55, 72, 0.8) 0%, rgba(26, 32, 44, 0.8) 100%);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .active-fights-title {
+  color: #e2e8f0;
+}
+
+body.dark-mode .active-fight-item {
+  background: rgba(45, 55, 72, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .active-fight-item:hover {
+  border-color: #4299e1;
+}
+
+body.dark-mode .participant {
+  color: #e2e8f0;
+}
+
+body.dark-mode .vs-text {
+  color: #a0aec0;
+}
+
+body.dark-mode .fight-votes,
+body.dark-mode .fight-timer {
+  color: #a0aec0;
+}
+
+body.dark-mode .view-all-fights-btn {
+  background: linear-gradient(135deg, #4a5568, #2d3748);
+}
+
+body.dark-mode .view-all-fights-btn:hover {
+  background: linear-gradient(135deg, #2d3748, #1a202c);
+}
+
+/* Mobile responsiveness for active fights */
+@media (max-width: 768px) {
+  .active-fights-section {
+    padding: 12px;
+    margin: 12px 0;
+  }
+
+  .active-fights-title {
+    font-size: 1rem;
+  }
+
+  .fight-participants {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+
+  .fight-info {
+    justify-content: center;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .participant {
+    font-size: 0.85rem;
+  }
+
+  .vs-text {
+    font-size: 0.75rem;
+  }
+}

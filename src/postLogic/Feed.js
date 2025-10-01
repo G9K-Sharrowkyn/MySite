@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PostCard from './PostCard';
 import CreatePost from './CreatePost';
+import TagFilter from '../tags/TagFilter';
 import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './Feed.css';
@@ -13,11 +14,38 @@ const Feed = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [sortBy, setSortBy] = useState('createdAt');
+  const [filters, setFilters] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
 
-  const fetchPosts = async (pageNum = 1, sort = 'createdAt', reset = false) => {
+  const fetchPosts = async (pageNum = 1, sort = 'createdAt', reset = false, currentFilters = {}) => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/posts?page=${pageNum}&limit=10&sortBy=${sort}`);
+      
+      // Sprawdź czy są aktywne filtry
+      const hasActiveFilters = Object.keys(currentFilters).length > 0 &&
+        Object.values(currentFilters).some(filterArray => filterArray.length > 0);
+      
+      let response;
+      if (hasActiveFilters) {
+        // Użyj API filtrowania tagów
+        response = await axios.post('/api/tags/filter-posts', {
+          ...currentFilters,
+          sortBy: sort,
+          page: pageNum,
+          limit: 10
+        });
+        
+        // Dostosuj format odpowiedzi do oczekiwanego
+        response.data = {
+          posts: response.data.posts,
+          currentPage: pageNum,
+          totalPages: Math.ceil(response.data.count / 10)
+        };
+      } else {
+        // Użyj standardowego API postów
+        response = await axios.get(`/api/posts?page=${pageNum}&limit=10&sortBy=${sort}`);
+      }
+      
       const newPosts = response.data.posts.map(post => ({
         ...post,
         author: {
@@ -41,18 +69,23 @@ const Feed = () => {
   };
 
   useEffect(() => {
-    fetchPosts(1, sortBy, true);
+    fetchPosts(1, sortBy, true, filters);
     setPage(1);
-  }, [sortBy]);
+  }, [sortBy, filters]);
 
   const handleLoadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
-    fetchPosts(nextPage, sortBy, false);
+    fetchPosts(nextPage, sortBy, false, filters);
   };
 
   const handlePostCreated = () => {
-    fetchPosts(1, sortBy, true);
+    fetchPosts(1, sortBy, true, filters);
+    setPage(1);
+  };
+
+  const handleFiltersChange = (newFilters) => {
+    setFilters(newFilters);
     setPage(1);
   };
 
@@ -76,21 +109,42 @@ const handlePostUpdate = (updatedPost, isDeleted) => {
         <h1>🌟 {t('feed')}</h1>
         <div className="feed-controls">
           <div className="sort-controls">
-            <button 
+            <button
               className={sortBy === 'createdAt' ? 'active' : ''}
               onClick={() => handleSortChange('createdAt')}
             >
               🕒 {t('newest')}
             </button>
-            <button 
+            <button
               className={sortBy === 'likes' ? 'active' : ''}
               onClick={() => handleSortChange('likes')}
             >
               🔥 {t('popular')}
             </button>
           </div>
+          <div className="filter-controls">
+            <button
+              className={`filter-toggle-btn ${showFilters ? 'active' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              🏷️ {t('filters')}
+              {Object.keys(filters).length > 0 &&
+                Object.values(filters).some(f => f.length > 0) && (
+                <span className="filter-count">
+                  ({Object.values(filters).reduce((total, f) => total + f.length, 0)})
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
+
+      {showFilters && (
+        <TagFilter
+          onFiltersChange={handleFiltersChange}
+          activeFilters={filters}
+        />
+      )}
 
       <CreatePost onPostCreated={handlePostCreated} />
 
