@@ -1,7 +1,88 @@
-import Fight from '../models/Fight.js';
-import User from '../models/User.js';
-import Vote from '../models/Vote.js';
-import Comment from '../models/Comment.js';
+import { v4 as uuidv4 } from 'uuid';
+import { readDb, updateDb } from '../services/jsonDb.js';
+
+const resolveUserId = (user) => user?.id || user?._id;
+
+const findUserById = (db, userId) =>
+  (db.users || []).find((entry) => resolveUserId(entry) === userId);
+
+const getTeamDisplayName = (team) => {
+  if (!team) return '';
+  if (typeof team === 'string') return team;
+  if (Array.isArray(team)) {
+    return team
+      .map((entry) => entry?.characterName || entry?.name || entry)
+      .filter(Boolean)
+      .join(', ');
+  }
+  return team.characterName || team.name || '';
+};
+
+const getTeamPrimary = (team) => {
+  if (!team) return null;
+  if (Array.isArray(team)) return team[0] || null;
+  if (typeof team === 'object') return team;
+  return null;
+};
+
+const countVotesForFight = (votes, fightId) => {
+  const fightVotes = votes.filter((vote) => vote.fightId === fightId);
+  const teamAVotes = fightVotes.filter((vote) =>
+    ['A', 'teamA', 'fighter1'].includes(vote.team)
+  ).length;
+  const teamBVotes = fightVotes.filter((vote) =>
+    ['B', 'teamB', 'fighter2'].includes(vote.team)
+  ).length;
+
+  return {
+    teamAVotes,
+    teamBVotes,
+    totalVotes: fightVotes.length
+  };
+};
+
+const normalizeFight = (fight, db) => {
+  const creator = db ? findUserById(db, fight.createdBy) : null;
+  const teamAName = fight.fighter1 || getTeamDisplayName(fight.teamA);
+  const teamBName = fight.fighter2 || getTeamDisplayName(fight.teamB);
+  const teamAPrimary = getTeamPrimary(fight.teamA);
+  const teamBPrimary = getTeamPrimary(fight.teamB);
+  const fighter1Image =
+    fight.fighter1Image ||
+    teamAPrimary?.characterImage ||
+    teamAPrimary?.image ||
+    '';
+  const fighter2Image =
+    fight.fighter2Image ||
+    teamBPrimary?.characterImage ||
+    teamBPrimary?.image ||
+    '';
+  const endDate = fight.endDate || fight.timer?.endTime || null;
+
+  const { teamAVotes, teamBVotes, totalVotes } = db
+    ? countVotesForFight(db.votes || [], fight.id)
+    : { teamAVotes: 0, teamBVotes: 0, totalVotes: 0 };
+
+  return {
+    ...fight,
+    id: fight.id,
+    fighter1: teamAName,
+    fighter2: teamBName,
+    fighter1Image,
+    fighter2Image,
+    endDate,
+    createdByUsername: creator ? creator.username : 'Nieznany',
+    votes: {
+      fighter1: teamAVotes,
+      fighter2: teamBVotes,
+      teamA: teamAVotes,
+      teamB: teamBVotes,
+      total: totalVotes
+    },
+    votesA: teamAVotes,
+    votesB: teamBVotes
+  };
+};
 
 // @desc    Create a new fight
 // @route   POST /api/fights
@@ -16,51 +97,84 @@ export const createFight = async (req, res) => {
       fighter1Image,
       fighter2Image,
       category,
-      type = 'feed', // 'main' or 'feed'
+      type = 'feed',
       endDate,
       teamA,
       teamB
     } = req.body;
 
-    // Check if user is moderator for main fights
-    const user = await User.findById(req.user.id);
-    if (type === 'main' && user.role !== 'moderator') {
-      return res.status(403).json({ msg: 'Tylko moderatorzy mogą tworzyć główne walki' });
+    const db = await readDb();
+    const user = findUserById(db, req.user.id);
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
     }
 
-    // Prepare teams (support both old and new formats)
-    const teamAData = teamA || [{
-      characterId: fighter1,
-      characterName: fighter1,
-      characterImage: fighter1Image || 'https://via.placeholder.com/150'
-    }];
+    if (type === 'main' && user.role !== 'moderator') {
+      return res.status(403).json({ msg: 'Only moderators can create main fights.' });
+    }
 
-    const teamBData = teamB || [{
-      characterId: fighter2,
-      characterName: fighter2,
-      characterImage: fighter2Image || 'https://via.placeholder.com/150'
-    }];
+    const teamAData =
+      teamA && Array.isArray(teamA)
+        ? teamA
+        : [
+            {
+              characterId: fighter1,
+              characterName: fighter1,
+              characterImage: fighter1Image || 'https://via.placeholder.com/150'
+            }
+          ];
 
-    const newFight = await Fight.create({
+    const teamBData =
+      teamB && Array.isArray(teamB)
+        ? teamB
+        : [
+            {
+              characterId: fighter2,
+              characterName: fighter2,
+              characterImage: fighter2Image || 'https://via.placeholder.com/150'
+            }
+          ];
+
+    const now = new Date();
+    const fight = {
+      id: uuidv4(),
       title,
       description,
       teamA: teamAData,
       teamB: teamBData,
       category,
-      type: type === 'main' ? 'official' : 'regular',
+      type,
       createdBy: req.user.id,
       status: 'active',
+      createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
+      endDate: endDate ? new Date(endDate).toISOString() : null,
       timer: {
-        duration: 168, // 7 days in hours
-        startTime: new Date(),
-        endTime: endDate ? new Date(endDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        duration: 168,
+        startTime: now.toISOString(),
+        endTime: endDate
+          ? new Date(endDate).toISOString()
+          : new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         autoLock: true
       },
       isOfficial: type === 'main',
-      moderatorCreated: user.role === 'moderator'
+      moderatorCreated: user.role === 'moderator',
+      result: {
+        winner: null,
+        finishedAt: null,
+        finalVotesA: 0,
+        finalVotesB: 0,
+        method: null
+      }
+    };
+
+    await updateDb((data) => {
+      data.fights = Array.isArray(data.fights) ? data.fights : [];
+      data.fights.push(fight);
+      return data;
     });
 
-    res.json({ msg: 'Walka została utworzona', fight: newFight });
+    res.json({ msg: 'Fight created', fight: normalizeFight(fight, db) });
   } catch (error) {
     console.error('Error creating fight:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -73,66 +187,36 @@ export const createFight = async (req, res) => {
 export const getFights = async (req, res) => {
   try {
     const { type, category, status, page = 1, limit = 10 } = req.query;
+    const db = await readDb();
+    const fights = Array.isArray(db.fights) ? db.fights : [];
 
-    // Build query
-    const query = {};
-
-    if (type) {
-      if (type === 'main') {
-        query.isOfficial = true;
-      } else if (type === 'feed') {
-        query.isOfficial = false;
+    const filtered = fights.filter((fight) => {
+      if (type) {
+        if (type === 'main' && !fight.isOfficial) return false;
+        if (type === 'feed' && fight.isOfficial) return false;
       }
-    }
+      if (category && fight.category !== category) return false;
+      if (status && fight.status !== status) return false;
+      return true;
+    });
 
-    if (category) {
-      query.category = category;
-    }
-
-    if (status) {
-      query.status = status;
-    }
-
-    // Get total count for pagination
-    const totalFights = await Fight.countDocuments(query);
-
-    // Get fights with pagination
-    const fights = await Fight.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-
-    // Add creator info and vote counts
-    const fightsWithDetails = await Promise.all(fights.map(async (fight) => {
-      const creator = await User.findById(fight.createdBy);
-      const voteCount = await Vote.countDocuments({ fightId: fight._id });
-      const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
-      const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
-
-      return {
-        ...fight.toObject(),
-        id: fight._id.toString(),
-        createdByUsername: creator ? creator.username : 'Nieznany',
-        votes: {
-          fighter1: teamAVotes,
-          fighter2: teamBVotes,
-          teamA: teamAVotes,
-          teamB: teamBVotes,
-          total: voteCount
-        },
-        votesA: teamAVotes,
-        votesB: teamBVotes
-      };
-    }));
+    const totalFights = filtered.length;
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 10;
+    const sorted = [...filtered].sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
 
     res.json({
-      fights: fightsWithDetails,
+      fights: sorted
+        .slice((pageNumber - 1) * limitNumber, pageNumber * limitNumber)
+        .map((fight) => normalizeFight(fight, db)),
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalFights / limit),
+        currentPage: pageNumber,
+        totalPages: Math.ceil(totalFights / limitNumber) || 1,
         totalFights,
-        hasNext: page * limit < totalFights,
-        hasPrev: page > 1
+        hasNext: pageNumber * limitNumber < totalFights,
+        hasPrev: pageNumber > 1
       }
     });
   } catch (error) {
@@ -146,40 +230,17 @@ export const getFights = async (req, res) => {
 // @access  Public
 export const getFight = async (req, res) => {
   try {
-    const fight = await Fight.findById(req.params.id);
+    const db = await readDb();
+    const fight = (db.fights || []).find((entry) => entry.id === req.params.id);
     if (!fight) {
-      return res.status(404).json({ msg: 'Walka nie znaleziona' });
+      return res.status(404).json({ msg: 'Fight not found' });
     }
 
-    // Get creator info
-    const creator = await User.findById(fight.createdBy);
+    const comments = (db.comments || [])
+      .filter((comment) => comment.type === 'fight' && comment.fightId === fight.id)
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
-    // Get vote counts
-    const totalVotes = await Vote.countDocuments({ fightId: fight._id });
-    const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
-    const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
-
-    // Get comments
-    const comments = await Comment.find({ fightId: fight._id.toString(), type: 'fight' })
-      .sort({ createdAt: -1 });
-
-    const fightWithDetails = {
-      ...fight.toObject(),
-      id: fight._id.toString(),
-      createdByUsername: creator ? creator.username : 'Nieznany',
-      votes: {
-        fighter1: teamAVotes,
-        fighter2: teamBVotes,
-        teamA: teamAVotes,
-        teamB: teamBVotes,
-        total: totalVotes
-      },
-      votesA: teamAVotes,
-      votesB: teamBVotes,
-      comments
-    };
-
-    res.json(fightWithDetails);
+    res.json({ ...normalizeFight(fight, db), comments });
   } catch (error) {
     console.error('Error getting fight:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -191,34 +252,52 @@ export const getFight = async (req, res) => {
 // @access  Private (Moderator only)
 export const updateFight = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (user.role !== 'moderator') {
-      return res.status(403).json({ msg: 'Tylko moderatorzy mogą edytować walki' });
-    }
+    let updatedFight;
 
-    const fight = await Fight.findById(req.params.id);
-    if (!fight) {
-      return res.status(404).json({ msg: 'Walka nie znaleziona' });
-    }
-
-    const { title, description, status, winner, endDate } = req.body;
-
-    if (title) fight.title = title;
-    if (description) fight.description = description;
-    if (status) fight.status = status;
-    if (winner) {
-      fight.result.winner = winner;
-      if (status === 'finished') {
-        fight.result.finishedAt = new Date();
+    await updateDb((db) => {
+      const user = findUserById(db, req.user.id);
+      if (!user || user.role !== 'moderator') {
+        const error = new Error('Access denied');
+        error.code = 'ACCESS_DENIED';
+        throw error;
       }
-    }
-    if (endDate) fight.timer.endTime = new Date(endDate);
 
-    fight.updatedAt = new Date();
-    await fight.save();
+      const fight = (db.fights || []).find((entry) => entry.id === req.params.id);
+      if (!fight) {
+        const error = new Error('Fight not found');
+        error.code = 'FIGHT_NOT_FOUND';
+        throw error;
+      }
 
-    res.json({ msg: 'Walka zaktualizowana', fight });
+      const { title, description, status, winner, endDate } = req.body;
+
+      if (title !== undefined) fight.title = title;
+      if (description !== undefined) fight.description = description;
+      if (status !== undefined) fight.status = status;
+      if (winner) {
+        fight.result = fight.result || {};
+        fight.result.winner = winner;
+        fight.result.finishedAt = new Date().toISOString();
+      }
+      if (endDate) {
+        fight.endDate = new Date(endDate).toISOString();
+        fight.timer = fight.timer || {};
+        fight.timer.endTime = fight.endDate;
+      }
+
+      fight.updatedAt = new Date().toISOString();
+      updatedFight = fight;
+      return db;
+    });
+
+    res.json({ msg: 'Fight updated', fight: updatedFight });
   } catch (error) {
+    if (error.code === 'ACCESS_DENIED') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+    if (error.code === 'FIGHT_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Fight not found' });
+    }
     console.error('Error updating fight:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -229,25 +308,40 @@ export const updateFight = async (req, res) => {
 // @access  Private (Moderator only)
 export const deleteFight = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (user.role !== 'moderator') {
-      return res.status(403).json({ msg: 'Tylko moderatorzy mogą usuwać walki' });
-    }
+    await updateDb((db) => {
+      const user = findUserById(db, req.user.id);
+      if (!user || user.role !== 'moderator') {
+        const error = new Error('Access denied');
+        error.code = 'ACCESS_DENIED';
+        throw error;
+      }
 
-    const fight = await Fight.findById(req.params.id);
-    if (!fight) {
-      return res.status(404).json({ msg: 'Walka nie znaleziona' });
-    }
+      const fightIndex = (db.fights || []).findIndex(
+        (entry) => entry.id === req.params.id
+      );
+      if (fightIndex === -1) {
+        const error = new Error('Fight not found');
+        error.code = 'FIGHT_NOT_FOUND';
+        throw error;
+      }
 
-    // Remove associated votes and comments
-    await Vote.deleteMany({ fightId: fight._id });
-    await Comment.deleteMany({ fightId: fight._id.toString(), type: 'fight' });
+      const fightId = db.fights[fightIndex].id;
+      db.fights.splice(fightIndex, 1);
+      db.votes = (db.votes || []).filter((vote) => vote.fightId !== fightId);
+      db.comments = (db.comments || []).filter(
+        (comment) => comment.fightId !== fightId
+      );
+      return db;
+    });
 
-    // Remove fight
-    await Fight.findByIdAndDelete(req.params.id);
-
-    res.json({ msg: 'Walka została usunięta' });
+    res.json({ msg: 'Fight deleted' });
   } catch (error) {
+    if (error.code === 'ACCESS_DENIED') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+    if (error.code === 'FIGHT_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Fight not found' });
+    }
     console.error('Error deleting fight:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -256,7 +350,7 @@ export const deleteFight = async (req, res) => {
 // @desc    Get fight categories
 // @route   GET /api/fights/categories
 // @access  Public
-export const getCategories = async (req, res) => {
+export const getCategories = async (_req, res) => {
   const categories = [
     'Anime',
     'Marvel',
@@ -269,7 +363,7 @@ export const getCategories = async (req, res) => {
     'History',
     'Mixed'
   ];
-  
+
   res.json(categories);
 };
 
@@ -278,53 +372,70 @@ export const getCategories = async (req, res) => {
 // @access  Private (Moderator only)
 export const endFight = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id);
-    if (user.role !== 'moderator') {
-      return res.status(403).json({ msg: 'Tylko moderatorzy mogą kończyć walki' });
-    }
+    let updatedFight;
 
-    const fight = await Fight.findById(req.params.id);
-    if (!fight) {
-      return res.status(404).json({ msg: 'Walka nie znaleziona' });
-    }
-
-    // Count votes
-    const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
-    const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
-
-    let winner;
-    if (teamAVotes > teamBVotes) {
-      winner = 'A';
-    } else if (teamBVotes > teamAVotes) {
-      winner = 'B';
-    } else {
-      winner = 'draw';
-    }
-
-    fight.status = 'finished';
-    fight.result.winner = winner;
-    fight.result.finishedAt = new Date();
-    fight.result.finalVotesA = teamAVotes;
-    fight.result.finalVotesB = teamBVotes;
-    fight.result.method = 'moderator';
-
-    // Award points to users who voted for the winner
-    if (winner !== 'draw') {
-      const winningVotes = await Vote.find({
-        fightId: fight._id,
-        team: winner === 'A' ? { $in: ['A', 'teamA'] } : { $in: ['B', 'teamB'] }
-      });
-
-      for (const vote of winningVotes) {
-        await User.findByIdAndUpdate(vote.userId, {
-          $inc: { 'stats.points': 10 }
-        });
+    await updateDb((db) => {
+      const user = findUserById(db, req.user.id);
+      if (!user || user.role !== 'moderator') {
+        const error = new Error('Access denied');
+        error.code = 'ACCESS_DENIED';
+        throw error;
       }
-    }
 
-    await fight.save();
-    res.json({ msg: 'Walka zakończona', fight });
+      const fight = (db.fights || []).find((entry) => entry.id === req.params.id);
+      if (!fight) {
+        const error = new Error('Fight not found');
+        error.code = 'FIGHT_NOT_FOUND';
+        throw error;
+      }
+
+      const { teamAVotes, teamBVotes } = countVotesForFight(
+        db.votes || [],
+        fight.id
+      );
+
+      let winner = 'draw';
+      if (teamAVotes > teamBVotes) winner = 'A';
+      if (teamBVotes > teamAVotes) winner = 'B';
+
+      fight.status = 'ended';
+      fight.result = fight.result || {};
+      fight.result.winner = winner;
+      fight.result.finishedAt = new Date().toISOString();
+      fight.result.finalVotesA = teamAVotes;
+      fight.result.finalVotesB = teamBVotes;
+      fight.result.method = 'moderator';
+      fight.updatedAt = new Date().toISOString();
+
+      if (winner !== 'draw') {
+        (db.votes || [])
+          .filter(
+            (vote) =>
+              vote.fightId === fight.id &&
+              ((winner === 'A' && ['A', 'teamA', 'fighter1'].includes(vote.team)) ||
+                (winner === 'B' && ['B', 'teamB', 'fighter2'].includes(vote.team)))
+          )
+          .forEach((vote) => {
+            const votedUser = findUserById(db, vote.userId);
+            if (votedUser) {
+              votedUser.stats = votedUser.stats || {};
+              votedUser.stats.points = (votedUser.stats.points || 0) + 10;
+            }
+          });
+      }
+
+      updatedFight = fight;
+      return db;
+    });
+
+    res.json({ msg: 'Fight ended', fight: updatedFight });
   } catch (error) {
+    if (error.code === 'ACCESS_DENIED') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+    if (error.code === 'FIGHT_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Fight not found' });
+    }
     console.error('Error ending fight:', error);
     res.status(500).json({ msg: 'Server error' });
   }

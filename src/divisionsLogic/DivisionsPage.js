@@ -15,9 +15,9 @@ const DivisionsPage = () => {
   const [userDivisions, setUserDivisions] = useState({});
   const [divisionStats, setDivisionStats] = useState({});
   const [divisionChampions, setDivisionChampions] = useState({});
+  const [divisionHistory, setDivisionHistory] = useState({});
   const [selectedDivision, setSelectedDivision] = useState(null);
   const [showTeamSelection, setShowTeamSelection] = useState(false);
-  const [loading, setLoading] = useState(true);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [divisionToLeave, setDivisionToLeave] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -96,73 +96,23 @@ const DivisionsPage = () => {
     }
   }, [token]);
 
-  const fetchDivisionStats = useCallback(async () => {
+  const fetchDivisionOverview = useCallback(async () => {
     try {
-      const statsPromises = divisionsData.map(division => 
-        axios.get(`/api/divisions/${division.id}/stats`)
-      );
-      const statsResponses = await Promise.all(statsPromises);
-      const stats = {};
-      statsResponses.forEach((response, index) => {
-        stats[divisionsData[index].id] = response.data;
-      });
-      setDivisionStats(stats);
+      const response = await axios.get('/api/divisions/overview');
+      setDivisionStats(response.data.stats || {});
+      setDivisionChampions(response.data.champions || {});
+      setTitleFights(response.data.titleFights || {});
+      setActiveFights(response.data.activeFights || {});
+      setDivisionHistory(response.data.championshipHistory || {});
     } catch (error) {
-      console.error('Error fetching division stats:', error);
+      console.error('Error fetching division overview:', error);
       setDivisionStats({});
-    }
-  }, [divisionsData]);
-
-  const fetchDivisionChampions = useCallback(async () => {
-    try {
-      const championPromises = divisionsData.map(division => 
-        axios.get(`/api/divisions/${division.id}/champion`)
-      );
-      const championResponses = await Promise.all(championPromises);
-      const champions = {};
-      championResponses.forEach((response, index) => {
-        champions[divisionsData[index].id] = response.data.champion;
-      });
-      setDivisionChampions(champions);
-    } catch (error) {
-      console.error('Error fetching division champions:', error);
       setDivisionChampions({});
-    }
-  }, [divisionsData]);
-
-  const fetchTitleFights = useCallback(async () => {
-    try {
-      const titleFightPromises = divisionsData.map(division =>
-        axios.get(`/api/divisions/${division.id}/title-fights`)
-      );
-      const titleFightResponses = await Promise.all(titleFightPromises);
-      const fights = {};
-      titleFightResponses.forEach((response, index) => {
-        fights[divisionsData[index].id] = response.data.titleFights || [];
-      });
-      setTitleFights(fights);
-    } catch (error) {
-      console.error('Error fetching title fights:', error);
       setTitleFights({});
-    }
-  }, [divisionsData]);
-
-  const fetchActiveFights = useCallback(async () => {
-    try {
-      const activeFightPromises = divisionsData.map(division =>
-        axios.get(`/api/divisions/${division.id}/active-fights`)
-      );
-      const activeFightResponses = await Promise.all(activeFightPromises);
-      const fights = {};
-      activeFightResponses.forEach((response, index) => {
-        fights[divisionsData[index].id] = response.data.activeFights || [];
-      });
-      setActiveFights(fights);
-    } catch (error) {
-      console.error('Error fetching active fights:', error);
       setActiveFights({});
+      setDivisionHistory({});
     }
-  }, [divisionsData]);
+  }, []);
 
   const fetchCurrentUser = useCallback(async () => {
     try {
@@ -180,20 +130,19 @@ const DivisionsPage = () => {
       navigate('/login');
       return;
     }
+
+    setDivisions(divisionsData);
     
     const loadData = async () => {
-      await fetchCurrentUser();
-      await fetchUserDivisions();
-      await fetchDivisionStats();
-      await fetchDivisionChampions();
-      await fetchTitleFights();
-      await fetchActiveFights();
-      setDivisions(divisionsData);
-      setLoading(false);
+      await Promise.all([
+        fetchCurrentUser(),
+        fetchUserDivisions(),
+        fetchDivisionOverview()
+      ]);
     };
     
     loadData();
-  }, [token, navigate, divisionsData, fetchCurrentUser, fetchUserDivisions, fetchDivisionStats, fetchDivisionChampions, fetchTitleFights, fetchActiveFights]);
+  }, [token, navigate, divisionsData, fetchCurrentUser, fetchUserDivisions, fetchDivisionOverview]);
 
   const handleJoinDivision = (division) => {
     setSelectedDivision(division);
@@ -227,7 +176,7 @@ const DivisionsPage = () => {
 
       // Refresh user divisions and stats
       console.log('🔄 Refreshing user divisions and stats...');
-      await Promise.all([fetchUserDivisions(), fetchDivisionStats(), fetchTitleFights(), fetchActiveFights()]);
+      await Promise.all([fetchUserDivisions(), fetchDivisionOverview()]);
       setShowTeamSelection(false);
       setSelectedDivision(null);
       console.log('✅ Division join process completed');
@@ -254,7 +203,7 @@ const DivisionsPage = () => {
         headers: { 'x-auth-token': token }
       });
 
-      await Promise.all([fetchUserDivisions(), fetchDivisionStats(), fetchTitleFights(), fetchActiveFights()]);
+      await Promise.all([fetchUserDivisions(), fetchDivisionOverview()]);
       setShowLeaveModal(false);
       setDivisionToLeave(null);
     } catch (error) {
@@ -270,17 +219,6 @@ const DivisionsPage = () => {
   const getUserTeamInDivision = (divisionId) => {
     return userDivisions && userDivisions[divisionId];
   };
-
-  if (loading) {
-    return (
-      <div className="divisions-page">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>{t('loading')}</p>
-        </div>
-      </div>
-    );
-  }
 
   if (showTeamSelection) {
     return (
@@ -409,6 +347,7 @@ const DivisionsPage = () => {
               <ChampionshipHistory
                 divisionId={division.id}
                 divisionName={division.name}
+                initialHistory={divisionHistory[division.id]}
               />
 
               {/* Contender Matches */}

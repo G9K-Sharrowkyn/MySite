@@ -136,10 +136,16 @@ const NotificationsPage = () => {
       case 'message':
         return `/messages/conversation/${data?.senderId}`;
       case 'comment':
+        if (data?.postId) {
+          return `/post/${data.postId}`;
+        }
         if (data?.fightId) {
           return `/fight/${data.fightId}`;
         }
-        return `/profile/${data?.authorId}`;
+        if (data?.profileId) {
+          return `/profile/${data.profileId}`;
+        }
+        return data?.authorId ? `/profile/${data.authorId}` : null;
       case 'like':
         return `/profile/me`;
       case 'fight_result':

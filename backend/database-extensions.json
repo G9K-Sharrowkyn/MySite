@@ -68,15 +68,7 @@
         }
       }
     },
-    "fighterProposals": {
-      "description": "System już istnieje - sprawdzić completeness",
-      "required_fields": [
-        "imageUpload",
-        "moderatorNotifications",
-        "autoApproval"
-      ]
-    },
-    "bets": {
+"bets": {
       "new_fields": {
         "parlayBets": {
           "type": "array",

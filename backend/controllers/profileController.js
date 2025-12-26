@@ -1,43 +1,43 @@
-import User from '../models/User.js';
-import Character from '../models/Character.js';
-import Fight from '../models/Fight.js';
+import { readDb, updateDb } from '../services/jsonDb.js';
+import { buildProfileFights } from '../utils/profileFights.js';
 
-export const calculateRank = (victories, totalFights, winRate) => {
-  // Base rank calculation on victories
-  let baseRank = 'Rookie';
-  if (victories >= 100) baseRank = 'Mythic';
-  else if (victories >= 75) baseRank = 'Legend';
-  else if (victories >= 50) baseRank = 'Grandmaster';
-  else if (victories >= 35) baseRank = 'Master';
-  else if (victories >= 20) baseRank = 'Champion';
-  else if (victories >= 10) baseRank = 'Warrior';
-  else if (victories >= 5) baseRank = 'Fighter';
-  else if (victories >= 1) baseRank = 'Novice';
+const resolveUserId = (user) => user?.id || user?._id;
 
-  // Bonus ranks for exceptional performance
-  if (totalFights >= 20 && winRate >= 90) {
-    const rankOrder = ['Rookie', 'Novice', 'Fighter', 'Warrior', 'Champion', 'Master', 'Grandmaster', 'Legend', 'Mythic'];
-    const currentIndex = rankOrder.indexOf(baseRank);
-    if (currentIndex < rankOrder.length - 1) {
-      baseRank = rankOrder[currentIndex + 1];
+const buildProfileResponse = (user, includeEmail = false, db = null) => {
+  const profile = user.profile || {};
+  const stats = user.stats || {};
+  const description = profile.description || profile.bio || '';
+
+  const fights = db
+    ? buildProfileFights(db, resolveUserId(user))
+    : user.fights || [];
+
+  return {
+    id: resolveUserId(user),
+    username: user.username,
+    ...(includeEmail ? { email: user.email } : {}),
+    role: user.role || 'user',
+    description,
+    profilePicture: profile.profilePicture || profile.avatar || '',
+    points: stats.points || 0,
+    rank: stats.rank || 'Rookie',
+    stats: {
+      fightsWon: stats.fightsWon || 0,
+      fightsLost: stats.fightsLost || 0,
+      fightsDrawn: stats.fightsDrawn || 0,
+      fightsNoContest: stats.fightsNoContest || 0,
+      totalFights: stats.totalFights || 0,
+      winRate: stats.winRate || 0
+    },
+    divisions: user.divisions || {},
+    fights,
+    joinDate: profile.joinDate || user.createdAt || new Date().toISOString(),
+    lastActive: profile.lastActive || user.updatedAt || new Date().toISOString(),
+    profile: {
+      ...profile,
+      backgroundImage: profile.backgroundImage || ''
     }
-  }
-
-  return baseRank;
-};
-
-const calculatePoints = (victories, losses, draws, winRate) => {
-  let points = 0;
-  points += victories * 10; // 10 points per victory
-  points += draws * 3; // 3 points per draw
-  points -= losses * 2; // -2 points per loss
-
-  // Bonus points for high win rate
-  if (winRate >= 80) points += victories * 5;
-  else if (winRate >= 60) points += victories * 3;
-  else if (winRate >= 40) points += victories * 1;
-
-  return Math.max(0, points); // Never go below 0
+  };
 };
 
 // @desc    Get current user's profile
@@ -45,82 +45,14 @@ const calculatePoints = (victories, losses, draws, winRate) => {
 // @access  Private
 export const getMyProfile = async (req, res) => {
   try {
-    console.log('Get my profile request received:', {
-      userId: req.user.id
-    });
-
-    const user = await User.findById(req.user.id).select('-password');
+    const db = await readDb();
+    const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
 
     if (!user) {
-      console.error('User not found:', req.user.id);
-      return res.status(404).json({ msg: 'Użytkownik nie znaleziony' });
+      return res.status(404).json({ msg: 'User not found' });
     }
 
-    // Normalize profile data structure
-    const profile = user.profile || {};
-    const stats = user.stats || {
-      fightsWon: 0,
-      fightsLost: 0,
-      fightsDrawn: 0,
-      fightsNoContest: 0,
-      totalFights: 0,
-      winRate: 0
-    };
-
-    const avatar = profile.avatar || profile.profilePicture || '';
-    const description = profile.description || profile.bio || '';
-
-    // Get user's selected characters
-    const selectedCharacterIds = profile.favoriteCharacters || [];
-    const characters = await Character.find({ _id: { $in: selectedCharacterIds } });
-
-    // Get user's fights
-    const fights = await Fight.find({
-      $or: [
-        { 'teamA.userId': user._id },
-        { 'teamB.userId': user._id }
-      ]
-    });
-
-    // Calculate fight statistics
-    const victories = fights.filter(fight =>
-      fight.winnerId && fight.winnerId.toString() === user._id.toString()
-    ).length;
-
-    const losses = fights.filter(fight =>
-      fight.winnerId && fight.winnerId.toString() !== user._id.toString() && fight.result !== 'draw'
-    ).length;
-
-    const draws = fights.filter(fight =>
-      fight.result === 'draw'
-    ).length;
-
-    const totalFights = fights.length;
-    const winRate = totalFights > 0 ? ((victories / totalFights) * 100).toFixed(1) : 0;
-    const calculatedRank = calculateRank(victories, totalFights, parseFloat(winRate));
-    const calculatedPoints = calculatePoints(victories, losses, draws, parseFloat(winRate));
-
-    res.json({
-      id: user._id,
-      username: user.username,
-      email: user.email,
-      description,
-      profilePicture: avatar,
-      points: calculatedPoints,
-      rank: calculatedRank,
-      stats: {
-        fightsWon: victories,
-        fightsLost: losses,
-        fightsDrawn: draws,
-        fightsNoContest: stats.fightsNoContest || 0,
-        totalFights,
-        winRate: parseFloat(winRate)
-      },
-      characters,
-      fights,
-      joinDate: profile.joinDate || user.createdAt || new Date().toISOString(),
-      lastActive: profile.lastActive || new Date().toISOString()
-    });
+    res.json(buildProfileResponse(user, true, db));
   } catch (error) {
     console.error('Error fetching my profile:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -132,76 +64,14 @@ export const getMyProfile = async (req, res) => {
 // @access  Public
 export const getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId).select('-password -email');
+    const db = await readDb();
+    const user = db.users.find((entry) => resolveUserId(entry) === req.params.userId);
 
     if (!user) {
-      return res.status(404).json({ msg: 'Użytkownik nie znaleziony' });
+      return res.status(404).json({ msg: 'User not found' });
     }
 
-    // Normalize profile data structure
-    const profile = user.profile || {};
-    const stats = user.stats || {
-      fightsWon: 0,
-      fightsLost: 0,
-      fightsDrawn: 0,
-      fightsNoContest: 0,
-      totalFights: 0,
-      winRate: 0
-    };
-
-    const avatar = profile.avatar || profile.profilePicture || '';
-    const description = profile.description || profile.bio || '';
-
-    // Get user's selected characters
-    const selectedCharacterIds = profile.favoriteCharacters || [];
-    const characters = await Character.find({ _id: { $in: selectedCharacterIds } });
-
-    // Get user's fights
-    const fights = await Fight.find({
-      $or: [
-        { 'teamA.userId': user._id },
-        { 'teamB.userId': user._id }
-      ]
-    });
-
-    // Calculate fight statistics
-    const victories = fights.filter(fight =>
-      fight.winnerId && fight.winnerId.toString() === user._id.toString()
-    ).length;
-
-    const losses = fights.filter(fight =>
-      fight.winnerId && fight.winnerId.toString() !== user._id.toString() && fight.result !== 'draw'
-    ).length;
-
-    const draws = fights.filter(fight =>
-      fight.result === 'draw'
-    ).length;
-
-    const totalFights = fights.length;
-    const winRate = totalFights > 0 ? ((victories / totalFights) * 100).toFixed(1) : 0;
-    const calculatedRank = calculateRank(victories, totalFights, parseFloat(winRate));
-    const calculatedPoints = calculatePoints(victories, losses, draws, parseFloat(winRate));
-
-    res.json({
-      id: user._id,
-      username: user.username,
-      description,
-      profilePicture: avatar,
-      points: calculatedPoints,
-      rank: calculatedRank,
-      stats: {
-        fightsWon: victories,
-        fightsLost: losses,
-        fightsDrawn: draws,
-        fightsNoContest: stats.fightsNoContest || 0,
-        totalFights,
-        winRate: parseFloat(winRate)
-      },
-      characters,
-      fights,
-      joinDate: profile.joinDate || user.createdAt || new Date().toISOString(),
-      lastActive: profile.lastActive || new Date().toISOString()
-    });
+    res.json(buildProfileResponse(user, false, db));
   } catch (error) {
     console.error('Error fetching profile:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -211,15 +81,13 @@ export const getProfile = async (req, res) => {
 // @desc    Get all user profiles (public data only)
 // @route   GET /api/profile/all
 // @access  Public
-export const getAllProfiles = async (req, res) => {
+export const getAllProfiles = async (_req, res) => {
   try {
-    const users = await User.find().select('_id username');
-
-    const profiles = users.map(user => ({
-      id: user._id,
-      username: user.username,
+    const db = await readDb();
+    const profiles = db.users.map((user) => ({
+      id: resolveUserId(user),
+      username: user.username
     }));
-
     res.json(profiles);
   } catch (error) {
     console.error('Error fetching all profiles:', error.message);
@@ -232,50 +100,49 @@ export const getAllProfiles = async (req, res) => {
 // @access  Private
 export const updateProfile = async (req, res) => {
   try {
-    const { description, profilePicture, selectedCharacters } = req.body;
+    const { description, profilePicture, selectedCharacters, backgroundImage } = req.body;
 
-    const user = await User.findById(req.user.id);
+    let updatedUser;
 
-    if (!user) {
-      return res.status(404).json({ msg: 'Użytkownik nie znaleziony' });
-    }
+    await updateDb((db) => {
+      const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
 
-    // Initialize profile object if it doesn't exist
-    if (!user.profile) {
-      user.profile = {
-        bio: '',
-        avatar: '',
-        favoriteCharacters: [],
-        joinDate: new Date(),
-        lastActive: new Date()
-      };
-    }
+      user.profile = user.profile || {};
 
-    // Update profile fields
-    if (description !== undefined) {
-      user.profile.description = description;
-      user.profile.bio = description; // Keep both for compatibility
-    }
+      if (description !== undefined) {
+        user.profile.description = description;
+        user.profile.bio = description;
+      }
 
-    if (profilePicture !== undefined) {
-      user.profile.avatar = profilePicture;
-      user.profile.profilePicture = profilePicture; // Keep both for compatibility
-    }
+      if (profilePicture !== undefined) {
+        user.profile.profilePicture = profilePicture;
+        user.profile.avatar = profilePicture;
+      }
 
-    if (selectedCharacters !== undefined) {
-      user.profile.favoriteCharacters = selectedCharacters;
-    }
+      if (backgroundImage !== undefined) {
+        user.profile.backgroundImage = backgroundImage;
+      }
 
-    // Update last active timestamp
-    user.profile.lastActive = new Date();
+      if (selectedCharacters !== undefined) {
+        user.profile.favoriteCharacters = selectedCharacters;
+      }
 
-    await user.save();
+      user.profile.lastActive = new Date().toISOString();
+      user.updatedAt = new Date().toISOString();
+      updatedUser = user;
+      return db;
+    });
 
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    res.json({ msg: 'Profil zaktualizowany', user: userResponse });
+    res.json({ msg: 'Profile updated', user: buildProfileResponse(updatedUser, true) });
   } catch (error) {
+    if (error.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
     console.error('Error updating profile:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -287,22 +154,23 @@ export const updateProfile = async (req, res) => {
 export const searchProfiles = async (req, res) => {
   try {
     const { query } = req.query;
-
     if (!query) {
-      return res.status(400).json({ msg: 'Brak zapytania wyszukiwania' });
+      return res.status(400).json({ msg: 'Query is required' });
     }
 
-    const users = await User.find({
-      username: { $regex: query, $options: 'i' }
-    }).select('_id username profile.profilePicture profile.avatar');
+    const db = await readDb();
+    const q = query.toLowerCase();
+    const users = db.users.filter((user) =>
+      (user.username || '').toLowerCase().includes(q)
+    );
 
-    const filteredUsers = users.map(user => ({
-      id: user._id,
+    const result = users.map((user) => ({
+      id: resolveUserId(user),
       username: user.username,
-      profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
+      profilePicture: user.profile?.profilePicture || user.profile?.avatar || ''
     }));
 
-    res.json(filteredUsers);
+    res.json(result);
   } catch (error) {
     console.error('Error searching profiles:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -312,65 +180,32 @@ export const searchProfiles = async (req, res) => {
 // @desc    Get user leaderboard
 // @route   GET /api/profile/leaderboard
 // @access  Public
-export const getLeaderboard = async (req, res) => {
+export const getLeaderboard = async (_req, res) => {
   try {
-    const users = await User.find().select('-password -email');
-
-    // Get all users and calculate their stats
-    const usersWithStats = await Promise.all(users.map(async (user) => {
-      const userFights = await Fight.find({
-        $or: [
-          { 'teamA.userId': user._id },
-          { 'teamB.userId': user._id }
-        ]
-      });
-
-      const victories = userFights.filter(fight =>
-        fight.winnerId && fight.winnerId.toString() === user._id.toString()
-      ).length;
-
-      const losses = userFights.filter(fight =>
-        fight.winnerId && fight.winnerId.toString() !== user._id.toString() && fight.result !== 'draw'
-      ).length;
-
-      const draws = userFights.filter(fight =>
-        fight.result === 'draw'
-      ).length;
-
-      const totalFights = userFights.length;
-      const winRate = totalFights > 0 ? (victories / totalFights * 100).toFixed(1) : 0;
-
-      const profile = user.profile || {};
-      const avatar = profile.avatar || profile.profilePicture || '';
-      const calculatedRank = calculateRank(victories, totalFights, parseFloat(winRate));
-      const calculatedPoints = calculatePoints(victories, losses, draws, parseFloat(winRate));
-
+    const db = await readDb();
+    const users = db.users.map((user) => {
+      const stats = user.stats || {};
       return {
-        id: user._id,
+        id: resolveUserId(user),
         username: user.username,
-        profilePicture: avatar,
-        victories,
-        losses,
-        draws,
-        totalFights,
-        winRate: parseFloat(winRate),
-        rank: calculatedRank,
-        points: calculatedPoints
+        profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
+        victories: stats.fightsWon || 0,
+        losses: stats.fightsLost || 0,
+        draws: stats.fightsDrawn || 0,
+        totalFights: stats.totalFights || 0,
+        winRate: stats.winRate || 0,
+        rank: stats.rank || 'Rookie',
+        points: stats.points || 0
       };
-    }));
+    });
 
-    // Sort users by points (descending), then by victories (descending), then by username (ascending)
-    const sortedUsers = usersWithStats.sort((a, b) => {
-      if (b.points !== a.points) {
-        return b.points - a.points;
-      }
-      if (b.victories !== a.victories) {
-        return b.victories - a.victories;
-      }
+    const sorted = users.sort((a, b) => {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.victories !== a.victories) return b.victories - a.victories;
       return a.username.localeCompare(b.username);
     });
 
-    res.json(sortedUsers);
+    res.json(sorted);
   } catch (error) {
     console.error('Error fetching leaderboard:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });

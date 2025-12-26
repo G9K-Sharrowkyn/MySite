@@ -15,7 +15,7 @@ export const useLanguage = () => {
 
 export const LanguageProvider = ({ children }) => {
   const [currentLanguage, setCurrentLanguage] = useState('en');
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
 
   useEffect(() => {
     // Load saved language from localStorage
@@ -26,7 +26,10 @@ export const LanguageProvider = ({ children }) => {
 
     // Load saved theme from localStorage
     const savedTheme = localStorage.getItem('geekfights-theme');
-    if (savedTheme === 'dark') {
+    if (savedTheme === 'light') {
+      setIsDarkMode(false);
+      document.body.classList.remove('dark-mode');
+    } else {
       setIsDarkMode(true);
       document.body.classList.add('dark-mode');
     }

@@ -39,7 +39,8 @@ const FightDetailPage = () => {
   const fetchComments = async () => {
     try {
       const response = await axios.get(`/api/comments/fight/${fightId}`);
-      setComments(response.data.comments);
+      const payload = response.data;
+      setComments(payload?.comments || payload || []);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }

@@ -11,7 +11,6 @@
     "ajv-keywords": "^5.1.0",
     "axios": "^1.10.0",
     "concurrently": "^9.2.0",
-    "mongodb": "^6.17.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-i18next": "^15.6.1",
@@ -29,7 +28,7 @@
     "backend": "cd backend && node server.js",
     "dev": "concurrently \"npm run backend\" \"npm start\""
   },
-  "proxy": "http://localhost:5000",
+  "proxy": "http://localhost:5001",
   "eslintConfig": {
     "extends": [
       "react-app",

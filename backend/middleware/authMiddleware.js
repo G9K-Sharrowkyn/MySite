@@ -2,7 +2,11 @@ import jwt from 'jsonwebtoken';
 
 export default function (req, res, next) {
   // Get token from header
-  const token = req.header('x-auth-token');
+  const authHeader = req.header('authorization') || req.header('Authorization');
+  const bearerToken = authHeader?.startsWith('Bearer ')
+    ? authHeader.slice(7).trim()
+    : null;
+  const token = bearerToken || req.header('x-auth-token');
 
   // Check if not token
   if (!token) {

@@ -59,7 +59,7 @@
 
     22. 6. **Technology Stack:**
 - Node.js with Express.js (or Fastify)
-- PostgreSQL or MongoDB (with user schema + GDPR metadata)
+- PostgreSQL or another SQL database (with user schema + GDPR metadata)
 - OpenAPI 3.0-compliant documentation
 - REST API or GraphQL (either is fine)
 - Include CORS config and helmet.js for security

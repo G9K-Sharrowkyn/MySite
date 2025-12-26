@@ -32,10 +32,8 @@ export const registerValidation = [
     .normalizeEmail(),
 
   body('password')
-    .isLength({ min: 8 })
-    .withMessage('Password must be at least 8 characters long')
-    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one uppercase letter, one lowercase letter, and one number'),
+    .isLength({ min: 6 })
+    .withMessage('Password must be at least 6 characters long'),
 
   validate
 ];
@@ -158,33 +156,6 @@ export const betValidation = [
 ];
 
 /**
- * Fighter proposal validation rules
- */
-export const fighterProposalValidation = [
-  body('name')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Fighter name must be between 2 and 100 characters'),
-
-  body('universe')
-    .trim()
-    .isLength({ min: 2, max: 100 })
-    .withMessage('Universe must be between 2 and 100 characters'),
-
-  body('imageUrl')
-    .trim()
-    .notEmpty()
-    .withMessage('Image is required for fighter proposal'),
-
-  body('suggestedDivision')
-    .optional()
-    .isIn(['regular-people', 'metahuman', 'planet-busters', 'god-tier', 'universal-threat', 'omnipotent'])
-    .withMessage('Invalid division ID'),
-
-  validate
-];
-
-/**
  * Sanitize user input to prevent XSS
  */
 export const sanitizeInput = (req, res, next) => {
@@ -218,6 +189,5 @@ export default {
   commentValidation,
   divisionJoinValidation,
   betValidation,
-  fighterProposalValidation,
   sanitizeInput
 };

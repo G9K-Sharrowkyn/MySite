@@ -1,14 +1,63 @@
 import express from 'express';
-import { getAllPosts, createPost, getPostById, updatePost, deletePost, toggleLike, addReaction } from '../controllers/postController.js';
+import {
+  getAllPosts,
+  createPost,
+  getPostById,
+  getPostsByUser,
+  updatePost,
+  deletePost,
+  toggleLike,
+  voteInFight,
+  voteInPoll,
+  addReaction,
+  removeReaction
+} from '../controllers/postController.js';
 import auth from '../middleware/auth.js';
-import Post from '../models/Post.js';
+import { readDb } from '../services/jsonDb.js';
 
 const router = express.Router();
+
+const normalizeFightTeam = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => (typeof entry === 'string' ? entry : entry?.name))
+      .filter(Boolean)
+      .join(', ');
+  }
+  if (typeof value === 'string') return value;
+  return value ? String(value) : '';
+};
+
+const collectTags = (posts) => {
+  const counts = new Map();
+  posts.forEach((post) => {
+    const tags = new Set();
+    (post.tags || []).forEach((tag) => tags.add(String(tag).trim()));
+    const autoTags = post.autoTags || {};
+    (autoTags.universes || []).forEach((tag) => tags.add(String(tag).trim()));
+    (autoTags.characters || []).forEach((tag) => tags.add(String(tag).trim()));
+    (autoTags.powerTiers || []).forEach((tag) => tags.add(String(tag).trim()));
+    (autoTags.categories || []).forEach((tag) => tags.add(String(tag).trim()));
+
+    tags.forEach((tag) => {
+      if (!tag) return;
+      const key = tag.toLowerCase();
+      counts.set(key, { tag, count: (counts.get(key)?.count || 0) + 1 });
+    });
+  });
+
+  return [...counts.values()].sort((a, b) => b.count - a.count);
+};
 
 // @route   GET api/posts
 // @desc    Get all posts
 // @access  Public
 router.get('/', getAllPosts);
+
+// @route   GET api/posts/user/:userId
+// @desc    Get posts by user
+// @access  Public
+router.get('/user/:userId', getPostsByUser);
 
 // @route   POST api/posts
 // @desc    Create a new post
@@ -23,36 +72,94 @@ router.get('/official', async (req, res) => {
     const { limit = 20, page = 1, sortBy = 'createdAt' } = req.query;
 
     // Build sort object
-    const sortOrder = {};
-    sortOrder[sortBy] = -1; // descending order
+    const db = await readDb();
+    const sortKey = sortBy === 'likes' ? 'likes' : 'createdAt';
+    const officialPosts = db.posts.filter((post) => post.isOfficial);
 
-    // Get total count for pagination
-    const totalPosts = await Post.countDocuments({ isOfficial: true });
+    const sorted = [...officialPosts].sort((a, b) => {
+      if (sortKey === 'likes') {
+        return (b.likes?.length || 0) - (a.likes?.length || 0);
+      }
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
 
-    // Fetch official posts with pagination
-    const posts = await Post.find({ isOfficial: true })
-      .populate('authorId', 'username profilePicture role')
-      .sort(sortOrder)
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit))
-      .lean();
+    const limitNumber = Number(limit);
+    const pageNumber = Number(page);
+    const paged = sorted.slice(
+      (pageNumber - 1) * limitNumber,
+      pageNumber * limitNumber
+    );
 
-    // Format response
-    const formattedPosts = posts.map(post => ({
-      ...post,
-      id: post._id.toString(),
-      author: post.authorId
-    }));
+    const formattedPosts = paged.map((post) => {
+      const author = db.users.find(
+        (user) => (user.id || user._id) === post.authorId
+      );
+      const fight = post.fight
+        ? {
+            ...post.fight,
+            teamA: normalizeFightTeam(post.fight.teamA),
+            teamB: normalizeFightTeam(post.fight.teamB),
+            votes: {
+              teamA: post.fight.votes?.teamA || 0,
+              teamB: post.fight.votes?.teamB || 0,
+              draw: post.fight.votes?.draw || 0,
+              voters: post.fight.votes?.voters || []
+            }
+          }
+        : null;
+      return {
+        ...post,
+        id: post.id || post._id,
+        fight,
+        author: author
+          ? {
+              id: author.id || author._id,
+              username: author.username,
+              profilePicture: author.profile?.profilePicture || author.profile?.avatar || '',
+              role: author.role || 'user'
+            }
+          : null
+      };
+    });
 
     res.json({
       fights: formattedPosts,
       posts: formattedPosts,
-      totalPosts,
-      currentPage: Number(page),
-      totalPages: Math.ceil(totalPosts / limit)
+      totalPosts: officialPosts.length,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(officialPosts.length / limitNumber)
     });
   } catch (error) {
     console.error('Error fetching official posts:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET api/posts/tags/popular
+// @desc    Get popular tags for posts
+// @access  Public
+router.get('/tags/popular', async (req, res) => {
+  try {
+    const limit = Number(req.query.limit || 10);
+    const db = await readDb();
+    const tags = collectTags(db.posts || []).slice(0, limit);
+    res.json(tags);
+  } catch (error) {
+    console.error('Error fetching popular tags:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// @route   GET api/posts/tags/all
+// @desc    Get all tags for posts
+// @access  Public
+router.get('/tags/all', async (_req, res) => {
+  try {
+    const db = await readDb();
+    const tags = collectTags(db.posts || []).map((entry) => entry.tag);
+    res.json(tags);
+  } catch (error) {
+    console.error('Error fetching tags:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -61,6 +168,16 @@ router.get('/official', async (req, res) => {
 // @desc    Get post by ID
 // @access  Public
 router.get('/:id', getPostById);
+
+// @route   POST api/posts/:id/fight-vote
+// @desc    Vote in fight post
+// @access  Private
+router.post('/:id/fight-vote', auth, voteInFight);
+
+// @route   POST api/posts/:id/poll-vote
+// @desc    Vote in poll
+// @access  Private
+router.post('/:id/poll-vote', auth, voteInPoll);
 
 // @route   PUT api/posts/:id
 // @desc    Update post
@@ -82,11 +199,16 @@ router.post('/:id/like', auth, toggleLike);
 // @access  Private
 router.post('/:id/react', auth, addReaction);
 
+// @route   POST api/posts/:id/reaction
+// @desc    Add reaction to post (frontend alias)
+// @access  Private
+router.post('/:id/reaction', auth, addReaction);
+
 // @route   DELETE api/posts/:id/react/:reactionId
 // @desc    Remove reaction from post
 // @access  Private
 router.delete('/:id/react/:reactionId', auth, (req, res) => {
-  res.status(501).json({ message: 'Remove reaction not implemented yet' });
+  return removeReaction(req, res);
 });
 
 export default router;

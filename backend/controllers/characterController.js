@@ -1,13 +1,13 @@
-import Character from '../models/Character.js';
-import User from '../models/User.js';
-import Notification from '../models/Notification.js';
+import { v4 as uuidv4 } from 'uuid';
+import { readDb, updateDb } from '../services/jsonDb.js';
 
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
-export const getCharacters = async (req, res) => {
+export const getCharacters = async (_req, res) => {
   try {
-    const characters = await Character.find({ status: 'active' });
+    const db = await readDb();
+    const characters = db.characters || [];
     res.json(characters);
   } catch (error) {
     console.error('Error fetching characters:', error);
@@ -22,27 +22,40 @@ export const addCharacter = async (req, res) => {
   try {
     const { name, universe, image, powerTier, category } = req.body;
 
-    const newCharacter = await Character.create({
-      name,
-      universe: universe || 'Other',
-      image,
-      images: {
-        primary: image,
-        gallery: [],
-        thumbnail: image
-      },
-      powerTier: powerTier || 'Metahuman',
-      category: category || 'Other',
-      addedBy: req.user.id,
-      status: 'active',
-      moderation: {
-        approved: true,
-        approvedBy: req.user.id,
-        approvedAt: new Date()
-      }
+    if (!name || !image) {
+      return res.status(400).json({ msg: 'Name and image are required' });
+    }
+
+    let created;
+
+    await updateDb((db) => {
+      const newCharacter = {
+        id: uuidv4(),
+        name,
+        universe: universe || 'Other',
+        image,
+        images: {
+          primary: image,
+          gallery: [],
+          thumbnail: image
+        },
+        powerTier: powerTier || 'Metahuman',
+        category: category || 'Other',
+        addedBy: req.user?.id || null,
+        status: 'active',
+        moderation: {
+          approved: true,
+          approvedBy: req.user?.id || null,
+          approvedAt: new Date().toISOString()
+        }
+      };
+
+      db.characters.push(newCharacter);
+      created = newCharacter;
+      return db;
     });
 
-    res.status(201).json(newCharacter);
+    res.status(201).json(created);
   } catch (error) {
     console.error('Error adding character:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -56,25 +69,34 @@ export const updateCharacter = async (req, res) => {
   try {
     const { id } = req.params;
     const { available, status } = req.body;
+    let updated;
 
-    const character = await Character.findById(id);
+    await updateDb((db) => {
+      const character = db.characters.find((entry) => entry.id === id);
 
-    if (!character) {
-      return res.status(404).json({ msg: 'Postać nie znaleziona' });
-    }
+      if (!character) {
+        const error = new Error('Character not found');
+        error.code = 'CHARACTER_NOT_FOUND';
+        throw error;
+      }
 
-    // Update status based on available field
-    if (available !== undefined) {
-      character.status = available ? 'active' : 'inactive';
-    }
+      if (available !== undefined) {
+        character.status = available ? 'active' : 'inactive';
+      }
 
-    if (status !== undefined) {
-      character.status = status;
-    }
+      if (status !== undefined) {
+        character.status = status;
+      }
 
-    await character.save();
-    res.json(character);
+      updated = character;
+      return db;
+    });
+
+    res.json(updated);
   } catch (error) {
+    if (error.code === 'CHARACTER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Character not found' });
+    }
     console.error('Error updating character:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -87,23 +109,25 @@ export const suggestCharacter = async (req, res) => {
   try {
     const { name, photo, universe, powerTier } = req.body;
 
-    // Create notification for moderators
-    const moderators = await User.find({ role: 'moderator' });
-
-    for (const mod of moderators) {
-      await Notification.create({
-        userId: mod._id,
-        type: 'character_suggestion',
-        title: 'New Character Suggestion',
-        message: `User suggested a new character: ${name}`,
-        data: { name, photo, universe, powerTier, suggestedBy: req.user.id },
-        read: false
+    await updateDb((db) => {
+      db.characterSuggestions = Array.isArray(db.characterSuggestions)
+        ? db.characterSuggestions
+        : [];
+      db.characterSuggestions.push({
+        id: uuidv4(),
+        name,
+        photo,
+        universe,
+        powerTier,
+        suggestedBy: req.user?.id || null,
+        createdAt: new Date().toISOString()
       });
-    }
+      return db;
+    });
 
-    res.status(200).json({ msg: 'Character suggestion sent to moderators' });
+    res.status(200).json({ msg: 'Character suggestion saved' });
   } catch (error) {
-    console.error('Error sending character suggestion notification:', error);
+    console.error('Error saving character suggestion:', error);
     res.status(500).json({ msg: 'Server error' });
   }
 };

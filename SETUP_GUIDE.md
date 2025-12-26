@@ -192,7 +192,7 @@ Edit CSS variables in your component files:
 
 Your website is already incredibly feature-complete! Here are some optional enhancements:
 
-1. **Real Database**: Migrate from JSON to MongoDB/PostgreSQL
+1. **Real Database**: Migrate from JSON to a production database (e.g. PostgreSQL)
 2. **Real-time Updates**: Add WebSocket for live voting
 3. **Image Upload**: Allow users to upload character images
 4. **Advanced Tournaments**: Bracket-style tournaments

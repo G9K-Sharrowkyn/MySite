@@ -1,9 +1,4 @@
-import User from '../models/User.js';
-import Fight from '../models/Fight.js';
-import Post from '../models/Post.js';
-import Comment from '../models/Comment.js';
-import Vote from '../models/Vote.js';
-import Message from '../models/Message.js';
+import { readDb, updateDb } from '../services/jsonDb.js';
 
 // Achievement definitions
 const ACHIEVEMENTS = {
@@ -32,7 +27,7 @@ const ACHIEVEMENTS = {
     requirement: 10,
     reward: { experience: 1000, points: 500 }
   },
-
+  
   // Fight achievements
   FIRST_FIGHT: {
     id: 'first_fight',
@@ -58,7 +53,7 @@ const ACHIEVEMENTS = {
     requirement: 100,
     reward: { experience: 500, points: 250 }
   },
-
+  
   // Voting achievements
   ACTIVE_VOTER: {
     id: 'active_voter',
@@ -76,7 +71,7 @@ const ACHIEVEMENTS = {
     requirement: 100,
     reward: { experience: 200, points: 100 }
   },
-
+  
   // Post achievements
   FIRST_POST: {
     id: 'first_post',
@@ -102,7 +97,7 @@ const ACHIEVEMENTS = {
     requirement: 100,
     reward: { experience: 300, points: 150 }
   },
-
+  
   // Comment achievements
   FIRST_COMMENT: {
     id: 'first_comment',
@@ -120,7 +115,7 @@ const ACHIEVEMENTS = {
     requirement: 50,
     reward: { experience: 75, points: 40 }
   },
-
+  
   // Streak achievements
   WINNING_STREAK_3: {
     id: 'winning_streak_3',
@@ -146,7 +141,7 @@ const ACHIEVEMENTS = {
     requirement: 10,
     reward: { experience: 200, points: 100 }
   },
-
+  
   // Division achievements
   DIVISION_CHAMPION: {
     id: 'division_champion',
@@ -167,16 +162,16 @@ const ACHIEVEMENTS = {
 };
 
 // Helper function to check and award achievements
-async function checkAndAwardAchievements(userId, achievementType, currentCount) {
-  const user = await User.findById(userId);
+function checkAndAwardAchievements(db, userId, achievementType, currentCount) {
+  const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
   if (!user) return [];
-
+  
   if (!user.achievements) {
     user.achievements = [];
   }
-
+  
   const awardedAchievements = [];
-
+  
   // Check each achievement of the given type
   Object.values(ACHIEVEMENTS).forEach(achievement => {
     if (achievement.type === achievementType && !user.achievements.some(a => a.id === achievement.id)) {
@@ -192,41 +187,37 @@ async function checkAndAwardAchievements(userId, achievementType, currentCount) 
           requirement: achievement.requirement,
           reward: achievement.reward
         };
-
+        
         user.achievements.push(userAchievement);
-
+        
         // Award rewards
         if (!user.stats) user.stats = { experience: 0, points: 0 };
         if (achievement.reward.experience) {
-          user.stats.experience = (user.stats.experience || 0) + achievement.reward.experience;
+          user.stats.experience += achievement.reward.experience;
         }
         if (achievement.reward.points) {
-          user.stats.points = (user.stats.points || 0) + achievement.reward.points;
+          user.stats.points += achievement.reward.points;
         }
-
+        
         awardedAchievements.push(userAchievement);
       }
     }
   });
-
-  if (awardedAchievements.length > 0) {
-    await user.save();
-  }
-
+  
   return awardedAchievements;
 }
 
 // Helper function to check streak achievements
-async function checkStreakAchievements(userId, currentStreak) {
-  const user = await User.findById(userId);
+function checkStreakAchievements(db, userId, currentStreak) {
+  const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
   if (!user) return [];
-
+  
   if (!user.achievements) {
     user.achievements = [];
   }
-
+  
   const awardedAchievements = [];
-
+  
   // Check streak achievements
   Object.values(ACHIEVEMENTS).forEach(achievement => {
     if (achievement.type === 'streak' && !user.achievements.some(a => a.id === achievement.id)) {
@@ -241,27 +232,23 @@ async function checkStreakAchievements(userId, currentStreak) {
           requirement: achievement.requirement,
           reward: achievement.reward
         };
-
+        
         user.achievements.push(userAchievement);
-
+        
         // Award rewards
         if (!user.stats) user.stats = { experience: 0, points: 0 };
         if (achievement.reward.experience) {
-          user.stats.experience = (user.stats.experience || 0) + achievement.reward.experience;
+          user.stats.experience += achievement.reward.experience;
         }
         if (achievement.reward.points) {
-          user.stats.points = (user.stats.points || 0) + achievement.reward.points;
+          user.stats.points += achievement.reward.points;
         }
-
+        
         awardedAchievements.push(userAchievement);
       }
     }
   });
-
-  if (awardedAchievements.length > 0) {
-    await user.save();
-  }
-
+  
   return awardedAchievements;
 }
 
@@ -269,81 +256,58 @@ async function checkStreakAchievements(userId, currentStreak) {
 // @route   GET /api/stats/site
 // @access  Public
 export const getSiteStats = async (req, res) => {
-  try {
-    const totalUsers = await User.countDocuments();
-    const totalFights = await Fight.countDocuments();
-    const activeFights = await Fight.countDocuments({ status: 'active' });
-    const totalVotes = await Vote.countDocuments();
-    const totalComments = await Comment.countDocuments();
-    const totalMessages = await Message.countDocuments();
+  const db = await readDb();
+  const totalUsers = (db.users || []).length;
+  const totalFights = (db.fights || []).length;
+  const activeFights = (db.fights || []).filter((f) => f.status === 'active').length;
+  const totalVotes = (db.votes || []).length;
+  const totalComments = (db.comments || []).length;
+  const totalMessages = (db.messages || []).length;
 
-    // Calculate most popular categories
-    const categoryStats = await Fight.aggregate([
-      { $match: { category: { $exists: true } } },
-      { $group: { _id: '$category', count: { $sum: 1 } } },
-      { $sort: { count: -1 } }
-    ]);
-
-    const mostPopularCategory = categoryStats.length > 0 ? categoryStats[0]._id : 'Mixed';
-
-    // Calculate most active users (by comments and votes)
-    const commentActivity = await Comment.aggregate([
-      { $group: { _id: '$userId', count: { $sum: 1 } } }
-    ]);
-
-    const voteActivity = await Vote.aggregate([
-      { $group: { _id: '$userId', count: { $sum: 1 } } }
-    ]);
-
-    // Combine activity counts
-    const userActivity = {};
-    commentActivity.forEach(item => {
-      if (item._id) {
-        userActivity[item._id.toString()] = item.count;
-      }
-    });
-    voteActivity.forEach(item => {
-      if (item._id) {
-        const userId = item._id.toString();
-        userActivity[userId] = (userActivity[userId] || 0) + item.count;
-      }
-    });
-
-    let mostActiveUser = null;
-    if (Object.keys(userActivity).length > 0) {
-      const mostActiveUserId = Object.keys(userActivity).reduce((a, b) =>
-        userActivity[a] > userActivity[b] ? a : b
-      );
-      const user = await User.findById(mostActiveUserId).select('_id username');
-      if (user) {
-        mostActiveUser = {
-          id: user._id,
-          username: user.username,
-          activity: userActivity[mostActiveUserId]
-        };
-      }
+  // Calculate most popular categories
+  const categoryStats = {};
+  (db.fights || []).forEach((fight) => {
+    if (fight.category) {
+      categoryStats[fight.category] = (categoryStats[fight.category] || 0) + 1;
     }
+  });
 
-    const categoryStatsObject = {};
-    categoryStats.forEach(stat => {
-      categoryStatsObject[stat._id] = stat.count;
-    });
+  const mostPopularCategory = Object.keys(categoryStats).reduce((a, b) => 
+    categoryStats[a] > categoryStats[b] ? a : b, 'Mixed'
+  );
 
-    res.json({
-      totalUsers,
-      totalFights,
-      activeFights,
-      totalVotes,
-      totalComments,
-      totalMessages,
-      mostPopularCategory,
-      mostActiveUser,
-      categoryStats: categoryStatsObject
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
+  // Calculate most active users (by comments and votes)
+  const userActivity = {};
+  (db.comments || []).forEach((comment) => {
+    userActivity[comment.authorId] = (userActivity[comment.authorId] || 0) + 1;
+  });
+  (db.votes || []).forEach((vote) => {
+    userActivity[vote.userId] = (userActivity[vote.userId] || 0) + 1;
+  });
+
+  const mostActiveUserId = Object.keys(userActivity).reduce((a, b) => 
+    userActivity[a] > userActivity[b] ? a : b, null
+  );
+
+  const mostActiveUser = mostActiveUserId
+    ? (db.users || []).find((u) => u.id === mostActiveUserId || u._id === mostActiveUserId)
+    : null;
+
+  res.json({
+    totalUsers,
+    totalFights,
+    activeFights,
+    totalVotes,
+    totalComments,
+    totalMessages,
+    mostPopularCategory,
+    mostActiveUser: mostActiveUser ? {
+      id: mostActiveUser.id,
+      username: mostActiveUser.username,
+      activity: userActivity[mostActiveUserId]
+    } : null,
+    categoryStats
+  });
 };
 
 // @desc    Get user statistics
@@ -351,35 +315,32 @@ export const getSiteStats = async (req, res) => {
 // @access  Public
 export const getUserStats = async (req, res) => {
   const { userId } = req.params;
-
+  
   try {
-    const user = await User.findById(userId);
-
+    const db = await readDb();
+    const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
+    
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
-
+    
     // Calculate additional stats
-    const userFights = await Fight.find({
-      $or: [
-        { 'teamA.userId': userId },
-        { 'teamB.userId': userId }
-      ]
-    });
-
-    const userPosts = await Post.find({ userId });
-    const userComments = await Comment.find({ userId });
-    const userVotes = await Vote.find({ userId });
-
-    const wins = userFights.filter(f => f.winnerId && f.winnerId.toString() === userId).length;
-
+    const userFights = (db.fights || []).filter(
+      (fight) => Array.isArray(fight.participants) && fight.participants.some((p) => p.userId === userId)
+    );
+    
+    const userPosts = (db.posts || []).filter((p) => p.userId === userId || p.authorId === userId);
+    const userComments = (db.comments || []).filter((c) => c.userId === userId || c.authorId === userId);
+    const userVotes = (db.votes || []).filter((v) => v.userId === userId);
+    
     const stats = {
       ...user.stats,
       fights: {
         total: userFights.length,
-        wins,
-        losses: userFights.filter(f => f.winnerId && f.winnerId.toString() !== userId && f.result !== 'draw').length,
-        winRate: userFights.length > 0 ? (wins / userFights.length * 100).toFixed(1) : 0
+        wins: userFights.filter(f => f.winner === userId).length,
+        losses: userFights.filter(f => f.winner && f.winner !== userId).length,
+        winRate: userFights.length > 0 ? 
+          (userFights.filter(f => f.winner === userId).length / userFights.length * 100).toFixed(1) : 0
       },
       posts: userPosts.length,
       comments: userComments.length,
@@ -388,7 +349,7 @@ export const getUserStats = async (req, res) => {
       level: Math.floor((user.stats?.experience || 0) / 100) + 1,
       experienceToNextLevel: 100 - ((user.stats?.experience || 0) % 100)
     };
-
+    
     res.json(stats);
   } catch (err) {
     console.error(err.message);
@@ -400,82 +361,80 @@ export const getUserStats = async (req, res) => {
 // @route   GET /api/stats/fight/:fightId
 // @access  Public
 export const getFightStats = async (req, res) => {
-  try {
-    const fightId = req.params.fightId;
-    const fight = await Fight.findById(fightId);
+  const db = await readDb();
 
-    if (!fight) {
-      return res.status(404).json({ msg: 'Walka nie znaleziona' });
-    }
+  const fightId = req.params.fightId;
+  const fight = (db.fights || []).find((f) => f.id === fightId);
 
-    // Get vote statistics
-    const fightVotes = await Vote.find({ fightId });
-    const fighter1Votes = fightVotes.filter(v => v.team === 'A' || v.team === 'teamA').length;
-    const fighter2Votes = fightVotes.filter(v => v.team === 'B' || v.team === 'teamB').length;
-    const totalVotes = fightVotes.length;
-
-    // Get comment statistics
-    const fightComments = await Comment.find({ fightId });
-    const totalComments = fightComments.length;
-    const totalCommentLikes = fightComments.reduce((sum, comment) =>
-      sum + (comment.likes || 0), 0
-    );
-
-    // Get hourly vote distribution (last 24 hours)
-    const now = new Date();
-    const hourlyVotes = Array(24).fill(0);
-
-    fightVotes.forEach(vote => {
-      const voteTime = new Date(vote.createdAt);
-      const hoursDiff = Math.floor((now - voteTime) / (1000 * 60 * 60));
-      if (hoursDiff >= 0 && hoursDiff < 24) {
-        hourlyVotes[23 - hoursDiff]++;
-      }
-    });
-
-    res.json({
-      fightId,
-      title: fight.title,
-      status: fight.status,
-      voteStats: {
-        fighter1Votes,
-        fighter2Votes,
-        totalVotes,
-        fighter1Percentage: totalVotes > 0 ? ((fighter1Votes / totalVotes) * 100).toFixed(1) : 0,
-        fighter2Percentage: totalVotes > 0 ? ((fighter2Votes / totalVotes) * 100).toFixed(1) : 0
-      },
-      commentStats: {
-        totalComments,
-        totalCommentLikes,
-        averageLikesPerComment: totalComments > 0 ?
-          (totalCommentLikes / totalComments).toFixed(1) : 0
-      },
-      engagement: {
-        hourlyVotes,
-        peakHour: hourlyVotes.indexOf(Math.max(...hourlyVotes)),
-        engagementRate: totalVotes + totalComments
-      },
-      createdAt: fight.createdAt,
-      endDate: fight.endDate
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+  if (!fight) {
+    return res.status(404).json({ msg: 'Walka nie znaleziona' });
   }
+
+  // Get vote statistics
+  const fightVotes = (db.votes || []).filter((v) => v.fightId === fightId);
+  const fighter1Votes = fightVotes.filter(v => v.choice === 'fighter1').length;
+  const fighter2Votes = fightVotes.filter(v => v.choice === 'fighter2').length;
+  const totalVotes = fightVotes.length;
+
+  // Get comment statistics
+  const fightComments = (db.comments || []).filter((c) => c.fightId === fightId);
+  const totalComments = fightComments.length;
+  const totalCommentLikes = fightComments.reduce((sum, comment) => 
+    sum + (comment.likes || 0), 0
+  );
+
+  // Get hourly vote distribution (last 24 hours)
+  const now = new Date();
+  const hourlyVotes = Array(24).fill(0);
+  
+  fightVotes.forEach(vote => {
+    const voteTime = new Date(vote.createdAt);
+    const hoursDiff = Math.floor((now - voteTime) / (1000 * 60 * 60));
+    if (hoursDiff >= 0 && hoursDiff < 24) {
+      hourlyVotes[23 - hoursDiff]++;
+    }
+  });
+
+  res.json({
+    fightId,
+    title: fight.title,
+    status: fight.status,
+    voteStats: {
+      fighter1Votes,
+      fighter2Votes,
+      totalVotes,
+      fighter1Percentage: totalVotes > 0 ? ((fighter1Votes / totalVotes) * 100).toFixed(1) : 0,
+      fighter2Percentage: totalVotes > 0 ? ((fighter2Votes / totalVotes) * 100).toFixed(1) : 0
+    },
+    commentStats: {
+      totalComments,
+      totalCommentLikes,
+      averageLikesPerComment: totalComments > 0 ? 
+        (totalCommentLikes / totalComments).toFixed(1) : 0
+    },
+    engagement: {
+      hourlyVotes,
+      peakHour: hourlyVotes.indexOf(Math.max(...hourlyVotes)),
+      engagementRate: totalVotes + totalComments
+    },
+    createdAt: fight.createdAt,
+    endDate: fight.endDate
+  });
 };
 
 export const getUserAchievements = async (req, res) => {
   const { userId } = req.params;
-
+  
   try {
-    const user = await User.findById(userId);
-
+    const db = await readDb();
+    const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
+    
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
-
+    
     const achievements = user.achievements || [];
-
+    
     // Add progress for unearned achievements
     const allAchievements = Object.values(ACHIEVEMENTS).map(achievement => {
       const earned = achievements.find(a => a.id === achievement.id);
@@ -506,12 +465,12 @@ export const getUserAchievements = async (req, res) => {
             progress = user.activity?.commentsPosted || 0;
             break;
           case 'division':
-            progress = achievements.filter(a => a.id.includes('division_champion')).length || 0;
+            progress = user.achievements?.filter(a => a.id.includes('division_champion')).length || 0;
             break;
           default:
             progress = 0;
         }
-
+        
         return {
           ...achievement,
           earned: false,
@@ -520,7 +479,7 @@ export const getUserAchievements = async (req, res) => {
         };
       }
     });
-
+    
     res.json(allAchievements);
   } catch (err) {
     console.error(err.message);
@@ -530,11 +489,15 @@ export const getUserAchievements = async (req, res) => {
 
 export const awardAchievement = async (req, res) => {
   const { userId, achievementType, currentCount } = req.body;
-
+  
   try {
-    const awardedAchievements = await checkAndAwardAchievements(userId, achievementType, currentCount);
-
-    res.json({
+    let awardedAchievements = [];
+    await updateDb((data) => {
+      awardedAchievements = checkAndAwardAchievements(data, userId, achievementType, currentCount);
+      return data;
+    });
+    
+    res.json({ 
       awardedAchievements,
       message: awardedAchievements.length > 0 ? 'Achievements awarded!' : 'No new achievements'
     });
@@ -546,11 +509,15 @@ export const awardAchievement = async (req, res) => {
 
 export const awardStreakAchievement = async (req, res) => {
   const { userId, currentStreak } = req.body;
-
+  
   try {
-    const awardedAchievements = await checkStreakAchievements(userId, currentStreak);
-
-    res.json({
+    let awardedAchievements = [];
+    await updateDb((data) => {
+      awardedAchievements = checkStreakAchievements(data, userId, currentStreak);
+      return data;
+    });
+    
+    res.json({ 
       awardedAchievements,
       message: awardedAchievements.length > 0 ? 'Streak achievements awarded!' : 'No new streak achievements'
     });
@@ -562,24 +529,21 @@ export const awardStreakAchievement = async (req, res) => {
 
 export const getLeaderboard = async (req, res) => {
   const { type = 'experience', limit = 10 } = req.query;
-
+  
   try {
-    const allUsers = await User.find().select('-password');
-
+    const db = await readDb();
+    
     // Get all users and calculate their stats
-    const users = await Promise.all(allUsers.map(async (user) => {
+    let users = (db.users || []).map((user) => {
       // Calculate user fights and wins
-      const userFights = await Fight.find({
-        $or: [
-          { 'teamA.userId': user._id },
-          { 'teamB.userId': user._id }
-        ]
-      });
-      const userWins = userFights.filter(f => f.winnerId && f.winnerId.toString() === user._id.toString());
-
+      const userFights = (db.fights || []).filter(
+        (fight) => Array.isArray(fight.participants) && fight.participants.some((p) => p.userId === user.id)
+      );
+      const userWins = userFights.filter(f => f.winner === user.id);
+      
       // Get user posts for activity
-      const userPosts = await Post.find({ userId: user._id });
-
+      const userPosts = (db.posts || []).filter((p) => p.authorId === user.id);
+      
       // Combine stats from different sources
       const combinedStats = {
         experience: user.stats?.experience || user.profile?.stats?.experience || 0,
@@ -589,9 +553,9 @@ export const getLeaderboard = async (req, res) => {
         fights: userFights.length,
         posts: userPosts.length
       };
-
+      
       return {
-        id: user._id,
+        id: user.id,
         username: user.username,
         profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
         rank: user.stats?.rank || user.profile?.rank || 'Rookie',
@@ -602,8 +566,8 @@ export const getLeaderboard = async (req, res) => {
         achievements: user.achievements?.length || 0,
         ...combinedStats
       };
-    }));
-
+    });
+    
     // Sort by the specified type
     switch (type) {
       case 'experience':
@@ -624,181 +588,12 @@ export const getLeaderboard = async (req, res) => {
       default:
         users.sort((a, b) => (b.experience || 0) - (a.experience || 0));
     }
-
-    const leaderboard = users.slice(0, parseInt(limit));
-
+    
+    const leaderboard = users.slice(0, limit);
+    
     res.json(leaderboard);
   } catch (err) {
     console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-};
-
-// Pobieranie statystyk dywizji
-export const getDivisionStatistics = async (req, res) => {
-  try {
-    const { divisionId } = req.params;
-    const { timeFrame = 'all' } = req.query;
-
-    // Note: Divisions are stored in User model as a Map
-    // We need to get all users with this division and calculate stats
-
-    // Przygotuj filtry czasowe
-    const now = new Date();
-    let startDate = new Date(0); // Początek czasu unix
-
-    if (timeFrame === 'month') {
-      startDate = new Date(now);
-      startDate.setMonth(startDate.getMonth() - 1);
-    } else if (timeFrame === 'week') {
-      startDate = new Date(now);
-      startDate.setDate(startDate.getDate() - 7);
-    }
-
-    // Get all users in this division
-    const usersInDivision = await User.find({
-      [`divisions.${divisionId}`]: { $exists: true }
-    });
-
-    if (usersInDivision.length === 0) {
-      return res.status(404).json({ message: 'Dywizja nie znaleziona lub brak drużyn' });
-    }
-
-    // Filtruj walki dla danej dywizji i przedziału czasowego
-    const divisionFights = await Fight.find({
-      divisionId,
-      createdAt: { $gte: startDate },
-      status: 'completed'
-    });
-
-    // Statystyki aktywnych drużyn
-    const teamStats = {};
-
-    // Identyfikacja aktywnych drużyn i zbieranie statystyk
-    usersInDivision.forEach(user => {
-      const divisionData = user.divisions.get(divisionId);
-      if (divisionData) {
-        const teamId = user._id.toString();
-        const team = divisionData.team;
-        teamStats[teamId] = {
-          id: teamId,
-          name: `${team?.mainCharacter?.name || 'Unknown'} & ${team?.secondaryCharacter?.name || 'Unknown'}`,
-          userId: user._id,
-          wins: divisionData.wins || 0,
-          losses: divisionData.losses || 0,
-          draws: divisionData.draws || 0,
-          totalVotes: 0,
-          fights: 0
-        };
-      }
-    });
-
-    // Liczenie wyników walk
-    let totalVotes = 0;
-
-    for (const fight of divisionFights) {
-      // Oblicz całkowitą liczbę głosów
-      const fightVotes = await Vote.countDocuments({ fightId: fight._id });
-      totalVotes += fightVotes;
-
-      const team1Id = fight.teamA?.userId?.toString();
-      const team2Id = fight.teamB?.userId?.toString();
-
-      // Aktualizuj statystyki dla obu drużyn
-      if (teamStats[team1Id]) {
-        teamStats[team1Id].fights++;
-        const team1Votes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
-        teamStats[team1Id].totalVotes += team1Votes;
-
-        if (fight.winnerId && fight.winnerId.toString() === team1Id) {
-          teamStats[team1Id].wins++;
-        } else if (fight.winnerId && fight.winnerId.toString() === team2Id) {
-          teamStats[team1Id].losses++;
-        } else if (fight.result === 'draw') {
-          teamStats[team1Id].draws++;
-        }
-      }
-
-      if (teamStats[team2Id]) {
-        teamStats[team2Id].fights++;
-        const team2Votes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
-        teamStats[team2Id].totalVotes += team2Votes;
-
-        if (fight.winnerId && fight.winnerId.toString() === team2Id) {
-          teamStats[team2Id].wins++;
-        } else if (fight.winnerId && fight.winnerId.toString() === team1Id) {
-          teamStats[team2Id].losses++;
-        } else if (fight.result === 'draw') {
-          teamStats[team2Id].draws++;
-        }
-      }
-    }
-
-    // Przekształć statystyki drużyn na tablicę
-    const teamsArray = Object.values(teamStats);
-
-    // Znajdź drużynę z najwyższym wskaźnikiem zwycięstw
-    let highestWinRateTeam = null;
-    let highestWinRate = 0;
-
-    teamsArray.forEach(team => {
-      if (team.fights > 0) {
-        const winRate = (team.wins / team.fights) * 100;
-        if (winRate > highestWinRate) {
-          highestWinRate = winRate;
-          highestWinRateTeam = {
-            teamName: team.name,
-            winRate: Math.round(winRate)
-          };
-        }
-      }
-    });
-
-    // Znajdź drużynę z największą liczbą zwycięstw
-    let mostWinsTeam = null;
-    let mostWins = 0;
-
-    teamsArray.forEach(team => {
-      if (team.wins > mostWins) {
-        mostWins = team.wins;
-        mostWinsTeam = {
-          teamName: team.name,
-          wins: team.wins
-        };
-      }
-    });
-
-    // Find current champion
-    const currentChampion = usersInDivision.find(user => {
-      const divisionData = user.divisions.get(divisionId);
-      return divisionData?.isChampion === true;
-    });
-
-    let longestChampion = null;
-    if (currentChampion) {
-      const divisionData = currentChampion.divisions.get(divisionId);
-      const team = divisionData.team;
-      longestChampion = {
-        teamName: `${team?.mainCharacter?.name || 'Unknown'} & ${team?.secondaryCharacter?.name || 'Unknown'}`,
-        days: 0 // Would need to track this in the schema
-      };
-    }
-
-    // Zbierz wyniki
-    const statistics = {
-      activeTeams: Object.keys(teamStats).length,
-      totalFights: divisionFights.length,
-      averageVotes: divisionFights.length > 0 ? totalVotes / divisionFights.length : 0,
-      highestWinRateTeam,
-      mostWinsTeam,
-      longestChampion,
-      championHistory: [] // Would need to implement champion history tracking
-    };
-
-    res.json(statistics);
-
-  } catch (err) {
-    console.error('Error getting division statistics:', err);
     res.status(500).send('Server Error');
   }
 };

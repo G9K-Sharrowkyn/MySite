@@ -1,82 +1,186 @@
-# How to Run Your Nerd Social Voting Platform
+api/profile/me:1 
+ Failed to load resource: the server responded with a status of 504 (Gateway Timeout)
 
----
-
-## 1. First-Time Setup (Do This Only Once)
-
-### a) Install Backend Dependencies
-Open Command Prompt and run:
-  cd F:\Teksty\Programming\Site1\my-site\backend
-  npm install
-
-### b) Install Frontend Dependencies
-Open a second Command Prompt and run:
-  cd F:\Teksty\Programming\Site1\my-site
-  npm install
-
-### c) Set Up Environment Variables
-- In backend/, create a file called .env (if it doesn't exist)
-- Example contents:
-  PORT=5000
-  MONGODB_URI=mongodb://localhost:27017/nerdsite
-  JWT_SECRET=your_super_secret_key
-  NODE_ENV=development
-- If using MongoDB Atlas, replace MONGODB_URI with your Atlas connection string.
-
-### d) Start MongoDB
-- If installed locally, run:
-  "C:\Program Files\MongoDB\Server\6.0\bin\mongod.exe"
-  (Or use MongoDB Compass to start the server)
-
-### e) Seed the Database (Optional, for demo data)
-In backend/scripts/:
-  cd F:\Teksty\Programming\Site1\my-site\backend
-  node scripts/seedCompleteSystem.js
-
-### f) Start the Backend Server
-In backend/:
-  npm start
-- You should see: Server running on port 5000
-
-### g) Start the Frontend (React) App
-In the main project folder:
-  npm start
-- This will open your app in the browser at http://localhost:3000
-
-### h) Register and Use the App
-- Open http://localhost:3000 in your browser.
-- Register a new user, log in, and explore all features!
-
----
-
-## 2. Quick Start (For Every Next Time)
-
-### a) Start MongoDB
-- If not already running, start MongoDB:
-  "C:\Program Files\MongoDB\Server\6.0\bin\mongod.exe"
-  (Or use MongoDB Compass)
-
-### b) Start the Backend Server
-Open Command Prompt:
-  cd F:\Teksty\Programming\Site1\my-site\backend
-  npm start
-
-### c) Start the Frontend (React) App
-Open a second Command Prompt:
-  cd F:\Teksty\Programming\Site1\my-site
-  npm start
-
-### d) Use the App
-- Go to http://localhost:3000 in your browser.
-
----
-
-## Troubleshooting
-- Port already in use? Close any other app using port 5000 or 3000, or restart your computer.
-- MongoDB errors? Make sure MongoDB is running.
-- .env issues? Double-check your .env file for typos.
-
----
-
-# You’re Done!
-If you get stuck, just copy the error and ask for help! 
+AuthContext.js:52 Error fetching user: 
+AxiosError
+(anonymous)	@	AuthContext.js:52
+api/profile/me:1 
+ Failed to load resource: the server responded with a status of 504 (Gateway Timeout)
+AuthContext.js:52 Error fetching user: 
+AxiosError
+(anonymous)	@	AuthContext.js:52
+Register.js:64 
+ POST http://localhost:3000/api/auth/register 504 (Gateway Timeout)
+onSubmit	@	Register.js:64
+Register.js:88 Registration error: 
+AxiosError {message: 'Request failed with status code 504', name: 'AxiosError', code: 'ERR_BAD_RESPONSE', config: {…}, request: XMLHttpRequest, …}
+code
+: 
+"ERR_BAD_RESPONSE"
+config
+: 
+adapter
+: 
+(3) ['xhr', 'http', 'fetch']
+allowAbsoluteUrls
+: 
+true
+data
+: 
+"{\"username\":\"api/profile/me:1   Failed to load resource: the server responded with a status of 504 (Gateway Timeout)  AuthContext.js:52 Error fetching user:  AxiosError (anonymous)\\t@\\tAuthContext.js:52 api/profile/me:1   Failed to load resource: the server responded with a status of 504 (Gateway Timeout) AuthContext.js:52 Error fetching user:  AxiosError (anonymous)\\t@\\tAuthContext.js:52\",\"email\":\"api/profile/me:1   Failed to load resource: the server responded with a status of 504 (Gateway Timeout)  AuthContext.js:52 Error fetching user:  AxiosError (anonymous)\\t@\\tAuthContext.js:52 api/profile/me:1   Failed to load resource: the server responded with a status of 504 (Gateway Timeout) AuthContext.js:52 Error fetching user:  AxiosError (anonymous)\\t@\\tAuthContext.js:52\",\"password\":\"api/profile/me:1   Failed to load resource: the server responded with a status of 504 (Gateway Timeout)  AuthContext.js:52 Error fetching user:  AxiosError (anonymous)\\t@\\tAuthContext.js:52 api/profile/me:1   Failed to load resource: the server responded with a status of 504 (Gateway Timeout) AuthContext.js:52 Error fetching user:  AxiosError (anonymous)\\t@\\tAuthContext.js:52\"}"
+env
+: 
+{FormData: ƒ, Blob: ƒ}
+headers
+: 
+AxiosHeaders {Accept: 'application/json, text/plain, */*', Content-Type: 'application/json'}
+maxBodyLength
+: 
+-1
+maxContentLength
+: 
+-1
+method
+: 
+"post"
+timeout
+: 
+0
+transformRequest
+: 
+[ƒ]
+transformResponse
+: 
+[ƒ]
+transitional
+: 
+{silentJSONParsing: true, forcedJSONParsing: true, clarifyTimeoutError: false}
+url
+: 
+"/api/auth/register"
+validateStatus
+: 
+ƒ validateStatus(status)
+xsrfCookieName
+: 
+"XSRF-TOKEN"
+xsrfHeaderName
+: 
+"X-XSRF-TOKEN"
+[[Prototype]]
+: 
+Object
+message
+: 
+"Request failed with status code 504"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest
+onabort
+: 
+ƒ handleAbort()
+onerror
+: 
+ƒ handleError()
+onload
+: 
+null
+onloadend
+: 
+ƒ onloadend()
+onloadstart
+: 
+null
+onprogress
+: 
+null
+onreadystatechange
+: 
+null
+ontimeout
+: 
+ƒ handleTimeout()
+readyState
+: 
+4
+response
+: 
+"Error occurred while trying to proxy: localhost:3000/api/auth/register"
+responseText
+: 
+"Error occurred while trying to proxy: localhost:3000/api/auth/register"
+responseType
+: 
+""
+responseURL
+: 
+"http://localhost:3000/api/auth/register"
+responseXML
+: 
+null
+status
+: 
+504
+statusText
+: 
+"Gateway Timeout"
+timeout
+: 
+0
+upload
+: 
+XMLHttpRequestUpload {onloadstart: null, onprogress: null, onabort: null, onerror: null, onload: null, …}
+withCredentials
+: 
+false
+[[Prototype]]
+: 
+XMLHttpRequest
+response
+: 
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
+data
+: 
+"Error occurred while trying to proxy: localhost:3000/api/auth/register"
+headers
+: 
+AxiosHeaders {connection: 'keep-alive', date: 'Thu, 23 Oct 2025 03:34:55 GMT', keep-alive: 'timeout=5', transfer-encoding: 'chunked', x-powered-by: 'Express'}
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}
+status
+: 
+504
+statusText
+: 
+"Gateway Timeout"
+[[Prototype]]
+: 
+Object
+status
+: 
+504
+stack
+: 
+"AxiosError: Request failed with status code 504\n    at settle (http://localhost:3000/static/js/bundle.js:2369:12)\n    at XMLHttpRequest.onloadend (http://localhost:3000/static/js/bundle.js:996:66)\n    at Axios.request (http://localhost:3000/static/js/bundle.js:1495:41)\n    at async onSubmit (http://localhost:3000/static/js/bundle.js:78152:24)"
+[[Prototype]]
+: 
+Error
+constructor
+: 
+ƒ AxiosError(message, code, config, request, response)
+toJSON
+: 
+ƒ toJSON()
+isAxiosError
+: 
+true
+[[Prototype]]
+: 
+Object
+onSubmit	@	Register.js:88

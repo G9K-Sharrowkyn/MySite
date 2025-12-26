@@ -9,7 +9,6 @@ const Home = () => {
   const [officialFights, setOfficialFights] = useState([]);
   const [recentPosts, setRecentPosts] = useState([]);
   const [topUsers, setTopUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalPosts: 0,
@@ -62,11 +61,8 @@ const Home = () => {
         totalFights,
         totalVotes
       });
-
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching home data:', error);
-      setLoading(false);
     }
   };
 
@@ -108,17 +104,6 @@ const Home = () => {
       default: return '💬';
     }
   };
-
-  if (loading) {
-    return (
-      <div className="home-page">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>{t('loading')}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="home-page">

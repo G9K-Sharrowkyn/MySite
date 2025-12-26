@@ -209,132 +209,79 @@
         "tournamentsWon": 0,
         "tournamentsParticipated": 0
       }
+    },
+    {
+      "id": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "username": "aaa111",
+      "email": "aaa111@wp.pl",
+      "password": "$2b$10$P9ycuYvJOoXXhQZFI2Ejnu0/8qIrjWio7Og3mBc0QyF4EWMtA/8Vm",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-12-25T21:39:34.481Z",
+        "lastActive": "2025-12-26T03:43:26.093Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Rookie",
+        "points": 0,
+        "level": 1,
+        "experience": 0
+      },
+      "activity": {
+        "postsCreated": 2,
+        "commentsPosted": 11,
+        "likesReceived": 2,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-12-25T21:39:34.481Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-12-25T21:39:34.481Z",
+      "updatedAt": "2025-12-26T18:16:26.733Z"
     }
   ],
-  "fights": [],
-  "characters": [
-    {
-      "id": "char1",
-      "name": "Anti-Monitor (New52)",
-      "universe": "DC",
-      "image": "/characters/Anti-Monitor(New52).webp"
-    },
-    {
-      "id": "char2",
-      "name": "Azrael (Dark Multiverse)",
-      "universe": "DC",
-      "image": "/characters/Azrael(DarkMultiverse).jpg"
-    },
-    {
-      "id": "char3",
-      "name": "Batman (New52)",
-      "universe": "DC",
-      "image": "/characters/Batman(New52).jpg"
-    },
-    {
-      "id": "char4",
-      "name": "Black Adam (New52)",
-      "universe": "DC",
-      "image": "/characters/Black_Adam(New52).jpg"
-    },
-    {
-      "id": "char5",
-      "name": "Black Winter (Prime)",
-      "universe": "Marvel",
-      "image": "/characters/Black_Winter(Prime).jpg"
-    },
-    {
-      "id": "char6",
-      "name": "Broly (Dragon Ball Z)",
-      "universe": "Dragon Ball Z",
-      "image": "/characters/Broly(DragonBallZ).jpg"
-    },
-    {
-      "id": "char7",
-      "name": "Darkseid (New52)",
-      "universe": "DC",
-      "image": "/characters/Darkseid_(New52).jpg"
-    },
-    {
-      "id": "char8",
-      "name": "Deadpool (DKMU)",
-      "universe": "Marvel",
-      "image": "/characters/Deadpool(DKMU).jpg"
-    },
-    {
-      "id": "char9",
-      "name": "Franklin Richards (Adult)",
-      "universe": "Marvel",
-      "image": "/characters/Franklin_Richards(Adult).webp"
-    },
-    {
-      "id": "char10",
-      "name": "Goku (SSJ4)",
-      "universe": "Dragon Ball GT",
-      "image": "/characters/Goku(SSJ4).jpg"
-    },
-    {
-      "id": "char11",
-      "name": "Goku (Ultra Instinct)",
-      "universe": "Dragon Ball Super",
-      "image": "/characters/Goku(UltraInstinct).webp"
-    },
-    {
-      "id": "char12",
-      "name": "Hyperion (Prime)",
-      "universe": "Marvel",
-      "image": "/characters/Hyperion(Prime).jpg"
-    },
-    {
-      "id": "char13",
-      "name": "Joker (New52)",
-      "universe": "DC",
-      "image": "/characters/Joker(New52).webp"
-    },
-    {
-      "id": "char14",
-      "name": "King Thanos (Prime)",
-      "universe": "Marvel",
-      "image": "/characters/King_Thanos(Prime).jpg"
-    },
-    {
-      "id": "char15",
-      "name": "Nate Grey (Uncanny X-Men)",
-      "universe": "Marvel",
-      "image": "/characters/Nate_Grey(Uncanny X-Men).webp"
-    },
-    {
-      "id": "char16",
-      "name": "Scarlet King",
-      "universe": "SCP Foundation",
-      "image": "/characters/Scarlet_King.jpg"
-    },
-    {
-      "id": "char17",
-      "name": "Sentry (Composite)",
-      "universe": "Marvel",
-      "image": "/characters/Sentry(Composite).jpg"
-    },
-    {
-      "id": "char18",
-      "name": "Superman (New52)",
-      "universe": "DC",
-      "image": "/characters/Superman(New52).webp"
-    },
-    {
-      "id": "char19",
-      "name": "Vegeta (SSJ4)",
-      "universe": "Dragon Ball GT",
-      "image": "/characters/Vegeta(SSJ4).webp"
-    },
-    {
-      "id": "char20",
-      "name": "Vegeta (Ultra Ego)",
-      "universe": "Dragon Ball Super",
-      "image": "/characters/Vegeta(UltraEgo).jpg"
-    }
-  ],
-  "tournaments": [],
   "posts": [
     {
       "id": "official-1",
@@ -362,7 +309,7 @@
       "type": "fight",
       "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
       "createdAt": "2025-07-08T20:43:39.141Z",
-      "updatedAt": "2025-07-08T20:43:39.141Z",
+      "updatedAt": "2025-12-26T00:56:58.620Z",
       "likes": [],
       "comments": [],
       "views": 0,
@@ -381,12 +328,17 @@
         "teamB": "Sentry (Composite)",
         "votes": {
           "teamA": 0,
-          "teamB": 1,
+          "teamB": 2,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
               "team": "B",
               "votedAt": "2025-07-09T10:34:17.540Z"
+            },
+            {
+              "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+              "team": "B",
+              "votedAt": "2025-12-26T00:56:58.620Z"
             }
           ],
           "draw": 0
@@ -406,7 +358,7 @@
       "type": "fight",
       "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
       "createdAt": "2025-07-09T02:12:30.066Z",
-      "updatedAt": "2025-07-09T02:12:30.066Z",
+      "updatedAt": "2025-12-25T21:40:27.543Z",
       "likes": [],
       "comments": [],
       "views": 0,
@@ -424,13 +376,18 @@
         "teamA": "Scarlet King, Sentry (Composite)",
         "teamB": "Superman (New52), Batman (New52)",
         "votes": {
-          "teamA": 1,
+          "teamA": 2,
           "teamB": 0,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
               "team": "A",
               "votedAt": "2025-07-09T07:06:21.535Z"
+            },
+            {
+              "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+              "team": "A",
+              "votedAt": "2025-12-25T21:40:27.543Z"
             }
           ],
           "draw": 0
@@ -450,7 +407,7 @@
       "type": "fight",
       "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
       "createdAt": "2025-07-09T07:08:23.015Z",
-      "updatedAt": "2025-07-09T07:08:23.015Z",
+      "updatedAt": "2025-12-26T03:44:00.609Z",
       "likes": [],
       "comments": [],
       "views": 0,
@@ -468,13 +425,18 @@
         "teamA": "Anti-Monitor (New52), Azrael (Dark Multiverse), Scarlet King, Sentry (Composite)",
         "teamB": "Darkseid (New52), Deadpool (DKMU), Vegeta (SSJ4), Broly (Dragon Ball Z)",
         "votes": {
-          "teamA": 1,
+          "teamA": 2,
           "teamB": 0,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
               "team": "A",
               "votedAt": "2025-07-09T11:11:37.153Z"
+            },
+            {
+              "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+              "team": "A",
+              "votedAt": "2025-12-26T03:44:00.609Z"
             }
           ],
           "draw": 0
@@ -632,6 +594,146 @@
         "powerTiers": [],
         "categories": []
       }
+    },
+    {
+      "id": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "title": "testtesttest",
+      "content": "testtesttest",
+      "type": "fight",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "createdAt": "2025-12-26T03:03:23.111Z",
+      "updatedAt": "2025-12-26T16:59:42.220Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Superman (New52)",
+          "Sentry (Composite)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Superman (New52)",
+        "teamB": "Sentry (Composite)",
+        "votes": {
+          "teamA": 1,
+          "teamB": 0,
+          "draw": 0,
+          "voters": [
+            {
+              "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+              "team": "A",
+              "votedAt": "2025-12-26T03:43:46.676Z"
+            }
+          ]
+        },
+        "status": "active",
+        "isOfficial": false,
+        "lockTime": "2025-12-29T03:03:23.111Z",
+        "winner": null,
+        "winnerTeam": null
+      },
+      "reactions": [
+        {
+          "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+          "reactionId": "goodJob1",
+          "reactionIcon": "👌",
+          "reactionName": "OK Hand",
+          "reactedAt": "2025-12-26T03:16:15.939Z"
+        }
+      ],
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": [
+        "DC",
+        "Marvel",
+        "Superman (New52)",
+        "Sentry (Composite)"
+      ],
+      "autoTags": {
+        "universes": [
+          "DC",
+          "Marvel"
+        ],
+        "characters": [
+          "Superman (New52)",
+          "Sentry (Composite)"
+        ],
+        "powerTiers": [],
+        "categories": []
+      }
+    },
+    {
+      "id": "6d70f760-5600-45ee-9412-c27facba6ef8",
+      "title": "qwdqwdqw",
+      "content": "dwqdqwd",
+      "type": "fight",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "createdAt": "2025-12-26T18:15:50.137Z",
+      "updatedAt": "2025-12-26T18:16:58.845Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Franklin Richards (Adult)",
+          "Vegeta (SSJ4)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Franklin Richards (Adult)",
+        "teamB": "Vegeta (SSJ4)",
+        "votes": {
+          "teamA": 0,
+          "teamB": 0,
+          "draw": 1,
+          "voters": [
+            {
+              "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+              "team": "draw",
+              "votedAt": "2025-12-26T18:16:58.845Z"
+            }
+          ]
+        },
+        "status": "active",
+        "isOfficial": false,
+        "lockTime": "2025-12-29T18:15:50.137Z",
+        "winner": null,
+        "winnerTeam": null
+      },
+      "reactions": [],
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": [
+        "Marvel",
+        "Dragon Ball GT",
+        "Franklin Richards (Adult)",
+        "Vegeta (SSJ4)"
+      ],
+      "autoTags": {
+        "universes": [
+          "Marvel",
+          "Dragon Ball GT"
+        ],
+        "characters": [
+          "Franklin Richards (Adult)",
+          "Vegeta (SSJ4)"
+        ],
+        "powerTiers": [],
+        "categories": []
+      }
     }
   ],
   "comments": [
@@ -666,23 +768,305 @@
       "createdAt": "2025-07-08T00:03:54.210Z",
       "likes": 0,
       "likedBy": []
-    }
-  ],
-  "messages": [
+    },
     {
-      "id": "121260d5-64c4-44f8-a5b1-672992dc1889",
-      "senderId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-      "senderUsername": "ultracode1",
-      "recipientId": "280ec015-edc9-4be3-87ca-b6be62093bf5",
-      "recipientUsername": "testuser",
-      "subject": "Chat message",
-      "content": "vxcvxcvxcv",
-      "createdAt": "2025-07-06T05:00:25.158Z",
-      "read": false,
-      "deleted": false
+      "id": "9a717831-5bbd-4c5a-8662-cc8b6346ed27",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "44454545",
+      "createdAt": "2025-12-26T03:16:32.215Z",
+      "updatedAt": "2025-12-26T03:16:32.215Z",
+      "likes": 0,
+      "likedBy": []
+    },
+    {
+      "id": "1df016f9-b2df-40b5-a66d-631b43c86794",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "dqwdwqdwqd",
+      "createdAt": "2025-12-26T03:49:00.210Z",
+      "updatedAt": "2025-12-26T03:49:00.210Z",
+      "likes": 0,
+      "likedBy": []
+    },
+    {
+      "id": "17bdcb89-f5ca-48f8-822a-4fd0205bbaab",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "dqwdqwdqwd",
+      "createdAt": "2025-12-26T03:49:03.722Z",
+      "updatedAt": "2025-12-26T03:49:03.722Z",
+      "likes": 0,
+      "likedBy": []
+    },
+    {
+      "id": "0795406b-9c58-4d68-b114-4c33a3e8ca48",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "dqwdqwdqw",
+      "createdAt": "2025-12-26T03:49:05.856Z",
+      "updatedAt": "2025-12-26T03:49:05.856Z",
+      "likes": 0,
+      "likedBy": []
+    },
+    {
+      "id": "82c155f6-3ebf-4914-a559-7e5898e64c13",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "parentId": "9a717831-5bbd-4c5a-8662-cc8b6346ed27",
+      "threadId": "9a717831-5bbd-4c5a-8662-cc8b6346ed27",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "dqwdqwdwq",
+      "createdAt": "2025-12-26T16:29:37.793Z",
+      "updatedAt": "2025-12-26T16:29:37.793Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "352270f7-1e3d-4409-a184-0f36d0e88681",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "parentId": "82c155f6-3ebf-4914-a559-7e5898e64c13",
+      "threadId": "9a717831-5bbd-4c5a-8662-cc8b6346ed27",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "dwqdwqdqwd",
+      "createdAt": "2025-12-26T16:29:41.637Z",
+      "updatedAt": "2025-12-26T16:29:41.637Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "baf1f604-9fca-4c7e-8213-82c083c29531",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "parentId": "9a717831-5bbd-4c5a-8662-cc8b6346ed27",
+      "threadId": "9a717831-5bbd-4c5a-8662-cc8b6346ed27",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "qwdwqdwqd",
+      "createdAt": "2025-12-26T16:29:48.454Z",
+      "updatedAt": "2025-12-26T16:29:48.454Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "3982e06e-4da5-4e29-a36e-7a1e723f502d",
+      "type": "post",
+      "targetId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "postId": "8c4432dc-72f3-4e21-92bd-0a4247710d9c",
+      "parentId": "1df016f9-b2df-40b5-a66d-631b43c86794",
+      "threadId": "1df016f9-b2df-40b5-a66d-631b43c86794",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "@aaa111 21d12d12d",
+      "createdAt": "2025-12-26T16:49:25.217Z",
+      "updatedAt": "2025-12-26T16:49:25.217Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "287f4fed-1a79-422f-95b9-901f6c88ecfe",
+      "type": "post",
+      "targetId": "6d70f760-5600-45ee-9412-c27facba6ef8",
+      "postId": "6d70f760-5600-45ee-9412-c27facba6ef8",
+      "parentId": null,
+      "threadId": "287f4fed-1a79-422f-95b9-901f6c88ecfe",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "fdgdfgfdg",
+      "createdAt": "2025-12-26T18:16:18.049Z",
+      "updatedAt": "2025-12-26T18:16:18.049Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "5ea532cb-7d0d-4281-a6a0-8a2796827a69",
+      "type": "post",
+      "targetId": "6d70f760-5600-45ee-9412-c27facba6ef8",
+      "postId": "6d70f760-5600-45ee-9412-c27facba6ef8",
+      "parentId": "287f4fed-1a79-422f-95b9-901f6c88ecfe",
+      "threadId": "287f4fed-1a79-422f-95b9-901f6c88ecfe",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "@aaa111 efwefwefwef",
+      "createdAt": "2025-12-26T18:16:21.702Z",
+      "updatedAt": "2025-12-26T18:16:21.702Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "c4a236f4-1c92-4386-b9b8-cae1e534e6d3",
+      "type": "post",
+      "targetId": "6d70f760-5600-45ee-9412-c27facba6ef8",
+      "postId": "6d70f760-5600-45ee-9412-c27facba6ef8",
+      "parentId": "5ea532cb-7d0d-4281-a6a0-8a2796827a69",
+      "threadId": "287f4fed-1a79-422f-95b9-901f6c88ecfe",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "@aaa111 wefwefwefwef",
+      "createdAt": "2025-12-26T18:16:26.733Z",
+      "updatedAt": "2025-12-26T18:16:26.733Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
     }
   ],
-  "votes": [],
+  "characters": [
+    {
+      "id": "char1",
+      "name": "Anti-Monitor (New52)",
+      "universe": "DC",
+      "image": "/characters/Anti-Monitor(New52).webp"
+    },
+    {
+      "id": "char2",
+      "name": "Azrael (Dark Multiverse)",
+      "universe": "DC",
+      "image": "/characters/Azrael(DarkMultiverse).jpg"
+    },
+    {
+      "id": "char3",
+      "name": "Batman (New52)",
+      "universe": "DC",
+      "image": "/characters/Batman(New52).jpg"
+    },
+    {
+      "id": "char4",
+      "name": "Black Adam (New52)",
+      "universe": "DC",
+      "image": "/characters/Black_Adam(New52).jpg"
+    },
+    {
+      "id": "char5",
+      "name": "Black Winter (Prime)",
+      "universe": "Marvel",
+      "image": "/characters/Black_Winter(Prime).jpg"
+    },
+    {
+      "id": "char6",
+      "name": "Broly (Dragon Ball Z)",
+      "universe": "Dragon Ball Z",
+      "image": "/characters/Broly(DragonBallZ).jpg"
+    },
+    {
+      "id": "char7",
+      "name": "Darkseid (New52)",
+      "universe": "DC",
+      "image": "/characters/Darkseid_(New52).jpg"
+    },
+    {
+      "id": "char8",
+      "name": "Deadpool (DKMU)",
+      "universe": "Marvel",
+      "image": "/characters/Deadpool(DKMU).jpg"
+    },
+    {
+      "id": "char9",
+      "name": "Franklin Richards (Adult)",
+      "universe": "Marvel",
+      "image": "/characters/Franklin_Richards(Adult).webp"
+    },
+    {
+      "id": "char10",
+      "name": "Goku (SSJ4)",
+      "universe": "Dragon Ball GT",
+      "image": "/characters/Goku(SSJ4).jpg"
+    },
+    {
+      "id": "char11",
+      "name": "Goku (Ultra Instinct)",
+      "universe": "Dragon Ball Super",
+      "image": "/characters/Goku(UltraInstinct).webp"
+    },
+    {
+      "id": "char12",
+      "name": "Hyperion (Prime)",
+      "universe": "Marvel",
+      "image": "/characters/Hyperion(Prime).jpg"
+    },
+    {
+      "id": "char13",
+      "name": "Joker (New52)",
+      "universe": "DC",
+      "image": "/characters/Joker(New52).webp"
+    },
+    {
+      "id": "char14",
+      "name": "King Thanos (Prime)",
+      "universe": "Marvel",
+      "image": "/characters/King_Thanos(Prime).jpg"
+    },
+    {
+      "id": "char15",
+      "name": "Nate Grey (Uncanny X-Men)",
+      "universe": "Marvel",
+      "image": "/characters/Nate_Grey(Uncanny X-Men).webp"
+    },
+    {
+      "id": "char16",
+      "name": "Scarlet King",
+      "universe": "SCP Foundation",
+      "image": "/characters/Scarlet_King.jpg"
+    },
+    {
+      "id": "char17",
+      "name": "Sentry (Composite)",
+      "universe": "Marvel",
+      "image": "/characters/Sentry(Composite).jpg"
+    },
+    {
+      "id": "char18",
+      "name": "Superman (New52)",
+      "universe": "DC",
+      "image": "/characters/Superman(New52).webp"
+    },
+    {
+      "id": "char19",
+      "name": "Vegeta (SSJ4)",
+      "universe": "Dragon Ball GT",
+      "image": "/characters/Vegeta(SSJ4).webp"
+    },
+    {
+      "id": "char20",
+      "name": "Vegeta (Ultra Ego)",
+      "universe": "Dragon Ball Super",
+      "image": "/characters/Vegeta(UltraEgo).jpg"
+    }
+  ],
   "notifications": [
     {
       "id": "5b284529-9d4f-4a8b-83d2-368204982ba3",
@@ -699,6 +1083,180 @@
       "createdAt": "2025-07-06T05:00:25.158Z"
     }
   ],
+  "messages": [
+    {
+      "id": "121260d5-64c4-44f8-a5b1-672992dc1889",
+      "senderId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
+      "senderUsername": "ultracode1",
+      "recipientId": "280ec015-edc9-4be3-87ca-b6be62093bf5",
+      "recipientUsername": "testuser",
+      "subject": "Chat message",
+      "content": "vxcvxcvxcv",
+      "createdAt": "2025-07-06T05:00:25.158Z",
+      "read": false,
+      "deleted": false
+    }
+  ],
+  "chatMessages": [],
+  "divisionFights": [],
+  "fights": [],
+  "votes": [],
+  "tournaments": [],
+  "badges": [
+    {
+      "id": "first_win",
+      "name": "First Victory",
+      "description": "Win your first fight",
+      "icon": "🏆",
+      "category": "fighting",
+      "rarity": "common",
+      "color": "#28a745",
+      "requirements": {
+        "fightsWon": 1
+      },
+      "_id": "first_win",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "win_streak_5",
+      "name": "Hot Streak",
+      "description": "Win 5 fights in a row",
+      "icon": "🔥",
+      "category": "fighting",
+      "rarity": "uncommon",
+      "color": "#fd7e14",
+      "requirements": {
+        "winStreak": 5
+      },
+      "_id": "win_streak_5",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "fights_won_10",
+      "name": "Veteran Fighter",
+      "description": "Win 10 total fights",
+      "icon": "⚔️",
+      "category": "fighting",
+      "rarity": "common",
+      "color": "#17a2b8",
+      "requirements": {
+        "fightsWon": 10
+      },
+      "_id": "fights_won_10",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "champion_regular",
+      "name": "Regular Division Champion",
+      "description": "Become champion of the Regular Division",
+      "icon": "🥇",
+      "category": "championship",
+      "rarity": "rare",
+      "color": "#6c757d",
+      "requirements": {
+        "divisionChampion": "regular"
+      },
+      "divisionId": "regular",
+      "_id": "champion_regular",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "first_post",
+      "name": "First Post",
+      "description": "Create your first post",
+      "icon": "📝",
+      "category": "social",
+      "rarity": "common",
+      "color": "#007bff",
+      "requirements": {
+        "postsCreated": 1
+      },
+      "_id": "first_post",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "social_butterfly",
+      "name": "Social Butterfly",
+      "description": "Receive 100 likes on your posts",
+      "icon": "🦋",
+      "category": "social",
+      "rarity": "uncommon",
+      "color": "#e83e8c",
+      "requirements": {
+        "likesReceived": 100
+      },
+      "_id": "social_butterfly",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "first_bet",
+      "name": "First Bet",
+      "description": "Place your first bet",
+      "icon": "🎲",
+      "category": "betting",
+      "rarity": "common",
+      "color": "#20c997",
+      "requirements": {
+        "betsPlaced": 1
+      },
+      "_id": "first_bet",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "early_adopter",
+      "name": "Early Adopter",
+      "description": "One of the first 100 users to join",
+      "icon": "🚀",
+      "category": "milestone",
+      "rarity": "rare",
+      "color": "#6f42c1",
+      "requirements": {
+        "userNumber": 100
+      },
+      "_id": "early_adopter",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    },
+    {
+      "id": "moderator",
+      "name": "Moderator",
+      "description": "Platform moderator",
+      "icon": "🛡️",
+      "category": "special",
+      "rarity": "legendary",
+      "color": "#dc3545",
+      "requirements": {
+        "role": "moderator"
+      },
+      "_id": "moderator",
+      "isActive": true,
+      "createdAt": "2025-12-26T16:57:21.959Z"
+    }
+  ],
+  "userBadges": [],
+  "bets": [],
+  "conversations": [],
+  "coinTransactions": [],
+  "storePurchases": [],
+  "tags": [],
+  "communityDiscussions": [],
+  "communityHotDebates": [],
+  "communityPolls": [],
+  "communityCharacterRankings": [],
+  "donations": [],
+  "pushSubscriptions": [],
+  "legalConsents": [],
+  "challengeProgress": [],
+  "recommendationEvents": [],
+  "characterSuggestions": [],
+  "fighterProposals": [],
   "divisions": {
     "regularPeople": {
       "id": "regularPeople",
@@ -762,6 +1320,5 @@
     "godTier": [],
     "universalThreat": [],
     "omnipotent": []
-  },
-  "chatMessages": []
+  }
 }

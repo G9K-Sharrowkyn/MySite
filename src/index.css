@@ -1,8 +1,14 @@
 :root {
   --font-main: 'Roboto', Arial, sans-serif;
-  --bg-dark: #0d0d0d;
-  --bg-light: #1a1a1a;
+  --bg-dark: #e8ecf2;
+  --bg-light: #ffffff;
   --accent: #e74c3c;
+  --text-light: #1b1f24;
+}
+
+body.dark-mode {
+  --bg-dark: #050608;
+  --bg-light: #11141a;
   --text-light: #ffffff;
 }
 

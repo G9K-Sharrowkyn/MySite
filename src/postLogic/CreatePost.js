@@ -15,6 +15,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     content: '',
     type: 'discussion', // discussion, fight, other
     photos: [],
+    voteDuration: '3d',
     pollOptions: ['', ''], // For fight posts (mandatory) or other posts (optional)
     teams: [] // For fight posts: array of {name: '', warriors: [{ character, customImage }] }
   });
@@ -27,8 +28,25 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
       // Map backend post structure to frontend format
       let mappedTeams = [];
       let mappedPollOptions = ['', ''];
+      const resolveVoteDuration = (lockTime, createdAt) => {
+        if (!lockTime) return 'none';
+        const created = createdAt ? new Date(createdAt).getTime() : Date.now();
+        const lock = new Date(lockTime).getTime();
+        if (!Number.isFinite(created) || !Number.isFinite(lock)) return '3d';
+        const diffDays = Math.round((lock - created) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) return '1d';
+        if (diffDays === 2) return '2d';
+        if (diffDays === 3) return '3d';
+        if (diffDays === 7) return '7d';
+        return '3d';
+      };
+      let mappedVoteDuration = '3d';
       
       if (initialData.type === 'fight') {
+        mappedVoteDuration = resolveVoteDuration(
+          initialData.fight?.lockTime,
+          initialData.createdAt
+        );
         // Convert teamA/teamB structure to teams array
         if (initialData.fight) {
           if (initialData.fight.teamA) {
@@ -62,6 +80,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         content: initialData.content || '',
         type: initialData.type || 'discussion',
         photos: initialData.photos ? initialData.photos.map(url => ({ url, type: 'database' })) : [],
+        voteDuration: mappedVoteDuration,
         pollOptions: mappedPollOptions,
         teams: mappedTeams
       });
@@ -266,7 +285,8 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         content: postData.content,
         type: postData.type,
         photos: postData.photos.map(p => p.url),
-        pollOptions: postData.pollOptions.filter(opt => opt.trim())
+        pollOptions: postData.pollOptions.filter(opt => opt.trim()),
+        voteDuration: postData.voteDuration
       };
 
       if (postData.type === 'fight') {
@@ -303,6 +323,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           content: '',
           type: 'discussion',
           photos: [],
+          voteDuration: '3d',
           pollOptions: ['', ''],
           teams: []
         });
@@ -413,6 +434,24 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
             {postData.type === 'fight' && (
               <div className="fight-section">
                 <h4>⚔️ {t('teams') || 'Teams'}</h4>
+                <div className="vote-duration">
+                  <label htmlFor="voteDuration">
+                    {t('voteDuration') || 'Voting ends'}
+                  </label>
+                  <select
+                    id="voteDuration"
+                    name="voteDuration"
+                    value={postData.voteDuration}
+                    onChange={handleInputChange}
+                    className="vote-duration-select"
+                  >
+                    <option value="1d">{t('oneDay') || '1 day'}</option>
+                    <option value="2d">{t('twoDays') || '2 days'}</option>
+                    <option value="3d">{t('threeDays') || '3 days'}</option>
+                    <option value="7d">{t('oneWeek') || '1 week'}</option>
+                    <option value="none">{t('noTimeLimit') || 'No time limit'}</option>
+                  </select>
+                </div>
                 {/* Render first two teams in a horizontal row if present */}
                 {postData.teams.length >= 2 && (
                   <div className="teams-row">

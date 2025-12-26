@@ -1,13 +1,4 @@
 services:
-  mongo:
-    image: mongo:6.0
-    container_name: nerdsite-mongo
-    restart: always
-    ports:
-      - '27017:27017'
-    volumes:
-      - mongo-data:/data/db
-
   backend:
     build: ./backend
     container_name: nerdsite-backend
@@ -15,12 +6,10 @@ services:
     ports:
       - '5001:5000'
     environment:
-      - MONGODB_URI=mongodb://mongo:27017/nerdsite
       - JWT_SECRET=your_super_secret_key
       - NODE_ENV=development
       - PORT=5000
-    depends_on:
-      - mongo
+      - USE_JSON_DB=true
     volumes:
       - ./backend:/usr/src/app
     command: npm start
@@ -40,5 +29,3 @@ services:
     working_dir: /usr/src/app
     command: npm start
 
-volumes:
-  mongo-data: 

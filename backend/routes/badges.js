@@ -1,23 +1,163 @@
 import express from 'express';
-import badgeService from '../services/badgeService.js';
-import Badge from '../models/Badge.js';
-import UserBadge from '../models/UserBadge.js';
-import User from '../models/User.js';
+import { v4 as uuidv4 } from 'uuid';
 import auth from '../middleware/auth.js';
 import moderatorAuth from '../middleware/moderatorAuth.js';
+import { readDb, updateDb } from '../services/jsonDb.js';
 
 const router = express.Router();
 
-// Get all available badges
+const DEFAULT_BADGES = [
+  {
+    id: 'first_win',
+    name: 'First Victory',
+    description: 'Win your first fight',
+    icon: '🏆',
+    category: 'fighting',
+    rarity: 'common',
+    color: '#28a745',
+    requirements: { fightsWon: 1 }
+  },
+  {
+    id: 'win_streak_5',
+    name: 'Hot Streak',
+    description: 'Win 5 fights in a row',
+    icon: '🔥',
+    category: 'fighting',
+    rarity: 'uncommon',
+    color: '#fd7e14',
+    requirements: { winStreak: 5 }
+  },
+  {
+    id: 'fights_won_10',
+    name: 'Veteran Fighter',
+    description: 'Win 10 total fights',
+    icon: '⚔️',
+    category: 'fighting',
+    rarity: 'common',
+    color: '#17a2b8',
+    requirements: { fightsWon: 10 }
+  },
+  {
+    id: 'champion_regular',
+    name: 'Regular Division Champion',
+    description: 'Become champion of the Regular Division',
+    icon: '🥇',
+    category: 'championship',
+    rarity: 'rare',
+    color: '#6c757d',
+    requirements: { divisionChampion: 'regular' },
+    divisionId: 'regular'
+  },
+  {
+    id: 'first_post',
+    name: 'First Post',
+    description: 'Create your first post',
+    icon: '📝',
+    category: 'social',
+    rarity: 'common',
+    color: '#007bff',
+    requirements: { postsCreated: 1 }
+  },
+  {
+    id: 'social_butterfly',
+    name: 'Social Butterfly',
+    description: 'Receive 100 likes on your posts',
+    icon: '🦋',
+    category: 'social',
+    rarity: 'uncommon',
+    color: '#e83e8c',
+    requirements: { likesReceived: 100 }
+  },
+  {
+    id: 'first_bet',
+    name: 'First Bet',
+    description: 'Place your first bet',
+    icon: '🎲',
+    category: 'betting',
+    rarity: 'common',
+    color: '#20c997',
+    requirements: { betsPlaced: 1 }
+  },
+  {
+    id: 'early_adopter',
+    name: 'Early Adopter',
+    description: 'One of the first 100 users to join',
+    icon: '🚀',
+    category: 'milestone',
+    rarity: 'rare',
+    color: '#6f42c1',
+    requirements: { userNumber: 100 }
+  },
+  {
+    id: 'moderator',
+    name: 'Moderator',
+    description: 'Platform moderator',
+    icon: '🛡️',
+    category: 'special',
+    rarity: 'legendary',
+    color: '#dc3545',
+    requirements: { role: 'moderator' }
+  }
+];
+
+const normalizeBadge = (badge) => ({
+  ...badge,
+  _id: badge._id || badge.id,
+  id: badge.id || badge._id,
+  isActive: badge.isActive !== false
+});
+
+const ensureBadges = async () => {
+  const db = await readDb();
+  if ((db.badges || []).length > 0) {
+    return db;
+  }
+
+  await updateDb((data) => {
+    data.badges = DEFAULT_BADGES.map((badge) => ({
+      ...badge,
+      _id: badge.id,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    }));
+    return data;
+  });
+
+  return readDb();
+};
+
+const buildUserBadgeEntry = (entry, badge) => ({
+  ...entry,
+  badgeId: entry.badgeId,
+  earnedAt: entry.earnedAt || entry.createdAt,
+  isDisplayed: entry.isDisplayed || false,
+  isActive: entry.isActive !== false,
+  badge: badge ? normalizeBadge(badge) : null
+});
+
+// GET /api/badges/all
+router.get('/all', async (_req, res) => {
+  try {
+    const db = await ensureBadges();
+    const badges = (db.badges || []).map(normalizeBadge);
+    res.json({ badges });
+  } catch (error) {
+    console.error('Error fetching badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/badges/available
 router.get('/available', async (req, res) => {
   try {
+    const db = await ensureBadges();
     const { category, rarity } = req.query;
-    const filter = { isActive: true };
-    
-    if (category) filter.category = category;
-    if (rarity) filter.rarity = rarity;
+    const badges = (db.badges || [])
+      .filter((badge) => badge.isActive !== false)
+      .filter((badge) => (category ? badge.category === category : true))
+      .filter((badge) => (rarity ? badge.rarity === rarity : true))
+      .map(normalizeBadge);
 
-    const badges = await Badge.find(filter).sort({ category: 1, rarity: 1 });
     res.json(badges);
   } catch (error) {
     console.error('Error fetching available badges:', error);
@@ -25,16 +165,37 @@ router.get('/available', async (req, res) => {
   }
 });
 
-// Get user's badges
+// GET /api/badges/user (current user)
+router.get('/user', auth, async (req, res) => {
+  try {
+    const db = await ensureBadges();
+    const badges = (db.userBadges || []).filter(
+      (entry) => entry.userId === req.user.id && entry.isActive !== false
+    );
+    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
+    const userBadges = badges.map((entry) =>
+      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
+    );
+
+    res.json({ badges: userBadges });
+  } catch (error) {
+    console.error('Error fetching user badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/badges/user/:userId
 router.get('/user/:userId', async (req, res) => {
   try {
-    const { userId } = req.params;
-    const { displayed } = req.query;
-    
-    const options = {};
-    if (displayed === 'true') options.displayed = true;
+    const db = await ensureBadges();
+    const badges = (db.userBadges || []).filter(
+      (entry) => entry.userId === req.params.userId && entry.isActive !== false
+    );
+    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
+    const userBadges = badges.map((entry) =>
+      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
+    );
 
-    const userBadges = await badgeService.getUserBadges(userId, options);
     res.json(userBadges);
   } catch (error) {
     console.error('Error fetching user badges:', error);
@@ -42,14 +203,18 @@ router.get('/user/:userId', async (req, res) => {
   }
 });
 
-// Get current user's badges
+// GET /api/badges/my-badges (alias)
 router.get('/my-badges', auth, async (req, res) => {
   try {
-    const { displayed } = req.query;
-    const options = {};
-    if (displayed === 'true') options.displayed = true;
+    const db = await ensureBadges();
+    const badges = (db.userBadges || []).filter(
+      (entry) => entry.userId === req.user.id && entry.isActive !== false
+    );
+    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
+    const userBadges = badges.map((entry) =>
+      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
+    );
 
-    const userBadges = await badgeService.getUserBadges(req.user.id, options);
     res.json(userBadges);
   } catch (error) {
     console.error('Error fetching user badges:', error);
@@ -57,32 +222,52 @@ router.get('/my-badges', auth, async (req, res) => {
   }
 });
 
-// Update badge display settings
+// PUT /api/badges/display/:badgeId
 router.put('/display/:badgeId', auth, async (req, res) => {
   try {
-    const { badgeId } = req.params;
     const { isDisplayed } = req.body;
+    await updateDb((db) => {
+      db.userBadges = Array.isArray(db.userBadges) ? db.userBadges : [];
+      const entry = db.userBadges.find(
+        (badge) => badge.userId === req.user.id && badge.badgeId === req.params.badgeId
+      );
+      if (entry) {
+        entry.isDisplayed = Boolean(isDisplayed);
+      }
+      return db;
+    });
 
-    const result = await badgeService.updateBadgeDisplay(req.user.id, badgeId, isDisplayed);
-    
-    if (result.success) {
-      res.json({ message: 'Badge display updated successfully' });
-    } else {
-      res.status(400).json({ message: 'Failed to update badge display' });
-    }
+    res.json({ message: 'Badge display updated successfully' });
   } catch (error) {
     console.error('Error updating badge display:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get badge leaderboard
+// GET /api/badges/leaderboard/:badgeId
 router.get('/leaderboard/:badgeId', async (req, res) => {
   try {
-    const { badgeId } = req.params;
-    const { limit = 10 } = req.query;
+    const db = await ensureBadges();
+    const limit = Number(req.query.limit || 10);
+    const entries = (db.userBadges || [])
+      .filter((entry) => entry.badgeId === req.params.badgeId && entry.isActive !== false)
+      .sort((a, b) => new Date(a.earnedAt || 0) - new Date(b.earnedAt || 0))
+      .slice(0, limit);
 
-    const leaderboard = await badgeService.getBadgeLeaderboard(badgeId, parseInt(limit));
+    const leaderboard = entries.map((entry) => {
+      const user = (db.users || []).find((u) => u.id === entry.userId);
+      return {
+        ...entry,
+        user: user
+          ? {
+              id: user.id,
+              username: user.username,
+              profilePicture: user.profile?.profilePicture || user.profile?.avatar || ''
+            }
+          : null
+      };
+    });
+
     res.json(leaderboard);
   } catch (error) {
     console.error('Error fetching badge leaderboard:', error);
@@ -90,189 +275,218 @@ router.get('/leaderboard/:badgeId', async (req, res) => {
   }
 });
 
-// Get badge statistics
-router.get('/stats', async (req, res) => {
+// GET /api/badges/stats
+router.get('/stats', async (_req, res) => {
   try {
-    const stats = await badgeService.getBadgeStats();
-    res.json(stats);
+    const db = await ensureBadges();
+    const totalBadges = (db.badges || []).filter((badge) => badge.isActive !== false).length;
+    const totalAwarded = (db.userBadges || []).filter((entry) => entry.isActive !== false).length;
+
+    const rarityStats = {};
+    const categoryStats = {};
+    (db.userBadges || [])
+      .filter((entry) => entry.isActive !== false)
+      .forEach((entry) => {
+        const badge = (db.badges || []).find((b) => b.id === entry.badgeId);
+        if (!badge) return;
+        rarityStats[badge.rarity] = (rarityStats[badge.rarity] || 0) + 1;
+        categoryStats[badge.category] = (categoryStats[badge.category] || 0) + 1;
+      });
+
+    res.json({ totalBadges, totalAwarded, rarityStats, categoryStats });
   } catch (error) {
     console.error('Error fetching badge stats:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Check and award badges for user (manual trigger)
-router.post('/check-awards', auth, async (req, res) => {
-  try {
-    await badgeService.checkAndAwardBadges(req.user.id);
-    res.json({ message: 'Badge check completed' });
-  } catch (error) {
-    console.error('Error checking badges:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
+// POST /api/badges/check-awards
+router.post('/check-awards', auth, async (_req, res) => {
+  res.json({ message: 'Badge check completed' });
 });
 
-// MODERATOR ROUTES
-
-// Award badge to user (moderator only)
+// Moderator: award badge
 router.post('/award', moderatorAuth, async (req, res) => {
   try {
     const { userId, badgeId, metadata } = req.body;
-
     if (!userId || !badgeId) {
       return res.status(400).json({ message: 'User ID and Badge ID are required' });
     }
 
-    const result = await badgeService.awardBadge(userId, badgeId, metadata);
-    
-    if (result.success) {
-      res.json({ 
-        message: 'Badge awarded successfully',
-        badge: result.badge
-      });
-    } else {
-      res.status(400).json({ message: result.message });
-    }
+    let created;
+
+    await updateDb((db) => {
+      db.userBadges = Array.isArray(db.userBadges) ? db.userBadges : [];
+      const existing = db.userBadges.find(
+        (entry) => entry.userId === userId && entry.badgeId === badgeId
+      );
+      if (existing) {
+        const error = new Error('User already has this badge');
+        error.code = 'ALREADY_HAS';
+        throw error;
+      }
+
+      created = {
+        id: uuidv4(),
+        userId,
+        badgeId,
+        metadata: metadata || {},
+        earnedAt: new Date().toISOString(),
+        isDisplayed: false,
+        isActive: true
+      };
+      db.userBadges.push(created);
+      return db;
+    });
+
+    res.json({ message: 'Badge awarded successfully', badge: created });
   } catch (error) {
+    if (error.code === 'ALREADY_HAS') {
+      return res.status(400).json({ message: error.message });
+    }
     console.error('Error awarding badge:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Create new badge (moderator only)
+// Moderator: create badge
 router.post('/create', moderatorAuth, async (req, res) => {
   try {
     const badgeData = req.body;
+    if (!badgeData.id || !badgeData.name) {
+      return res.status(400).json({ message: 'Badge id and name are required' });
+    }
 
-    // Validate required fields
-    const requiredFields = ['id', 'name', 'description', 'icon', 'category', 'rarity', 'color', 'requirements'];
-    for (const field of requiredFields) {
-      if (!badgeData[field]) {
-        return res.status(400).json({ message: `${field} is required` });
+    let created;
+    await updateDb((db) => {
+      db.badges = Array.isArray(db.badges) ? db.badges : [];
+      const exists = db.badges.some((badge) => badge.id === badgeData.id);
+      if (exists) {
+        const error = new Error('Badge ID already exists');
+        error.code = 'DUPLICATE';
+        throw error;
       }
-    }
-
-    const badge = new Badge(badgeData);
-    await badge.save();
-
-    res.status(201).json({
-      message: 'Badge created successfully',
-      badge
+      created = {
+        ...badgeData,
+        _id: badgeData.id,
+        isActive: true,
+        createdAt: new Date().toISOString()
+      };
+      db.badges.push(created);
+      return db;
     });
+
+    res.status(201).json({ message: 'Badge created successfully', badge: created });
   } catch (error) {
-    if (error.code === 11000) {
-      res.status(400).json({ message: 'Badge ID already exists' });
-    } else {
-      console.error('Error creating badge:', error);
-      res.status(500).json({ message: 'Server error' });
+    if (error.code === 'DUPLICATE') {
+      return res.status(400).json({ message: error.message });
     }
+    console.error('Error creating badge:', error);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Update badge (moderator only)
+// Moderator: update badge
 router.put('/:badgeId', moderatorAuth, async (req, res) => {
   try {
-    const { badgeId } = req.params;
-    const updateData = req.body;
+    let updated;
+    await updateDb((db) => {
+      const badge = (db.badges || []).find((entry) => entry.id === req.params.badgeId);
+      if (!badge) {
+        const error = new Error('Badge not found');
+        error.code = 'NOT_FOUND';
+        throw error;
+      }
+      Object.assign(badge, req.body);
+      updated = badge;
+      return db;
+    });
 
-    const badge = await Badge.findOneAndUpdate(
-      { id: badgeId },
-      updateData,
-      { new: true, runValidators: true }
-    );
-
-    if (!badge) {
+    res.json({ message: 'Badge updated successfully', badge: updated });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') {
       return res.status(404).json({ message: 'Badge not found' });
     }
-
-    res.json({
-      message: 'Badge updated successfully',
-      badge
-    });
-  } catch (error) {
     console.error('Error updating badge:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Delete badge (moderator only)
+// Moderator: delete badge (soft delete)
 router.delete('/:badgeId', moderatorAuth, async (req, res) => {
   try {
-    const { badgeId } = req.params;
-
-    // Soft delete - set isActive to false
-    const badge = await Badge.findOneAndUpdate(
-      { id: badgeId },
-      { isActive: false },
-      { new: true }
-    );
-
-    if (!badge) {
-      return res.status(404).json({ message: 'Badge not found' });
-    }
-
-    // Also deactivate all user badges with this ID
-    await UserBadge.updateMany(
-      { badgeId },
-      { isActive: false }
-    );
+    await updateDb((db) => {
+      const badge = (db.badges || []).find((entry) => entry.id === req.params.badgeId);
+      if (!badge) {
+        const error = new Error('Badge not found');
+        error.code = 'NOT_FOUND';
+        throw error;
+      }
+      badge.isActive = false;
+      return db;
+    });
 
     res.json({ message: 'Badge deleted successfully' });
   } catch (error) {
+    if (error.code === 'NOT_FOUND') {
+      return res.status(404).json({ message: 'Badge not found' });
+    }
     console.error('Error deleting badge:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get all badges for management (moderator only)
-router.get('/manage/all', moderatorAuth, async (req, res) => {
+// Moderator: list all badges
+router.get('/manage/all', moderatorAuth, async (_req, res) => {
   try {
-    const badges = await Badge.find().sort({ category: 1, createdAt: -1 });
-    res.json(badges);
+    const db = await ensureBadges();
+    res.json((db.badges || []).map(normalizeBadge));
   } catch (error) {
     console.error('Error fetching all badges:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Get user badge history (moderator only)
+// Moderator: user badge history
 router.get('/manage/user/:userId/history', moderatorAuth, async (req, res) => {
   try {
-    const { userId } = req.params;
-    
-    const userBadges = await UserBadge.find({ userId })
-      .populate('badge')
-      .sort({ earnedAt: -1 });
-
-    res.json(userBadges);
+    const db = await ensureBadges();
+    const entries = (db.userBadges || []).filter(
+      (entry) => entry.userId === req.params.userId
+    );
+    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
+    const history = entries.map((entry) =>
+      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
+    );
+    res.json(history);
   } catch (error) {
     console.error('Error fetching user badge history:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Revoke badge from user (moderator only)
+// Moderator: revoke badge
 router.delete('/revoke/:userId/:badgeId', moderatorAuth, async (req, res) => {
   try {
-    const { userId, badgeId } = req.params;
-
-    const userBadge = await UserBadge.findOneAndUpdate(
-      { userId, badgeId },
-      { isActive: false },
-      { new: true }
-    );
-
-    if (!userBadge) {
-      return res.status(404).json({ message: 'User badge not found' });
-    }
-
-    // Remove from user's achievements array
-    await User.findByIdAndUpdate(userId, {
-      $pull: { achievements: badgeId }
+    await updateDb((db) => {
+      const entry = (db.userBadges || []).find(
+        (badge) =>
+          badge.userId === req.params.userId && badge.badgeId === req.params.badgeId
+      );
+      if (!entry) {
+        const error = new Error('User badge not found');
+        error.code = 'NOT_FOUND';
+        throw error;
+      }
+      entry.isActive = false;
+      return db;
     });
 
     res.json({ message: 'Badge revoked successfully' });
   } catch (error) {
+    if (error.code === 'NOT_FOUND') {
+      return res.status(404).json({ message: 'User badge not found' });
+    }
     console.error('Error revoking badge:', error);
     res.status(500).json({ message: 'Server error' });
   }

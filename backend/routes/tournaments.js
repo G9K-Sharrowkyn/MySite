@@ -1,5 +1,17 @@
 import express from 'express';
-import { getAllTournaments, createTournament, getTournamentById, updateTournament, deleteTournament } from '../controllers/tournamentController.js';
+import {
+  getAllTournaments,
+  createTournament,
+  getTournamentById,
+  updateTournament,
+  deleteTournament,
+  joinTournament,
+  leaveTournament,
+  startTournament,
+  voteInTournament,
+  getTournamentBrackets,
+  advanceMatch
+} from '../controllers/tournamentController.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
@@ -18,6 +30,36 @@ router.post('/', auth, createTournament);
 // @desc    Get tournament by ID
 // @access  Public
 router.get('/:id', getTournamentById);
+
+// @route   GET api/tournaments/:id/brackets
+// @desc    Get tournament brackets
+// @access  Public
+router.get('/:id/brackets', getTournamentBrackets);
+
+// @route   POST api/tournaments/:id/join
+// @desc    Join tournament
+// @access  Private
+router.post('/:id/join', auth, joinTournament);
+
+// @route   POST api/tournaments/:id/leave
+// @desc    Leave tournament
+// @access  Private
+router.post('/:id/leave', auth, leaveTournament);
+
+// @route   POST api/tournaments/:id/start
+// @desc    Start tournament
+// @access  Private (Moderator)
+router.post('/:id/start', auth, startTournament);
+
+// @route   POST api/tournaments/:id/matches/:matchId/vote
+// @desc    Vote in tournament match
+// @access  Private
+router.post('/:id/matches/:matchId/vote', auth, voteInTournament);
+
+// @route   POST api/tournaments/:id/matches/:matchId/advance
+// @desc    Advance tournament match (Moderator)
+// @access  Private
+router.post('/:id/matches/:matchId/advance', auth, advanceMatch);
 
 // @route   PUT api/tournaments/:id
 // @desc    Update tournament

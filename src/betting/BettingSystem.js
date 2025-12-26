@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../auth/AuthContext';
 import './BettingSystem.css';
 
 const BettingSystem = () => {
@@ -70,17 +70,6 @@ const BettingSystem = () => {
     setShowBetModal(true);
   };
 
-  if (loading) {
-    return (
-      <div className="betting-system">
-        <div className="loading-spinner">
-          <div className="spinner"></div>
-          <p>Ładowanie zakładów...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="betting-system">
       <div className="betting-header">
@@ -118,11 +107,12 @@ const BettingSystem = () => {
             fights={availableFights} 
             onBetClick={openBetModal}
             formatTimeRemaining={formatTimeRemaining}
+            isLoading={loading}
           />
         )}
         
         {activeTab === 'my-bets' && (
-          <MyBets bets={myBets} />
+          <MyBets bets={myBets} isLoading={loading} />
         )}
         
         {activeTab === 'parlay' && (
@@ -146,7 +136,11 @@ const BettingSystem = () => {
 };
 
 // Komponent dostępnych walk
-const AvailableFights = ({ fights, onBetClick, formatTimeRemaining }) => {
+const AvailableFights = ({ fights, onBetClick, formatTimeRemaining, isLoading }) => {
+  if (isLoading && fights.length === 0) {
+    return null;
+  }
+
   if (fights.length === 0) {
     return (
       <div className="no-fights">
@@ -242,7 +236,7 @@ const AvailableFights = ({ fights, onBetClick, formatTimeRemaining }) => {
 };
 
 // Komponent moich zakładów
-const MyBets = ({ bets }) => {
+const MyBets = ({ bets, isLoading }) => {
   const getStatusIcon = (status) => {
     switch (status) {
       case 'won': return '🏆';
@@ -262,6 +256,10 @@ const MyBets = ({ bets }) => {
       default: return '#9E9E9E';
     }
   };
+
+  if (isLoading && bets.length === 0) {
+    return null;
+  }
 
   if (bets.length === 0) {
     return (

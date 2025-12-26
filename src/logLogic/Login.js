@@ -1,23 +1,40 @@
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import Notification from '../notificationLogic/Notification';
 import { useNavigate } from 'react-router-dom';
+import Notification from '../notificationLogic/Notification';
 import { AuthContext } from '../auth/AuthContext';
-import '../Auth.css'; // Wspólny plik CSS dla autentykacji
+import '../Auth.css';
+
+const getErrorMessage = (error, fallback) => {
+  if (error?.response?.data) {
+    const { data } = error.response;
+    if (Array.isArray(data.errors) && data.errors.length > 0) {
+      return data.errors.map((item) => item.msg || item.message).join(' ');
+    }
+    if (data.msg) {
+      return data.msg;
+    }
+  }
+
+  return fallback;
+};
 
 const Login = () => {
   const { login } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    password: ''
   });
   const [notification, setNotification] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const { email, password } = formData;
 
-  const onChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const onChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const showNotification = (message, type) => {
     setNotification({ message, type });
@@ -27,64 +44,86 @@ const Login = () => {
     setNotification(null);
   };
 
-  const onSubmit = async (e) => {
-    e.preventDefault();
+  const onSubmit = async (event) => {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      const user = {
-        email,
-        password,
-      };
+      const response = await axios.post(
+        '/api/auth/login',
+        { email, password },
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
 
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      };
-
-      const body = JSON.stringify(user);
-
-      const res = await axios.post('/api/auth/login', body, config);
-      console.log('Login response:', res.data);
-      if (!res.data.userId) {
-        showNotification('Błąd logowania: brak userId w odpowiedzi serwera.', 'error');
+      if (!response.data?.token || !response.data?.userId) {
+        showNotification('Unexpected response from the server.', 'error');
         return;
       }
-      login(res.data.token, res.data.userId);
-      showNotification('Logowanie udane!', 'success');
-      setTimeout(() => navigate('/'), 1000); // Przekieruj po krótkim opóźnieniu, aby powiadomienie było widoczne
-    } catch (err) {
-      console.error(err.response.data);
-      showNotification(err.response.data.msg || 'Błąd logowania', 'error');
+
+      login(response.data.token, response.data.userId, response.data.user);
+      showNotification('Login successful!', 'success');
+
+      setTimeout(() => {
+        navigate('/feed', { replace: true });
+      }, 800);
+    } catch (error) {
+      console.error('Login error:', error);
+      showNotification(
+        getErrorMessage(error, 'Login failed. Please check your credentials.'),
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <div className="auth-container">
-      <h1>Zaloguj się</h1>
-      <Notification message={notification?.message} type={notification?.type} onClose={clearNotification} />
-      <form onSubmit={onSubmit}>
+      <h1>Sign in</h1>
+      <Notification
+        message={notification?.message}
+        type={notification?.type}
+        onClose={clearNotification}
+      />
+      <form onSubmit={onSubmit} noValidate>
         <div className="form-group">
           <input
             type="email"
-            placeholder="Adres Email"
+            placeholder="Email address"
             name="email"
             value={email}
             onChange={onChange}
             required
+            autoComplete="email"
+            disabled={isSubmitting}
           />
         </div>
         <div className="form-group">
           <input
             type="password"
-            placeholder="Hasło"
+            placeholder="Password"
             name="password"
             value={password}
             onChange={onChange}
             minLength="6"
             required
+            autoComplete="current-password"
+            disabled={isSubmitting}
           />
         </div>
-        <input type="submit" value="Zaloguj" className="btn btn-primary" />
+        <input
+          type="submit"
+          value={isSubmitting ? 'Signing in...' : 'Sign in'}
+          className="btn btn-primary"
+          disabled={isSubmitting}
+        />
       </form>
     </div>
   );

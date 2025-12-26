@@ -7,7 +7,6 @@ import './LeaderboardPage.css';
 const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [rankingType, setRankingType] = useState('experience');
-  const [loading, setLoading] = useState(true);
   const [userAchievements, setUserAchievements] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   
@@ -27,13 +26,45 @@ const LeaderboardPage = () => {
 
   const fetchLeaderboard = async () => {
     try {
-      setLoading(true);
       const response = await axios.get(`/api/stats/leaderboard?type=${rankingType}&limit=50`);
-      setLeaderboard(response.data);
-      setLoading(false);
+      const normalized = (response.data || []).map((entry, index) => {
+        const fallbackStats = entry?.stats || {};
+        const fightsValue = entry?.fights;
+        const fightsObject = typeof fightsValue === 'object' && fightsValue !== null
+          ? fightsValue
+          : fallbackStats.fights || {};
+        const fightsTotal =
+          typeof fightsValue === 'number'
+            ? fightsValue
+            : fightsObject.total ?? 0;
+
+        const stats = {
+          experience: entry?.experience ?? fallbackStats.experience ?? 0,
+          points: entry?.points ?? fallbackStats.points ?? 0,
+          level: entry?.level ?? fallbackStats.level ?? 1,
+          fights: {
+            total: fightsTotal,
+            wins: fightsObject.wins ?? 0,
+            losses: fightsObject.losses ?? 0,
+            winRate: fightsObject.winRate ?? 0
+          }
+        };
+
+        return {
+          ...entry,
+          userId: entry?.userId || entry?.id || entry?._id || String(index),
+          stats,
+          level: stats.level,
+          achievements:
+            entry?.achievements ??
+            (Array.isArray(fallbackStats.achievements)
+              ? fallbackStats.achievements.length
+              : 0)
+        };
+      });
+      setLeaderboard(normalized);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
-      setLoading(false);
     }
   };
 
@@ -242,17 +273,6 @@ const LeaderboardPage = () => {
     );
   };
 
-  if (loading) {
-    return (
-      <div className="leaderboard-page">
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>{t('loading') || 'Loading...'}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="leaderboard-page">
       <div className="leaderboard-header">
@@ -295,19 +315,22 @@ const LeaderboardPage = () => {
             <div className="header-achievements">{t('achievements') || 'Achievements'}</div>
           </div>
 
-          {leaderboard.map((user, index) => (
+          {leaderboard.map((user, index) => {
+            const userId = user.userId || user.id || user._id || String(index);
+            const isCurrentUser = userId === currentUserId;
+            return (
             <div 
-              key={user.userId} 
-              className={`leaderboard-row ${user.userId === currentUserId ? 'current-user' : ''}`}
-              onClick={() => navigate(`/profile/${user.userId}`)}
+              key={userId} 
+              className={`leaderboard-row ${isCurrentUser ? 'current-user' : ''}`}
+              onClick={() => navigate(`/profile/${userId}`)}
             >
               <div className="rank">
                 <span className="rank-icon">{getRankIcon(user.rank)}</span>
               </div>
               <div className="user-info">
                 <span className="username">{user.username}</span>
-                {user.userId === currentUserId && (
-                  <span className="current-user-badge">👤 {t('you') || 'You'}</span>
+                {isCurrentUser && (
+                  <span className="current-user-badge">??'? {t('you') || 'You'}</span>
                 )}
               </div>
               <div className="level">
@@ -329,11 +352,12 @@ const LeaderboardPage = () => {
               </div>
               <div className="achievements">
                 <span className="achievement-count">
-                  {user.achievements} 🏅
+                  {user.achievements} ????
                 </span>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

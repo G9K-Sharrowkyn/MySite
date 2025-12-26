@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
@@ -6,14 +5,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
-// import mongoSanitize from 'express-mongo-sanitize'; // Incompatible with Express 5.x
 import hpp from 'hpp';
-import { startScheduler } from './services/fightScheduler.js';
-import { startBettingService } from './services/bettingService.js';
-import { startFightAutoLockJob } from './jobs/fightAutoLock.js';
 import http from 'http';
 import { Server } from 'socket.io';
-import ChatMessage from './models/ChatMessage.js';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import {
+  addMessage as addLocalMessage,
+  addReaction as addLocalReaction,
+  getRecentMessages as getLocalRecentMessages,
+  trimMessages as trimLocalMessages
+} from './services/chatStore.js';
 
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
@@ -29,20 +31,27 @@ import tournamentRoutes from './routes/tournaments.js';
 import statsRoutes from './routes/stats.js';
 import badgeRoutes from './routes/badges.js';
 import bettingRoutes from './routes/betting.js';
-import fighterProposalRoutes from './routes/fighterProposals.js';
 import tagRoutes from './routes/tags.js';
 import privacyRoutes from './routes/privacy.js';
+import usersRoutes from './routes/users.js';
+import coinsRoutes from './routes/coins.js';
+import communityRoutes from './routes/community.js';
+import donationsRoutes from './routes/donations.js';
+import legalRoutes from './routes/legal.js';
+import recommendationsRoutes from './routes/recommendations.js';
+import challengesRoutes from './routes/challenges.js';
+import storeRoutes from './routes/store.js';
+import userRoutes from './routes/user.js';
+import pushRoutes from './routes/push.js';
 
-// Connect to MongoDB
-const mongoUri = process.env.MONGODB_URI;
-if (mongoUri) {
-  mongoose.connect(mongoUri)
-    .then(() => console.log('✅ Connected to MongoDB'))
-    .catch((err) => console.error('❌ MongoDB connection error:', err));
-} else {
-  console.warn('⚠️  No MONGODB_URI found in .env, MongoDB will not be used.');
-}
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const chatStore = {
+  getRecentMessages: getLocalRecentMessages,
+  addMessage: addLocalMessage,
+  addReaction: addLocalReaction,
+  trimMessages: trimLocalMessages
+};
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -67,7 +76,7 @@ app.use(helmet({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per windowMs (increased for development)
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -83,11 +92,6 @@ const authLimiter = rateLimit({
 app.use('/api/', limiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
-
-// Data sanitization against NoSQL query injection
-// Note: express-mongo-sanitize has compatibility issues with Express 5.x
-// Using custom sanitization in validation middleware instead
-// app.use(mongoSanitize());
 
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
@@ -108,6 +112,7 @@ app.use(cors({
 // Body parser
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Make io accessible to routes
 app.use((req, res, next) => {
@@ -132,9 +137,18 @@ app.use('/api/tournaments', tournamentRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/betting', bettingRoutes);
-app.use('/api/fighter-proposals', fighterProposalRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/privacy', privacyRoutes);
+app.use('/api/users', usersRoutes);
+app.use('/api/coins', coinsRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/donations', donationsRoutes);
+app.use('/api/legal', legalRoutes);
+app.use('/api/recommendations', recommendationsRoutes);
+app.use('/api/challenges', challengesRoutes);
+app.use('/api/store', storeRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/push', pushRoutes);
 
 // Basic route
 app.get('/', (req, res) => {
@@ -170,25 +184,19 @@ io.on('connection', (socket) => {
     // Send active users list
     socket.emit('active-users', Array.from(activeUsers.values()));
 
-    // Load recent chat messages from MongoDB
+    // Load recent chat messages
     try {
-      const recentMessages = await ChatMessage.find()
-        .sort({ createdAt: -1 })
-        .limit(50)
-        .lean();
-
-      const formattedMessages = recentMessages
-        .reverse()
-        .map(msg => ({
-          id: msg._id.toString(),
-          userId: msg.userId,
-          username: msg.username,
-          profilePicture: msg.profilePicture,
-          text: msg.text,
-          timestamp: msg.createdAt,
-          reactions: msg.reactions || [],
-          isOwn: msg.userId === userData.userId
-        }));
+      const recentMessages = await chatStore.getRecentMessages(50);
+      const formattedMessages = recentMessages.map((msg) => ({
+        id: msg.id,
+        userId: msg.userId,
+        username: msg.username,
+        profilePicture: msg.profilePicture,
+        text: msg.text,
+        timestamp: msg.timestamp || msg.createdAt,
+        reactions: msg.reactions || [],
+        isOwn: msg.userId === userData.userId
+      }));
 
       socket.emit('message-history', formattedMessages);
     } catch (error) {
@@ -206,38 +214,25 @@ io.on('connection', (socket) => {
     const user = activeUsers.get(socket.id);
 
     try {
-      // Save to MongoDB
-      const newMessage = await ChatMessage.create({
+      const newMessage = await chatStore.addMessage({
         userId: user.userId,
         username: user.username,
         profilePicture: user.profilePicture,
-        text: messageData.text,
-        reactions: []
+        text: messageData.text
       });
 
-      // Clean up old messages - keep only last 1000
-      const messageCount = await ChatMessage.countDocuments();
-      if (messageCount > 1000) {
-        const oldMessages = await ChatMessage.find()
-          .sort({ createdAt: 1 })
-          .limit(messageCount - 1000)
-          .select('_id');
-        const idsToDelete = oldMessages.map(msg => msg._id);
-        await ChatMessage.deleteMany({ _id: { $in: idsToDelete } });
-      }
+      await chatStore.trimMessages(1000);
 
-      // Format message for broadcast
       const formattedMessage = {
-        id: newMessage._id.toString(),
+        id: newMessage.id,
         userId: newMessage.userId,
         username: newMessage.username,
         profilePicture: newMessage.profilePicture,
         text: newMessage.text,
-        timestamp: newMessage.createdAt,
-        reactions: []
+        timestamp: newMessage.timestamp || newMessage.createdAt,
+        reactions: newMessage.reactions || []
       };
 
-      // Broadcast to all clients
       io.emit('new-message', formattedMessage);
     } catch (error) {
       console.error('Error saving chat message:', error);
@@ -253,30 +248,21 @@ io.on('connection', (socket) => {
     const user = activeUsers.get(socket.id);
 
     try {
-      // Find message and update reactions
-      const message = await ChatMessage.findById(data.messageId);
+      const reactionUpdate = await chatStore.addReaction({
+        messageId: data.messageId,
+        userId: user.userId,
+        username: user.username,
+        emoji: data.emoji
+      });
 
-      if (message) {
-        // Check if user already reacted with this emoji
-        const existingReaction = message.reactions.find(
-          r => r.userId === user.userId && r.emoji === data.emoji
-        );
-
-        if (!existingReaction) {
-          message.reactions.push({
-            userId: user.userId,
-            username: user.username,
-            emoji: data.emoji
-          });
-
-          await message.save();
-
-          // Broadcast reaction update
-          io.emit('reaction-added', {
-            messageId: data.messageId,
-            reactions: message.reactions
-          });
-        }
+      if (reactionUpdate) {
+        const payload = reactionUpdate.messageId
+          ? reactionUpdate
+          : {
+              messageId: reactionUpdate.id,
+              reactions: reactionUpdate.reactions || []
+            };
+        io.emit('reaction-added', payload);
       }
     } catch (error) {
       console.error('Error adding reaction:', error);
@@ -314,19 +300,7 @@ io.on('connection', (socket) => {
 // Start the server
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  
-  // Start the fight scheduler
-  (async () => {
-    await startScheduler();
-  })();
-  
-  // Start the betting service
-  (async () => {
-    await startBettingService();
-  })();
-  
-  // Start the fight auto-lock job
-  (async () => {
-    await startFightAutoLockJob(io);
-  })();
 });
+
+export { io };
+

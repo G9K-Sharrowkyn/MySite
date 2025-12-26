@@ -1,302 +1,402 @@
 import express from 'express';
-import taggingService from '../services/taggingService.js';
-import Tag from '../models/Tag.js';
-import Post from '../models/Post.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { readDb, updateDb } from '../services/jsonDb.js';
+import { autoTagPost, getBaseTags } from '../utils/tagging.js';
 
 const router = express.Router();
 
-// GET /api/tags - Pobierz wszystkie tagi
-router.get('/', async (req, res) => {
-  try {
-    const { category, limit = 50, trending = false } = req.query;
-    
-    let tags;
-    if (trending === 'true') {
-      tags = await taggingService.getTrendingTags(parseInt(limit));
-    } else {
-      tags = await taggingService.getPopularTags(category, parseInt(limit));
-    }
-    
-    res.json({
-      success: true,
-      tags
+const CATEGORY_KEYS = ['universe', 'character', 'power_tier', 'genre'];
+
+const normalizeTagName = (value) => String(value || '').trim();
+
+const extractTagsByCategory = (post) => {
+  const autoTags = post.autoTags || {};
+  const tags = Array.isArray(post.tags) ? post.tags : [];
+
+  return {
+    universe: (autoTags.universes || []).map(normalizeTagName).filter(Boolean),
+    character: (autoTags.characters || []).map(normalizeTagName).filter(Boolean),
+    power_tier: (autoTags.powerTiers || []).map(normalizeTagName).filter(Boolean),
+    genre: [
+      ...(autoTags.categories || []).map(normalizeTagName),
+      ...tags.map(normalizeTagName)
+    ].filter(Boolean)
+  };
+};
+
+const resolveUserId = (user) => user?.id || user?._id;
+
+const buildAuthor = (user) => {
+  if (!user) return null;
+  return {
+    id: resolveUserId(user),
+    username: user.username,
+    profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
+    role: user.role || 'user'
+  };
+};
+
+const buildTagIndex = (posts) => {
+  const index = {
+    universe: new Map(),
+    character: new Map(),
+    power_tier: new Map(),
+    genre: new Map()
+  };
+
+  posts.forEach((post) => {
+    const tagsByCategory = extractTagsByCategory(post);
+    CATEGORY_KEYS.forEach((category) => {
+      const bucket = index[category];
+      tagsByCategory[category].forEach((tag) => {
+        const key = tag.toLowerCase();
+        const entry = bucket.get(key) || { name: tag, postCount: 0 };
+        entry.postCount += 1;
+        bucket.set(key, entry);
+      });
     });
+  });
+
+  return index;
+};
+
+const mapTagEntries = (entries, category) =>
+  [...entries.values()]
+    .sort((a, b) => b.postCount - a.postCount)
+    .map((entry) => ({
+      _id: `${category}:${entry.name.toLowerCase()}`,
+      name: entry.name,
+      postCount: entry.postCount,
+      category
+    }));
+
+const resolveTagId = (tag) => {
+  if (tag?.id) return tag.id;
+  if (tag?._id) return tag._id;
+  if (!tag?.name || !tag?.category) return null;
+  return `${tag.category}:${tag.name.toLowerCase()}`;
+};
+
+const findStoredTagIndex = (tags, id) =>
+  tags.findIndex((tag) => {
+    const tagId = resolveTagId(tag);
+    if (tagId === id) return true;
+    if (tag?.name && tag.name.toLowerCase() === id.toLowerCase()) return true;
+    return false;
+  });
+
+const normalizeStoredTag = (tag) => {
+  const id = resolveTagId(tag);
+  return {
+    ...tag,
+    id,
+    _id: id,
+    isActive: tag?.isActive !== false
+  };
+};
+
+// GET /api/tags - list tags (simple)
+router.get('/', async (_req, res) => {
+  try {
+    const db = await readDb();
+    const index = buildTagIndex(db.posts || []);
+    const tags = CATEGORY_KEYS.flatMap((category) =>
+      mapTagEntries(index[category], category)
+    );
+
+    res.json({ success: true, tags });
   } catch (error) {
     console.error('Error fetching tags:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas pobierania tagów'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch tags' });
   }
 });
 
-// GET /api/tags/categories - Pobierz tagi pogrupowane według kategorii
-router.get('/categories', async (req, res) => {
+// GET /api/tags/categories - tags grouped by category
+router.get('/categories', async (_req, res) => {
   try {
-    const categories = ['universe', 'character', 'power_tier', 'genre'];
-    const tagsByCategory = {};
-    
-    for (const category of categories) {
-      tagsByCategory[category] = await taggingService.getPopularTags(category, 20);
-    }
-    
-    res.json({
-      success: true,
-      categories: tagsByCategory
+    const db = await readDb();
+    const index = buildTagIndex(db.posts || []);
+    const categories = {};
+
+    CATEGORY_KEYS.forEach((category) => {
+      categories[category] = mapTagEntries(index[category], category).slice(0, 20);
     });
+
+    res.json({ success: true, categories });
   } catch (error) {
     console.error('Error fetching tag categories:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas pobierania kategorii tagów'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch tag categories' });
   }
 });
 
-// GET /api/tags/search - Wyszukaj tagi
+// GET /api/tags/search - search tags
 router.get('/search', async (req, res) => {
   try {
-    const { q } = req.query;
-    
-    if (!q || q.length < 2) {
-      return res.json({
-        success: true,
-        tags: []
-      });
+    const q = (req.query.q || '').toLowerCase();
+    if (q.length < 2) {
+      return res.json({ success: true, tags: [] });
     }
-    
-    const tags = await taggingService.searchTags(q);
-    
-    res.json({
-      success: true,
-      tags
-    });
+
+    const db = await readDb();
+    const index = buildTagIndex(db.posts || []);
+    const results = CATEGORY_KEYS.flatMap((category) =>
+      mapTagEntries(index[category], category)
+    ).filter((tag) => tag.name.toLowerCase().includes(q));
+
+    res.json({ success: true, tags: results.slice(0, 50) });
   } catch (error) {
     console.error('Error searching tags:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas wyszukiwania tagów'
-    });
+    res.status(500).json({ success: false, message: 'Failed to search tags' });
   }
 });
 
-// GET /api/tags/trending - Pobierz trending tagi
+// GET /api/tags/trending - trending tags
 router.get('/trending', async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
-    const tags = await taggingService.getTrendingTags(parseInt(limit));
-    
-    res.json({
-      success: true,
-      tags
-    });
+    const limit = Number(req.query.limit || 10);
+    const db = await readDb();
+    const index = buildTagIndex(db.posts || []);
+    const tags = CATEGORY_KEYS.flatMap((category) =>
+      mapTagEntries(index[category], category)
+    )
+      .sort((a, b) => b.postCount - a.postCount)
+      .slice(0, limit);
+
+    res.json({ success: true, tags });
   } catch (error) {
     console.error('Error fetching trending tags:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas pobierania trending tagów'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch trending tags' });
   }
 });
 
-// POST /api/tags/filter-posts - Filtruj posty według tagów
+// POST /api/tags/filter-posts - filter posts by tags
 router.post('/filter-posts', async (req, res) => {
   try {
-    const filters = req.body;
-    const posts = await taggingService.filterPosts(filters);
-    
+    const { page = 1, limit = 10, sortBy = 'createdAt', ...filters } = req.body || {};
+    const db = await readDb();
+
+    const hasFilters = CATEGORY_KEYS.some(
+      (category) => Array.isArray(filters[category]) && filters[category].length > 0
+    );
+
+    let posts = db.posts || [];
+
+    if (hasFilters) {
+      posts = posts.filter((post) => {
+        const tagsByCategory = extractTagsByCategory(post);
+        return CATEGORY_KEYS.every((category) => {
+          const wanted = filters[category] || [];
+          if (!wanted.length) {
+            return true;
+          }
+          const normalizedWanted = wanted.map((tag) => tag.toLowerCase());
+          return tagsByCategory[category].some((tag) =>
+            normalizedWanted.includes(tag.toLowerCase())
+          );
+        });
+      });
+    }
+
+    const sorted = [...posts].sort((a, b) => {
+      if (sortBy === 'likes') {
+        return (b.likes?.length || 0) - (a.likes?.length || 0);
+      }
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const paged = sorted.slice(
+      (pageNumber - 1) * limitNumber,
+      pageNumber * limitNumber
+    );
+
+    const formatted = paged.map((post) => {
+      const author = db.users.find(
+        (user) => resolveUserId(user) === post.authorId
+      );
+      const fight = post.fight
+        ? {
+            ...post.fight,
+            teamA: Array.isArray(post.fight.teamA)
+              ? post.fight.teamA.map((entry) => entry?.name || entry).join(', ')
+              : post.fight.teamA,
+            teamB: Array.isArray(post.fight.teamB)
+              ? post.fight.teamB.map((entry) => entry?.name || entry).join(', ')
+              : post.fight.teamB,
+            votes: {
+              teamA: post.fight.votes?.teamA || 0,
+              teamB: post.fight.votes?.teamB || 0,
+              draw: post.fight.votes?.draw || 0,
+              voters: post.fight.votes?.voters || []
+            }
+          }
+        : null;
+      return {
+        ...post,
+        id: post.id || post._id,
+        fight,
+        author: buildAuthor(author)
+      };
+    });
+
     res.json({
       success: true,
-      posts,
+      posts: formatted,
       count: posts.length
     });
   } catch (error) {
     console.error('Error filtering posts:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas filtrowania postów'
-    });
+    res.status(500).json({ success: false, message: 'Failed to filter posts' });
   }
 });
 
-// POST /api/tags/auto-tag - Automatyczne tagowanie posta (dla moderatorów)
-router.post('/auto-tag', authenticateToken, async (req, res) => {
+// POST /api/tags/auto-tag - generate tags from content
+router.post('/auto-tag', async (req, res) => {
   try {
-    const { postId } = req.body;
-    
-    // Sprawdź czy użytkownik jest moderatorem
-    if (!req.user.isModerator) {
-      return res.status(403).json({
-        success: false,
-        message: 'Brak uprawnień'
-      });
-    }
-    
-    const post = await Post.findById(postId);
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: 'Post nie został znaleziony'
-      });
-    }
-    
-    const taggingResult = await taggingService.autoTagPost(post);
-    
-    // Aktualizuj post
-    post.tags = taggingResult.tags;
-    post.autoTags = taggingResult.autoTags;
-    await post.save();
-    
-    // Aktualizuj statystyki tagów
-    await taggingService.updateTagStats(taggingResult.tags);
-    
-    res.json({
-      success: true,
-      message: 'Post został automatycznie otagowany',
-      tags: taggingResult.tags,
-      autoTags: taggingResult.autoTags
-    });
+    const db = await readDb();
+    const tagged = autoTagPost(db, req.body || {});
+    res.json({ success: true, ...tagged });
   } catch (error) {
-    console.error('Error auto-tagging post:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas automatycznego tagowania'
-    });
+    console.error('Error auto-tagging:', error);
+    res.status(500).json({ success: false, message: 'Failed to auto-tag content' });
   }
 });
 
-// POST /api/tags/initialize - Inicjalizuj podstawowe tagi (dla administratorów)
-router.post('/initialize', authenticateToken, async (req, res) => {
+// POST /api/tags/initialize - seed base tags
+router.post('/initialize', async (_req, res) => {
   try {
-    // Sprawdź czy użytkownik jest administratorem
-    if (!req.user.isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Brak uprawnień administratora'
+    const baseTags = getBaseTags();
+    let created = [];
+
+    await updateDb((db) => {
+      db.tags = Array.isArray(db.tags) ? db.tags : [];
+      const existing = new Set(
+        db.tags.map((tag) => `${tag.category}:${tag.name}`.toLowerCase())
+      );
+
+      baseTags.forEach((tag) => {
+        const key = `${tag.category}:${tag.name}`.toLowerCase();
+        if (existing.has(key)) {
+          return;
+        }
+
+        const id = resolveTagId(tag) || `${tag.category}:${tag.name.toLowerCase()}`;
+        db.tags.push({
+          ...tag,
+          id,
+          _id: id,
+          usageCount: 0,
+          createdAt: new Date().toISOString(),
+          isActive: true
+        });
+        created.push(tag.name);
       });
-    }
-    
-    await taggingService.initializeBaseTags();
-    
-    res.json({
-      success: true,
-      message: 'Podstawowe tagi zostały zainicjalizowane'
+
+      return db;
     });
+
+    res.json({ success: true, created, count: created.length });
   } catch (error) {
     console.error('Error initializing tags:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas inicjalizacji tagów'
-    });
+    res.status(500).json({ success: false, message: 'Failed to initialize tags' });
   }
 });
 
-// GET /api/tags/stats - Statystyki tagów
-router.get('/stats', async (req, res) => {
+// GET /api/tags/stats - aggregate tag stats
+router.get('/stats', async (_req, res) => {
   try {
-    const totalTags = await Tag.countDocuments({ active: true });
-    const trendingCount = await Tag.countDocuments({ trending: true });
-    const categoryCounts = await Tag.aggregate([
-      { $match: { active: true } },
-      { $group: { _id: '$category', count: { $sum: 1 } } }
-    ]);
-    
-    const topTags = await Tag.find({ active: true })
-      .sort({ postCount: -1 })
-      .limit(10)
-      .select('name postCount category');
-    
+    const db = await readDb();
+    const index = buildTagIndex(db.posts || []);
+    const categories = {};
+    const totals = {};
+
+    CATEGORY_KEYS.forEach((category) => {
+      const entries = mapTagEntries(index[category], category);
+      categories[category] = entries;
+      totals[category] = entries.length;
+    });
+
+    const allTags = CATEGORY_KEYS.flatMap((category) =>
+      mapTagEntries(index[category], category)
+    );
+
     res.json({
       success: true,
-      stats: {
-        totalTags,
-        trendingCount,
-        categoryCounts,
-        topTags
-      }
+      totals,
+      totalTags: allTags.length,
+      topTags: allTags.slice().sort((a, b) => b.postCount - a.postCount).slice(0, 10),
+      storedTags: (db.tags || []).length,
+      categories
     });
   } catch (error) {
     console.error('Error fetching tag stats:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas pobierania statystyk tagów'
-    });
+    res.status(500).json({ success: false, message: 'Failed to fetch tag stats' });
   }
 });
 
-// PUT /api/tags/:id - Aktualizuj tag (dla moderatorów)
-router.put('/:id', authenticateToken, async (req, res) => {
+// PUT /api/tags/:id - update stored tag metadata
+router.put('/:id', async (req, res) => {
   try {
-    if (!req.user.isModerator) {
-      return res.status(403).json({
-        success: false,
-        message: 'Brak uprawnień'
-      });
-    }
-    
-    const { id } = req.params;
-    const updates = req.body;
-    
-    const tag = await Tag.findByIdAndUpdate(id, updates, { new: true });
-    
-    if (!tag) {
-      return res.status(404).json({
-        success: false,
-        message: 'Tag nie został znaleziony'
-      });
-    }
-    
-    res.json({
-      success: true,
-      message: 'Tag został zaktualizowany',
-      tag
+    let updated;
+    await updateDb((db) => {
+      db.tags = Array.isArray(db.tags) ? db.tags : [];
+      const index = findStoredTagIndex(db.tags, req.params.id);
+      if (index < 0) {
+        const error = new Error('Tag not found');
+        error.code = 'NOT_FOUND';
+        throw error;
+      }
+
+      const tag = db.tags[index];
+      const nextName = req.body?.name ?? tag.name;
+      const nextCategory = req.body?.category ?? tag.category;
+      const nextId = resolveTagId({ ...tag, name: nextName, category: nextCategory });
+
+      tag.name = nextName;
+      tag.category = nextCategory;
+      if (req.body?.color !== undefined) tag.color = req.body.color;
+      if (req.body?.isActive !== undefined) {
+        tag.isActive = Boolean(req.body.isActive);
+      }
+      tag.id = nextId;
+      tag._id = nextId;
+      tag.updatedAt = new Date().toISOString();
+      updated = normalizeStoredTag(tag);
+      return db;
     });
+
+    res.json({ success: true, tag: updated });
   } catch (error) {
+    if (error.code === 'NOT_FOUND') {
+      return res.status(404).json({ success: false, message: 'Tag not found' });
+    }
     console.error('Error updating tag:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas aktualizacji tagu'
-    });
+    res.status(500).json({ success: false, message: 'Failed to update tag' });
   }
 });
 
-// DELETE /api/tags/:id - Usuń tag (dla administratorów)
-router.delete('/:id', authenticateToken, async (req, res) => {
+// DELETE /api/tags/:id - delete stored tag
+router.delete('/:id', async (req, res) => {
   try {
-    if (!req.user.isAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: 'Brak uprawnień administratora'
-      });
-    }
-    
-    const { id } = req.params;
-    const tag = await Tag.findByIdAndDelete(id);
-    
-    if (!tag) {
-      return res.status(404).json({
-        success: false,
-        message: 'Tag nie został znaleziony'
-      });
-    }
-    
-    // Usuń tag z wszystkich postów
-    await Post.updateMany(
-      { tags: tag.name },
-      { $pull: { tags: tag.name } }
-    );
-    
-    res.json({
-      success: true,
-      message: 'Tag został usunięty'
+    let removed = false;
+    await updateDb((db) => {
+      db.tags = Array.isArray(db.tags) ? db.tags : [];
+      const before = db.tags.length;
+      db.tags = db.tags.filter(
+        (tag) => resolveTagId(tag) !== req.params.id
+      );
+      removed = db.tags.length !== before;
+      return db;
     });
+
+    if (!removed) {
+      return res.status(404).json({ success: false, message: 'Tag not found' });
+    }
+
+    res.json({ success: true, message: 'Tag deleted' });
   } catch (error) {
     console.error('Error deleting tag:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Błąd podczas usuwania tagu'
-    });
+    res.status(500).json({ success: false, message: 'Failed to delete tag' });
   }
 });
 

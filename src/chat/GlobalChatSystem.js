@@ -12,7 +12,7 @@ const GlobalChatSystem = () => {
   const [typingUsers, setTypingUsers] = useState(new Map());
   const [isConnected, setIsConnected] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   
   const messagesEndRef = useRef(null);

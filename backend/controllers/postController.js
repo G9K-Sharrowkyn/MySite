@@ -1,72 +1,125 @@
 import { v4 as uuidv4 } from 'uuid';
-import Post from '../models/Post.js';
-import User from '../models/User.js';
-import taggingService from '../services/taggingService.js';
+import { readDb, updateDb } from '../services/jsonDb.js';
+import { autoTagPost } from '../utils/tagging.js';
+
+const resolveUserId = (user) => user?.id || user?._id;
+
+const buildAuthor = (user) => {
+  if (!user) return null;
+  const profile = user.profile || {};
+  return {
+    id: resolveUserId(user),
+    username: user.username,
+    profilePicture: profile.profilePicture || profile.avatar || '',
+    rank: user.stats?.rank || 'Rookie'
+  };
+};
+
+const normalizeFightTeam = (value) => {
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => (typeof entry === 'string' ? entry : entry?.name))
+      .filter(Boolean)
+      .join(', ');
+  }
+  if (typeof value === 'string') return value;
+  return value ? String(value) : '';
+};
+
+const normalizePostForResponse = (post, users) => {
+  const author = users.find((user) => resolveUserId(user) === post.authorId);
+  const normalized = { ...post };
+  const postId = normalized.id || normalized._id;
+
+  if (normalized.fight) {
+    normalized.fight = {
+      ...normalized.fight,
+      teamA: normalizeFightTeam(normalized.fight.teamA),
+      teamB: normalizeFightTeam(normalized.fight.teamB),
+      votes: {
+        teamA: normalized.fight.votes?.teamA || 0,
+        teamB: normalized.fight.votes?.teamB || 0,
+        draw: normalized.fight.votes?.draw || 0,
+        voters: normalized.fight.votes?.voters || []
+      }
+    };
+  }
+
+  return {
+    ...normalized,
+    id: postId,
+    author: buildAuthor(author)
+  };
+};
+
+const findPostById = (posts, id) =>
+  posts.find((entry) => entry.id === id || entry._id === id);
+
+const sortPosts = (posts, sortBy) => {
+  if (sortBy === 'likes') {
+    return [...posts].sort(
+      (a, b) => (b.likes?.length || 0) - (a.likes?.length || 0)
+    );
+  }
+  return [...posts].sort(
+    (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+  );
+};
+
+const buildReactionSummary = (reactions = []) => {
+  const reactionCounts = {};
+  reactions.forEach((reaction) => {
+    const key = `${reaction.reactionIcon}-${reaction.reactionName}`;
+    reactionCounts[key] = (reactionCounts[key] || 0) + 1;
+  });
+
+  return Object.entries(reactionCounts).map(([key, count]) => {
+    const [icon, name] = key.split('-', 2);
+    return { icon, name, count };
+  });
+};
 
 export const getAllPosts = async (req, res) => {
   const { page = 1, limit = 10, sortBy = 'createdAt' } = req.query;
   try {
-    const sortObj = sortBy === 'likes' ? { likes: -1 } : { createdAt: -1 };
-    const posts = await Post.find()
-      .sort(sortObj)
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
-    const totalPosts = await Post.countDocuments();
-    // Populate author info
-    const postsWithUserInfo = await Promise.all(posts.map(async post => {
-      const author = await User.findById(post.authorId);
-      return {
-        ...post.toObject(),
-        author: author ? {
-          id: author._id,
-          username: author.username,
-          profilePicture: author.profile?.profilePicture || '',
-          rank: author.stats?.rank || 'Rookie'
-        } : null
-      };
-    }));
+    const db = await readDb();
+    const sortedPosts = sortPosts(db.posts, sortBy);
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+    const pagedPosts = sortedPosts.slice(
+      (pageNumber - 1) * limitNumber,
+      pageNumber * limitNumber
+    );
+
+    const postsWithUserInfo = pagedPosts.map((post) =>
+      normalizePostForResponse(post, db.users)
+    );
+
     res.json({
       posts: postsWithUserInfo,
-      totalPosts,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(totalPosts / limit)
+      totalPosts: db.posts.length,
+      currentPage: pageNumber,
+      totalPages: Math.ceil(db.posts.length / limitNumber)
     });
   } catch (err) {
-    console.error('Error fetching all posts from MongoDB:', err.message);
+    console.error('Error fetching all posts from JSON:', err.message);
     res.status(500).send('Server Error');
   }
 };
 
 export const getPostsByUser = async (req, res) => {
   const { userId } = req.params;
-  const { page = 1, limit = 10 } = req.query;
 
   try {
-    const posts = await Post.find({ authorId: userId })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    const db = await readDb();
+    const posts = db.posts.filter((post) => post.authorId === userId);
+    const sorted = sortPosts(posts, 'createdAt');
 
-    const totalPosts = await Post.countDocuments({ authorId: userId });
+    const postsWithUserInfo = sorted.map((post) =>
+      normalizePostForResponse(post, db.users)
+    );
 
-    // Populate author info
-    const author = await User.findById(userId);
-    const postsWithUserInfo = posts.map(post => ({
-      ...post.toObject(),
-      author: author ? {
-        id: author._id,
-        username: author.username,
-        profilePicture: author.profile?.profilePicture || '',
-        rank: author.stats?.rank || 'Rookie'
-      } : null
-    }));
-
-    res.json({
-      posts: postsWithUserInfo,
-      totalPosts,
-      currentPage: parseInt(page),
-      totalPages: Math.ceil(totalPosts / limit)
-    });
+    res.json(postsWithUserInfo);
   } catch (err) {
     console.error('Error fetching user posts:', err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
@@ -77,25 +130,14 @@ export const getPostById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const post = await Post.findById(id);
+    const db = await readDb();
+    const post = findPostById(db.posts, id);
 
     if (!post) {
       return res.status(404).json({ msg: 'Post not found' });
     }
-    
-    // Add author info
-    const author = await User.findById(post.authorId);
-    const postWithAuthor = {
-      ...post.toObject(),
-      author: author ? {
-        id: author._id,
-        username: author.username,
-        profilePicture: author.profile?.profilePicture || '',
-        rank: author.stats?.rank || 'Rookie'
-      } : null
-    };
 
-    res.json(postWithAuthor);
+    res.json(normalizePostForResponse(post, db.users));
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -103,103 +145,162 @@ export const getPostById = async (req, res) => {
 };
 
 export const createPost = async (req, res) => {
-  const { title, content, type, teamA, teamB, photos, pollOptions, isOfficial, moderatorCreated, category } = req.body;
+  const {
+    title,
+    content,
+    type,
+    teamA,
+    teamB,
+    photos,
+    pollOptions,
+    voteDuration,
+    isOfficial,
+    moderatorCreated,
+    category
+  } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ message: 'Title and content are required.' });
+  }
 
   try {
-    // Check if user is moderator for official fights
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    if (isOfficial && user.role !== 'moderator') {
-      return res.status(403).json({ message: 'Only moderators can create official fights' });
-    }
-
-    const postData = {
-      title,
-      content,
-      type: type || 'discussion', // discussion, fight, other
-      authorId: req.user.id,
-      likes: [],
-      comments: [],
-      views: 0,
-      photos: photos && photos.length > 0 ? photos : [],
-      poll: null,
-      fight: null,
-      isOfficial: isOfficial || false,
-      moderatorCreated: moderatorCreated || false,
-      category: category || null,
-      featured: false,
-      tags: [] // Will be populated below
-    };
-
-    if (type === 'fight') {
-      // Calculate lock time (72 hours from creation)
-      const lockTime = new Date();
-      lockTime.setHours(lockTime.getHours() + 72);
-
-      postData.fight = {
-        teamA: teamA || null,
-        teamB: teamB || null,
-        votes: {
-          teamA: 0,
-          teamB: 0,
-          voters: []
-        },
-        status: 'active', // active, completed, locked
-        isOfficial: isOfficial || false,
-        lockTime: lockTime, // When the fight will be locked
-        winner: null, // Will be set when fight is locked
-        winnerTeam: null // 'teamA', 'teamB', or 'draw'
-      };
-      // For fight posts, pollOptions are mandatory and correspond to teamA and teamB
-      postData.poll = {
-        options: [teamA, teamB],
-        votes: {
-          voters: []
-        }
-      };
-    } else if (type === 'other' && pollOptions && pollOptions.some(opt => opt.trim() !== '')) {
-      // For other posts, optional poll
-      postData.poll = {
-        options: pollOptions.filter(opt => opt.trim() !== ''),
-        votes: {
-          voters: []
-        }
-      };
-    }
-
-    // Create post in MongoDB
-    const newPost = await Post.create(postData);
-
-    // Automatyczne tagowanie posta
-    try {
-      const taggingResult = await taggingService.autoTagPost(newPost.toObject());
-      newPost.tags = taggingResult.tags;
-      newPost.autoTags = taggingResult.autoTags;
-      await newPost.save();
-
-      // Aktualizuj statystyki tagów
-      await taggingService.updateTagStats(taggingResult.tags);
-    } catch (tagError) {
-      console.error('Error auto-tagging post:', tagError);
-      // Kontynuuj bez tagowania jeśli wystąpi błąd
-    }
-
-    // Add author info to response
-    const postWithAuthor = {
-      ...newPost.toObject(),
-      author: {
-        id: user._id,
-        username: user.username,
-        profilePicture: user.profile?.profilePicture || '',
-        rank: user.stats?.rank || 'Rookie'
+    const now = new Date();
+    const postType = type || 'discussion';
+    const resolveLockTime = (duration) => {
+      if (!duration) {
+        return new Date(now.getTime() + 72 * 60 * 60 * 1000);
       }
+      const normalized = String(duration).toLowerCase();
+      if (normalized === 'none' || normalized === 'no-limit') return null;
+      const daysMap = {
+        '1d': 1,
+        '2d': 2,
+        '3d': 3,
+        '7d': 7
+      };
+      const days = daysMap[normalized];
+      if (!days) {
+        return new Date(now.getTime() + 72 * 60 * 60 * 1000);
+      }
+      return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
     };
 
-    res.status(201).json(postWithAuthor);
+    let createdPost;
+    let author;
+
+    await updateDb((db) => {
+      author = db.users.find((user) => resolveUserId(user) === req.user.id);
+      if (!author) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
+
+      if (isOfficial && author.role !== 'moderator') {
+        const error = new Error('Only moderators can create official fights');
+        error.code = 'FORBIDDEN_OFFICIAL';
+        throw error;
+      }
+
+      const postData = {
+        id: uuidv4(),
+        title,
+        content,
+        type: postType,
+        authorId: req.user.id,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        likes: [],
+        comments: [],
+        views: 0,
+        photos: Array.isArray(photos) ? photos : [],
+        poll: null,
+        fight: null,
+        reactions: [],
+        isOfficial: Boolean(isOfficial),
+        moderatorCreated: Boolean(moderatorCreated),
+        category: category || null,
+        featured: false,
+        tags: [],
+        autoTags: {
+          universes: [],
+          characters: [],
+          powerTiers: [],
+          categories: []
+        }
+      };
+
+      if (postType === 'fight') {
+        const lockTime = resolveLockTime(voteDuration);
+        postData.fight = {
+          teamA: teamA || '',
+          teamB: teamB || '',
+          votes: {
+            teamA: 0,
+            teamB: 0,
+            draw: 0,
+            voters: []
+          },
+          status: 'active',
+          isOfficial: Boolean(isOfficial),
+          lockTime: lockTime ? lockTime.toISOString() : null,
+          winner: null,
+          winnerTeam: null
+        };
+        postData.poll = {
+          options: [teamA || '', teamB || ''],
+          votes: { voters: [] }
+        };
+      } else if (
+        postType === 'other' &&
+        Array.isArray(pollOptions) &&
+        pollOptions.some((opt) => opt.trim() !== '')
+      ) {
+        postData.poll = {
+          options: pollOptions.filter((opt) => opt.trim() !== ''),
+          votes: { voters: [] }
+        };
+      }
+
+      const autoTagPayload = autoTagPost(db, {
+        title,
+        content,
+        teamA: postData.fight?.teamA || teamA,
+        teamB: postData.fight?.teamB || teamB,
+        fight: postData.fight
+      });
+      postData.tags = autoTagPayload.tags;
+      postData.autoTags = autoTagPayload.autoTags;
+
+      db.posts.push(postData);
+
+      if (!author.activity) {
+        author.activity = {
+          postsCreated: 0,
+          commentsPosted: 0,
+          likesReceived: 0,
+          tournamentsWon: 0,
+          tournamentsParticipated: 0
+        };
+      }
+      author.activity.postsCreated += 1;
+      author.updatedAt = now.toISOString();
+
+      createdPost = postData;
+      return db;
+    });
+
+    res.status(201).json({
+      ...normalizePostForResponse(createdPost, [author]),
+      author: buildAuthor(author)
+    });
   } catch (err) {
+    if (err.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ message: err.message });
+    }
+    if (err.code === 'FORBIDDEN_OFFICIAL') {
+      return res.status(403).json({ message: err.message });
+    }
     console.error('Error creating post:', err.message);
     res.status(500).send('Server Error');
   }
@@ -210,24 +311,46 @@ export const updatePost = async (req, res) => {
   const updates = req.body;
 
   try {
-    const post = await Post.findById(id);
-    if (!post) {
+    let updatedPost;
+
+    await updateDb((db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
+
+      const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
+
+      if (post.authorId !== req.user.id && user.role !== 'moderator') {
+        const error = new Error('Access denied');
+        error.code = 'ACCESS_DENIED';
+        throw error;
+      }
+
+      Object.assign(post, updates);
+      post.updatedAt = new Date().toISOString();
+      updatedPost = post;
+      return db;
+    });
+
+    res.json(updatedPost);
+  } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
       return res.status(404).json({ msg: 'Post not found' });
     }
-
-    // Check if user is the author or moderator
-    const user = await User.findById(req.user.id);
-    if (post.authorId.toString() !== req.user.id && user.role !== 'moderator') {
+    if (err.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    if (err.code === 'ACCESS_DENIED') {
       return res.status(403).json({ msg: 'Access denied' });
     }
-
-    // Update post
-    Object.assign(post, updates);
-    post.updatedAt = new Date();
-    await post.save();
-
-    res.json(post.toObject());
-  } catch (err) {
     console.error('Error updating post:', err.message);
     res.status(500).send('Server Error');
   }
@@ -237,21 +360,43 @@ export const deletePost = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const post = await Post.findById(id);
-    if (!post) {
-      return res.status(404).json({ msg: 'Post not found' });
-    }
+    await updateDb((db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
 
-    // Check if user is the author or moderator
-    const user = await User.findById(req.user.id);
-    if (post.authorId.toString() !== req.user.id && user.role !== 'moderator') {
-      return res.status(403).json({ msg: 'Access denied' });
-    }
+      const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
 
-    await Post.findByIdAndDelete(id);
+      if (post.authorId !== req.user.id && user.role !== 'moderator') {
+        const error = new Error('Access denied');
+        error.code = 'ACCESS_DENIED';
+        throw error;
+      }
+
+      db.posts = db.posts.filter((entry) => entry.id !== id);
+      db.comments = db.comments.filter((comment) => comment.postId !== id);
+      return db;
+    });
 
     res.json({ msg: 'Post deleted successfully' });
   } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    if (err.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    if (err.code === 'ACCESS_DENIED') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
     console.error('Error deleting post:', err.message);
     res.status(500).send('Server Error');
   }
@@ -261,49 +406,57 @@ export const toggleLike = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const post = await Post.findById(id);
-    if (!post) {
-      return res.status(404).json({ msg: 'Post not found' });
-    }
+    let likesCount = 0;
+    let isLiked = false;
 
-    const userLikeIndex = post.likes.findIndex(like => like.userId === req.user.id);
-    const wasLiked = userLikeIndex > -1;
+    await updateDb((db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
 
-    if (wasLiked) {
-      // Unlike
-      post.likes.splice(userLikeIndex, 1);
-    } else {
-      // Like
-      post.likes.push({
-        userId: req.user.id,
-        likedAt: new Date()
-      });
+      post.likes = Array.isArray(post.likes) ? post.likes : [];
+      const index = post.likes.findIndex((like) => like.userId === req.user.id);
+      const wasLiked = index > -1;
 
-      // Update post author's stats
-      const author = await User.findById(post.authorId);
-      if (author) {
-        if (!author.activity) {
-          author.activity = {
+      if (wasLiked) {
+        post.likes.splice(index, 1);
+        isLiked = false;
+      } else {
+        post.likes.push({ userId: req.user.id, likedAt: new Date().toISOString() });
+        isLiked = true;
+
+        const author = db.users.find(
+          (entry) => resolveUserId(entry) === post.authorId
+        );
+        if (author) {
+          author.activity = author.activity || {
             postsCreated: 0,
             likesReceived: 0,
             commentsPosted: 0,
-            fightsCreated: 0,
-            votesGiven: 0
+            tournamentsWon: 0,
+            tournamentsParticipated: 0
           };
+          author.activity.likesReceived += 1;
         }
-        author.activity.likesReceived += 1;
-        await author.save();
       }
-    }
 
-    await post.save();
+      likesCount = post.likes.length;
+      post.updatedAt = new Date().toISOString();
+      return db;
+    });
 
     res.json({
-      msg: wasLiked ? 'Post unliked' : 'Post liked',
-      likesCount: post.likes.length,
-      isLiked: !wasLiked
+      msg: isLiked ? 'Post liked' : 'Post unliked',
+      likesCount,
+      isLiked
     });
   } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
     console.error('Error toggling like:', err.message);
     res.status(500).send('Server Error');
   }
@@ -314,61 +467,52 @@ export const voteInPoll = async (req, res) => {
   const { optionIndex } = req.body;
 
   try {
-    const post = await Post.findById(id);
-    if (!post) {
-      return res.status(404).json({ msg: 'Post not found' });
-    }
+    let optionVotes = 0;
+    let totalVotes = 0;
 
-    // Check if post has a poll
-    if (!post.poll || !post.poll.options) {
-      return res.status(400).json({ msg: 'Post does not have a poll' });
-    }
-
-    // Check if option index is valid
-    if (optionIndex < 0 || optionIndex >= post.poll.options.length) {
-      return res.status(400).json({ msg: 'Invalid option index' });
-    }
-
-    // Initialize poll votes if not exists
-    if (!post.poll.votes) {
-      post.poll.votes = { voters: [] };
-    }
-
-    // Check if user already voted
-    const existingVoteIndex = post.poll.votes.voters.findIndex(v => v.userId === req.user.id);
-    if (existingVoteIndex > -1) {
-      return res.status(400).json({ msg: 'User already voted in this poll' });
-    }
-
-    // Add vote
-    post.poll.votes.voters.push({
-      userId: req.user.id,
-      optionIndex: optionIndex,
-      votedAt: new Date()
-    });
-
-    await post.save();
-
-    // Update user stats
-    const user = await User.findById(req.user.id);
-    if (user) {
-      if (!user.activity) {
-        user.activity = {
-          postsCreated: 0,
-          likesReceived: 0,
-          commentsPosted: 0,
-          fightsCreated: 0,
-          votesGiven: 0
-        };
+    await updateDb((db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
       }
-      user.activity.votesGiven += 1;
-      user.stats.experience = (user.stats.experience || 0) + 5; // Award experience for voting
-      await user.save();
-    }
 
-    // Return updated poll data
-    const optionVotes = post.poll.votes.voters.filter(v => v.optionIndex === optionIndex).length;
-    const totalVotes = post.poll.votes.voters.length;
+      if (!post.poll || !Array.isArray(post.poll.options)) {
+        const error = new Error('Post does not have a poll');
+        error.code = 'NO_POLL';
+        throw error;
+      }
+
+      if (optionIndex < 0 || optionIndex >= post.poll.options.length) {
+        const error = new Error('Invalid option index');
+        error.code = 'INVALID_OPTION';
+        throw error;
+      }
+
+      post.poll.votes = post.poll.votes || { voters: [] };
+      const alreadyVoted = post.poll.votes.voters.find(
+        (vote) => vote.userId === req.user.id
+      );
+      if (alreadyVoted) {
+        const error = new Error('User already voted in this poll');
+        error.code = 'ALREADY_VOTED';
+        throw error;
+      }
+
+      post.poll.votes.voters.push({
+        userId: req.user.id,
+        optionIndex,
+        votedAt: new Date().toISOString()
+      });
+
+      optionVotes = post.poll.votes.voters.filter(
+        (vote) => vote.optionIndex === optionIndex
+      ).length;
+      totalVotes = post.poll.votes.voters.length;
+      post.updatedAt = new Date().toISOString();
+      return db;
+    });
 
     res.json({
       msg: 'Vote recorded successfully',
@@ -377,6 +521,18 @@ export const voteInPoll = async (req, res) => {
       votedOption: optionIndex
     });
   } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    if (err.code === 'NO_POLL') {
+      return res.status(400).json({ msg: 'Post does not have a poll' });
+    }
+    if (err.code === 'INVALID_OPTION') {
+      return res.status(400).json({ msg: 'Invalid option index' });
+    }
+    if (err.code === 'ALREADY_VOTED') {
+      return res.status(400).json({ msg: 'User already voted in this poll' });
+    }
     console.error('Error voting in poll:', err.message);
     res.status(500).send('Server Error');
   }
@@ -386,43 +542,18 @@ export const getOfficialFights = async (req, res) => {
   const { limit = 10 } = req.query;
 
   try {
-    console.log('Fetching official fights');
-
-    // Filter only official fights
-    const officialFights = await Post.find({
-      isOfficial: true,
-      type: 'fight',
-      'fight.status': 'active'
-    })
-      .sort({ createdAt: -1 })
-      .limit(parseInt(limit));
-
-    const totalFights = await Post.countDocuments({
-      isOfficial: true,
-      type: 'fight',
-      'fight.status': 'active'
-    });
-
-    // Add user info to posts
-    const fightsWithUserInfo = await Promise.all(
-      officialFights.map(async post => {
-        const author = await User.findById(post.authorId);
-        return {
-          ...post.toObject(),
-          author: author ? {
-            id: author._id,
-            username: author.username,
-            profilePicture: author.profile?.profilePicture || '',
-            rank: author.stats?.rank || 'Rookie'
-          } : null
-        };
-      })
+    const db = await readDb();
+    const fights = db.posts.filter(
+      (post) => post.isOfficial && post.type === 'fight' && post.fight?.status === 'active'
+    );
+    const sorted = sortPosts(fights, 'createdAt').slice(0, Number(limit));
+    const fightsWithUserInfo = sorted.map((post) =>
+      normalizePostForResponse(post, db.users)
     );
 
-    console.log(`Returning ${fightsWithUserInfo.length} official fights`);
     res.json({
       fights: fightsWithUserInfo,
-      totalFights
+      totalFights: fights.length
     });
   } catch (err) {
     console.error('Error fetching official fights:', err.message);
@@ -432,66 +563,94 @@ export const getOfficialFights = async (req, res) => {
 
 export const voteInFight = async (req, res) => {
   const { id } = req.params;
-  const { team } = req.body; // team: 'A' or 'B'
+  const { team } = req.body;
 
   try {
-    const post = await Post.findById(id);
-    if (!post) {
-      return res.status(404).json({ msg: 'Post not found' });
-    }
+    let updatedVotes;
 
-    // Check if post is a fight post
-    if (post.type !== 'fight' || !post.fight) {
-      return res.status(400).json({ msg: 'Post is not a fight post' });
-    }
+    await updateDb((db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
 
-    // Check if fight is locked
-    if (post.fight.status === 'locked' || post.fight.status === 'completed') {
-      return res.status(400).json({ msg: 'This fight has ended and is no longer accepting votes' });
-    }
+      if (post.type !== 'fight' || !post.fight) {
+        const error = new Error('Post is not a fight post');
+        error.code = 'NOT_FIGHT';
+        throw error;
+      }
 
-    // Check if lock time has passed
-    if (post.fight.lockTime && new Date() > new Date(post.fight.lockTime)) {
-      return res.status(400).json({ msg: 'This fight has exceeded the 72-hour voting period and is now locked' });
-    }
+      if (post.fight.status === 'locked' || post.fight.status === 'completed') {
+        const error = new Error('This fight has ended and is no longer accepting votes');
+        error.code = 'FIGHT_ENDED';
+        throw error;
+      }
 
-    // Check if team is valid
-    if (team !== 'A' && team !== 'B' && team !== 'draw') {
-      return res.status(400).json({ msg: 'Invalid team choice' });
-    }
+      if (post.fight.lockTime && new Date() > new Date(post.fight.lockTime)) {
+        const error = new Error('This fight has exceeded the voting period and is now locked');
+        error.code = 'FIGHT_LOCKED';
+        throw error;
+      }
 
-    // Check if user already voted
-    const existingVoteIndex = post.fight.votes.voters.findIndex(v => v.userId === req.user.id);
-    if (existingVoteIndex > -1) {
-      // User already voted, update their vote
-      const prevTeam = post.fight.votes.voters[existingVoteIndex].team;
-      // Decrement previous vote count
-      if (prevTeam === 'A') post.fight.votes.teamA = Math.max(0, (post.fight.votes.teamA || 0) - 1);
-      if (prevTeam === 'B') post.fight.votes.teamB = Math.max(0, (post.fight.votes.teamB || 0) - 1);
-      if (prevTeam === 'draw') post.fight.votes.draw = Math.max(0, (post.fight.votes.draw || 0) - 1);
-      // Update to new team
-      post.fight.votes.voters[existingVoteIndex].team = team;
-      post.fight.votes.voters[existingVoteIndex].votedAt = new Date();
-    } else {
-      // Add vote
-      post.fight.votes.voters.push({
-        userId: req.user.id,
-        team: team,
-        votedAt: new Date()
-      });
-    }
-    // Increment new vote count
-    if (team === 'A') post.fight.votes.teamA = (post.fight.votes.teamA || 0) + 1;
-    if (team === 'B') post.fight.votes.teamB = (post.fight.votes.teamB || 0) + 1;
-    if (team === 'draw') post.fight.votes.draw = (post.fight.votes.draw || 0) + 1;
+      if (!['A', 'B', 'draw'].includes(team)) {
+        const error = new Error('Invalid team choice');
+        error.code = 'INVALID_TEAM';
+        throw error;
+      }
 
-    await post.save();
+      post.fight.votes = post.fight.votes || { teamA: 0, teamB: 0, draw: 0, voters: [] };
+      post.fight.votes.teamA = post.fight.votes.teamA || 0;
+      post.fight.votes.teamB = post.fight.votes.teamB || 0;
+      post.fight.votes.draw = post.fight.votes.draw || 0;
+      post.fight.votes.voters = post.fight.votes.voters || [];
+
+      const existingVoteIndex = post.fight.votes.voters.findIndex(
+        (vote) => vote.userId === req.user.id
+      );
+
+      if (existingVoteIndex > -1) {
+        const prevTeam = post.fight.votes.voters[existingVoteIndex].team;
+        if (prevTeam === 'A') post.fight.votes.teamA = Math.max(0, post.fight.votes.teamA - 1);
+        if (prevTeam === 'B') post.fight.votes.teamB = Math.max(0, post.fight.votes.teamB - 1);
+        if (prevTeam === 'draw') post.fight.votes.draw = Math.max(0, post.fight.votes.draw - 1);
+        post.fight.votes.voters[existingVoteIndex].team = team;
+        post.fight.votes.voters[existingVoteIndex].votedAt = new Date().toISOString();
+      } else {
+        post.fight.votes.voters.push({
+          userId: req.user.id,
+          team,
+          votedAt: new Date().toISOString()
+        });
+      }
+
+      if (team === 'A') post.fight.votes.teamA += 1;
+      if (team === 'B') post.fight.votes.teamB += 1;
+      if (team === 'draw') post.fight.votes.draw += 1;
+
+      updatedVotes = post.fight.votes;
+      post.updatedAt = new Date().toISOString();
+      return db;
+    });
 
     res.json({
       msg: 'Vote recorded successfully',
-      votes: post.fight.votes
+      votes: updatedVotes
     });
   } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    if (err.code === 'NOT_FIGHT') {
+      return res.status(400).json({ msg: 'Post is not a fight post' });
+    }
+    if (err.code === 'FIGHT_ENDED' || err.code === 'FIGHT_LOCKED') {
+      return res.status(400).json({ msg: err.message });
+    }
+    if (err.code === 'INVALID_TEAM') {
+      return res.status(400).json({ msg: 'Invalid team choice' });
+    }
     console.error('Error voting in fight:', err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
@@ -502,51 +661,39 @@ export const addReaction = async (req, res) => {
   const { reactionId, reactionIcon, reactionName } = req.body;
 
   try {
-    const post = await Post.findById(id);
-    if (!post) {
-      return res.status(404).json({ msg: 'Post not found' });
-    }
+    let reactionsArray = [];
 
-    // Initialize reactions array if it doesn't exist
-    if (!post.reactions) {
-      post.reactions = [];
-    }
+    await updateDb((db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
 
-    // Check if user already reacted
-    const existingReactionIndex = post.reactions.findIndex(r => r.userId === req.user.id);
-    if (existingReactionIndex > -1) {
-      // Update existing reaction
-      post.reactions[existingReactionIndex] = {
+      post.reactions = Array.isArray(post.reactions) ? post.reactions : [];
+      const existingReactionIndex = post.reactions.findIndex(
+        (reaction) => reaction.userId === req.user.id
+      );
+
+      const nextReaction = {
         userId: req.user.id,
         reactionId,
         reactionIcon,
         reactionName,
-        reactedAt: new Date()
+        reactedAt: new Date().toISOString()
       };
-    } else {
-      // Add new reaction
-      post.reactions.push({
-        userId: req.user.id,
-        reactionId,
-        reactionIcon,
-        reactionName,
-        reactedAt: new Date()
-      });
-    }
 
-    await post.save();
+      if (existingReactionIndex > -1) {
+        post.reactions[existingReactionIndex] = nextReaction;
+      } else {
+        post.reactions.push(nextReaction);
+      }
 
-    // Count reactions by type
-    const reactionCounts = {};
-    post.reactions.forEach(reaction => {
-      const key = `${reaction.reactionIcon}-${reaction.reactionName}`;
-      reactionCounts[key] = (reactionCounts[key] || 0) + 1;
-    });
+      reactionsArray = buildReactionSummary(post.reactions);
 
-    // Convert to array format for frontend
-    const reactionsArray = Object.entries(reactionCounts).map(([key, count]) => {
-      const [icon, name] = key.split('-', 2);
-      return { icon, name, count };
+      post.updatedAt = new Date().toISOString();
+      return db;
     });
 
     res.json({
@@ -554,7 +701,61 @@ export const addReaction = async (req, res) => {
       reactions: reactionsArray
     });
   } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
     console.error('Error adding reaction:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+};
+
+export const removeReaction = async (req, res) => {
+  const { id, reactionId } = req.params;
+
+  try {
+    let reactionsArray = [];
+    let removed = false;
+
+    await updateDb((db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
+
+      post.reactions = Array.isArray(post.reactions) ? post.reactions : [];
+      const beforeCount = post.reactions.length;
+
+      post.reactions = post.reactions.filter((reaction) => {
+        if (reaction.userId !== req.user.id) {
+          return true;
+        }
+        if (!reactionId) {
+          return false;
+        }
+        return reaction.reactionId !== reactionId;
+      });
+
+      removed = post.reactions.length !== beforeCount;
+      reactionsArray = buildReactionSummary(post.reactions);
+      post.updatedAt = new Date().toISOString();
+      return db;
+    });
+
+    if (!removed) {
+      return res.status(404).json({ msg: 'Reaction not found' });
+    }
+
+    res.json({
+      msg: 'Reaction removed successfully',
+      reactions: reactionsArray
+    });
+  } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    console.error('Error removing reaction:', err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };

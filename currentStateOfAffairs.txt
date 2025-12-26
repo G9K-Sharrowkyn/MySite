@@ -22,7 +22,7 @@ OVERALL PROGRESS: 35% Complete
 
 2. BACKEND INFRASTRUCTURE (90% Complete)
    ✅ Node.js + Express.js setup
-   ✅ MongoDB Atlas connection
+   ✅ Local JSON storage (db.json)
    ✅ All required dependencies installed
    ✅ API route structure complete
    ✅ Middleware stack configured

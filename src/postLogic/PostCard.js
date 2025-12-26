@@ -14,8 +14,9 @@ const PostCard = ({ post, onUpdate }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
-  const [likesCount, setLikesCount] = useState(post.likes?.length || 0);
+  const [expandedThreads, setExpandedThreads] = useState({});
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState('');
   const [userVote, setUserVote] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const { currentLanguage, t } = useLanguage();
@@ -25,22 +26,28 @@ const PostCard = ({ post, onUpdate }) => {
   const [translatingComments, setTranslatingComments] = useState({});
   const [showReactionMenu, setShowReactionMenu] = useState(false);
   const [userReaction, setUserReaction] = useState(null);
+  const [commentReactionTarget, setCommentReactionTarget] = useState(null);
   const [reactions, setReactions] = useState(post.reactions || []);
   const [characters, setCharacters] = useState([]);
+  const [pollVote, setPollVote] = useState(null);
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
 
+  const normalizeVoteTeam = (team) => {
+    if (!team) return null;
+    const value = String(team).toLowerCase();
+    if (['a', 'teama', 'team a', 'fighter1', 'fighterone'].includes(value)) return 'A';
+    if (['b', 'teamb', 'team b', 'fighter2', 'fightertwo'].includes(value)) return 'B';
+    if (['draw', 'tie'].includes(value)) return 'draw';
+    return team;
+  };
+
   useEffect(() => {
-    // Check if current user liked this post
-    if (post.likes && currentUserId) {
-      setIsLiked(post.likes.some(like => like.userId === currentUserId));
-    }
-    
     // Check if user voted in fight
     if (post.type === 'fight' && post.fight?.votes?.voters && currentUserId) {
       const vote = post.fight.votes.voters.find(v => v.userId === currentUserId);
-      setUserVote(vote?.team || null);
+      setUserVote(normalizeVoteTeam(vote?.team));
     }
 
     // Fetch character list for mapping names to images
@@ -54,9 +61,6 @@ const PostCard = ({ post, onUpdate }) => {
     };
     fetchCharacters();
   }, [post, currentUserId]);
-  
-  // Additional state for poll votes in 'other' posts
-const [pollVote, setPollVote] = useState(null);
 
   const fetchComments = async () => {
     try {
@@ -67,18 +71,158 @@ const [pollVote, setPollVote] = useState(null);
     }
   };
 
-  const handleLike = async () => {
-    if (!token) return;
-    
+  const buildCommentThreads = (allComments) => {
+    const commentList = Array.isArray(allComments) ? allComments : [];
+    const commentsById = new Map(
+      commentList.map((comment) => [comment.id, comment])
+    );
+    const rootCache = new Map();
+
+    const resolveRootId = (comment) => {
+      const commentId = comment?.id;
+      if (!commentId) return null;
+      if (rootCache.has(commentId)) return rootCache.get(commentId);
+
+      let current = comment;
+      const visited = new Set([commentId]);
+      let rootId = null;
+
+      while (current?.parentId) {
+        const parentId = current.parentId;
+        if (!parentId || visited.has(parentId)) break;
+        const parent = commentsById.get(parentId);
+        if (!parent) {
+          rootId = comment.threadId || commentId;
+          break;
+        }
+        visited.add(parentId);
+        current = parent;
+      }
+
+      if (!rootId) {
+        rootId = current?.id || comment.threadId || commentId;
+      }
+
+      rootCache.set(commentId, rootId);
+      return rootId;
+    };
+
+    const threads = new Map();
+    commentList.forEach((comment) => {
+      const rootId = resolveRootId(comment);
+      if (!rootId) return;
+      if (!threads.has(rootId)) {
+        threads.set(rootId, { id: rootId, root: null, replies: [] });
+      }
+      threads.get(rootId).replies.push(comment);
+    });
+
+    const threadList = Array.from(threads.values()).map((thread) => {
+      const sorted = [...thread.replies].sort(
+        (a, b) =>
+          new Date(a.createdAt || a.timestamp || 0) -
+          new Date(b.createdAt || b.timestamp || 0)
+      );
+      let rootIndex = sorted.findIndex(
+        (comment) => comment.id === thread.id && !comment.parentId
+      );
+      if (rootIndex === -1) {
+        rootIndex = sorted.findIndex((comment) => comment.id === thread.id);
+      }
+      const root =
+        rootIndex >= 0 ? sorted.splice(rootIndex, 1)[0] : sorted.shift() || null;
+      return { ...thread, root, replies: sorted };
+    });
+
+    return threadList.sort(
+      (a, b) =>
+        new Date(a.root?.createdAt || a.root?.timestamp || 0) -
+        new Date(b.root?.createdAt || b.root?.timestamp || 0)
+    );
+  };
+
+  const toggleThread = (threadId) => {
+    setExpandedThreads((prev) => ({
+      ...prev,
+      [threadId]: !prev[threadId]
+    }));
+  };
+
+  const handleReplyClick = (comment, threadId) => {
+    setExpandedThreads((prev) => ({
+      ...prev,
+      [threadId]: true
+    }));
+    setReplyingTo({
+      id: comment.id,
+      threadId,
+      username: comment.authorUsername
+    });
+    const mention = comment?.authorUsername ? `@${comment.authorUsername} ` : '';
+    setReplyText(mention);
+  };
+
+  const handleReplyCancel = () => {
+    setReplyingTo(null);
+    setReplyText('');
+  };
+
+  const handleReplySubmit = async (e, threadId, fallbackParentId) => {
+    e.preventDefault();
+    if (!token || !replyText.trim()) return;
+
+    const parentId =
+      replyingTo && replyingTo.threadId === threadId
+        ? replyingTo.id
+        : fallbackParentId;
+
     try {
-      const response = await axios.post(`/api/posts/${post.id}/like`, {}, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      setIsLiked(response.data.isLiked);
-      setLikesCount(response.data.likesCount);
+      await axios.post(
+        `/api/comments/post/${post.id}`,
+        { text: replyText, parentId },
+        { headers: { 'x-auth-token': token } }
+      );
+      setReplyText('');
+      setReplyingTo(null);
+      fetchComments();
     } catch (error) {
-      console.error('Error liking post:', error);
+      console.error('Error adding reply:', error);
+    }
+  };
+
+  const handleCommentReactionClick = (commentId) => {
+    if (!token) return;
+    setCommentReactionTarget(commentId);
+  };
+
+  const handleCommentReactionSelect = async (reaction) => {
+    if (!token || !commentReactionTarget) return;
+
+    try {
+      const response = await axios.post(
+        `/api/comments/${commentReactionTarget}/reaction`,
+        {
+          reactionId: reaction.id,
+          reactionIcon: reaction.icon,
+          reactionName: reaction.name
+        },
+        { headers: { 'x-auth-token': token } }
+      );
+
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment.id === commentReactionTarget
+            ? {
+                ...comment,
+                reactions: response.data.reactions || [],
+                userReaction: reaction
+              }
+            : comment
+        )
+      );
+      setCommentReactionTarget(null);
+    } catch (error) {
+      console.error('Error adding comment reaction:', error);
     }
   };
 
@@ -88,7 +232,7 @@ const [pollVote, setPollVote] = useState(null);
       await axios.post(`/api/posts/${post.id}/fight-vote`, { team }, {
         headers: { 'x-auth-token': token }
       });
-      setUserVote(team);
+      setUserVote(normalizeVoteTeam(team));
       // Refresh post data
       if (onUpdate) {
         const updatedPost = await axios.get(`/api/posts/${post.id}`);
@@ -558,6 +702,8 @@ const [pollVote, setPollVote] = useState(null);
     );
   };
 
+  const commentThreads = buildCommentThreads(comments);
+
   if (isEditing) {
     return (
       <div className="post-card editing">
@@ -684,14 +830,6 @@ const [pollVote, setPollVote] = useState(null);
 
       <div className="post-actions" onClick={e => e.stopPropagation()}>
         <button 
-          className={`action-btn like-btn ${isLiked ? 'liked' : ''}`}
-          onClick={handleLike}
-        >
-          <span className="action-icon">{isLiked ? '❤️' : '🤍'}</span>
-          <span className="action-text">{likesCount}</span>
-        </button>
-        
-        <button 
           className="action-btn comment-btn"
           onClick={toggleComments}
         >
@@ -765,36 +903,245 @@ const [pollVote, setPollVote] = useState(null);
                 className="comment-input"
               />
               <button type="submit" className="comment-submit">
-                📤
+                {t('send') || 'Send'}
               </button>
             </form>
           )}
           
           <div className="comments-list">
-            {comments.map(comment => (
-              <div key={comment.id} className="comment-item">
-                <Link to={`/profile/${comment.authorId}`} className="comment-author">
-                  <img 
-                    src={placeholderImages.userSmall} 
-                    alt={comment.authorUsername}
-                    className="comment-avatar"
-                  />
-                  <strong>{comment.authorUsername}</strong>
-                </Link>
-                <p className="comment-text">{comment.text}</p>
-                {needsCommentTranslation(comment.text) && (
-                  <button className="translate-btn" onClick={() => handleTranslateComment(comment.id, comment.text)} disabled={translatingComments[comment.id]}>
-                    {translatingComments[comment.id] ? t('loading') : t('translate') || 'Translate'}
-                  </button>
-                )}
-                {translatedComments[comment.id] && (
-                  <p className="comment-text translated">{translatedComments[comment.id]}</p>
-                )}
-                <span className="comment-time">
-                  {formatTimeAgo(comment.createdAt)}
-                </span>
+            {commentThreads.map((thread) => {
+              if (!thread.root) return null;
+              const root = thread.root;
+              const threadId = thread.id;
+              const replies = thread.replies || [];
+              const isExpanded = Boolean(expandedThreads[threadId]);
+              const replyCount = replies.length;
+
+              return (
+                <div key={threadId} className="comment-thread">
+                  <div
+                    className={`comment-item comment-root${isExpanded ? ' expanded' : ''}`}
+                    onClick={() => toggleThread(threadId)}
+                  >
+                    <div className="comment-header">
+                      <Link
+                        to={`/profile/${root.authorId}`}
+                        className="comment-author"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <img
+                          src={
+                            replacePlaceholderUrl(root.authorAvatar) ||
+                            placeholderImages.userSmall
+                          }
+                          alt={root.authorUsername}
+                          className="comment-avatar"
+                        />
+                        <strong>{root.authorUsername}</strong>
+                      </Link>
+                      <span className="comment-time">{formatTimeAgo(root.createdAt)}</span>
+                    </div>
+                    <p className="comment-text">{root.text}</p>
+                    {needsCommentTranslation(root.text) && (
+                      <button
+                        className="translate-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTranslateComment(root.id, root.text);
+                        }}
+                        disabled={translatingComments[root.id]}
+                      >
+                        {translatingComments[root.id]
+                          ? t('loading')
+                          : t('translate') || 'Translate'}
+                      </button>
+                    )}
+                    {translatedComments[root.id] && (
+                      <p className="comment-text translated">
+                        {translatedComments[root.id]}
+                      </p>
+                    )}
+                    {root.reactions?.length > 0 && (
+                      <div
+                        className="comment-reactions"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {root.reactions.map((reaction, index) => (
+                          <div key={index} className="comment-reaction-item">
+                            <span className="reaction-icon">{reaction.icon}</span>
+                            <span className="reaction-count">{reaction.count}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <div className="comment-actions">
+                      <button
+                        className="comment-action comment-reply-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleReplyClick(root, threadId);
+                        }}
+                      >
+                        {t('reply') || 'Reply'}
+                      </button>
+                      <button
+                        className={`comment-action comment-react-btn${
+                          root.userReaction ? ' reacted' : ''
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCommentReactionClick(root.id);
+                        }}
+                      >
+                        {root.userReaction && (
+                          <span className="comment-action-icon">
+                            {root.userReaction.icon}
+                          </span>
+                        )}
+                        <span className="comment-action-text">{t('react') || 'React'}</span>
+                      </button>
+                      {replyCount > 0 && (
+                        <button
+                          className="comment-action comment-toggle"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleThread(threadId);
+                          }}
+                        >
+                          {isExpanded
+                            ? `Hide replies (${replyCount})`
+                            : `View replies (${replyCount})`}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {isExpanded && replyCount > 0 && (
+                    <div className="comment-replies">
+                      {replies.map((reply) => (
+                        <div key={reply.id} className="comment-item comment-reply">
+                          <div className="comment-header">
+                            <Link
+                              to={`/profile/${reply.authorId}`}
+                              className="comment-author"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <img
+                                src={
+                                  replacePlaceholderUrl(reply.authorAvatar) ||
+                                  placeholderImages.userSmall
+                                }
+                                alt={reply.authorUsername}
+                                className="comment-avatar"
+                              />
+                              <strong>{reply.authorUsername}</strong>
+                            </Link>
+                            <span className="comment-time">
+                              {formatTimeAgo(reply.createdAt)}
+                            </span>
+                          </div>
+                          <p className="comment-text">{reply.text}</p>
+                          {needsCommentTranslation(reply.text) && (
+                            <button
+                              className="translate-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTranslateComment(reply.id, reply.text);
+                              }}
+                              disabled={translatingComments[reply.id]}
+                            >
+                              {translatingComments[reply.id]
+                                ? t('loading')
+                                : t('translate') || 'Translate'}
+                            </button>
+                          )}
+                          {translatedComments[reply.id] && (
+                            <p className="comment-text translated">
+                              {translatedComments[reply.id]}
+                            </p>
+                          )}
+                          {reply.reactions?.length > 0 && (
+                            <div
+                              className="comment-reactions"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {reply.reactions.map((reaction, index) => (
+                                <div key={index} className="comment-reaction-item">
+                                  <span className="reaction-icon">{reaction.icon}</span>
+                                  <span className="reaction-count">{reaction.count}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          <div className="comment-actions">
+                            <button
+                              className="comment-action comment-reply-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleReplyClick(reply, threadId);
+                              }}
+                            >
+                              {t('reply') || 'Reply'}
+                            </button>
+                            <button
+                              className={`comment-action comment-react-btn${
+                                reply.userReaction ? ' reacted' : ''
+                              }`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCommentReactionClick(reply.id);
+                              }}
+                            >
+                              {reply.userReaction && (
+                                <span className="comment-action-icon">
+                                  {reply.userReaction.icon}
+                                </span>
+                              )}
+                              <span className="comment-action-text">
+                                {t('react') || 'React'}
+                              </span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {replyingTo && replyingTo.threadId === threadId && token && (
+                    <form
+                      className="comment-reply-form"
+                      onSubmit={(e) => handleReplySubmit(e, threadId, root.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input
+                        type="text"
+                        value={replyText}
+                        onChange={(e) => setReplyText(e.target.value)}
+                        placeholder={`Reply to ${replyingTo.username || 'comment'}`}
+                        className="comment-input"
+                      />
+                      <div className="comment-reply-actions">
+                        <button type="submit" className="comment-reply-submit">
+                          {t('reply') || 'Reply'}
+                        </button>
+                        <button
+                          type="button"
+                          className="comment-reply-cancel"
+                          onClick={handleReplyCancel}
+                        >
+                          {t('cancel') || 'Cancel'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
+                </div>
+              );
+            })}
+            {commentThreads.length === 0 && (
+              <div className="no-comments">
+                {t('noComments') || 'No comments yet. Be the first to comment!'}
               </div>
-            ))}
+            )}
           </div>
         </div>
       )}
@@ -804,6 +1151,13 @@ const [pollVote, setPollVote] = useState(null);
         <ReactionMenu
           onReactionSelect={handleReactionSelect}
           onClose={() => setShowReactionMenu(false)}
+        />
+      )}
+
+      {commentReactionTarget && (
+        <ReactionMenu
+          onReactionSelect={handleCommentReactionSelect}
+          onClose={() => setCommentReactionTarget(null)}
         />
       )}
     </div>

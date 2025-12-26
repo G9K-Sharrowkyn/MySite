@@ -157,13 +157,6 @@ const handlePostUpdate = (updatedPost, isDeleted) => {
           />
         ))}
         
-        {loading && (
-          <div className="loading-spinner">
-            <div className="spinner"></div>
-            <p>{t('loadingPosts')}</p>
-          </div>
-        )}
-        
         {!loading && hasMore && (
           <button className="load-more-btn" onClick={handleLoadMore}>
             📄 {t('loadMorePosts')}

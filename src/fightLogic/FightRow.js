@@ -9,7 +9,8 @@ const FightRow = ({ fight }) => {
   const fetchComments = async () => {
     try {
       const res = await axios.get(`/api/comments/fight/${fight.id}`);
-      setComments(res.data);
+      const payload = res.data;
+      setComments(payload?.comments || payload || []);
     } catch (err) {
       console.error('Błąd podczas pobierania komentarzy:', err);
     }
@@ -70,3 +71,4 @@ const FightRow = ({ fight }) => {
 };
 
 export default FightRow;
+

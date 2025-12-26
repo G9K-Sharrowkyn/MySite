@@ -1,62 +1,97 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 export const AuthContext = createContext();
+
+const normalizeUser = (data, fallbackId) => {
+  if (!data) {
+    return null;
+  }
+
+  return {
+    id: data.id || data._id || fallbackId || null,
+    username: data.username || '',
+    email: data.email || '',
+    profilePicture:
+      data.profilePicture ||
+      data.profile?.profilePicture ||
+      data.profile?.avatar ||
+      '',
+    role: data.role || 'user'
+  };
+};
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (token) {
-      fetchUser();
-    } else {
-      setLoading(false);
-    }
-  }, [token]);
-
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get('/api/profile/me', {
-        headers: { 'x-auth-token': token }
-      });
-      
-      setUser({
-        id: response.data.id,
-        username: response.data.username,
-        email: response.data.email,
-        profilePicture: response.data.profilePicture,
-        role: response.data.role || 'user'
-      });
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching user:', error);
-      if (error.response?.status === 401) {
-        // Token is invalid
-        logout();
-      }
-      setLoading(false);
-    }
-  };
-
-  const login = (token, userId) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('userId', userId);
-    setToken(token);
-    fetchUser();
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     setToken(null);
     setUser(null);
-  };
+    setLoading(false);
+  }, []);
 
-  const updateUser = (userData) => {
-    setUser(prev => ({ ...prev, ...userData }));
-  };
+  const fetchUser = useCallback(
+    async (authToken = token) => {
+      if (!authToken) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await axios.get('/api/profile/me', {
+          headers: { 'x-auth-token': authToken }
+        });
+
+        setUser(normalizeUser(response.data, response.data?.id));
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching user:', error);
+        if (error.response?.status === 401) {
+          logout();
+        } else {
+          setLoading(false);
+        }
+      }
+    },
+    [token, logout]
+  );
+
+  const login = useCallback(
+    (authToken, userId, userData) => {
+      localStorage.setItem('token', authToken);
+      localStorage.setItem('userId', userId);
+      setToken(authToken);
+
+      const normalized = normalizeUser(userData, userId);
+      if (normalized) {
+        setUser(normalized);
+        setLoading(false);
+      } else {
+        setUser(null);
+        fetchUser(authToken);
+      }
+    },
+    [fetchUser]
+  );
+
+  const updateUser = useCallback((userData) => {
+    setUser((prev) => ({ ...(prev || {}), ...userData }));
+  }, []);
+
+  useEffect(() => {
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    if (!user) {
+      fetchUser(token);
+    }
+  }, [token, user, fetchUser]);
 
   const value = {
     user,
@@ -67,9 +102,5 @@ export const AuthProvider = ({ children }) => {
     updateUser
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-}; 
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

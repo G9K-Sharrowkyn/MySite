@@ -1,20 +1,19 @@
-import User from '../models/User.js';
+import { readDb } from '../services/jsonDb.js';
+
+const resolveUserId = (user) => user?.id || user?._id;
 
 const moderatorAuth = async (req, res, next) => {
   try {
-    // Sprawdź czy użytkownik jest już uwierzytelniony przez middleware auth
     if (!req.user || !req.user.id) {
       return res.status(401).json({ msg: 'No token, authorization denied' });
     }
 
-    // Pobierz użytkownika z bazy danych
-    const user = await User.findById(req.user.id).select('role');
-    
+    const db = await readDb();
+    const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
     if (!user) {
       return res.status(401).json({ msg: 'User not found' });
     }
 
-    // Sprawdź czy użytkownik ma rolę moderatora
     if (user.role !== 'moderator') {
       return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
     }

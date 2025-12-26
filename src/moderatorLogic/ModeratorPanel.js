@@ -13,9 +13,6 @@ const ModeratorPanel = () => {
   const [users, setUsers] = useState([]);
   const [characters, setCharacters] = useState([]);
   const [bets, setBets] = useState([]);
-  const [fighterProposals, setFighterProposals] = useState([]);
-  const [proposalStats, setProposalStats] = useState({});
-  const [loadingProposals, setLoadingProposals] = useState(false);
   const [divisions, setDivisions] = useState([]);
   const [divisionStats, setDivisionStats] = useState({});
   const [notification, setNotification] = useState(null);
@@ -86,11 +83,8 @@ const ModeratorPanel = () => {
       setBets(betsRes.data || []);
       setDivisionStats(divisionsRes.data || {});
       
-      // Fetch fighter proposals and divisions data
-      await Promise.all([
-        fetchFighterProposals(),
-        fetchDivisions()
-      ]);
+      // Fetch divisions data
+      await fetchDivisions();
     } catch (error) {
       console.error('Error fetching data:', error);
       showNotification('Błąd podczas ładowania danych', 'error');
@@ -150,30 +144,6 @@ const ModeratorPanel = () => {
     }
   };
 
-  // Fighter Proposals Management
-  const fetchFighterProposals = async () => {
-    if (!token) return;
-    
-    setLoadingProposals(true);
-    try {
-      const [proposalsResponse, statsResponse] = await Promise.all([
-        axios.get('/api/fighter-proposals/all?limit=50', {
-          headers: { 'x-auth-token': token }
-        }).catch(() => ({ data: { proposals: [] } })),
-        axios.get('/api/fighter-proposals/stats', {
-          headers: { 'x-auth-token': token }
-        }).catch(() => ({ data: {} }))
-      ]);
-
-      setFighterProposals(proposalsResponse.data.proposals || []);
-      setProposalStats(statsResponse.data || {});
-    } catch (error) {
-      console.error('Error fetching fighter proposals:', error);
-    } finally {
-      setLoadingProposals(false);
-    }
-  };
-
   // Divisions Management
   const fetchDivisions = async () => {
     if (!token) return;
@@ -185,57 +155,6 @@ const ModeratorPanel = () => {
       setDivisions(response.data || []);
     } catch (error) {
       console.error('Error fetching divisions:', error);
-    }
-  };
-
-  const handleApproveProposal = async (proposalId, notes = '') => {
-    if (!window.confirm('Czy na pewno chcesz zatwierdzić tę propozycję?')) return;
-
-    try {
-      await axios.post(`/api/fighter-proposals/${proposalId}/approve`,
-        { notes },
-        { headers: { 'x-auth-token': token } }
-      );
-      
-      alert('Propozycja została zatwierdzona i fighter dodany do bazy danych');
-      fetchFighterProposals();
-    } catch (error) {
-      console.error('Error approving proposal:', error);
-      alert('Błąd podczas zatwierdzania propozycji');
-    }
-  };
-
-  const handleRejectProposal = async (proposalId, notes = '') => {
-    const reason = window.prompt('Podaj powód odrzucenia propozycji:', notes);
-    if (reason === null) return;
-
-    try {
-      await axios.post(`/api/fighter-proposals/${proposalId}/reject`,
-        { notes: reason },
-        { headers: { 'x-auth-token': token } }
-      );
-      
-      alert('Propozycja została odrzucona');
-      fetchFighterProposals();
-    } catch (error) {
-      console.error('Error rejecting proposal:', error);
-      alert('Błąd podczas odrzucania propozycji');
-    }
-  };
-
-  const handleDeleteProposal = async (proposalId) => {
-    if (!window.confirm('Czy na pewno chcesz usunąć tę propozycję? Ta akcja jest nieodwracalna.')) return;
-
-    try {
-      await axios.delete(`/api/fighter-proposals/${proposalId}`, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      alert('Propozycja została usunięta');
-      fetchFighterProposals();
-    } catch (error) {
-      console.error('Error deleting proposal:', error);
-      alert('Błąd podczas usuwania propozycji');
     }
   };
 
@@ -398,12 +317,7 @@ const ModeratorPanel = () => {
         >
           🏆 Dywizje
         </button>
-        <button
-          className={`tab-btn ${activeTab === 'proposals' ? 'active' : ''}`}
-          onClick={() => setActiveTab('proposals')}
-        >
-          🥊 Propozycje Fighterów
-        </button>
+        
         <button
           className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
           onClick={() => setActiveTab('posts')}
@@ -681,134 +595,6 @@ const ModeratorPanel = () => {
                 <p>Brak dywizji do wyświetlenia.</p>
               </div>
             )}
-          </div>
-        )}
-
-        {activeTab === 'proposals' && (
-          <div className="proposals-section">
-            <h3>🥊 Propozycje Fighterów</h3>
-            
-            <div className="proposal-stats">
-              <div className="stat-card">
-                <div className="stat-icon">📝</div>
-                <div className="stat-info">
-                  <h4>{proposalStats.total || 0}</h4>
-                  <p>Wszystkich Propozycji</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">⏳</div>
-                <div className="stat-info">
-                  <h4>{proposalStats.pending || 0}</h4>
-                  <p>Oczekujących</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">✅</div>
-                <div className="stat-info">
-                  <h4>{proposalStats.approved || 0}</h4>
-                  <p>Zatwierdzonych</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">❌</div>
-                <div className="stat-info">
-                  <h4>{proposalStats.rejected || 0}</h4>
-                  <p>Odrzuconych</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="proposals-list">
-              {loadingProposals ? (
-                <div className="loading">Ładowanie propozycji...</div>
-              ) : fighterProposals.length > 0 ? (
-                <div className="proposals-grid">
-                  {fighterProposals.map(proposal => (
-                    <div key={proposal._id} className="proposal-card">
-                      <div className="proposal-header">
-                        <h4>{proposal.name}</h4>
-                        <span className={`proposal-status status-${proposal.status}`}>
-                          {proposal.status === 'pending' && '⏳ Oczekująca'}
-                          {proposal.status === 'approved' && '✅ Zatwierdzona'}
-                          {proposal.status === 'rejected' && '❌ Odrzucona'}
-                        </span>
-                      </div>
-
-                      <div className="proposal-details">
-                        <div className="proposal-image">
-                          {proposal.imageUrl && (
-                            <img src={proposal.imageUrl} alt={proposal.name} />
-                          )}
-                        </div>
-                        
-                        <div className="proposal-info">
-                          <div className="proposal-field">
-                            <strong>Uniwersum:</strong> {proposal.universe}
-                          </div>
-                          <div className="proposal-field">
-                            <strong>Opis:</strong> {proposal.description}
-                          </div>
-                          <div className="proposal-field">
-                            <strong>Moce:</strong> {proposal.powers}
-                          </div>
-                          <div className="proposal-field">
-                            <strong>Autor:</strong> {proposal.submittedBy?.username || 'Nieznany'}
-                          </div>
-                          <div className="proposal-field">
-                            <strong>Data:</strong> {formatDate(proposal.createdAt)}
-                          </div>
-                          
-                          {proposal.moderatorNotes && (
-                            <div className="proposal-field">
-                              <strong>Notatki moderatora:</strong> {proposal.moderatorNotes}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {proposal.status === 'pending' && (
-                        <div className="proposal-actions">
-                          <button
-                            onClick={() => handleApproveProposal(proposal._id)}
-                            className="approve-btn"
-                          >
-                            ✅ Zatwierdź
-                          </button>
-                          <button
-                            onClick={() => handleRejectProposal(proposal._id)}
-                            className="reject-btn"
-                          >
-                            ❌ Odrzuć
-                          </button>
-                          <button
-                            onClick={() => handleDeleteProposal(proposal._id)}
-                            className="delete-btn"
-                          >
-                            🗑️ Usuń
-                          </button>
-                        </div>
-                      )}
-
-                      {proposal.status !== 'pending' && (
-                        <div className="proposal-actions">
-                          <button
-                            onClick={() => handleDeleteProposal(proposal._id)}
-                            className="delete-btn"
-                          >
-                            🗑️ Usuń
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="no-proposals">
-                  <p>Brak propozycji fighterów do wyświetlenia.</p>
-                </div>
-              )}
-            </div>
           </div>
         )}
 

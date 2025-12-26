@@ -141,7 +141,7 @@
 
 /* Dark Mode Styles */
 body.dark-mode {
-  background: #1a1a1a;
+  background: #050608;
   color: #e0e0e0;
 }
 
@@ -179,7 +179,7 @@ body.dark-mode .home-page,
 body.dark-mode .feed-container,
 body.dark-mode .messages-page,
 body.dark-mode .moderator-panel {
-  background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+  background: linear-gradient(135deg, #0b0e14 0%, #141b26 100%);
 }
 
 body.dark-mode .post-card,
@@ -187,7 +187,7 @@ body.dark-mode .create-post-card,
 body.dark-mode .featured-fight-card,
 body.dark-mode .messages-container,
 body.dark-mode .profile-page {
-  background: rgba(45, 55, 72, 0.98);
+  background: rgba(16, 20, 28, 0.98);
   color: #e0e0e0;
 }
 

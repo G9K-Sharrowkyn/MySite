@@ -1,8 +1,14 @@
 import express from 'express';
+import bcrypt from 'bcryptjs';
 import auth from '../middleware/auth.js';
-import User from '../models/User.js';
+import { readDb, updateDb } from '../services/jsonDb.js';
 
 const router = express.Router();
+
+const resolveUserId = (user) => user?.id || user?._id;
+
+const findUserById = (db, userId) =>
+  (db.users || []).find((entry) => resolveUserId(entry) === userId);
 
 /**
  * Get Privacy Policy
@@ -199,20 +205,31 @@ router.post('/cookie-consent', auth, async (req, res) => {
   try {
     const { analytics, marketing, functional } = req.body;
 
-    await User.findByIdAndUpdate(req.user.id, {
-      $set: {
-        'privacy.cookieConsent': {
-          given: true,
-          date: new Date(),
-          analytics: analytics || false,
-          marketing: marketing || false,
-          functional: functional !== false // Default true
-        }
+    await updateDb((db) => {
+      const user = findUserById(db, req.user.id);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
       }
+
+      user.privacy = user.privacy || {};
+      user.privacy.cookieConsent = {
+        given: true,
+        date: new Date().toISOString(),
+        analytics: Boolean(analytics),
+        marketing: Boolean(marketing),
+        functional: functional !== false
+      };
+      user.updatedAt = new Date().toISOString();
+      return db;
     });
 
     res.json({ msg: 'Cookie consent updated successfully' });
   } catch (error) {
+    if (error.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
     console.error('Error updating cookie consent:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -225,18 +242,21 @@ router.post('/cookie-consent', auth, async (req, res) => {
  */
 router.post('/export-data', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .select('-password')
-      .lean();
-
+    const db = await readDb();
+    const user = findUserById(db, req.user.id);
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    // Gather all user data
+    const sanitizedUser = { ...user };
+    delete sanitizedUser.password;
+
     const userData = {
-      profile: user,
-      exportDate: new Date(),
+      profile: sanitizedUser,
+      posts: (db.posts || []).filter((post) => post.authorId === req.user.id),
+      comments: (db.comments || []).filter((comment) => comment.authorId === req.user.id),
+      votes: (db.votes || []).filter((vote) => vote.userId === req.user.id),
+      exportDate: new Date().toISOString(),
       format: 'JSON',
       gdprCompliant: true
     };
@@ -264,36 +284,44 @@ router.delete('/delete-account', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Please type DELETE to confirm account deletion' });
     }
 
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
-    }
+    let deletionDate = new Date().toISOString();
 
-    // Verify password
-    const bcrypt = (await import('bcryptjs')).default;
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Incorrect password' });
-    }
-
-    // Mark account for deletion (soft delete) or delete immediately
-    // For GDPR compliance, it's better to anonymize rather than delete
-    await User.findByIdAndUpdate(req.user.id, {
-      $set: {
-        email: `deleted_${req.user.id}@deleted.local`,
-        username: `deleted_user_${req.user.id}`,
-        'privacy.accountDeleted': true,
-        'privacy.deletionDate': new Date(),
-        password: 'DELETED',
-        profile: {}
+    await updateDb((db) => {
+      const user = findUserById(db, req.user.id);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
       }
+
+      const isMatch = bcrypt.compareSync(password || '', user.password || '');
+      if (!isMatch) {
+        const error = new Error('Incorrect password');
+        error.code = 'BAD_PASSWORD';
+        throw error;
+      }
+
+      user.email = `deleted_${req.user.id}@deleted.local`;
+      user.username = `deleted_user_${req.user.id}`;
+      user.password = 'DELETED';
+      user.profile = {};
+      user.privacy = user.privacy || {};
+      user.privacy.accountDeleted = true;
+      user.privacy.deletionDate = deletionDate;
+      return db;
     });
 
     res.json({
       msg: 'Account deletion request processed. Your account has been anonymized.',
-      deletionDate: new Date()
+      deletionDate
     });
   } catch (error) {
+    if (error.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    if (error.code === 'BAD_PASSWORD') {
+      return res.status(400).json({ msg: 'Incorrect password' });
+    }
     console.error('Error deleting account:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -306,9 +334,8 @@ router.delete('/delete-account', auth, async (req, res) => {
  */
 router.get('/settings', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id)
-      .select('privacy notificationSettings');
-
+    const db = await readDb();
+    const user = findUserById(db, req.user.id);
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
@@ -335,19 +362,30 @@ router.put('/settings', auth, async (req, res) => {
   try {
     const { dataProcessing, marketing, profiling } = req.body;
 
-    await User.findByIdAndUpdate(req.user.id, {
-      $set: {
-        'privacy.settings': {
-          dataProcessing: dataProcessing !== false,
-          marketing: marketing || false,
-          profiling: profiling || false,
-          updatedAt: new Date()
-        }
+    await updateDb((db) => {
+      const user = findUserById(db, req.user.id);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
       }
+
+      user.privacy = user.privacy || {};
+      user.privacy.settings = {
+        dataProcessing: dataProcessing !== false,
+        marketing: Boolean(marketing),
+        profiling: Boolean(profiling),
+        updatedAt: new Date().toISOString()
+      };
+      user.updatedAt = new Date().toISOString();
+      return db;
     });
 
     res.json({ msg: 'Privacy settings updated successfully' });
   } catch (error) {
+    if (error.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
     console.error('Error updating privacy settings:', error);
     res.status(500).json({ msg: 'Server error' });
   }

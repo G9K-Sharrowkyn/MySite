@@ -1,40 +1,62 @@
-import Notification from '../models/Notification.js';
+import { v4 as uuidv4 } from 'uuid';
+import { readDb, updateDb } from '../services/jsonDb.js';
+
+const normalizeNotification = (notification) => ({
+  id: notification.id || notification._id,
+  userId: notification.userId,
+  type: notification.type || 'system',
+  title: notification.title || '',
+  content: notification.content || notification.message || '',
+  message: notification.message || notification.content || '',
+  data: notification.data || notification.metadata || {},
+  read: Boolean(notification.read),
+  createdAt: notification.createdAt,
+  readAt: notification.readAt || null
+});
 
 // @desc    Get user notifications
 // @route   GET /api/notifications
 // @access  Private
 export const getNotifications = async (req, res) => {
   try {
-    console.log('Get notifications request received:', {
-      userId: req.user.id,
-      query: req.query
+    const { page = 1, limit = 20, type } = req.query;
+    const pageNumber = Number(page) || 1;
+    const limitNumber = Number(limit) || 20;
+
+    const db = await readDb();
+    const notifications = Array.isArray(db.notifications) ? db.notifications : [];
+
+    const filtered = notifications.filter((notification) => {
+      if (notification.userId !== req.user.id) return false;
+      if (type) {
+        return notification.type === type;
+      }
+      return true;
     });
 
-    const { page = 1, limit = 20, type } = req.query;
+    const sorted = [...filtered].sort(
+      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+    );
+    const paged = sorted.slice(
+      (pageNumber - 1) * limitNumber,
+      pageNumber * limitNumber
+    );
 
-    const query = { userId: req.user.id };
-    if (type) {
-      query.type = type;
-    }
-
-    const totalNotifications = await Notification.countDocuments(query);
-    const notifications = await Notification.find(query)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit));
-
-    const unreadCount = await Notification.countDocuments({ userId: req.user.id, read: false });
-
-    console.log(`Returning ${notifications.length} notifications out of ${totalNotifications}`);
+    const unreadCount = notifications.filter(
+      (notification) =>
+        notification.userId === req.user.id && !notification.read
+    ).length;
 
     res.json({
-      notifications,
+      notifications: paged.map((notification) =>
+        normalizeNotification(notification)
+      ),
       pagination: {
-        currentPage: parseInt(page),
-        totalPages: Math.ceil(totalNotifications / limit),
-        totalNotifications,
-        hasNext: page * limit < totalNotifications,
-        hasPrev: page > 1
+        currentPage: pageNumber,
+        totalPages: Math.ceil(filtered.length / limitNumber) || 1,
+        totalNotifications: filtered.length,
+        hasNext: pageNumber * limitNumber < filtered.length,
+        hasPrev: pageNumber > 1
       },
       unreadCount
     });
@@ -49,27 +71,32 @@ export const getNotifications = async (req, res) => {
 // @access  Private
 export const markAsRead = async (req, res) => {
   try {
-    console.log('Mark notification as read request received:', {
-      userId: req.user.id,
-      notificationId: req.params.id
+    let found;
+
+    await updateDb((db) => {
+      const notification = db.notifications.find(
+        (entry) => entry.id === req.params.id || entry._id === req.params.id
+      );
+      if (!notification || notification.userId !== req.user.id) {
+        const error = new Error('Notification not found');
+        error.code = 'NOTIFICATION_NOT_FOUND';
+        throw error;
+      }
+
+      notification.read = true;
+      notification.readAt = new Date().toISOString();
+      found = notification;
+      return db;
     });
 
-    const notification = await Notification.findOne({
-      _id: req.params.id,
-      userId: req.user.id
+    res.json({
+      msg: 'Notification marked as read',
+      notification: normalizeNotification(found)
     });
-
-    if (!notification) {
-      console.error('Notification not found:', req.params.id);
-      return res.status(404).json({ msg: 'Powiadomienie nie znalezione' });
-    }
-
-    notification.read = true;
-    notification.readAt = new Date();
-    await notification.save();
-
-    res.json({ msg: 'Powiadomienie oznaczone jako przeczytane' });
   } catch (error) {
+    if (error.code === 'NOTIFICATION_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Notification not found' });
+    }
     console.error('Error marking notification as read:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -80,16 +107,18 @@ export const markAsRead = async (req, res) => {
 // @access  Private
 export const markAllAsRead = async (req, res) => {
   try {
-    console.log('Mark all notifications as read request received:', {
-      userId: req.user.id
+    await updateDb((db) => {
+      db.notifications = Array.isArray(db.notifications) ? db.notifications : [];
+      db.notifications.forEach((notification) => {
+        if (notification.userId === req.user.id && !notification.read) {
+          notification.read = true;
+          notification.readAt = new Date().toISOString();
+        }
+      });
+      return db;
     });
 
-    await Notification.updateMany(
-      { userId: req.user.id, read: false },
-      { read: true, readAt: new Date() }
-    );
-
-    res.json({ msg: 'Wszystkie powiadomienia oznaczone jako przeczytane' });
+    res.json({ msg: 'All notifications marked as read' });
   } catch (error) {
     console.error('Error marking all notifications as read:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -101,22 +130,26 @@ export const markAllAsRead = async (req, res) => {
 // @access  Private
 export const deleteNotification = async (req, res) => {
   try {
-    console.log('Delete notification request received:', {
-      userId: req.user.id,
-      notificationId: req.params.id
+    let removed = false;
+
+    await updateDb((db) => {
+      const before = db.notifications.length;
+      db.notifications = db.notifications.filter(
+        (entry) =>
+          !(
+            (entry.id === req.params.id || entry._id === req.params.id) &&
+            entry.userId === req.user.id
+          )
+      );
+      removed = db.notifications.length !== before;
+      return db;
     });
 
-    const notification = await Notification.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.id
-    });
-
-    if (!notification) {
-      console.error('Notification not found:', req.params.id);
-      return res.status(404).json({ msg: 'Powiadomienie nie znalezione' });
+    if (!removed) {
+      return res.status(404).json({ msg: 'Notification not found' });
     }
 
-    res.json({ msg: 'Powiadomienie usunięte' });
+    res.json({ msg: 'Notification deleted' });
   } catch (error) {
     console.error('Error deleting notification:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -128,14 +161,12 @@ export const deleteNotification = async (req, res) => {
 // @access  Private
 export const getUnreadCount = async (req, res) => {
   try {
-    console.log('Get unread notification count request received:', {
-      userId: req.user.id
-    });
-
-    const unreadCount = await Notification.countDocuments({
-      userId: req.user.id,
-      read: false
-    });
+    const db = await readDb();
+    const notifications = Array.isArray(db.notifications) ? db.notifications : [];
+    const unreadCount = notifications.filter(
+      (notification) =>
+        notification.userId === req.user.id && !notification.read
+    ).length;
 
     res.json({ unreadCount });
   } catch (error) {
@@ -144,31 +175,47 @@ export const getUnreadCount = async (req, res) => {
   }
 };
 
-// @desc    Create notification (internal function)
-// This function is no longer needed as we use Notification.create directly
-// Keeping it for backward compatibility
-export const createNotification = async (db, userId, type, title, content, data = {}) => {
-  try {
-    console.log('Create notification called (deprecated):', {
-      userId,
-      type,
-      title,
-      content,
-      data
-    });
-
-    const notification = await Notification.create({
-      userId,
-      type,
-      title,
-      message: content,
-      data,
-      read: false
-    });
-
-    return notification;
-  } catch (error) {
-    console.error('Error creating notification:', error.message);
-    throw error;
+// @desc    Create notification (compat helper)
+// @access  Internal
+export const createNotification = async (
+  db,
+  userId,
+  type,
+  title,
+  content,
+  data = {}
+) => {
+  if (!userId) {
+    throw new Error('createNotification requires a userId');
   }
+  if (!title || !content) {
+    throw new Error('createNotification requires a title and content');
+  }
+
+  const now = new Date().toISOString();
+  const notification = {
+    id: uuidv4(),
+    userId,
+    type,
+    title,
+    content,
+    message: content,
+    data,
+    read: false,
+    createdAt: now
+  };
+
+  if (db && typeof db === 'object') {
+    db.notifications = Array.isArray(db.notifications) ? db.notifications : [];
+    db.notifications.push(notification);
+    return notification;
+  }
+
+  await updateDb((data) => {
+    data.notifications = Array.isArray(data.notifications) ? data.notifications : [];
+    data.notifications.push(notification);
+    return data;
+  });
+
+  return notification;
 };

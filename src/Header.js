@@ -152,7 +152,6 @@ const Header = () => {
           {isLoggedIn && (
             <>
               <Link to="/betting" className="nav-link betting-link">💰 {t('betting')}</Link>
-              <Link to="/propose-fighter" className="nav-link propose-fighter-link">⚔️ {t('proposeFighter')}</Link>
             </>
           )}
           {user && user.role === 'moderator' && (

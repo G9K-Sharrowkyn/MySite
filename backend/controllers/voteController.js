@@ -1,82 +1,99 @@
-import Vote from '../models/Vote.js';
-import Fight from '../models/Fight.js';
+import { v4 as uuidv4 } from 'uuid';
+import { readDb, updateDb } from '../services/jsonDb.js';
+
+const resolveUserId = (user) => user?.id || user?._id;
+
+const resolveVoteTeam = (choice) => {
+  if (['fighter1', 'teamA', 'A'].includes(choice)) return 'A';
+  if (['fighter2', 'teamB', 'B'].includes(choice)) return 'B';
+  if (choice === 'draw') return 'draw';
+  return null;
+};
+
+const findFightById = (db, fightId) =>
+  (db.fights || []).find((entry) => entry.id === fightId);
+
+const countFightVotes = (votes, fightId) => {
+  const fightVotes = votes.filter((vote) => vote.fightId === fightId);
+  const teamAVotes = fightVotes.filter((vote) =>
+    ['A', 'teamA', 'fighter1'].includes(vote.team)
+  ).length;
+  const teamBVotes = fightVotes.filter((vote) =>
+    ['B', 'teamB', 'fighter2'].includes(vote.team)
+  ).length;
+
+  return {
+    teamAVotes,
+    teamBVotes,
+    totalVotes: fightVotes.length
+  };
+};
 
 // @desc    Vote on a fight
 // @route   POST /api/votes
 // @access  Private
 export const vote = async (req, res) => {
   try {
-    console.log('Vote request received:', {
-      userId: req.user.id,
-      body: req.body
+    const { fightId, choice } = req.body;
+
+    const team = resolveVoteTeam(choice);
+    if (!fightId || !team) {
+      return res.status(400).json({ msg: 'Invalid vote payload.' });
+    }
+
+    let storedVote;
+
+    await updateDb((db) => {
+      const fight = findFightById(db, fightId);
+      if (!fight) {
+        const error = new Error('Fight not found');
+        error.code = 'FIGHT_NOT_FOUND';
+        throw error;
+      }
+
+      if (fight.status !== 'active') {
+        const error = new Error('Fight is not active');
+        error.code = 'FIGHT_INACTIVE';
+        throw error;
+      }
+
+      db.votes = Array.isArray(db.votes) ? db.votes : [];
+      const existing = db.votes.find(
+        (voteEntry) =>
+          voteEntry.fightId === fightId && voteEntry.userId === req.user.id
+      );
+
+      if (existing) {
+        existing.team = team;
+        existing.updatedAt = new Date().toISOString();
+        storedVote = existing;
+      } else {
+        const now = new Date().toISOString();
+        storedVote = {
+          id: uuidv4(),
+          fightId,
+          userId: req.user.id,
+          team,
+          ip: req.ip,
+          userAgent: req.get('user-agent') || '',
+          createdAt: now,
+          updatedAt: now
+        };
+        db.votes.push(storedVote);
+      }
+
+      return db;
     });
 
-    const { fightId, choice } = req.body; // choice: 'fighter1' or 'fighter2' or 'A' or 'B'
-
-    // Check if fight exists
-    const fight = await Fight.findById(fightId);
-    if (!fight) {
-      console.error('Fight not found:', fightId);
-      return res.status(404).json({ msg: 'Walka nie znaleziona' });
-    }
-
-    // Check if fight is still active
-    if (fight.status !== 'active') {
-      return res.status(400).json({ msg: 'Nie można głosować na zakończoną walkę' });
-    }
-
-    // Convert old choice format to new format
-    let team;
-    if (choice === 'fighter1' || choice === 'teamA' || choice === 'A') {
-      team = 'A';
-    } else if (choice === 'fighter2' || choice === 'teamB' || choice === 'B') {
-      team = 'B';
-    } else if (choice === 'draw') {
-      team = 'draw';
-    } else {
-      return res.status(400).json({ msg: 'Nieprawidłowy wybór' });
-    }
-
-    // Check if user already voted
-    const existingVote = await Vote.findOne({ fightId: fight._id, userId: req.user.id });
-
-    if (existingVote) {
-      // Update existing vote
-      existingVote.team = team;
-      existingVote.updatedAt = new Date();
-      await existingVote.save();
-
-      // Update fight vote counts
-      const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
-      const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
-      fight.votesA = teamAVotes;
-      fight.votesB = teamBVotes;
-      await fight.save();
-
-      console.log('Vote updated:', existingVote);
-      return res.json({ msg: 'Głos zaktualizowany', vote: existingVote });
-    }
-
-    // Create new vote
-    const newVote = await Vote.create({
-      fightId: fight._id,
-      userId: req.user.id,
-      team,
-      ip: req.ip,
-      userAgent: req.get('user-agent')
-    });
-
-    // Update fight vote counts
-    const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
-    const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
-    fight.votesA = teamAVotes;
-    fight.votesB = teamBVotes;
-    await fight.save();
-
-    console.log('Vote created:', newVote);
-    res.json({ msg: 'Głos oddany', vote: newVote });
+    res.json({ msg: 'Vote recorded', vote: storedVote });
   } catch (error) {
-    console.error('Error processing vote:', error.message);
+    if (error.code === 'FIGHT_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Fight not found' });
+    }
+    if (error.code === 'FIGHT_INACTIVE') {
+      return res.status(400).json({ msg: 'Fight is not active' });
+    }
+    console.error('Error processing vote:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -86,16 +103,24 @@ export const vote = async (req, res) => {
 // @access  Private
 export const getUserVote = async (req, res) => {
   try {
-    const vote = await Vote.findOne({
-      fightId: req.params.fightId,
-      userId: req.user.id
-    });
+    const db = await readDb();
+    const voteEntry = (db.votes || []).find(
+      (vote) => vote.fightId === req.params.fightId && vote.userId === req.user.id
+    );
 
-    if (!vote) {
-      return res.status(404).json({ msg: 'Nie znaleziono głosu' });
+    if (!voteEntry) {
+      return res.status(404).json({ msg: 'Vote not found' });
     }
 
-    res.json(vote);
+    res.json({
+      ...voteEntry,
+      choice:
+        voteEntry.team === 'A'
+          ? 'fighter1'
+          : voteEntry.team === 'B'
+          ? 'fighter2'
+          : voteEntry.team
+    });
   } catch (error) {
     console.error('Error fetching user vote:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -107,12 +132,16 @@ export const getUserVote = async (req, res) => {
 // @access  Public
 export const getFightVoteStats = async (req, res) => {
   try {
-    const totalVotes = await Vote.countDocuments({ fightId: req.params.fightId });
-    const teamAVotes = await Vote.countDocuments({ fightId: req.params.fightId, team: { $in: ['A', 'teamA'] } });
-    const teamBVotes = await Vote.countDocuments({ fightId: req.params.fightId, team: { $in: ['B', 'teamB'] } });
+    const db = await readDb();
+    const { teamAVotes, teamBVotes, totalVotes } = countFightVotes(
+      db.votes || [],
+      req.params.fightId
+    );
 
-    const fighter1Percentage = totalVotes > 0 ? ((teamAVotes / totalVotes) * 100).toFixed(1) : 0;
-    const fighter2Percentage = totalVotes > 0 ? ((teamBVotes / totalVotes) * 100).toFixed(1) : 0;
+    const fighter1Percentage =
+      totalVotes > 0 ? ((teamAVotes / totalVotes) * 100).toFixed(1) : 0;
+    const fighter2Percentage =
+      totalVotes > 0 ? ((teamBVotes / totalVotes) * 100).toFixed(1) : 0;
 
     res.json({
       fighter1Votes: teamAVotes,
@@ -134,34 +163,37 @@ export const getFightVoteStats = async (req, res) => {
 // @access  Private
 export const removeVote = async (req, res) => {
   try {
-    const vote = await Vote.findOne({
-      fightId: req.params.fightId,
-      userId: req.user.id
+    await updateDb((db) => {
+      const fight = findFightById(db, req.params.fightId);
+      if (fight && fight.status !== 'active') {
+        const error = new Error('Fight is not active');
+        error.code = 'FIGHT_INACTIVE';
+        throw error;
+      }
+
+      const before = (db.votes || []).length;
+      db.votes = (db.votes || []).filter(
+        (voteEntry) =>
+          !(voteEntry.fightId === req.params.fightId && voteEntry.userId === req.user.id)
+      );
+
+      if (before === db.votes.length) {
+        const error = new Error('Vote not found');
+        error.code = 'VOTE_NOT_FOUND';
+        throw error;
+      }
+
+      return db;
     });
 
-    if (!vote) {
-      return res.status(404).json({ msg: 'Nie znaleziono głosu' });
-    }
-
-    // Check if fight is still active
-    const fight = await Fight.findById(req.params.fightId);
-    if (fight && fight.status !== 'active') {
-      return res.status(400).json({ msg: 'Nie można usunąć głosu z zakończonej walki' });
-    }
-
-    await Vote.findByIdAndDelete(vote._id);
-
-    // Update fight vote counts
-    if (fight) {
-      const teamAVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['A', 'teamA'] } });
-      const teamBVotes = await Vote.countDocuments({ fightId: fight._id, team: { $in: ['B', 'teamB'] } });
-      fight.votesA = teamAVotes;
-      fight.votesB = teamBVotes;
-      await fight.save();
-    }
-
-    res.json({ msg: 'Głos usunięty' });
+    res.json({ msg: 'Vote removed' });
   } catch (error) {
+    if (error.code === 'VOTE_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Vote not found' });
+    }
+    if (error.code === 'FIGHT_INACTIVE') {
+      return res.status(400).json({ msg: 'Fight is not active' });
+    }
     console.error('Error removing vote:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -172,23 +204,29 @@ export const removeVote = async (req, res) => {
 // @access  Private
 export const getUserVotes = async (req, res) => {
   try {
-    const userVotes = await Vote.find({ userId: req.user.id });
+    const db = await readDb();
+    const userVotes = (db.votes || []).filter(
+      (voteEntry) => voteEntry.userId === req.user.id
+    );
 
-    // Add fight details to each vote
-    const votesWithFights = await Promise.all(userVotes.map(async (vote) => {
-      const fight = await Fight.findById(vote.fightId);
+    const fightsById = new Map((db.fights || []).map((fight) => [fight.id, fight]));
+
+    const votesWithFights = userVotes.map((voteEntry) => {
+      const fight = fightsById.get(voteEntry.fightId);
       return {
-        ...vote.toObject(),
-        fight: fight ? {
-          id: fight._id,
-          title: fight.title,
-          fighter1: fight.teamA?.[0]?.characterName || 'Fighter 1',
-          fighter2: fight.teamB?.[0]?.characterName || 'Fighter 2',
-          status: fight.status,
-          winner: fight.result?.winner
-        } : null
+        ...voteEntry,
+        fight: fight
+          ? {
+              id: fight.id,
+              title: fight.title,
+              fighter1: fight.fighter1 || fight.teamA?.[0]?.characterName || 'Fighter 1',
+              fighter2: fight.fighter2 || fight.teamB?.[0]?.characterName || 'Fighter 2',
+              status: fight.status,
+              winner: fight.result?.winner || fight.winner
+            }
+          : null
       };
-    }));
+    });
 
     res.json(votesWithFights);
   } catch (error) {

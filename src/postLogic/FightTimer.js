@@ -57,6 +57,15 @@ const FightTimer = ({ lockTime, status }) => {
     );
   }
 
+  if (!lockTime) {
+    return (
+      <div className="fight-timer no-limit">
+        <span className="timer-icon">N/A</span>
+        <span className="timer-text">No time limit</span>
+      </div>
+    );
+  }
+
   if (timeLeft.expired) {
     return (
       <div className="fight-timer expired">

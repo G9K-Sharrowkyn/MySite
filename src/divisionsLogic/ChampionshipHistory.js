@@ -3,15 +3,23 @@ import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
 import './ChampionshipHistory.css';
 
-const ChampionshipHistory = ({ divisionId, divisionName }) => {
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+const ChampionshipHistory = ({ divisionId, divisionName, initialHistory }) => {
+  const [history, setHistory] = useState(
+    Array.isArray(initialHistory) ? initialHistory : []
+  );
+  const [loading, setLoading] = useState(!Array.isArray(initialHistory));
   const [showModal, setShowModal] = useState(false);
   const { t } = useLanguage();
 
   useEffect(() => {
+    if (Array.isArray(initialHistory)) {
+      setHistory(initialHistory);
+      setLoading(false);
+      return;
+    }
+
     fetchChampionshipHistory();
-  }, [divisionId]);
+  }, [divisionId, initialHistory]);
 
   const fetchChampionshipHistory = async () => {
     try {

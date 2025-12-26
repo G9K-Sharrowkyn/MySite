@@ -31,7 +31,7 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
       }
       
       const badgesData = await badgesResponse.json();
-      setBadges(badgesData);
+      setBadges(badgesData.badges || badgesData || []);
 
       // Pobierz odznaki użytkownika
       const userBadgesResponse = await fetch(`/api/badges/user/${userId}`, {
@@ -45,7 +45,7 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
       }
       
       const userBadgesData = await userBadgesResponse.json();
-      setUserBadges(userBadgesData);
+      setUserBadges(userBadgesData.badges || userBadgesData || []);
       
     } catch (err) {
       console.error('Error fetching badges:', err);
