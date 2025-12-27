@@ -10,7 +10,12 @@ import {
   voteInFight,
   voteInPoll,
   addReaction,
-  removeReaction
+  removeReaction,
+  createUserChallenge,
+  respondToChallenge,
+  approveChallenge,
+  getPendingChallenges,
+  searchUsersForChallenge
 } from '../controllers/postController.js';
 import auth from '../middleware/auth.js';
 import { readDb } from '../services/jsonDb.js';
@@ -164,6 +169,25 @@ router.get('/tags/all', async (_req, res) => {
   }
 });
 
+// ============================================
+// USER-VS-USER CHALLENGE ROUTES
+// ============================================
+
+// @route   GET api/posts/pending-challenges
+// @desc    Get pending challenges for current user
+// @access  Private
+router.get('/pending-challenges', auth, getPendingChallenges);
+
+// @route   GET api/posts/search-users
+// @desc    Search users to challenge
+// @access  Private
+router.get('/search-users', auth, searchUsersForChallenge);
+
+// @route   POST api/posts/user-challenge
+// @desc    Create a user-vs-user challenge
+// @access  Private
+router.post('/user-challenge', auth, createUserChallenge);
+
 // @route   GET api/posts/:id
 // @desc    Get post by ID
 // @access  Public
@@ -173,6 +197,16 @@ router.get('/:id', getPostById);
 // @desc    Vote in fight post
 // @access  Private
 router.post('/:id/fight-vote', auth, voteInFight);
+
+// @route   POST api/posts/:id/respond
+// @desc    Respond to a user-vs-user challenge (opponent)
+// @access  Private
+router.post('/:id/respond', auth, respondToChallenge);
+
+// @route   POST api/posts/:id/approve
+// @desc    Approve a user-vs-user challenge (challenger)
+// @access  Private
+router.post('/:id/approve', auth, approveChallenge);
 
 // @route   POST api/posts/:id/poll-vote
 // @desc    Vote in poll

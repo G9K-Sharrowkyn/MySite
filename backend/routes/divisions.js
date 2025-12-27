@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import auth from '../middleware/auth.js';
 import moderatorAuth from '../middleware/moderatorAuth.js';
 import { readDb, updateDb } from '../services/jsonDb.js';
+import { getRankInfo } from '../utils/rankSystem.js';
 
 const router = express.Router();
 
@@ -52,11 +53,12 @@ const buildTeamName = (team) =>
 
 const buildAuthor = (user) => {
   if (!user) return null;
+  const rankInfo = getRankInfo(user.stats?.points || 0);
   return {
     id: resolveUserId(user),
     username: user.username,
     profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
-    rank: user.stats?.rank || 'Rookie'
+    rank: rankInfo.rank
   };
 };
 
@@ -195,6 +197,7 @@ const buildChampion = (divisionId, db) => {
   if (!championUser) return null;
 
   const divisionData = championUser.divisions?.[divisionId] || {};
+  const rankInfo = getRankInfo(championUser.stats?.points || 0);
   return {
     id: resolveUserId(championUser),
     username: championUser.username,
@@ -205,7 +208,7 @@ const buildChampion = (divisionId, db) => {
       wins: divisionData.wins || 0,
       losses: divisionData.losses || 0,
       points: divisionData.points || 0,
-      rank: divisionData.rank || 'Rookie'
+      rank: divisionData.rank || rankInfo.rank
     },
     team: divisionData.team || null
   };

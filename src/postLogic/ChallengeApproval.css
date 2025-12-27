@@ -1,0 +1,198 @@
+/* Challenge Approval Panel */
+.challenge-approval-panel {
+  background: linear-gradient(135deg, rgba(46, 204, 113, 0.1) 0%, rgba(39, 174, 96, 0.1) 100%);
+  border: 2px solid #27ae60;
+  border-radius: 12px;
+  padding: 25px;
+  margin: 20px 0;
+}
+
+.approval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.approval-header h3 {
+  margin: 0;
+  color: #27ae60;
+  font-size: 1.4em;
+}
+
+.approval-badge {
+  background: #27ae60;
+  color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+/* Teams Comparison */
+.teams-comparison {
+  display: flex;
+  align-items: stretch;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.team-box {
+  flex: 1;
+  background: var(--bg-dark);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.team-box h4 {
+  margin: 0 0 12px 0;
+  font-size: 0.95em;
+}
+
+.challenger-team h4 {
+  color: #FFD700;
+}
+
+.opponent-team h4 {
+  color: #3498db;
+}
+
+.opponent-link {
+  color: #3498db;
+  text-decoration: none;
+}
+
+.opponent-link:hover {
+  text-decoration: underline;
+}
+
+.team-content {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  padding: 15px;
+  color: var(--text-light);
+  font-weight: 500;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vs-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-weight: bold;
+  font-size: 1.3em;
+  padding: 0 10px;
+}
+
+/* Vote Duration Info */
+.vote-duration-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: rgba(52, 152, 219, 0.15);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  border-radius: 8px;
+  color: #5dade2;
+  font-size: 0.95em;
+  margin-bottom: 20px;
+}
+
+.info-icon {
+  font-size: 1.2em;
+}
+
+/* Error Message */
+.approval-error {
+  background: rgba(255, 68, 68, 0.15);
+  border: 1px solid #ff4444;
+  color: #ff6666;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Actions */
+.approval-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.cancel-btn,
+.approve-btn {
+  flex: 1;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.cancel-btn {
+  background: transparent;
+  border: 2px solid #888;
+  color: #888;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  border-color: #ff4444;
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+}
+
+.approve-btn {
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: white;
+}
+
+.approve-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+}
+
+.cancel-btn:disabled,
+.approve-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Note */
+.approval-note {
+  text-align: center;
+  color: #888;
+  font-size: 0.9em;
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .approval-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .teams-comparison {
+    flex-direction: column;
+  }
+
+  .vs-divider {
+    padding: 10px 0;
+  }
+
+  .approval-actions {
+    flex-direction: column;
+  }
+}

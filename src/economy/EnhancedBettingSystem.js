@@ -47,7 +47,7 @@ const EnhancedBettingSystem = ({ user }) => {
     }
 
     if (amount > userCoins) {
-      alert('Insufficient coins for this bet.');
+      alert('Insufficient eurodolary for this bet.');
       return;
     }
 
@@ -67,7 +67,7 @@ const EnhancedBettingSystem = ({ user }) => {
         [fightId]: { prediction, amount }
       }));
 
-      alert(`Bet placed: ${amount} coins on ${prediction}`);
+      alert(`Bet placed: ${amount} eurodolary on ${prediction}`);
       fetchBettingData();
     } catch (error) {
       console.error('Error placing bet:', error);
@@ -85,7 +85,7 @@ const EnhancedBettingSystem = ({ user }) => {
 
     const totalAmount = parlayBets.reduce((sum, bet) => sum + bet.amount, 0);
     if (totalAmount > userCoins) {
-      alert('Insufficient coins for this parlay.');
+      alert('Insufficient eurodolary for this parlay.');
       return;
     }
 
@@ -442,7 +442,7 @@ const EnhancedBettingSystem = ({ user }) => {
     <div className="enhanced-betting-system">
       <div className="betting-header">
         <h1>🎰 Enhanced Betting System</h1>
-        <p>Bet on official fights with virtual coins and create parlays for bigger rewards!</p>
+        <p>Bet on official fights with eurodolary and create parlays for bigger rewards!</p>
         
         <div className="user-wallet">
           <div className="coin-balance">
@@ -492,7 +492,7 @@ const EnhancedBettingSystem = ({ user }) => {
           <h3>💰 How It Works</h3>
           <p>• Bet on individual fights or create parlays</p>
           <p>• Odds are calculated based on betting patterns</p>
-          <p>• Win coins when your predictions are correct</p>
+          <p>• Win eurodolary when your predictions are correct</p>
         </div>
         
         <div className="info-card">

@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, updateDb } from '../services/jsonDb.js';
+import { applyDailyBonus } from '../utils/coinBonus.js';
 
 const isJwtConfigured = () =>
   typeof process.env.JWT_SECRET === 'string' &&
@@ -63,14 +64,28 @@ const buildNewUser = ({ username, email, passwordHash }) => {
       fightsNoContest: 0,
       totalFights: 0,
       winRate: 0,
-      rank: 'Rookie',
+      rank: 'Mortal',
       points: 0,
       level: 1,
-      experience: 0
+      experience: 0,
+      // Rozdzielone statystyki: oficjalne (dywizje) vs nieoficjalne (społeczność)
+      officialStats: {
+        fightsWon: 0,
+        fightsLost: 0,
+        fightsDrawn: 0,
+        winRate: 0
+      },
+      unofficialStats: {
+        fightsWon: 0,
+        fightsLost: 0,
+        fightsDrawn: 0,
+        winRate: 0
+      }
     },
     activity: {
       postsCreated: 0,
       commentsPosted: 0,
+      reactionsGiven: 0,
       likesReceived: 0,
       tournamentsWon: 0,
       tournamentsParticipated: 0
@@ -216,14 +231,17 @@ export const login = async (req, res) => {
     }
 
     const now = new Date().toISOString();
+    let responseUser = user;
     await updateDb((data) => {
       const storedUser = data.users.find(
         (entry) => resolveUserId(entry) === resolveUserId(user)
       );
       if (storedUser) {
+        applyDailyBonus(data, storedUser);
         storedUser.profile = storedUser.profile || {};
         storedUser.profile.lastActive = now;
         storedUser.updatedAt = now;
+        responseUser = storedUser;
       }
       return data;
     });
@@ -242,7 +260,7 @@ export const login = async (req, res) => {
         res.json({
           token,
           userId: resolveUserId(user),
-          user: buildAuthResponse(user)
+          user: buildAuthResponse(responseUser)
         });
       }
     );

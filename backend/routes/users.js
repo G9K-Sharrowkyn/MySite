@@ -1,6 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, updateDb } from '../services/jsonDb.js';
+import { applyDailyBonus } from '../utils/coinBonus.js';
 
 const router = express.Router();
 
@@ -247,15 +248,25 @@ router.post('/claim-daily-task', async (req, res) => {
 // GET /api/users/:userId/coins
 router.get('/:userId/coins', async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
-    if (!user) {
+    let coins = 0;
+    await updateDb((db) => {
+      const user = findUserById(db, req.params.userId);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
+
+      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
+      coins = user.coins.balance || 0;
+      return db;
+    });
+    res.json({ coins });
+  } catch (error) {
+    if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ message: 'User not found' });
     }
-
-    ensureCoinAccount(user);
-    res.json({ coins: user.coins.balance || 0 });
-  } catch (error) {
     console.error('Error fetching user coins:', error);
     res.status(500).json({ message: 'Server error' });
   }

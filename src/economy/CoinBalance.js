@@ -52,7 +52,7 @@ const CoinBalance = ({ userId, showLabel = true, className = '' }) => {
   return (
     <div className={`coin-balance ${className}`}>
       <span className="coin-icon">🪙</span>
-      {showLabel && <span className="balance-label">Coins:</span>}
+      {showLabel && <span className="balance-label">Eurodolary:</span>}
       <span className="balance-amount">{balance.toLocaleString()}</span>
     </div>
   );

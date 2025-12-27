@@ -12,54 +12,97 @@ const GlobalChatSystem = () => {
   const [activeUsers, setActiveUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Map());
   const [isConnected, setIsConnected] = useState(false);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [isMinimized, setIsMinimized] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
-  
+  const [showUsers, setShowUsers] = useState(false);
+
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const chatContainerRef = useRef(null);
+  const socketRef = useRef(null);
+  const userIdRef = useRef(null);
+  const isMinimizedRef = useRef(true);
 
-  const emojis = ['😀', '😂', '❤️', '👍', '👎', '🔥', '🎉', '😎', '😭', '🤔'];
 
-  const resolveSocketUrl = () => {
-    if (process.env.REACT_APP_SOCKET_URL) {
-      return process.env.REACT_APP_SOCKET_URL;
-    }
-    if (typeof window === 'undefined') {
-      return 'http://localhost:5001';
-    }
-    const { protocol, hostname, port } = window.location;
-    if (port === '3000') {
-      return `${protocol}//${hostname}:5001`;
-    }
-    return window.location.origin;
+  const sanitizeProfilePicture = (value) => {
+    if (typeof value !== 'string') return null;
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('data:')) return null;
+    if (trimmed.length > 2048) return null;
+    return trimmed;
   };
 
+  const resolveSocketUrl = () => {
+    const envUrl = process.env.REACT_APP_SOCKET_URL;
+    if (typeof window !== 'undefined') {
+      if (envUrl) return envUrl;
+      const { hostname, port, protocol, origin } = window.location;
+      if (port === '3000') {
+        return `${protocol}//${hostname}:5001`;
+      }
+      return origin;
+    }
+    return envUrl || 'http://localhost:5001';
+  };
+
+  // Extract stable values to prevent reconnection loops
+  const userId = user?.id;
+  const username = user?.username;
+  const profilePicture = user?.profilePicture;
+
   useEffect(() => {
-    if (!user || !token) return;
+    isMinimizedRef.current = isMinimized;
+  }, [isMinimized]);
+
+  useEffect(() => {
+    if (!userId || !token) return;
+
+    // Prevent reconnection if already connected with same user
+    if (socketRef.current && userIdRef.current === userId) {
+      return;
+    }
+
+    // Clean up existing socket if user changed
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+
+    userIdRef.current = userId;
 
     // Connect to Socket.io server
     const newSocket = io(resolveSocketUrl(), {
       auth: { token },
-      transports: ['websocket', 'polling']
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000
     });
+
+    socketRef.current = newSocket;
 
     newSocket.on('connect', () => {
       console.log('Connected to chat server');
       setIsConnected(true);
-      
+
       // Join chat with user info
       newSocket.emit('join-chat', {
-        userId: user.id,
-        username: user.username,
-        profilePicture: user.profilePicture || null
+        userId,
+        username,
+        profilePicture: sanitizeProfilePicture(profilePicture)
       });
     });
 
-    newSocket.on('disconnect', () => {
-      console.log('Disconnected from chat server');
+    newSocket.on('disconnect', (reason) => {
+      console.log('Disconnected from chat server:', reason);
       setIsConnected(false);
+      setSocket(null);
+    });
+
+    newSocket.on('connect_error', (error) => {
+      console.warn('Chat connection error:', error?.message || error);
+      setIsConnected(false);
+      setSocket(null);
     });
 
     // Handle incoming messages
@@ -67,7 +110,7 @@ const GlobalChatSystem = () => {
       setMessages(prev => [...prev, message]);
       
       // Increment unread count if minimized
-      if (isMinimized && message.userId !== user.id) {
+      if (isMinimizedRef.current && message.userId !== userId) {
         setUnreadCount(prev => prev + 1);
       }
       
@@ -124,9 +167,12 @@ const GlobalChatSystem = () => {
     setSocket(newSocket);
 
     return () => {
-      newSocket.close();
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [user, token]);
+  }, [userId, token]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -158,17 +204,6 @@ const GlobalChatSystem = () => {
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('typing', false);
     }, 1000);
-  };
-
-  const handleReaction = (messageId, emoji) => {
-    if (!socket || !isConnected) return;
-    
-    socket.emit('add-reaction', {
-      messageId,
-      emoji
-    });
-    
-    setShowEmojiPicker(null);
   };
 
   const toggleMinimize = () => {
@@ -232,7 +267,22 @@ const GlobalChatSystem = () => {
             {isConnected ? '🟢' : '🔴'}
           </span>
           <span className="online-count">{activeUsers.length + 1} online</span>
-          <button className="minimize-btn">
+          <button
+            className={`toggle-users-btn ${showUsers ? 'active' : ''}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              setShowUsers(prev => !prev);
+            }}
+          >
+            {showUsers ? 'Hide users' : 'Users'}
+          </button>
+          <button
+            className="minimize-btn"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleMinimize();
+            }}
+          >
             {isMinimized ? '▲' : '▼'}
           </button>
         </div>
@@ -245,6 +295,8 @@ const GlobalChatSystem = () => {
               {messages.map((message) => {
                 const isOwn = message.userId === user.id;
                 const reactionCounts = getReactionCounts(message.reactions);
+                const hasReactions = Object.keys(reactionCounts).length > 0;
+                const authorLabel = message.username || (isOwn ? (username || 'Ty') : 'Unknown');
                 
                 return (
                   <div key={message.id} className={`message ${isOwn ? 'own' : 'other'}`}>
@@ -259,47 +311,24 @@ const GlobalChatSystem = () => {
                       />
                     )}
                     <div className="message-content">
-                      {!isOwn && (
-                        <span className="message-username">{message.username}</span>
-                      )}
+                      <span className="message-author">{authorLabel}</span>
                       <div className="message-bubble">
                         <p className="message-text">{message.text}</p>
-                        <span className="message-time">{formatTime(message.timestamp)}</span>
                       </div>
+                      <span className="message-time">{formatTime(message.timestamp)}</span>
                       
                       {/* Reactions */}
-                      <div className="message-reactions">
-                        {Object.entries(reactionCounts).map(([emoji, users]) => (
-                          <div 
-                            key={emoji} 
-                            className="reaction-pill"
-                            title={users.join(', ')}
-                          >
-                            <span>{emoji}</span>
-                            <span className="reaction-count">{users.length}</span>
-                          </div>
-                        ))}
-                        <button 
-                          className="add-reaction-btn"
-                          onClick={() => setShowEmojiPicker(
-                            showEmojiPicker === message.id ? null : message.id
-                          )}
-                        >
-                          +
-                        </button>
-                      </div>
-                      
-                      {/* Emoji Picker */}
-                      {showEmojiPicker === message.id && (
-                        <div className="emoji-picker">
-                          {emojis.map(emoji => (
-                            <button
-                              key={emoji}
-                              className="emoji-option"
-                              onClick={() => handleReaction(message.id, emoji)}
+                      {hasReactions && (
+                        <div className="message-reactions">
+                          {Object.entries(reactionCounts).map(([emoji, users]) => (
+                            <div 
+                              key={emoji} 
+                              className="reaction-pill"
+                              title={users.join(', ')}
                             >
-                              {emoji}
-                            </button>
+                              <span>{emoji}</span>
+                              <span className="reaction-count">{users.length}</span>
+                            </div>
                           ))}
                         </div>
                       )}
@@ -326,33 +355,35 @@ const GlobalChatSystem = () => {
             </div>
             
             {/* Active Users Sidebar */}
-            <div className="active-users-sidebar">
-              <h4>Online Users</h4>
-              <div className="users-list">
-                <div className="user-item current-user">
-                  <img 
-                    {...getOptimizedImageProps(
-                      user.profilePicture || '/placeholder-avatar.png',
-                      { size: 28 }
-                    )}
-                    alt={user.username}
-                  />
-                  <span>{user.username} (You)</span>
-                </div>
-                {activeUsers.map(activeUser => (
-                  <div key={activeUser.userId} className="user-item">
+            {showUsers && (
+              <div className="active-users-sidebar">
+                <h4>Online Users</h4>
+                <div className="users-list">
+                  <div className="user-item current-user">
                     <img 
                       {...getOptimizedImageProps(
-                        activeUser.profilePicture || '/placeholder-avatar.png',
+                        user.profilePicture || '/placeholder-avatar.png',
                         { size: 28 }
                       )}
-                      alt={activeUser.username}
+                      alt={user.username}
                     />
-                    <span>{activeUser.username}</span>
+                    <span>{user.username} (You)</span>
                   </div>
-                ))}
+                  {activeUsers.map(activeUser => (
+                    <div key={activeUser.userId} className="user-item">
+                      <img 
+                        {...getOptimizedImageProps(
+                          activeUser.profilePicture || '/placeholder-avatar.png',
+                          { size: 28 }
+                        )}
+                        alt={activeUser.username}
+                      />
+                      <span>{activeUser.username}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
           
           <form className="chat-input-form" onSubmit={handleSendMessage}>

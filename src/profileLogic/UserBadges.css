@@ -1,9 +1,9 @@
 .user-badges-wrapper {
   margin: 20px 0;
   padding: 20px;
-  background: #f8f9fa;
+  background: var(--bg-light);
   border-radius: 12px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--bg-dark);
 }
 
 .badges-header {
@@ -12,31 +12,23 @@
 
 .badges-header h3 {
   margin: 0;
-  color: #495057;
-  font-size: 18px;
+  color: var(--text-light);
+  font-size: 1.4em;
 }
 
-.view-all-badges {
-  margin-top: 16px;
+.badges-loading {
   text-align: center;
+  padding: 20px;
+  color: var(--text-light);
+  opacity: 0.7;
 }
 
-.view-all-link {
-  display: inline-block;
-  padding: 8px 16px;
-  background: #007bff;
-  color: white;
-  text-decoration: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  transition: background 0.2s;
-}
-
-.view-all-link:hover {
-  background: #0056b3;
-  text-decoration: none;
-  color: white;
+/* Leveled badges grid */
+.leveled-badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 /* Responsive design */
@@ -45,8 +37,13 @@
     margin: 16px 0;
     padding: 16px;
   }
-  
+
   .badges-header h3 {
-    font-size: 16px;
+    font-size: 1.2em;
+  }
+
+  .leveled-badges-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 }

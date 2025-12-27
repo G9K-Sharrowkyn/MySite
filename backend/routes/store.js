@@ -1,6 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { updateDb } from '../services/jsonDb.js';
+import { applyDailyBonus } from '../utils/coinBonus.js';
 
 const router = express.Router();
 
@@ -25,16 +26,11 @@ router.post('/purchase', async (req, res) => {
         throw error;
       }
 
-      user.coins = user.coins || {
-        balance: 0,
-        totalEarned: 0,
-        totalSpent: 0,
-        lastBonusDate: new Date().toISOString()
-      };
+      applyDailyBonus(db, user);
 
       const itemCost = Number(cost || 0);
       if (user.coins.balance < itemCost) {
-        const error = new Error('Insufficient coins');
+        const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
@@ -76,7 +72,7 @@ router.post('/purchase', async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
-      return res.status(400).json({ message: 'Insufficient coins' });
+      return res.status(400).json({ message: 'Insufficient eurodolary' });
     }
     console.error('Error processing purchase:', error);
     res.status(500).json({ message: 'Server error' });

@@ -1,4 +1,5 @@
 import { readDb, updateDb } from '../services/jsonDb.js';
+import { getRankInfo, syncRankFromPoints } from '../utils/rankSystem.js';
 
 // Achievement definitions
 const ACHIEVEMENTS = {
@@ -197,6 +198,7 @@ function checkAndAwardAchievements(db, userId, achievementType, currentCount) {
         }
         if (achievement.reward.points) {
           user.stats.points += achievement.reward.points;
+          syncRankFromPoints(user);
         }
         
         awardedAchievements.push(userAchievement);
@@ -242,6 +244,7 @@ function checkStreakAchievements(db, userId, currentStreak) {
         }
         if (achievement.reward.points) {
           user.stats.points += achievement.reward.points;
+          syncRankFromPoints(user);
         }
         
         awardedAchievements.push(userAchievement);
@@ -558,7 +561,7 @@ export const getLeaderboard = async (req, res) => {
         id: user.id,
         username: user.username,
         profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
-        rank: user.stats?.rank || user.profile?.rank || 'Rookie',
+        rank: getRankInfo(combinedStats.points).rank,
         points: combinedStats.points,
         victories: combinedStats.victories,
         level: combinedStats.level,

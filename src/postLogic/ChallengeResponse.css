@@ -1,0 +1,237 @@
+/* Challenge Response Panel */
+.challenge-response-panel {
+  background: linear-gradient(135deg, rgba(231, 76, 60, 0.1) 0%, rgba(192, 57, 43, 0.1) 100%);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 25px;
+  margin: 20px 0;
+}
+
+.challenge-response-panel.expired {
+  background: rgba(128, 128, 128, 0.1);
+  border-color: #666;
+  text-align: center;
+}
+
+.challenge-response-panel.expired h3 {
+  color: #888;
+}
+
+.challenge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(231, 76, 60, 0.3);
+}
+
+.challenge-header h3 {
+  margin: 0;
+  color: var(--accent);
+  font-size: 1.4em;
+}
+
+.challenge-timer {
+  background: var(--accent);
+  color: white;
+  padding: 8px 15px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+/* Challenger Section */
+.challenger-section {
+  background: var(--bg-dark);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.challenger-info {
+  margin-bottom: 15px;
+  font-size: 1.1em;
+  color: var(--text-light);
+}
+
+.challenger-link {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.challenger-link:hover {
+  text-decoration: underline;
+}
+
+.challenger-team h4 {
+  margin: 0 0 10px 0;
+  color: #FFD700;
+  font-size: 0.95em;
+}
+
+.team-names {
+  background: rgba(255, 215, 0, 0.1);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 8px;
+  padding: 12px 15px;
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+/* Your Team Section */
+.your-team-section {
+  margin-bottom: 20px;
+}
+
+.your-team-section h4 {
+  margin: 0 0 15px 0;
+  color: #3498db;
+  font-size: 1.1em;
+}
+
+.warriors-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.warrior-slot {
+  background: var(--bg-dark);
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.warrior-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.warrior-preview img {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+}
+
+.warrior-name {
+  font-weight: 500;
+  color: var(--text-light);
+  text-align: center;
+}
+
+.remove-warrior-btn {
+  background: transparent;
+  border: 1px solid #ff4444;
+  color: #ff4444;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85em;
+  transition: all 0.2s;
+}
+
+.remove-warrior-btn:hover {
+  background: rgba(255, 68, 68, 0.1);
+}
+
+.add-warrior-btn {
+  background: transparent;
+  border: 2px dashed #444;
+  color: var(--text-light);
+  padding: 12px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.95em;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.add-warrior-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Error Message */
+.challenge-error {
+  background: rgba(255, 68, 68, 0.15);
+  border: 1px solid #ff4444;
+  color: #ff6666;
+  padding: 12px 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  text-align: center;
+}
+
+/* Actions */
+.challenge-actions {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.reject-btn,
+.accept-btn {
+  flex: 1;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  border: none;
+}
+
+.reject-btn {
+  background: transparent;
+  border: 2px solid #888;
+  color: #888;
+}
+
+.reject-btn:hover:not(:disabled) {
+  border-color: #ff4444;
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
+}
+
+.accept-btn {
+  background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+  color: white;
+}
+
+.accept-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4);
+}
+
+.reject-btn:disabled,
+.accept-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .challenge-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .challenge-actions {
+    flex-direction: column;
+  }
+
+  .warriors-grid {
+    grid-template-columns: 1fr;
+  }
+}

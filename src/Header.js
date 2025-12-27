@@ -248,7 +248,7 @@ const Header = () => {
                 {showUserMenu && (
                   <div className="user-dropdown">
                     <Link 
-                      to="/profile/me" 
+                      to={user?.username ? `/profile/${encodeURIComponent(user.username)}` : "/profile/me"} 
                       className="dropdown-item"
                       onClick={() => setShowUserMenu(false)}
                     >

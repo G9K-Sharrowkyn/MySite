@@ -39,13 +39,13 @@
 }
 
 .stat-card {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-light);
   border-radius: 15px;
   padding: 25px;
   text-align: center;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--bg-dark);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -63,7 +63,7 @@
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--text-light);
 }
 
 .main-stat .stat-number {
@@ -91,7 +91,8 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #666;
+  color: var(--text-light);
+  opacity: 0.7;
 }
 
 .main-stat .stat-label {
@@ -151,19 +152,19 @@
 }
 
 .tab-btn.active {
-  background: white;
-  color: #333;
+  background: var(--bg-light);
+  color: var(--text-light);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Content */
 .badges-content {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-light);
   border-radius: 20px;
   padding: 30px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--bg-dark);
 }
 
 /* States */
@@ -171,21 +172,22 @@
 .error-state {
   text-align: center;
   padding: 60px 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-light);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .login-required h2,
 .error-state h2 {
-  color: #333;
+  color: var(--text-light);
   margin-bottom: 15px;
   font-size: 2rem;
 }
 
 .login-required p,
 .error-state p {
-  color: #666;
+  color: var(--text-light);
+  opacity: 0.7;
   font-size: 1.1rem;
   margin-bottom: 20px;
 }
@@ -208,7 +210,7 @@
 .loading-state {
   text-align: center;
   padding: 60px 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-light);
   border-radius: 20px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
@@ -229,7 +231,8 @@
 }
 
 .loading-state p {
-  color: #666;
+  color: var(--text-light);
+  opacity: 0.7;
   font-size: 1.1rem;
   margin: 0;
 }

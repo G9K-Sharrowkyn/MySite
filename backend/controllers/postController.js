@@ -3,6 +3,7 @@ import { readDb, updateDb } from '../services/jsonDb.js';
 import { autoTagPost } from '../utils/tagging.js';
 import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
+import { addRankPoints, getRankInfo, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveRole = (user) => user?.role || 'user';
@@ -10,11 +11,12 @@ const resolveRole = (user) => user?.role || 'user';
 const buildAuthor = (user) => {
   if (!user) return null;
   const profile = user.profile || {};
+  const rankInfo = getRankInfo(user.stats?.points || 0);
   return {
     id: resolveUserId(user),
     username: user.username,
     profilePicture: profile.profilePicture || profile.avatar || '',
-    rank: user.stats?.rank || 'Rookie'
+    rank: rankInfo.rank
   };
 };
 
@@ -177,10 +179,23 @@ export const getAllPosts = async (req, res) => {
 
 export const getPostsByUser = async (req, res) => {
   const { userId } = req.params;
+  const { category } = req.query; // Filter by category: 'all', 'fight', 'discussion', 'article', 'question'
 
   try {
     const db = await readDb();
-    const posts = db.posts.filter((post) => post.authorId === userId);
+    let posts = db.posts.filter((post) => post.authorId === userId);
+
+    // Apply category filter if specified
+    if (category && category !== 'all') {
+      if (category === 'fight') {
+        // Fights have type='fight'
+        posts = posts.filter((post) => post.type === 'fight');
+      } else {
+        // Other categories (discussion, article, question) are stored in post.category
+        posts = posts.filter((post) => post.category === category || post.type === category);
+      }
+    }
+
     const sorted = sortPosts(posts, 'createdAt');
     const commentCounts = buildCommentCountByPostId(db.comments || []);
 
@@ -370,17 +385,29 @@ export const createPost = async (req, res) => {
         });
       }
 
-      if (!author.activity) {
-        author.activity = {
-          postsCreated: 0,
-          commentsPosted: 0,
-          likesReceived: 0,
-          tournamentsWon: 0,
-          tournamentsParticipated: 0
-        };
-      }
-      author.activity.postsCreated += 1;
-      author.updatedAt = now.toISOString();
+        if (!author.activity) {
+          author.activity = {
+            postsCreated: 0,
+            commentsPosted: 0,
+            reactionsGiven: 0,
+            likesReceived: 0,
+            tournamentsWon: 0,
+            tournamentsParticipated: 0
+          };
+        }
+        author.activity.postsCreated += 1;
+        if (postType === 'fight') {
+          author.activity.fightsCreated = (author.activity.fightsCreated || 0) + 1;
+          updateLeveledBadgeProgress(
+            author,
+            'badge_manager',
+            author.activity.fightsCreated,
+            20,
+            20
+          );
+        }
+        addRankPoints(author, RANK_POINT_VALUES.post);
+        author.updatedAt = now.toISOString();
 
       createdPost = postData;
       return db;
@@ -781,6 +808,7 @@ export const addReaction = async (req, res) => {
       const existingReactionIndex = post.reactions.findIndex(
         (reaction) => reaction.userId === req.user.id
       );
+      const isNewReaction = existingReactionIndex === -1;
 
       const nextReaction = {
         userId: req.user.id,
@@ -799,6 +827,30 @@ export const addReaction = async (req, res) => {
       reactionsArray = buildReactionSummary(post.reactions);
 
       post.updatedAt = new Date().toISOString();
+
+      if (isNewReaction) {
+        const reactingUser = db.users.find((user) => resolveUserId(user) === req.user.id);
+        if (reactingUser) {
+          reactingUser.activity = reactingUser.activity || {
+            postsCreated: 0,
+            commentsPosted: 0,
+            reactionsGiven: 0,
+            likesReceived: 0,
+            tournamentsWon: 0,
+            tournamentsParticipated: 0
+          };
+          reactingUser.activity.reactionsGiven += 1;
+          addRankPoints(reactingUser, RANK_POINT_VALUES.reaction);
+          updateLeveledBadgeProgress(
+            reactingUser,
+            'badge_reactive',
+            reactingUser.activity.reactionsGiven,
+            100,
+            20
+          );
+          reactingUser.updatedAt = new Date().toISOString();
+        }
+      }
       return db;
     });
 
@@ -862,6 +914,597 @@ export const removeReaction = async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error removing reaction:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+};
+
+// ============================================
+// USER-VS-USER CHALLENGE SYSTEM
+// ============================================
+
+// @desc    Create a user-vs-user challenge
+// @route   POST /api/posts/user-challenge
+// @access  Private
+export const createUserChallenge = async (req, res) => {
+  const {
+    title,
+    content,
+    opponentId,
+    challengerTeam,
+    voteDuration,
+    photos
+  } = req.body;
+
+  if (!title || !content) {
+    return res.status(400).json({ message: 'Title and content are required.' });
+  }
+
+  if (!opponentId) {
+    return res.status(400).json({ message: 'Opponent ID is required.' });
+  }
+
+  if (!challengerTeam) {
+    return res.status(400).json({ message: 'Challenger team is required.' });
+  }
+
+  try {
+    const now = new Date();
+    const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days to respond
+    let createdPost;
+    let challenger;
+    let opponent;
+
+    await updateDb(async (db) => {
+      challenger = db.users.find((user) => resolveUserId(user) === req.user.id);
+      if (!challenger) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
+
+      opponent = db.users.find((user) => resolveUserId(user) === opponentId);
+      if (!opponent) {
+        const error = new Error('Opponent not found');
+        error.code = 'OPPONENT_NOT_FOUND';
+        throw error;
+      }
+
+      if (resolveUserId(challenger) === resolveUserId(opponent)) {
+        const error = new Error('Cannot challenge yourself');
+        error.code = 'SELF_CHALLENGE';
+        throw error;
+      }
+
+      const postData = {
+        id: uuidv4(),
+        title,
+        content,
+        type: 'fight',
+        authorId: req.user.id,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        likes: [],
+        comments: [],
+        views: 0,
+        photos: Array.isArray(photos) ? photos : [],
+        poll: null,
+        reactions: [],
+        isOfficial: false,
+        moderatorCreated: false,
+        category: null,
+        featured: false,
+        tags: [],
+        autoTags: {
+          universes: [],
+          characters: [],
+          powerTiers: [],
+          categories: []
+        },
+        fight: {
+          teamA: challengerTeam,
+          teamB: '', // Will be set by opponent
+          votes: {
+            teamA: 0,
+            teamB: 0,
+            draw: 0,
+            voters: []
+          },
+          status: 'pending_opponent', // pending_opponent -> pending_approval -> active
+          isOfficial: false,
+          lockTime: null, // Will be set when approved
+          winner: null,
+          winnerTeam: null,
+          // User-vs-user specific fields
+          fightMode: 'user_vs_user',
+          challengerId: resolveUserId(challenger),
+          challengerUsername: challenger.username,
+          opponentId: resolveUserId(opponent),
+          opponentUsername: opponent.username,
+          challengerTeam: challengerTeam,
+          opponentTeam: null,
+          voteDuration: voteDuration || '3d',
+          expiresAt: expiresAt.toISOString(),
+          respondedAt: null,
+          approvedAt: null
+        }
+      };
+
+      const autoTagPayload = autoTagPost(db, {
+        title,
+        content,
+        teamA: challengerTeam,
+        teamB: '',
+        fight: postData.fight
+      });
+      postData.tags = autoTagPayload.tags;
+      postData.autoTags = autoTagPayload.autoTags;
+
+      db.posts.push(postData);
+
+      // Create notification for opponent
+      await createNotification(
+        db,
+        resolveUserId(opponent),
+        'fight_challenge',
+        'Nowe wyzwanie na walkę!',
+        `${challenger.username} wyzwał Cię na walkę: "${title}"`,
+        {
+          sourceType: 'challenge',
+          postId: postData.id,
+          challengerId: resolveUserId(challenger),
+          challengerUsername: challenger.username
+        }
+      );
+
+      // Send private message with link
+      db.messages = Array.isArray(db.messages) ? db.messages : [];
+      db.messages.push({
+        id: uuidv4(),
+        senderId: resolveUserId(challenger),
+        senderUsername: challenger.username,
+        recipientId: resolveUserId(opponent),
+        recipientUsername: opponent.username,
+        subject: `Wyzwanie na walkę: ${title}`,
+        content: `Hej ${opponent.username}!\n\n` +
+          `Wyzywam Cię na walkę!\n\n` +
+          `Moja drużyna: ${challengerTeam}\n\n` +
+          `Kliknij tutaj, aby odpowiedzieć: /post/${postData.id}\n\n` +
+          `Masz 7 dni na odpowiedź. Po tym czasie wyzwanie wygaśnie.`,
+        read: false,
+        deleted: false,
+        createdAt: now.toISOString()
+      });
+
+      // Update challenger activity
+        if (!challenger.activity) {
+          challenger.activity = {
+            postsCreated: 0,
+            commentsPosted: 0,
+            reactionsGiven: 0,
+            likesReceived: 0,
+            tournamentsWon: 0,
+            tournamentsParticipated: 0
+          };
+        }
+        challenger.activity.postsCreated += 1;
+        challenger.activity.fightsCreated = (challenger.activity.fightsCreated || 0) + 1;
+        updateLeveledBadgeProgress(
+          challenger,
+          'badge_manager',
+          challenger.activity.fightsCreated,
+          20,
+          20
+        );
+        addRankPoints(challenger, RANK_POINT_VALUES.post);
+        challenger.updatedAt = now.toISOString();
+
+      createdPost = postData;
+      return db;
+    });
+
+    res.status(201).json({
+      ...normalizePostForResponse(createdPost, [challenger]),
+      commentCount: 0,
+      reactionsSummary: [],
+      author: buildAuthor(challenger),
+      opponent: {
+        id: resolveUserId(opponent),
+        username: opponent.username,
+        profilePicture: opponent.profile?.profilePicture || opponent.profile?.avatar || ''
+      }
+    });
+  } catch (err) {
+    if (err.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    if (err.code === 'OPPONENT_NOT_FOUND') {
+      return res.status(404).json({ message: 'Opponent not found' });
+    }
+    if (err.code === 'SELF_CHALLENGE') {
+      return res.status(400).json({ message: 'Cannot challenge yourself' });
+    }
+    console.error('Error creating user challenge:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+};
+
+// @desc    Respond to a challenge (opponent sets their team)
+// @route   POST /api/posts/:id/respond
+// @access  Private
+export const respondToChallenge = async (req, res) => {
+  const { id } = req.params;
+  const { opponentTeam, accept } = req.body;
+
+  if (accept && !opponentTeam) {
+    return res.status(400).json({ message: 'Team is required when accepting.' });
+  }
+
+  try {
+    let updatedPost;
+    let challenger;
+
+    await updateDb(async (db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
+
+      if (!post.fight || post.fight.fightMode !== 'user_vs_user') {
+        const error = new Error('This is not a user-vs-user challenge');
+        error.code = 'NOT_CHALLENGE';
+        throw error;
+      }
+
+      if (post.fight.opponentId !== req.user.id) {
+        const error = new Error('You are not the opponent of this challenge');
+        error.code = 'NOT_OPPONENT';
+        throw error;
+      }
+
+      if (post.fight.status !== 'pending_opponent') {
+        const error = new Error('This challenge is not awaiting your response');
+        error.code = 'INVALID_STATUS';
+        throw error;
+      }
+
+      // Check if challenge has expired
+      if (new Date() > new Date(post.fight.expiresAt)) {
+        post.fight.status = 'expired';
+        const error = new Error('This challenge has expired');
+        error.code = 'CHALLENGE_EXPIRED';
+        throw error;
+      }
+
+      const now = new Date().toISOString();
+
+      if (!accept) {
+        // Opponent rejected the challenge
+        post.fight.status = 'rejected';
+        post.fight.respondedAt = now;
+        post.updatedAt = now;
+
+        // Notify challenger
+        challenger = db.users.find(
+          (user) => resolveUserId(user) === post.fight.challengerId
+        );
+        if (challenger) {
+          await createNotification(
+            db,
+            resolveUserId(challenger),
+            'fight_rejected',
+            'Wyzwanie odrzucone',
+            `${post.fight.opponentUsername} odrzucił Twoje wyzwanie: "${post.title}"`,
+            {
+              sourceType: 'challenge',
+              postId: post.id
+            }
+          );
+        }
+
+        updatedPost = post;
+        return db;
+      }
+
+      // Opponent accepted - set their team
+      post.fight.opponentTeam = opponentTeam;
+      post.fight.teamB = opponentTeam;
+      post.fight.status = 'pending_approval';
+      post.fight.respondedAt = now;
+      post.updatedAt = now;
+
+      // Notify challenger that opponent responded
+      challenger = db.users.find(
+        (user) => resolveUserId(user) === post.fight.challengerId
+      );
+      if (challenger) {
+        await createNotification(
+          db,
+          resolveUserId(challenger),
+          'fight_response',
+          'Odpowiedź na wyzwanie!',
+          `${post.fight.opponentUsername} zaakceptował Twoje wyzwanie i wybrał drużynę!`,
+          {
+            sourceType: 'challenge',
+            postId: post.id,
+            opponentTeam: opponentTeam
+          }
+        );
+
+        // Send private message
+        const opponent = db.users.find(
+          (user) => resolveUserId(user) === req.user.id
+        );
+        if (opponent) {
+          db.messages = Array.isArray(db.messages) ? db.messages : [];
+          db.messages.push({
+            id: uuidv4(),
+            senderId: resolveUserId(opponent),
+            senderUsername: opponent.username,
+            recipientId: resolveUserId(challenger),
+            recipientUsername: challenger.username,
+            subject: `Odpowiedź na wyzwanie: ${post.title}`,
+            content: `Przyjmuję Twoje wyzwanie!\n\n` +
+              `Twoja drużyna: ${post.fight.challengerTeam}\n` +
+              `Moja drużyna: ${opponentTeam}\n\n` +
+              `Kliknij tutaj, aby zatwierdzić walkę: /post/${post.id}`,
+            read: false,
+            deleted: false,
+            createdAt: now
+          });
+        }
+      }
+
+      updatedPost = post;
+      return db;
+    });
+
+    res.json({
+      msg: accept ? 'Challenge accepted' : 'Challenge rejected',
+      post: normalizePostForResponse(updatedPost, [])
+    });
+  } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    if (err.code === 'NOT_CHALLENGE') {
+      return res.status(400).json({ msg: 'This is not a user-vs-user challenge' });
+    }
+    if (err.code === 'NOT_OPPONENT') {
+      return res.status(403).json({ msg: 'You are not the opponent of this challenge' });
+    }
+    if (err.code === 'INVALID_STATUS') {
+      return res.status(400).json({ msg: 'This challenge is not awaiting your response' });
+    }
+    if (err.code === 'CHALLENGE_EXPIRED') {
+      return res.status(400).json({ msg: 'This challenge has expired' });
+    }
+    console.error('Error responding to challenge:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+};
+
+// @desc    Approve a challenge (challenger confirms the fight)
+// @route   POST /api/posts/:id/approve
+// @access  Private
+export const approveChallenge = async (req, res) => {
+  const { id } = req.params;
+  const { approve } = req.body;
+
+  try {
+    let updatedPost;
+
+    await updateDb(async (db) => {
+      const post = findPostById(db.posts, id);
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
+
+      if (!post.fight || post.fight.fightMode !== 'user_vs_user') {
+        const error = new Error('This is not a user-vs-user challenge');
+        error.code = 'NOT_CHALLENGE';
+        throw error;
+      }
+
+      if (post.fight.challengerId !== req.user.id) {
+        const error = new Error('Only the challenger can approve this fight');
+        error.code = 'NOT_CHALLENGER';
+        throw error;
+      }
+
+      if (post.fight.status !== 'pending_approval') {
+        const error = new Error('This challenge is not awaiting approval');
+        error.code = 'INVALID_STATUS';
+        throw error;
+      }
+
+      const now = new Date();
+
+      if (!approve) {
+        // Challenger cancelled the fight
+        post.fight.status = 'cancelled';
+        post.updatedAt = now.toISOString();
+
+        // Notify opponent
+        const opponent = db.users.find(
+          (user) => resolveUserId(user) === post.fight.opponentId
+        );
+        if (opponent) {
+          await createNotification(
+            db,
+            resolveUserId(opponent),
+            'fight_cancelled',
+            'Walka anulowana',
+            `${post.fight.challengerUsername} anulował walkę: "${post.title}"`,
+            {
+              sourceType: 'challenge',
+              postId: post.id
+            }
+          );
+        }
+
+        updatedPost = post;
+        return db;
+      }
+
+      // Calculate lock time based on vote duration
+      const daysMap = {
+        '1d': 1,
+        '2d': 2,
+        '3d': 3,
+        '7d': 7
+      };
+      const voteDays = daysMap[post.fight.voteDuration] || 3;
+      const lockTime = new Date(now.getTime() + voteDays * 24 * 60 * 60 * 1000);
+
+      // Approve the fight - make it active
+      post.fight.status = 'active';
+      post.fight.approvedAt = now.toISOString();
+      post.fight.lockTime = lockTime.toISOString();
+      post.updatedAt = now.toISOString();
+
+      // Update poll for voting
+      post.poll = {
+        options: [post.fight.teamA, post.fight.teamB],
+        votes: { voters: [] }
+      };
+
+      // Notify opponent that fight is live
+      const opponent = db.users.find(
+        (user) => resolveUserId(user) === post.fight.opponentId
+      );
+      if (opponent) {
+        await createNotification(
+          db,
+          resolveUserId(opponent),
+          'fight_approved',
+          'Walka zatwierdzona!',
+          `Walka "${post.title}" została zatwierdzona i jest teraz aktywna!`,
+          {
+            sourceType: 'challenge',
+            postId: post.id
+          }
+        );
+      }
+
+      updatedPost = post;
+      return db;
+    });
+
+    res.json({
+      msg: approve ? 'Fight approved and active' : 'Fight cancelled',
+      post: normalizePostForResponse(updatedPost, [])
+    });
+  } catch (err) {
+    if (err.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    if (err.code === 'NOT_CHALLENGE') {
+      return res.status(400).json({ msg: 'This is not a user-vs-user challenge' });
+    }
+    if (err.code === 'NOT_CHALLENGER') {
+      return res.status(403).json({ msg: 'Only the challenger can approve this fight' });
+    }
+    if (err.code === 'INVALID_STATUS') {
+      return res.status(400).json({ msg: 'This challenge is not awaiting approval' });
+    }
+    console.error('Error approving challenge:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+};
+
+// @desc    Get pending challenges for the current user
+// @route   GET /api/posts/pending-challenges
+// @access  Private
+export const getPendingChallenges = async (req, res) => {
+  try {
+    const db = await readDb();
+    const userId = req.user.id;
+
+    const challenges = db.posts.filter((post) => {
+      if (post.type !== 'fight' || !post.fight) return false;
+      if (post.fight.fightMode !== 'user_vs_user') return false;
+
+      // Challenges where user is opponent and needs to respond
+      const awaitingResponse =
+        post.fight.opponentId === userId &&
+        post.fight.status === 'pending_opponent';
+
+      // Challenges where user is challenger and needs to approve
+      const awaitingApproval =
+        post.fight.challengerId === userId &&
+        post.fight.status === 'pending_approval';
+
+      return awaitingResponse || awaitingApproval;
+    });
+
+    // Check for expired challenges and update them
+    const now = new Date();
+    const processedChallenges = [];
+
+    for (const post of challenges) {
+      if (
+        post.fight.status === 'pending_opponent' &&
+        new Date(post.fight.expiresAt) < now
+      ) {
+        // Mark as expired (will be persisted separately if needed)
+        post.fight.status = 'expired';
+      }
+
+      if (post.fight.status !== 'expired') {
+        processedChallenges.push(normalizePostForResponse(post, db.users));
+      }
+    }
+
+    res.json({
+      challenges: processedChallenges,
+      awaitingResponse: processedChallenges.filter(
+        (p) => p.fight.opponentId === userId && p.fight.status === 'pending_opponent'
+      ).length,
+      awaitingApproval: processedChallenges.filter(
+        (p) => p.fight.challengerId === userId && p.fight.status === 'pending_approval'
+      ).length
+    });
+  } catch (err) {
+    console.error('Error fetching pending challenges:', err.message);
+    res.status(500).json({ message: 'Server Error', error: err.message });
+  }
+};
+
+// @desc    Search users for challenge
+// @route   GET /api/posts/search-users
+// @access  Private
+export const searchUsersForChallenge = async (req, res) => {
+  const { q } = req.query;
+
+  if (!q || q.length < 2) {
+    return res.json({ users: [] });
+  }
+
+  try {
+    const db = await readDb();
+    const searchTerm = q.toLowerCase();
+
+    const matchingUsers = db.users
+      .filter((user) => {
+        const userId = resolveUserId(user);
+        if (userId === req.user.id) return false; // Exclude self
+        return user.username.toLowerCase().includes(searchTerm);
+      })
+      .slice(0, 10)
+        .map((user) => ({
+          id: resolveUserId(user),
+          username: user.username,
+          profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
+          rank: getRankInfo(user.stats?.points || 0).rank
+        }));
+
+    res.json({ users: matchingUsers });
+  } catch (err) {
+    console.error('Error searching users:', err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
   }
 };

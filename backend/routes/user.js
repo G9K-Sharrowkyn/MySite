@@ -1,6 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { updateDb } from '../services/jsonDb.js';
+import { syncRankFromPoints } from '../utils/rankSystem.js';
 
 const router = express.Router();
 
@@ -28,6 +29,7 @@ router.post('/rewards', async (req, res) => {
       }
       if (reward.points) {
         user.stats.points = (user.stats.points || 0) + Number(reward.points || 0);
+        syncRankFromPoints(user);
       }
 
       if (reward.coins) {

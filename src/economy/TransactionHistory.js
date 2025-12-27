@@ -100,7 +100,7 @@ const TransactionHistory = ({ userId }) => {
   return (
     <div className="transaction-history">
       <div className="history-header">
-        <h2>🪙 Coin Transaction History</h2>
+        <h2>🪙 Eurodolary Transaction History</h2>
         <CoinBalance userId={currentUserId} showLabel={true} className="profile" />
       </div>
 
@@ -159,7 +159,7 @@ const TransactionHistory = ({ userId }) => {
         ) : (
           <div className="no-transactions">
             <p>No transactions found</p>
-            <p className="subtitle">Start earning coins by posting, commenting, and voting!</p>
+            <p className="subtitle">Start earning eurodolary by posting, commenting, and voting!</p>
           </div>
         )}
 
@@ -189,30 +189,30 @@ const TransactionHistory = ({ userId }) => {
       </div>
 
       <div className="earning-tips">
-        <h3>💡 How to Earn Coins</h3>
+        <h3>💡 How to Earn Eurodolary</h3>
         <div className="tips-grid">
           <div className="tip-item">
             <span className="tip-icon">📝</span>
             <div className="tip-content">
-              <strong>Create Posts:</strong> 10 coins per post
+              <strong>Create Posts:</strong> 10 eurodolary per post
             </div>
           </div>
           <div className="tip-item">
             <span className="tip-icon">💬</span>
             <div className="tip-content">
-              <strong>Add Comments:</strong> 2 coins per comment
+              <strong>Add Comments:</strong> 2 eurodolary per comment
             </div>
           </div>
           <div className="tip-item">
             <span className="tip-icon">🗳️</span>
             <div className="tip-content">
-              <strong>Vote on Fights:</strong> 1 coin per vote
+              <strong>Vote on Fights:</strong> 1 eurodolar per vote
             </div>
           </div>
           <div className="tip-item">
             <span className="tip-icon">🏆</span>
             <div className="tip-content">
-              <strong>Win Fights:</strong> 50 coins per win
+              <strong>Win Fights:</strong> 50 eurodolary per win
             </div>
           </div>
           <div className="tip-item">
@@ -224,7 +224,7 @@ const TransactionHistory = ({ userId }) => {
           <div className="tip-item">
             <span className="tip-icon">📅</span>
             <div className="tip-content">
-              <strong>Daily Login:</strong> 5 coins per day
+              <strong>Daily Bonus:</strong> 10 eurodolary per day
             </div>
           </div>
         </div>

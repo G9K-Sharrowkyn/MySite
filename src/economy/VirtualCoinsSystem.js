@@ -74,7 +74,7 @@ const VirtualCoinsSystem = ({ user }) => {
 
   // Ways to earn coins
   const coinEarningMethods = [
-    { action: 'Daily Login', amount: 50, icon: '📅' },
+    { action: 'Daily Bonus', amount: 10, icon: '📅' },
     { action: 'Cast Vote in Fight', amount: 10, icon: '🗳️' },
     { action: 'Comment on Fight', amount: 5, icon: '💬' },
     { action: 'Share Fight', amount: 15, icon: '📤' },
@@ -154,7 +154,7 @@ const VirtualCoinsSystem = ({ user }) => {
       });
 
       fetchEconomyData();
-      alert('Daily task completed! Coins earned!');
+      alert('Daily task completed! Eurodolary earned!');
     } catch (error) {
       console.error('Error claiming task:', error);
     }
@@ -162,7 +162,7 @@ const VirtualCoinsSystem = ({ user }) => {
 
   const EarningMethodsSection = () => (
     <div className="earning-methods">
-      <h3>💰 Ways to Earn Coins</h3>
+      <h3>💰 Ways to Earn Eurodolary</h3>
       <div className="earning-grid">
         {coinEarningMethods.map((method, index) => (
           <div key={index} className="earning-method">
@@ -217,7 +217,7 @@ const VirtualCoinsSystem = ({ user }) => {
 
   const StoreSection = () => (
     <div className="coin-store">
-      <h3>🛒 Coin Store</h3>
+      <h3>🛒 Eurodolary Store</h3>
       
       <div className="store-categories">
         {Object.entries(storeCategories).map(([key, category]) => (
@@ -279,7 +279,7 @@ const VirtualCoinsSystem = ({ user }) => {
                     onClick={() => purchaseItem(item.id, selectedStoreCategory)}
                     disabled={!canAfford}
                   >
-                    {canAfford ? 'Purchase' : 'Not Enough Coins'}
+                    {canAfford ? 'Purchase' : 'Not Enough Eurodolary'}
                   </button>
                 )}
               </div>
@@ -373,7 +373,7 @@ const VirtualCoinsSystem = ({ user }) => {
 
   const CoinHistorySection = () => (
     <div className="coin-history">
-      <h3>📊 Coin Transaction History</h3>
+      <h3>📊 Eurodolary Transaction History</h3>
       <div className="history-list">
         {coinHistory.slice(0, 50).map(transaction => (
           <div key={transaction.id} className={`history-item ${transaction.type}`}>
@@ -405,7 +405,7 @@ const VirtualCoinsSystem = ({ user }) => {
             <span className="balance-amount">🪙 {userCoins.toLocaleString()}</span>
           </div>
           <button className="buy-coins-btn" onClick={() => window.open('/purchase-coins', '_blank')}>
-            💳 Buy More Coins
+            💳 Buy More Eurodolary
           </button>
         </div>
       </div>

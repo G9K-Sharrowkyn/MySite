@@ -1,11 +1,13 @@
 import { readDb, updateDb } from '../services/jsonDb.js';
 import { buildProfileFights } from '../utils/profileFights.js';
+import { getRankInfo } from '../utils/rankSystem.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
 const buildProfileResponse = (user, includeEmail = false, db = null) => {
   const profile = user.profile || {};
   const stats = user.stats || {};
+  const rankInfo = getRankInfo(stats.points || 0);
   const description = profile.description || profile.bio || '';
 
   const fights = db
@@ -20,14 +22,26 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     description,
     profilePicture: profile.profilePicture || profile.avatar || '',
     points: stats.points || 0,
-    rank: stats.rank || 'Rookie',
+    rank: rankInfo.rank,
     stats: {
       fightsWon: stats.fightsWon || 0,
       fightsLost: stats.fightsLost || 0,
       fightsDrawn: stats.fightsDrawn || 0,
       fightsNoContest: stats.fightsNoContest || 0,
       totalFights: stats.totalFights || 0,
-      winRate: stats.winRate || 0
+      winRate: stats.winRate || 0,
+      officialStats: stats.officialStats || {
+        fightsWon: 0,
+        fightsLost: 0,
+        fightsDrawn: 0,
+        winRate: 0
+      },
+      unofficialStats: stats.unofficialStats || {
+        fightsWon: 0,
+        fightsLost: 0,
+        fightsDrawn: 0,
+        winRate: 0
+      }
     },
     divisions: user.divisions || {},
     fights,
@@ -65,7 +79,10 @@ export const getMyProfile = async (req, res) => {
 export const getProfile = async (req, res) => {
   try {
     const db = await readDb();
-    const user = db.users.find((entry) => resolveUserId(entry) === req.params.userId);
+    const lookup = String(req.params.userId || '').toLowerCase();
+    const user =
+      db.users.find((entry) => resolveUserId(entry) === req.params.userId) ||
+      db.users.find((entry) => (entry.username || '').toLowerCase() === lookup);
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -185,6 +202,7 @@ export const getLeaderboard = async (_req, res) => {
     const db = await readDb();
     const users = db.users.map((user) => {
       const stats = user.stats || {};
+      const rankInfo = getRankInfo(stats.points || 0);
       return {
         id: resolveUserId(user),
         username: user.username,
@@ -194,7 +212,7 @@ export const getLeaderboard = async (_req, res) => {
         draws: stats.fightsDrawn || 0,
         totalFights: stats.totalFights || 0,
         winRate: stats.winRate || 0,
-        rank: stats.rank || 'Rookie',
+        rank: rankInfo.rank,
         points: stats.points || 0
       };
     });

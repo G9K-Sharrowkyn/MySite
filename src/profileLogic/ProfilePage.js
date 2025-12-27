@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { ChampionUsername, getChampionTitle } from '../utils/championUtils';
+import { useLanguage } from '../i18n/LanguageContext';
 import ImageUpload from '../ImageUpload/ImageUpload';
 import ProfileBackgroundUpload from './ProfileBackgroundUpload';
 import UserBadges from './UserBadges';
@@ -11,37 +12,52 @@ import './ProfilePage.css';
 
 const ProfilePage = () => {
   const { userId } = useParams();
+  const { t, lang } = useLanguage();
 
   // Initialize profile state from localStorage if available
   const storedProfile = localStorage.getItem('cachedProfile');
   const initialProfile = storedProfile ? JSON.parse(storedProfile) : null;
+  const normalizeDescription = (value) => {
+    if (typeof value !== 'string') return '';
+    const trimmed = value.trim();
+    if (!trimmed) return '';
+    if (trimmed.toLowerCase() === 'nodescription') return '';
+    return trimmed;
+  };
 
   const [profile, setProfile] = useState(initialProfile);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  const [description, setDescription] = useState(initialProfile?.description || '');
+  const [description, setDescription] = useState(
+    normalizeDescription(initialProfile?.description)
+  );
   const [profilePicture, setProfilePicture] = useState(initialProfile?.profilePicture || '');
   const [backgroundImage, setBackgroundImage] = useState(initialProfile?.profile?.backgroundImage || '');
   const [loading, setLoading] = useState(initialProfile === null); // only true if no profile yet
   const [isFetching, setIsFetching] = useState(false); // new state for background fetching
   const [error, setError] = useState(null);
   const [posts, setPosts] = useState([]);
+  const [contentFilter, setContentFilter] = useState('all');
   const navigate = useNavigate();
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
   const actualUserId = userId === 'me' ? currentUserId : userId;
+  const resolvedUserId =
+    profile?.id ||
+    profile?._id ||
+    profile?.userId ||
+    (userId === 'me' ? currentUserId : null);
+  const isOwner = Boolean(currentUserId && resolvedUserId && currentUserId === resolvedUserId);
 
   useEffect(() => {
     if (!actualUserId) {
-      setError('Nie można znaleźć Twojego profilu. Zaloguj się ponownie.');
+      setError(t('profileNotFound') || 'Cannot find your profile. Please log in again.');
       setLoading(false);
       return;
     }
     fetchProfile(actualUserId);
-    fetchComments(actualUserId);
-    fetchUserPosts(actualUserId);
   }, [actualUserId]);
 
   const fetchProfile = async (id) => {
@@ -57,7 +73,7 @@ const ProfilePage = () => {
         // Use the authenticated /api/profile/me endpoint
         const token = localStorage.getItem('token');
         if (!token) {
-          setError('Nie można znaleźć Twojego profilu. Zaloguj się ponownie.');
+          setError(t('profileNotFound') || 'Cannot find your profile. Please log in again.');
           setLoading(false);
           setIsFetching(false);
           return;
@@ -71,17 +87,26 @@ const ProfilePage = () => {
         // Use the public /api/profile/:userId endpoint
         res = await axios.get(`/api/profile/${id}`);
       }
-      setProfile(res.data);
-      setDescription(res.data.description || '');
-      setProfilePicture(res.data.profilePicture || '');
-      setBackgroundImage(res.data.profile?.backgroundImage || '');
+        const normalizedDescription = normalizeDescription(res.data.description);
+        setProfile({ ...res.data, description: normalizedDescription });
+        setDescription(normalizedDescription);
+        setProfilePicture(res.data.profilePicture || '');
+        setBackgroundImage(res.data.profile?.backgroundImage || '');
+        const resolvedId = res.data?.id || res.data?._id || id;
+        if (resolvedId) {
+          fetchComments(resolvedId);
+          fetchUserPosts(resolvedId);
+        }
+      if (userId === 'me' && res.data?.username) {
+        navigate(`/profile/${res.data.username}`, { replace: true });
+      }
       setLoading(false);
       setIsFetching(false);
       // Update localStorage cache
       localStorage.setItem('cachedProfile', JSON.stringify(res.data));
     } catch (err) {
       console.error('Profile fetch error:', err);
-      setError('Błąd podczas pobierania profilu lub profil nie istnieje.');
+      setError(t('profileFetchError') || 'Error loading profile or profile does not exist.');
       setLoading(false);
       setIsFetching(false);
     }
@@ -90,37 +115,38 @@ const ProfilePage = () => {
   const fetchComments = async (id) => {
     try {
       const res = await axios.get(`/api/comments/user/${id}`);
-      setComments(res.data);
+      setComments(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error('Błąd podczas pobierania komentarzy:', err);
     }
   };
 
-  const handleCommentSubmit = async (e) => {
-    e.preventDefault();
-    const token = localStorage.getItem('token');
-    if (!token) {
-      console.error('Musisz być zalogowany, aby dodać komentarz.');
-      return;
-    }
-    try {
-      await axios.post(`/api/comments/user/${actualUserId}`, 
-        { 
-          text: newComment,
-          userId: actualUserId
-        }, 
-        {
-          headers: {
-            'x-auth-token': token,
+const handleCommentSubmit = async (e) => {
+  e.preventDefault();
+  const token = localStorage.getItem('token');
+  if (!resolvedUserId) return;
+  if (!token) {
+    console.error('Musisz być zalogowany, aby dodać komentarz.');
+    return;
+  }
+  try {
+    await axios.post(`/api/comments/user/${resolvedUserId}`, 
+      { 
+        text: newComment,
+        userId: resolvedUserId
+      }, 
+      {
+        headers: {
+          'x-auth-token': token,
           },
         }
-      );
-      setNewComment('');
-      await fetchComments(actualUserId);
-    } catch (err) {
-      console.error('Błąd podczas dodawania komentarza:', err.response?.data);
-    }
-  };
+    );
+    setNewComment('');
+    await fetchComments(resolvedUserId);
+  } catch (err) {
+    console.error('Błąd podczas dodawania komentarza:', err.response?.data);
+  }
+};
 
   const handleCommentDelete = async (commentId) => {
     const token = localStorage.getItem('token');
@@ -132,7 +158,7 @@ const ProfilePage = () => {
           'x-auth-token': token,
         },
       });
-      await fetchComments(actualUserId);
+      await fetchComments(resolvedUserId);
     } catch (err) {
       console.error('Błąd podczas usuwania komentarza:', err.response?.data);
     }
@@ -154,6 +180,10 @@ const ProfilePage = () => {
     }
   };
 
+  const handleFilterChange = (filter) => {
+    setContentFilter(filter);
+  };
+
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem('token');
@@ -172,7 +202,7 @@ const ProfilePage = () => {
         },
       });
       setIsEditing(false);
-      fetchProfile(currentUserId);
+      fetchProfile(resolvedUserId || currentUserId);
     } catch (err) {
       console.error('Błąd podczas aktualizacji profilu:', err.response?.data);
     }
@@ -191,9 +221,53 @@ const ProfilePage = () => {
 
   const isChampion = profile?.divisions && Object.values(profile.divisions).some(d => d.isChampion);
   const championTitle = getChampionTitle(profile?.divisions);
+  const normalizedDescription = normalizeDescription(profile?.description);
+  const hasDescription = Boolean(normalizedDescription);
+  const divisionEntries = useMemo(() => {
+    if (!profile?.divisions) return [];
+    return Object.entries(profile.divisions)
+      .map(([divisionId, division]) => {
+        const team = division?.team || {};
+        const displayCharacter =
+          division?.selectedCharacter ||
+          team.mainCharacter ||
+          team.fighters?.[0] ||
+          team.secondaryCharacter ||
+          team.fighters?.[1] ||
+          null;
+        return { divisionId, division, displayCharacter };
+      })
+      .filter((entry) => entry.displayCharacter);
+  }, [profile?.divisions]);
+  const hasDivisions = divisionEntries.length > 0;
+  const hasComments = comments.length > 0;
 
-  if (loading && profile === null) return <div className="profile-page"><p>Ładowanie profilu...</p></div>;
-  if (error) return <div className="profile-page"><p style={{color: 'red'}}>{error}</p><button onClick={() => navigate('/login')}>Zaloguj się ponownie</button></div>;
+  const postCategoryCounts = useMemo(() => {
+    return posts.reduce((acc, post) => {
+      const category = post.category || post.type;
+      if (!category) return acc;
+      acc[category] = (acc[category] || 0) + 1;
+      return acc;
+    }, {});
+  }, [posts]);
+
+  const displayedPosts = useMemo(() => {
+    if (contentFilter === 'all') return posts;
+    return posts.filter((post) => {
+      const category = post.category || post.type;
+      return category === contentFilter;
+    });
+  }, [posts, contentFilter]);
+
+  useEffect(() => {
+    if (contentFilter === 'all') return;
+    if (!postCategoryCounts[contentFilter]) {
+      setContentFilter('all');
+    }
+  }, [contentFilter, postCategoryCounts]);
+
+  if (loading && profile === null) return <div className="profile-page"><p>{t('loadingProfile') || 'Loading profile...'}</p></div>;
+  if (error) return <div className="profile-page"><p style={{color: 'red'}}>{error}</p><button onClick={() => navigate('/login')}>{t('loginAgain') || 'Log in again'}</button></div>;
 
   return (
     <div className="profile-page">
@@ -208,7 +282,7 @@ const ProfilePage = () => {
             replacePlaceholderUrl(profile.profilePicture) || placeholderImages.user,
             { size: 150 }
           )}
-          alt="Profilowe"
+          alt={t('profilePicture') || 'Profile picture'}
           className="profile-picture"
         />
         <div className="profile-info">
@@ -218,51 +292,77 @@ const ProfilePage = () => {
           {championTitle && (
             <p className="champion-title-display">{championTitle}</p>
           )}
-          <p className="profile-rank">Punkty: {profile.points || 0} | Ranga: {profile.rank}</p>
-          <div className="fight-stats">
-            <div className="stat-item">
-              <span className="stat-label">Zwycięstwa:</span>
-              <span className="stat-value">{profile.stats?.fightsWon || 0}</span>
+          <p className="profile-rank">
+            {t('points') || 'Points'}: {profile.points || 0} | {t('rank') || 'Rank'}: {profile.rank}
+          </p>
+          <div className="fight-stats-vertical">
+            <div className="stats-category official-stats">
+              <h4 className="stats-category-title">
+                {lang === 'pl' ? 'Oficjalne (Dywizje)' : lang === 'de' ? 'Offiziell (Divisionen)' : 'Official (Divisions)'}
+              </h4>
+              <div className="stats-row">
+                  <span className="stat-item">
+                    <span className="stat-label">{t('wins') || 'Wins'}:</span>
+                    <span className="stat-value official">{profile.stats?.officialStats?.fightsWon || 0}</span>
+                  </span>
+                  <span className="stat-item">
+                    <span className="stat-label">{t('losses') || 'Losses'}:</span>
+                    <span className="stat-value official">{profile.stats?.officialStats?.fightsLost || 0}</span>
+                  </span>
+                  <span className="stat-item">
+                    <span className="stat-label">{t('draws') || 'Draws'}:</span>
+                    <span className="stat-value official">{profile.stats?.officialStats?.fightsDrawn || 0}</span>
+                  </span>
+              </div>
             </div>
-            <div className="stat-item">
-              <span className="stat-label">Porażki:</span>
-              <span className="stat-value">{profile.stats?.fightsLost || 0}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Remisy:</span>
-              <span className="stat-value">{profile.stats?.fightsDrawn || 0}</span>
-            </div>
-            <div className="stat-item">
-              <span className="stat-label">Procent wygranych:</span>
-              <span className="stat-value">{profile.stats?.winRate || 0}%</span>
+            <div className="stats-category unofficial-stats">
+              <h4 className="stats-category-title">
+                {lang === 'pl' ? 'Nieoficjalne (Społeczność)' : lang === 'de' ? 'Inoffiziell (Community)' : 'Unofficial (Community)'}
+              </h4>
+              <div className="stats-row">
+                  <span className="stat-item">
+                    <span className="stat-label">{t('wins') || 'Wins'}:</span>
+                    <span className="stat-value unofficial">{profile.stats?.unofficialStats?.fightsWon || 0}</span>
+                  </span>
+                  <span className="stat-item">
+                    <span className="stat-label">{t('losses') || 'Losses'}:</span>
+                    <span className="stat-value unofficial">{profile.stats?.unofficialStats?.fightsLost || 0}</span>
+                  </span>
+                  <span className="stat-item">
+                    <span className="stat-label">{t('draws') || 'Draws'}:</span>
+                    <span className="stat-value unofficial">{profile.stats?.unofficialStats?.fightsDrawn || 0}</span>
+                  </span>
+              </div>
             </div>
           </div>
           <div className="profile-actions">
-            {userId === 'me' && (
+            {isOwner && (
               <button onClick={() => setIsEditing(!isEditing)} className="edit-profile-btn">
-                {isEditing ? 'Anuluj edycję' : 'Edytuj profil'}
+                {isEditing
+                  ? (t('cancelEdit') || 'Cancel')
+                  : (t('editProfile') || 'Edit Profile')}
               </button>
             )}
-            {userId !== 'me' && (
+            {!isOwner && resolvedUserId && (
               <Link 
-                to={`/messages?to=${actualUserId}&username=${profile.username}`} 
+                to={`/messages?to=${resolvedUserId}&username=${profile.username}`} 
                 className="send-message-btn"
               >
-                Wyślij wiadomość
+                {t('sendMessage') || 'Send Message'}
               </Link>
             )}
           </div>
         </div>
       </div>
 
-      {isEditing && userId === 'me' ? (
+      {isEditing && isOwner ? (
         <form onSubmit={handleProfileUpdate} className="edit-profile-form">
           <ProfileBackgroundUpload 
             currentBackground={backgroundImage}
             onBackgroundUpdate={handleBackgroundUpdate}
           />
           <div className="form-group">
-            <label>Zdjęcie profilowe:</label>
+            <label>{t('profilePicture') || 'Profile picture'}:</label>
             <ImageUpload 
               currentImage={profilePicture}
               onImageChange={setProfilePicture}
@@ -270,28 +370,66 @@ const ProfilePage = () => {
             />
           </div>
           <div className="form-group">
-            <label>Opis:</label>
+            <label>{t('description') || 'Description'}:</label>
             <textarea value={description} onChange={(e) => setDescription(e.target.value)}></textarea>
           </div>
-          <button type="submit" className="btn-primary">Zapisz zmiany</button>
+          <button type="submit" className="btn-primary">{t('saveChanges') || 'Save Changes'}</button>
         </form>
-      ) : (
-        <div className="profile-details">
-          <h3>Opis:</h3>
-          <p>{profile.description || 'Brak opisu.'}</p>
-        </div>
+        ) : (
+          hasDescription && (
+            <div className="profile-details">
+              <h3>{t('description') || 'Description'}:</h3>
+              <p>{normalizedDescription}</p>
+            </div>
+          )
+        )}
+
+      {resolvedUserId && (
+        <UserBadges
+          userId={resolvedUserId}
+          isOwner={isOwner}
+        />
       )}
 
-      <UserBadges 
-        userId={actualUserId}
-        isOwner={userId === 'me'}
-      />
-
       <div className="profile-posts">
-        <h3>Posty:</h3>
+        <div className="posts-header">
+          <h3>{t('posts') || 'Posts'}:</h3>
+          <div className="content-filter-buttons">
+            <button
+              className={`filter-btn ${contentFilter === 'all' ? 'active' : ''}`}
+              onClick={() => handleFilterChange('all')}
+            >
+              {t('all') || 'All'}
+            </button>
+            {postCategoryCounts.fight > 0 && (
+              <button
+                className={`filter-btn ${contentFilter === 'fight' ? 'active' : ''}`}
+                onClick={() => handleFilterChange('fight')}
+              >
+                {t('fights') || 'Fights'}
+              </button>
+            )}
+            {postCategoryCounts.discussion > 0 && (
+              <button
+                className={`filter-btn ${contentFilter === 'discussion' ? 'active' : ''}`}
+                onClick={() => handleFilterChange('discussion')}
+              >
+                {t('discussions') || 'Discussions'}
+              </button>
+            )}
+            {postCategoryCounts.article > 0 && (
+              <button
+                className={`filter-btn ${contentFilter === 'article' ? 'active' : ''}`}
+                onClick={() => handleFilterChange('article')}
+              >
+                {t('articles') || 'Articles'}
+              </button>
+            )}
+          </div>
+        </div>
         <div className="posts-grid">
-          {posts.length > 0 ? (
-            posts.map(post => (
+          {displayedPosts.length > 0 ? (
+            displayedPosts.map(post => (
               <div key={post.id} className="profile-post-link">
                 <PostCard 
                   post={post}
@@ -300,7 +438,7 @@ const ProfilePage = () => {
                       prevPosts.map(p => p.id === updatedPost.id ? updatedPost : p)
                     );
                   }}
-                  showEditDelete={userId === 'me' || profile.role === 'moderator'}
+                  showEditDelete={isOwner || profile.role === 'moderator'}
                   onDelete={async (postId) => {
                     if (!token) return;
                     try {
@@ -316,64 +454,65 @@ const ProfilePage = () => {
               </div>
             ))
           ) : (
-            <p>Brak postów.</p>
+            <p className="no-posts-message">
+              {contentFilter === 'all' && (t('noPosts') || 'No posts.')}
+              {contentFilter === 'fight' && (t('noFightPosts') || 'No fights.')}
+              {contentFilter === 'discussion' && (t('noDiscussionPosts') || 'No discussions.')}
+              {contentFilter === 'article' && (t('noArticlePosts') || 'No articles.')}
+            </p>
           )}
         </div>
       </div>
 
-      <div className="profile-divisions">
-        <h3>Drużyny w dywizjach:</h3>
-        {profile.divisions && Object.keys(profile.divisions).length > 0 ? (
+      {hasDivisions && (
+        <div className="profile-divisions">
+          <h3>{t('teamsInDivisions') || 'Teams in Divisions'}:</h3>
           <div className="divisions-grid">
-            {Object.entries(profile.divisions).map(([divisionId, division]) => (
-              <div key={divisionId} className="division-card">
-                <h4>{division.divisionName}</h4>
-                {division.selectedCharacter && (
+            {divisionEntries.map(({ divisionId, division, displayCharacter }) => {
+              const divisionName = division.divisionName || division.name || divisionId;
+              return (
+                <div key={divisionId} className="division-card">
+                  <h4>{divisionName}</h4>
                   <div className="division-character">
                     <img 
                       {...getOptimizedImageProps(
-                        replacePlaceholderUrl(division.selectedCharacter.image) ||
+                        replacePlaceholderUrl(displayCharacter.image) ||
                           placeholderImages.character,
                         { size: 80 }
                       )}
-                      alt={division.selectedCharacter.name} 
+                      alt={displayCharacter.name} 
                       className="character-image" 
                     />
-                    <p className="character-name">{division.selectedCharacter.name}</p>
+                    <p className="character-name">{displayCharacter.name}</p>
                     <p className="character-stats">
                       Wins: {division.wins || 0} | Losses: {division.losses || 0}
                     </p>
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
-        ) : (
-          <p>
-            Brak wybranych drużyn. 
-            {userId === 'me' ? <Link to="/divisions">Dołącz do dywizji</Link> : ''}
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className="profile-fights">
-        <h3>Historia walk:</h3>
+        <h3>{t('fightHistory') || 'Fight History'}:</h3>
         {profile.fights && profile.fights.length > 0 ? (
           <div className="fights-list">
             {profile.fights.slice(0, 10).map(fight => (
               <div key={fight.id} className="fight-item">
                 <div className="fight-participants">
                   <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
-                    {fight.fighter1 || 'Nieznany'}
+                    {fight.fighter1 || (t('unknown') || 'Unknown')}
                   </span>
                   <span className="vs">vs</span>
                   <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
-                    {fight.fighter2 || 'Nieznany'}
+                    {fight.fighter2 || (t('unknown') || 'Unknown')}
                   </span>
                 </div>
                 <div className="fight-result">
-                  {fight.winnerId === profile.id ? '🏆 Zwycięstwo' : 
-                   fight.winner === 'draw' ? '🤝 Remis' : '❌ Porażka'}
+                  {fight.winnerId === profile.id ? `🏆 ${t('victory') || 'Victory'}` :
+                   fight.winner === 'draw' ? `🤝 ${t('draw') || 'Draw'}` : `❌ ${t('defeat') || 'Defeat'}`}
                 </div>
                 <div className="fight-date">
                   {new Date(fight.createdAt || fight.date).toLocaleDateString()}
@@ -381,20 +520,21 @@ const ProfilePage = () => {
               </div>
             ))}
             {profile.fights.length > 10 && (
-              <p className="more-fights">... i {profile.fights.length - 10} więcej walk</p>
+              <p className="more-fights">... {t('andMore') || 'and'} {profile.fights.length - 10} {t('moreFights') || 'more fights'}</p>
             )}
           </div>
         ) : (
-          <p>Brak historii walk.</p>
+          <p>{t('noFightHistory') || 'No fight history.'}</p>
         )}
       </div>
 
+      {hasComments && (
       <div className="comments-section">
-        <h3>Komentarze:</h3>
-        {userId !== 'me' && (
+        <h3>{t('comments') || 'Comments'}:</h3>
+        {!isOwner && (
           <form onSubmit={handleCommentSubmit} className="add-comment-form">
             <textarea
-              placeholder="Dodaj komentarz..."
+              placeholder={t('addCommentPlaceholder') || 'Add a comment...'}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               required
@@ -403,7 +543,7 @@ const ProfilePage = () => {
             <div className="comment-controls">
               <span className="char-count">{newComment.length}/500</span>
               <button type="submit" className="btn-primary" disabled={!newComment.trim()}>
-                Dodaj komentarz
+                {t('addComment') || 'Add Comment'}
               </button>
             </div>
           </form>
@@ -415,12 +555,12 @@ const ProfilePage = () => {
                 <div className="comment-header">
                   <div className="comment-author">
                     <Link to={`/profile/${comment.authorId}`}>
-                      <img 
+                      <img
                         {...getOptimizedImageProps(
                           replacePlaceholderUrl(comment.authorAvatar) || placeholderImages.userSmall,
                           { size: 24 }
                         )}
-                        alt={comment.authorUsername} 
+                        alt={comment.authorUsername}
                         className="author-avatar"
                       />
                       <strong>{comment.authorUsername}</strong>
@@ -430,10 +570,10 @@ const ProfilePage = () => {
                     {new Date(comment.timestamp).toLocaleString()}
                   </span>
                   {(currentUserId === comment.authorId || profile.role === 'moderator') && (
-                    <button 
+                    <button
                       onClick={() => handleCommentDelete(comment.id)}
                       className="delete-comment-btn"
-                      title="Usuń komentarz"
+                      title={t('deleteComment') || 'Delete comment'}
                     >
                       🗑️
                     </button>
@@ -443,10 +583,11 @@ const ProfilePage = () => {
               </div>
             ))
           ) : (
-            <p>Brak komentarzy.</p>
+            <p>{t('noComments') || 'No comments.'}</p>
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };

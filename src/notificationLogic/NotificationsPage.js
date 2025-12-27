@@ -124,14 +124,20 @@ const NotificationsPage = () => {
       like: '👍',
       fight_result: '🏆',
       tournament: '🎯',
-      system: '⚙️'
+      system: '⚙️',
+      // User-vs-user challenge notifications
+      fight_challenge: '⚔️',
+      fight_response: '✅',
+      fight_approved: '🎉',
+      fight_rejected: '❌',
+      fight_cancelled: '🚫'
     };
     return icons[type] || '📢';
   };
 
   const getNotificationLink = (notification) => {
     const { type, data } = notification;
-    
+
     switch (type) {
       case 'message':
         return `/messages/conversation/${data?.senderId}`;
@@ -152,6 +158,13 @@ const NotificationsPage = () => {
         return `/fight/${data?.fightId}`;
       case 'tournament':
         return `/tournaments/${data?.tournamentId}`;
+      // User-vs-user challenge notifications - all link to the post
+      case 'fight_challenge':
+      case 'fight_response':
+      case 'fight_approved':
+      case 'fight_rejected':
+      case 'fight_cancelled':
+        return data?.postId ? `/post/${data.postId}` : null;
       default:
         return null;
     }

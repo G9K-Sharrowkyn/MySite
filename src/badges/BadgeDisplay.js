@@ -1,7 +1,7 @@
 import React from 'react';
 import './BadgeDisplay.css';
 
-const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true }) => {
+const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true, leveledData = null }) => {
   const getRarityColor = (rarity) => {
     const colors = {
       common: '#9CA3AF',
@@ -14,6 +14,14 @@ const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true })
     return colors[rarity] || colors.common;
   };
 
+  const getLevelColor = (level) => {
+    if (level >= 15) return '#EF4444'; // mythic red
+    if (level >= 10) return '#F59E0B'; // legendary gold
+    if (level >= 5) return '#8B5CF6';  // epic purple
+    if (level >= 1) return '#3B82F6';  // rare blue
+    return '#9CA3AF'; // common gray
+  };
+
   const getCategoryIcon = (category) => {
     const icons = {
       fighting: '⚔️',
@@ -24,7 +32,8 @@ const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true })
       betting: '🎲',
       special: '⭐',
       milestone: '📈',
-      community: '🌟'
+      community: '🌟',
+      activity: '📅'
     };
     return icons[category] || '🏅';
   };
@@ -39,47 +48,86 @@ const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true })
   };
 
   const getProgressPercentage = () => {
+    // For leveled badges
+    if (leveledData) {
+      return Math.min((leveledData.progress / leveledData.maxProgress) * 100, 100);
+    }
+    // For regular badges
     if (!userBadge?.progress || !badge.requirements?.count) return 0;
     return Math.min((userBadge.progress / badge.requirements.count) * 100, 100);
   };
 
-  const isEarned = userBadge?.earnedAt;
+  const isLeveled = badge.isLeveled || leveledData;
+  const level = leveledData?.level || 0;
+  const isEarned = userBadge?.earnedAt || (isLeveled && level > 0);
   const progressPercentage = getProgressPercentage();
 
+  // For leveled badges, use level-based color
+  const badgeColor = isLeveled ? getLevelColor(level) : getRarityColor(badge.rarity);
+
   return (
-    <div 
-      className={`badge-display ${size} ${isEarned ? 'earned' : 'unearned'}`}
+    <div
+      className={`badge-display ${size} ${isEarned ? 'earned' : 'unearned'} ${isLeveled ? 'leveled' : ''}`}
       title={showTooltip ? `${badge.name} - ${badge.description}` : ''}
     >
-      <div 
-        className="badge-icon"
-        style={{ 
-          borderColor: getRarityColor(badge.rarity),
-          backgroundColor: isEarned ? getRarityColor(badge.rarity) + '20' : '#f3f4f6'
+      <div
+        className="badge-icon-container"
+        style={{
+          borderColor: badgeColor,
+          backgroundColor: isEarned ? badgeColor + '20' : 'var(--bg-dark)'
         }}
       >
-        <span className="badge-emoji">{getCategoryIcon(badge.category)}</span>
+        <span className="badge-emoji">{badge.icon || getCategoryIcon(badge.category)}</span>
+        {isLeveled && level > 0 && (
+          <span className="badge-level-number" style={{ background: badgeColor }}>
+            Lv.{level}
+          </span>
+        )}
         {badge.rarity === 'legendary' && <div className="legendary-glow"></div>}
         {badge.rarity === 'mythic' && <div className="mythic-glow"></div>}
+        {isLeveled && level >= 15 && <div className="mythic-glow"></div>}
+        {isLeveled && level >= 10 && level < 15 && <div className="legendary-glow"></div>}
       </div>
 
       <div className="badge-info">
-        <div className="badge-name" style={{ color: getRarityColor(badge.rarity) }}>
+        <div className="badge-name" style={{ color: badgeColor }}>
           {badge.name}
         </div>
-        
+
         {size !== 'small' && (
           <>
             <div className="badge-description">{badge.description}</div>
-            
-            {!isEarned && badge.requirements?.count && (
+
+            {/* Leveled badge progress */}
+            {isLeveled && (
+              <div className="badge-progress leveled-progress">
+                <div className="level-info">
+                  <span className="level-label">Poziom {level}/{badge.maxLevel || 20}</span>
+                </div>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${progressPercentage}%`,
+                      backgroundColor: badgeColor
+                    }}
+                  ></div>
+                </div>
+                <div className="progress-text">
+                  {leveledData?.progress || 0} / {leveledData?.maxProgress || badge.requirement?.perLevel || 100}
+                </div>
+              </div>
+            )}
+
+            {/* Regular badge progress */}
+            {!isLeveled && !isEarned && badge.requirements?.count && (
               <div className="badge-progress">
                 <div className="progress-bar">
-                  <div 
+                  <div
                     className="progress-fill"
-                    style={{ 
+                    style={{
                       width: `${progressPercentage}%`,
-                      backgroundColor: getRarityColor(badge.rarity)
+                      backgroundColor: badgeColor
                     }}
                   ></div>
                 </div>
@@ -89,7 +137,8 @@ const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true })
               </div>
             )}
 
-            {isEarned && (
+            {/* Regular badge earned status */}
+            {!isLeveled && isEarned && (
               <div className="badge-earned">
                 <span className="earned-icon">✓</span>
                 Zdobyte: {formatDate(userBadge.earnedAt)}
@@ -101,11 +150,14 @@ const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true })
               </div>
             )}
 
-            <div className="badge-rarity">
-              <span className={`rarity-badge ${badge.rarity}`}>
-                {badge.rarity.toUpperCase()}
-              </span>
-            </div>
+            {/* Rarity for non-leveled badges */}
+            {!isLeveled && badge.rarity && (
+              <div className="badge-rarity">
+                <span className={`rarity-badge ${badge.rarity}`}>
+                  {badge.rarity.toUpperCase()}
+                </span>
+              </div>
+            )}
           </>
         )}
       </div>

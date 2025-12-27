@@ -10,7 +10,14 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
   const [isExpanded, setIsExpanded] = useState(!!initialData);
   const [characters, setCharacters] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
+  // User-vs-user challenge state
+  const [fightMode, setFightMode] = useState('community'); // 'community' or 'user_vs_user'
+  const [opponentSearch, setOpponentSearch] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [selectedOpponent, setSelectedOpponent] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
+
   const [postData, setPostData] = useState({
     title: '',
     content: '',
@@ -111,6 +118,42 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     } catch (error) {
       console.error('Error fetching characters:', error);
     }
+  };
+
+  // Search users for challenge
+  const handleOpponentSearch = async (e) => {
+    const value = e.target.value;
+    setOpponentSearch(value);
+
+    if (value.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const response = await axios.get(`/api/posts/search-users?q=${encodeURIComponent(value)}`, {
+        headers: { 'x-auth-token': token }
+      });
+      setSearchResults(response.data.users || []);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectOpponent = (user) => {
+    setSelectedOpponent(user);
+    setOpponentSearch(user.username);
+    setSearchResults([]);
+  };
+
+  const clearOpponent = () => {
+    setSelectedOpponent(null);
+    setOpponentSearch('');
+    setSearchResults([]);
   };
 
   const handleInputChange = (e) => {
@@ -260,9 +303,25 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     if (!postData.title.trim() || !postData.content.trim()) {
       return false;
     }
-    
+
     if (postData.type === 'fight') {
-      // Fight posts must have at least two teams, each with at least one fighter
+      // User-vs-user mode: only need Team A (challenger's team) and opponent
+      if (fightMode === 'user_vs_user') {
+        if (!selectedOpponent) {
+          return false;
+        }
+        // Only check Team A for user-vs-user
+        if (postData.teams.length < 1) {
+          return false;
+        }
+        const teamAHasFighter = postData.teams[0]?.warriors?.some(w => w.character && w.character.name);
+        if (!teamAHasFighter) {
+          return false;
+        }
+        return true;
+      }
+
+      // Community mode: Fight posts must have at least two teams, each with at least one fighter
       if (postData.teams.length < 2) {
         return false;
       }
@@ -271,9 +330,8 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
       if (!teamAHasFighter || !teamBHasFighter) {
         return false;
       }
-      // Removed pollOptions check for fight posts
     }
-    
+
     return true;
   };
 
@@ -283,6 +341,43 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
 
     setIsSubmitting(true);
     try {
+      // Handle user-vs-user challenge separately
+      if (postData.type === 'fight' && fightMode === 'user_vs_user') {
+        const teamANames = postData.teams[0]?.warriors.map(w => w.character?.name).filter(Boolean) || [];
+
+        await axios.post('/api/posts/user-challenge', {
+          title: postData.title,
+          content: postData.content,
+          opponentId: selectedOpponent.id,
+          challengerTeam: teamANames.join(', '),
+          voteDuration: postData.voteDuration,
+          photos: postData.photos.map(p => p.url)
+        }, {
+          headers: { 'x-auth-token': token }
+        });
+
+        if (onPostCreated) {
+          onPostCreated();
+        }
+
+        // Reset form
+        setPostData({
+          title: '',
+          content: '',
+          type: 'discussion',
+          photos: [],
+          category: 'discussion',
+          voteDuration: '3d',
+          pollOptions: ['', ''],
+          teams: []
+        });
+        setFightMode('community');
+        setSelectedOpponent(null);
+        setOpponentSearch('');
+        setIsExpanded(false);
+        return;
+      }
+
       const submitData = {
         title: postData.title,
         content: postData.content,
@@ -297,7 +392,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         // For fight posts, create teamA and teamB from teams
         const teamANames = postData.teams[0]?.warriors.map(w => w.character?.name).filter(Boolean) || [];
         const teamBNames = postData.teams[1]?.warriors.map(w => w.character?.name).filter(Boolean) || [];
-        
+
         submitData.teamA = teamANames.join(', ');
         submitData.teamB = teamBNames.join(', ');
       }
@@ -322,16 +417,19 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
 
       // Reset form only if creating new post
       if (!initialData) {
-      setPostData({
-        title: '',
-        content: '',
-        type: 'discussion',
-        photos: [],
-        category: 'discussion',
-        voteDuration: '3d',
-        pollOptions: ['', ''],
-        teams: []
-      });
+        setPostData({
+          title: '',
+          content: '',
+          type: 'discussion',
+          photos: [],
+          category: 'discussion',
+          voteDuration: '3d',
+          pollOptions: ['', ''],
+          teams: []
+        });
+        setFightMode('community');
+        setSelectedOpponent(null);
+        setOpponentSearch('');
         setIsExpanded(false);
       }
     } catch (error) {
@@ -457,7 +555,92 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
             {/* Fight Section */}
             {postData.type === 'fight' && (
               <div className="fight-section">
-                <h4>⚔️ {t('teams') || 'Teams'}</h4>
+                {/* Fight Mode Selector */}
+                <div className="fight-mode-selector">
+                  <button
+                    type="button"
+                    className={`fight-mode-btn${fightMode === 'community' ? ' active' : ''}`}
+                    onClick={() => {
+                      setFightMode('community');
+                      setSelectedOpponent(null);
+                      setOpponentSearch('');
+                    }}
+                  >
+                    🌍 {lang === 'pl' ? 'Walka społeczności' : 'Community Fight'}
+                  </button>
+                  <button
+                    type="button"
+                    className={`fight-mode-btn${fightMode === 'user_vs_user' ? ' active' : ''}`}
+                    onClick={() => setFightMode('user_vs_user')}
+                  >
+                    ⚔️ {lang === 'pl' ? 'Wyzwij użytkownika' : 'Challenge User'}
+                  </button>
+                </div>
+
+                {/* User-vs-user: Opponent Search */}
+                {fightMode === 'user_vs_user' && (
+                  <div className="opponent-search-section">
+                    <label>{lang === 'pl' ? 'Wybierz przeciwnika' : 'Choose Opponent'}</label>
+                    {selectedOpponent ? (
+                      <div className="selected-opponent">
+                        <div className="opponent-info">
+                          {selectedOpponent.profilePicture && (
+                            <img
+                              src={selectedOpponent.profilePicture}
+                              alt={selectedOpponent.username}
+                              className="opponent-avatar"
+                            />
+                          )}
+                          <span className="opponent-name">{selectedOpponent.username}</span>
+                          <span className="opponent-rank">{selectedOpponent.rank}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="clear-opponent-btn"
+                          onClick={clearOpponent}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="opponent-search-wrapper">
+                        <input
+                          type="text"
+                          placeholder={lang === 'pl' ? 'Wpisz nazwę użytkownika...' : 'Enter username...'}
+                          value={opponentSearch}
+                          onChange={handleOpponentSearch}
+                          className="opponent-search-input"
+                        />
+                        {isSearching && (
+                          <div className="search-loading">{lang === 'pl' ? 'Szukam...' : 'Searching...'}</div>
+                        )}
+                        {searchResults.length > 0 && (
+                          <div className="search-results-dropdown">
+                            {searchResults.map((user) => (
+                              <div
+                                key={user.id}
+                                className="search-result-item"
+                                onClick={() => selectOpponent(user)}
+                              >
+                                {user.profilePicture && (
+                                  <img
+                                    src={user.profilePicture}
+                                    alt={user.username}
+                                    className="search-result-avatar"
+                                  />
+                                )}
+                                <span className="search-result-name">{user.username}</span>
+                                <span className="search-result-rank">{user.rank}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <h4>⚔️ {fightMode === 'user_vs_user' ? (lang === 'pl' ? 'Twoja drużyna' : 'Your Team') : (t('teams') || 'Teams')}</h4>
                 <div className="vote-duration">
                   <label htmlFor="voteDuration">
                     {t('voteDuration') || 'Voting ends'}
@@ -476,8 +659,8 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                     <option value="none">{t('noTimeLimit') || 'No time limit'}</option>
                   </select>
                 </div>
-                {/* Render first two teams in a horizontal row if present */}
-                {postData.teams.length >= 2 && (
+                {/* Render first two teams in a horizontal row if present (community mode) */}
+                {fightMode === 'community' && postData.teams.length >= 2 && (
                   <div className="teams-row">
                     {postData.teams.slice(0, 2).map((team, index) => (
                       <div key={index} className="team-builder">
@@ -541,8 +724,66 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                     ))}
                   </div>
                 )}
-                {/* Render any additional teams vertically */}
-                {postData.teams.length > 2 && postData.teams.slice(2).map((team, index) => (
+                {/* Render Team A only for user_vs_user mode */}
+                {fightMode === 'user_vs_user' && postData.teams.length >= 1 && (
+                  <div className="team-builder single-team">
+                    <div className="team-header">
+                      <h5>{lang === 'pl' ? 'Twoja drużyna' : 'Your Team'}</h5>
+                    </div>
+                    <div className="warriors horizontal-row">
+                      {postData.teams[0]?.warriors.map((warrior, warriorIndex) => (
+                        <div key={warriorIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div className="character-label">
+                            {getCharacterLabel(warriorIndex, t, lang)}
+                          </div>
+                          <div className="warrior-pair compact">
+                            <div className="warrior-inputs" style={{ width: '100%' }}>
+                              <div className="warrior-input" style={{ width: '100%' }}>
+                                <CharacterSelector
+                                  characters={characters}
+                                  selectedCharacter={warrior.character}
+                                  onSelect={(character) => updateWarrior(0, warriorIndex, character)}
+                                />
+                              </div>
+                              {warrior.character && (
+                                <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
+                                  <div className="warrior-preview-frame">
+                                    <img
+                                      {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
+                                      alt={warrior.character.name}
+                                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <button
+                              type="button"
+                              className="remove-warrior-btn"
+                              onClick={() => removeWarrior(0, warriorIndex)}
+                            >
+                              🗑️ {t('remove')}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button
+                        type="button"
+                        className="add-warriors-btn"
+                        onClick={() => addWarrior(0, { character: null, customImage: null })}
+                      >
+                        ➕ {t('addAnotherCharacter') || 'Add another character'}
+                      </button>
+                    </div>
+                    <p className="challenge-info">
+                      {lang === 'pl'
+                        ? '💡 Przeciwnik wybierze swoją drużynę po zaakceptowaniu wyzwania'
+                        : '💡 Opponent will choose their team after accepting the challenge'}
+                    </p>
+                  </div>
+                )}
+                {/* Render any additional teams vertically (community mode) */}
+                {fightMode === 'community' && postData.teams.length > 2 && postData.teams.slice(2).map((team, index) => (
                   <div key={index + 2} className="team-builder">
                     <div className="team-header">
                       <h5>{team.name}</h5>
@@ -602,13 +843,15 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                     </div>
                   </div>
                 ))}
-                <button
-                  type="button"
-                  className="add-teams-btn"
-                  onClick={addTeam}
-                >
-                  ➕ {t('addTeam') || 'Add Team'}
-                </button>
+                {fightMode === 'community' && (
+                  <button
+                    type="button"
+                    className="add-teams-btn"
+                    onClick={addTeam}
+                  >
+                    ➕ {t('addTeam') || 'Add Team'}
+                  </button>
+                )}
               </div>
             )}
           </div>

@@ -1267,3 +1267,210 @@ body.dark-mode .image-input::placeholder,
 body.dark-mode .poll-input::placeholder {
   color: rgba(255, 255, 255, 0.45);
 }
+
+/* ============================================
+   USER-VS-USER CHALLENGE STYLES
+   ============================================ */
+
+/* Fight Mode Selector */
+.fight-mode-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.fight-mode-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: 2px solid #444;
+  border-radius: 10px;
+  background: var(--bg-dark);
+  color: var(--text-light);
+  font-size: 0.95em;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.fight-mode-btn:hover {
+  border-color: var(--accent);
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.fight-mode-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+/* Opponent Search Section */
+.opponent-search-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: var(--bg-dark);
+  border-radius: 10px;
+  border: 1px solid #333;
+}
+
+.opponent-search-section label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.opponent-search-wrapper {
+  position: relative;
+}
+
+.opponent-search-input {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #444;
+  border-radius: 8px;
+  background: var(--bg-light);
+  color: var(--text-light);
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+.opponent-search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.search-loading {
+  padding: 10px;
+  text-align: center;
+  color: #888;
+  font-size: 0.9em;
+}
+
+.search-results-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--bg-light);
+  border: 1px solid #444;
+  border-radius: 8px;
+  margin-top: 5px;
+  max-height: 250px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+  border-bottom: 1px solid #333;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: rgba(231, 76, 60, 0.1);
+}
+
+.search-result-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+}
+
+.search-result-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-light);
+}
+
+.search-result-rank {
+  font-size: 0.85em;
+  color: #888;
+}
+
+/* Selected Opponent */
+.selected-opponent {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+}
+
+.opponent-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.opponent-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--accent);
+}
+
+.opponent-name {
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.opponent-rank {
+  font-size: 0.85em;
+  color: #888;
+  margin-left: 8px;
+}
+
+.clear-opponent-btn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.2em;
+  cursor: pointer;
+  padding: 5px 10px;
+  transition: color 0.2s;
+}
+
+.clear-opponent-btn:hover {
+  color: #ff4444;
+}
+
+/* Single Team for User-vs-User */
+.team-builder.single-team {
+  max-width: 100%;
+}
+
+.challenge-info {
+  margin-top: 15px;
+  padding: 12px 15px;
+  background: rgba(52, 152, 219, 0.15);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  border-radius: 8px;
+  color: #5dade2;
+  font-size: 0.9em;
+  text-align: center;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .fight-mode-selector {
+    flex-direction: column;
+  }
+
+  .fight-mode-btn {
+    width: 100%;
+  }
+}

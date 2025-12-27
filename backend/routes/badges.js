@@ -6,6 +6,70 @@ import { readDb, updateDb } from '../services/jsonDb.js';
 
 const router = express.Router();
 
+// Leveled badges - odznaki z poziomami (1-20)
+const LEVELED_BADGES = [
+  {
+    id: 'badge_daily',
+    name: 'Daily',
+    description: 'Loguj się regularnie',
+    icon: '📅',
+    category: 'activity',
+    isLeveled: true,
+    maxLevel: 20,
+    requirement: { type: 'loginDays', perLevel: 30 }
+  },
+  {
+    id: 'badge_commentator',
+    name: 'Commentator',
+    description: 'Pisz komentarze',
+    icon: '💬',
+    category: 'social',
+    isLeveled: true,
+    maxLevel: 20,
+    requirement: { type: 'comments', perLevel: 100 }
+  },
+  {
+    id: 'badge_reactive',
+    name: 'Reactive',
+    description: 'Dawaj reakcje',
+    icon: '👍',
+    category: 'social',
+    isLeveled: true,
+    maxLevel: 20,
+    requirement: { type: 'reactions', perLevel: 100 }
+  },
+  {
+    id: 'badge_manager',
+    name: 'Manager',
+    description: 'Twórz walki',
+    icon: '🎬',
+    category: 'fighting',
+    isLeveled: true,
+    maxLevel: 20,
+    requirement: { type: 'fightsCreated', perLevel: 20 }
+  },
+  {
+    id: 'badge_gambler',
+    name: 'Gambler',
+    description: 'Wygrywaj zakłady',
+    icon: '🎰',
+    category: 'betting',
+    isLeveled: true,
+    maxLevel: 20,
+    requirement: { type: 'bettingWins', perLevel: 20 }
+  },
+  {
+    id: 'badge_fighter',
+    name: 'Fighter',
+    description: 'Wygrywaj walki oficjalne w dywizjach',
+    icon: '🏆',
+    category: 'fighting',
+    isLeveled: true,
+    maxLevel: 20,
+    requirement: { type: 'officialWins', perLevel: 10 }
+  }
+];
+
 const DEFAULT_BADGES = [
   {
     id: 'first_win',
@@ -135,6 +199,51 @@ const buildUserBadgeEntry = (entry, badge) => ({
   badge: badge ? normalizeBadge(badge) : null
 });
 
+// Calculate leveled badge progress for a user
+const calculateLeveledBadgeProgress = (user, badge) => {
+  const req = badge.requirement;
+  let currentValue = 0;
+
+  const stats = user.stats || {};
+  const activity = user.activity || {};
+
+  switch (req.type) {
+    case 'loginDays':
+      currentValue = activity.loginDays || 0;
+      break;
+    case 'comments':
+      currentValue = activity.commentsPosted || 0;
+      break;
+    case 'reactions':
+      currentValue = activity.reactionsGiven || 0;
+      break;
+    case 'fightsCreated':
+      currentValue = activity.fightsCreated || activity.postsCreated || 0;
+      break;
+    case 'bettingWins':
+      currentValue = stats.bettingWins || 0;
+      break;
+    case 'officialWins':
+      currentValue = stats.officialStats?.fightsWon || 0;
+      break;
+    default:
+      currentValue = 0;
+  }
+
+  const level = Math.min(Math.floor(currentValue / req.perLevel), badge.maxLevel);
+  const progressToNext = currentValue % req.perLevel;
+
+  return {
+    badgeId: badge.id,
+    badge: badge,
+    level: level,
+    progress: progressToNext,
+    maxProgress: req.perLevel,
+    totalValue: currentValue,
+    nextLevelAt: (level + 1) * req.perLevel
+  };
+};
+
 // GET /api/badges/all
 router.get('/all', async (_req, res) => {
   try {
@@ -199,6 +308,37 @@ router.get('/user/:userId', async (req, res) => {
     res.json(userBadges);
   } catch (error) {
     console.error('Error fetching user badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/badges/leveled/:userId - Get leveled badges with progress for a user
+router.get('/leveled/:userId', async (req, res) => {
+  try {
+    const db = await readDb();
+    const user = db.users.find((u) => u.id === req.params.userId || u._id === req.params.userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const leveledBadges = LEVELED_BADGES.map((badge) =>
+      calculateLeveledBadgeProgress(user, badge)
+    );
+
+    res.json({ badges: leveledBadges });
+  } catch (error) {
+    console.error('Error fetching leveled badges:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/badges/leveled-all - Get all leveled badge definitions
+router.get('/leveled-all', async (_req, res) => {
+  try {
+    res.json({ badges: LEVELED_BADGES });
+  } catch (error) {
+    console.error('Error fetching leveled badge definitions:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

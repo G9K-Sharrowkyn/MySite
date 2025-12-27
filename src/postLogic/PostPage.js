@@ -5,6 +5,8 @@ import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from
 import { normalizeReactionSummary } from '../utils/reactionSummary';
 import ReactionMenu from './ReactionMenu';
 import BettingPanel from '../economy/BettingPanel';
+import ChallengeResponse from './ChallengeResponse';
+import ChallengeApproval from './ChallengeApproval';
 import './PostPage.css';
 import { AuthContext } from '../auth/AuthContext';
 
@@ -32,6 +34,15 @@ const PostPage = () => {
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
   const canModerate = user?.role === 'admin' || user?.role === 'moderator';
+  const bettingEligible = (() => {
+    if (post?.type !== 'fight' || !post?.fight) return false;
+    const lockTimeValue = post.fight.lockTime;
+    if (!lockTimeValue) return false;
+    const lockTime = new Date(lockTimeValue);
+    if (Number.isNaN(lockTime.getTime())) return false;
+    if (post.fight.status && post.fight.status !== 'active') return false;
+    return new Date() < lockTime;
+  })();
 
   const normalizeVoteTeam = (team) => {
     if (!team) return null;
@@ -492,7 +503,7 @@ const PostPage = () => {
               />
               <div className="author-details">
                 <span className="author-name">{post.author?.username || 'Anonymous'}</span>
-                <span className="author-rank">{post.author?.rank || 'Rookie'}</span>
+                  <span className="author-rank">{post.author?.rank || 'Mortal'}</span>
               </div>
             </Link>
           </div>
@@ -514,8 +525,65 @@ const PostPage = () => {
               />
             </div>
           )}
-          
-          {post.type === 'fight' && post.fight && (
+
+          {/* User-vs-User Challenge Components */}
+          {post.type === 'fight' && post.fight?.fightMode === 'user_vs_user' && (
+            <>
+              <ChallengeResponse
+                post={post}
+                currentUserId={currentUserId}
+                onResponse={(result) => {
+                  // Refresh post data after response
+                  window.location.reload();
+                }}
+              />
+              <ChallengeApproval
+                post={post}
+                currentUserId={currentUserId}
+                onApproval={(result) => {
+                  // Refresh post data after approval
+                  window.location.reload();
+                }}
+              />
+              {/* Show challenge status for non-participants */}
+              {post.fight.status === 'pending_opponent' &&
+                post.fight.opponentId !== currentUserId &&
+                post.fight.challengerId !== currentUserId && (
+                  <div className="challenge-status-info pending">
+                    <span className="status-icon">⏳</span>
+                    <span>Oczekiwanie na odpowiedź {post.fight.opponentUsername}...</span>
+                  </div>
+                )}
+              {post.fight.status === 'pending_approval' &&
+                post.fight.opponentId !== currentUserId &&
+                post.fight.challengerId !== currentUserId && (
+                  <div className="challenge-status-info pending">
+                    <span className="status-icon">✅</span>
+                    <span>Oczekiwanie na zatwierdzenie przez {post.fight.challengerUsername}...</span>
+                  </div>
+                )}
+              {post.fight.status === 'rejected' && (
+                <div className="challenge-status-info rejected">
+                  <span className="status-icon">❌</span>
+                  <span>Wyzwanie zostało odrzucone</span>
+                </div>
+              )}
+              {post.fight.status === 'cancelled' && (
+                <div className="challenge-status-info cancelled">
+                  <span className="status-icon">🚫</span>
+                  <span>Walka została anulowana</span>
+                </div>
+              )}
+              {post.fight.status === 'expired' && (
+                <div className="challenge-status-info expired">
+                  <span className="status-icon">⌛</span>
+                  <span>Wyzwanie wygasło</span>
+                </div>
+              )}
+            </>
+          )}
+
+          {post.type === 'fight' && post.fight && (post.fight.fightMode !== 'user_vs_user' || post.fight.status === 'active') && (
             <div className="fight-section">
               <div className="fight-teams-symmetrical">
                 <div className="team-column">
@@ -599,7 +667,7 @@ const PostPage = () => {
             <span className="action-text">React</span>
           </button>
 
-          {post?.type === 'fight' && post.fight && (
+          {bettingEligible && (
             <button
               className={`action-btn betting-btn ${showBetting ? 'active' : ''}`}
               onClick={toggleBetting}
@@ -609,14 +677,10 @@ const PostPage = () => {
             </button>
           )}
 
-          <button className="action-btn share-btn">
-            <span className="action-icon">📤</span>
-            <span className="action-text">Share</span>
-          </button>
+          
 
           {canDelete && (
             <button className="action-btn delete-btn" onClick={handleDelete}>
-              <span className="action-icon">DEL</span>
               <span className="action-text">Delete</span>
             </button>
           )}
@@ -652,13 +716,14 @@ const PostPage = () => {
           </div>
         )}
 
-        {post?.type === 'fight' && post.fight && showBetting && (
+        {post?.type === 'fight' && post.fight && showBetting && bettingEligible && (
           <div className="betting-inline" onClick={(e) => e.stopPropagation()}>
             <BettingPanel
               fightId={post.id}
               fightTitle={post.title}
               teamA={post.fight.teamA || 'Team A'}
               teamB={post.fight.teamB || 'Team B'}
+              bettingEndsAt={post.fight.lockTime}
             />
           </div>
         )}

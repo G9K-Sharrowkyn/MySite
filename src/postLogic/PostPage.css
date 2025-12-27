@@ -597,3 +597,47 @@ body.dark-mode .team-btn.voted {
   cursor: not-allowed;
   transform: none;
 }
+
+/* ============================================
+   CHALLENGE STATUS INFO STYLES
+   ============================================ */
+
+.challenge-status-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 15px 20px;
+  border-radius: 10px;
+  margin: 20px 0;
+  font-size: 1em;
+  font-weight: 500;
+}
+
+.challenge-status-info .status-icon {
+  font-size: 1.3em;
+}
+
+.challenge-status-info.pending {
+  background: rgba(52, 152, 219, 0.15);
+  border: 1px solid rgba(52, 152, 219, 0.3);
+  color: #5dade2;
+}
+
+.challenge-status-info.rejected {
+  background: rgba(231, 76, 60, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.3);
+  color: #e74c3c;
+}
+
+.challenge-status-info.cancelled {
+  background: rgba(149, 165, 166, 0.15);
+  border: 1px solid rgba(149, 165, 166, 0.3);
+  color: #95a5a6;
+}
+
+.challenge-status-info.expired {
+  background: rgba(241, 196, 15, 0.15);
+  border: 1px solid rgba(241, 196, 15, 0.3);
+  color: #f1c40f;
+}

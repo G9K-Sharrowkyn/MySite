@@ -58,19 +58,44 @@ const PORT = process.env.PORT || 5000;
 // Create HTTP server
 const server = http.createServer(app);
 
+const isDev = process.env.NODE_ENV !== 'production';
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+].filter(Boolean);
+
 // Configure Socket.io
 const io = new Server(server, {
+  maxHttpBufferSize: 5e6,
   cors: {
-    origin: "http://localhost:3000",
+    origin: (origin, callback) => {
+      if (isDev) {
+        return callback(null, true);
+      }
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
     methods: ["GET", "POST"],
     credentials: true
+  }
+});
+
+io.engine.on('connection_error', (err) => {
+  console.error('Engine.IO connection error:', err.code, err.message);
+  if (err.context) {
+    console.error('Engine.IO context:', err.context);
   }
 });
 
 // Security Middleware
 app.use(helmet({
   contentSecurityPolicy: false, // Disable for development, enable in production
-  crossOriginEmbedderPolicy: false
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: isDev ? false : undefined,
+  crossOriginOpenerPolicy: isDev ? false : undefined
 }));
 
 // Rate limiting
@@ -164,6 +189,10 @@ const activeUsers = new Map(); // Track active users in chat
 
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
+
+  socket.conn.on('upgradeError', (err) => {
+    console.error('Socket upgrade error:', err?.message || err);
+  });
 
   // User joins the global chat
   socket.on('join-chat', async (userData) => {
@@ -286,7 +315,7 @@ io.on('connection', (socket) => {
   });
 
   // Handle disconnect
-  socket.on('disconnect', () => {
+  socket.on('disconnect', (reason) => {
     const user = activeUsers.get(socket.id);
     if (user) {
       activeUsers.delete(socket.id);
@@ -297,7 +326,7 @@ io.on('connection', (socket) => {
         username: user.username
       });
     }
-    console.log('Client disconnected:', socket.id);
+    console.log('Client disconnected:', socket.id, reason);
   });
 });
 

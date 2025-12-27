@@ -73,33 +73,72 @@
   color: var(--text-light);
 }
 
-.fight-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 15px;
-  margin-bottom: 20px;
+/* Vertical Stats Layout */
+.fight-stats-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 15px;
 }
 
-.stat-item {
-  background-color: var(--bg-dark);
-  padding: 15px;
-  border-radius: 8px;
-  text-align: center;
+.stats-category {
+  background-color: rgba(0, 0, 0, 0.3);
+  padding: 12px 15px;
+  border-radius: 10px;
   border: 1px solid #333;
 }
 
-.stat-label {
-  display: block;
+.stats-category-title {
+  margin: 0 0 8px 0;
   font-size: 0.9em;
+  font-weight: 600;
+}
+
+.official-stats .stats-category-title {
+  color: #FFD700;
+}
+
+.unofficial-stats .stats-category-title {
+  color: #00BFFF;
+}
+
+.official-stats .stat-value {
+  color: #FFD700;
+}
+
+.unofficial-stats .stat-value {
+  color: #00BFFF;
+}
+
+.stats-row {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stat-label {
+  font-size: 0.85em;
   color: #aaa;
-  margin-bottom: 5px;
 }
 
 .stat-value {
-  display: block;
-  font-size: 1.5em;
+  font-size: 1em;
   font-weight: bold;
-  color: var(--accent);
+  color: var(--text-light);
+}
+
+.stat-value.official {
+  color: #FFD700;
+}
+
+.stat-value.unofficial {
+  color: #00BFFF;
 }
 
 .profile-actions {
@@ -184,8 +223,46 @@
 
 .profile-posts h3 {
   color: var(--accent);
-  margin-bottom: 20px;
+  margin: 0;
   font-size: 1.4em;
+}
+
+/* Posts header with filter buttons */
+.posts-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.content-filter-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  padding: 8px 16px;
+  border: 1px solid #444;
+  border-radius: 20px;
+  background-color: var(--bg-dark);
+  color: var(--text-light);
+  font-size: 0.9em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.filter-btn.active {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  color: white;
 }
 
 .posts-grid {
@@ -462,17 +539,42 @@
     text-align: center;
     gap: 20px;
   }
-  
-  .fight-stats {
-    grid-template-columns: repeat(2, 1fr);
+
+  .fight-stats-split {
+    grid-template-columns: 1fr;
+    gap: 15px;
   }
-  
+
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .stat-item {
+    padding: 10px 6px;
+  }
+
+  .stat-label {
+    font-size: 0.7em;
+  }
+
+  .stat-value {
+    font-size: 1.1em;
+  }
+
+  .total-stats {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    font-size: 0.9em;
+  }
+
   .fight-item {
     grid-template-columns: 1fr;
     gap: 10px;
     text-align: center;
   }
-  
+
   .characters-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   }

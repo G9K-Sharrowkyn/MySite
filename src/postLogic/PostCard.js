@@ -77,6 +77,15 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const imageLazy = !eagerImages;
   const imagePriority = eagerImages ? 'high' : undefined;
   const imageDecoding = eagerImages ? 'sync' : 'async';
+  const bettingEligible = (() => {
+    if (post.type !== 'fight' || !post.fight) return false;
+    const lockTimeValue = post.fight.lockTime;
+    if (!lockTimeValue) return false;
+    const lockTime = new Date(lockTimeValue);
+    if (Number.isNaN(lockTime.getTime())) return false;
+    if (post.fight.status && post.fight.status !== 'active') return false;
+    return new Date() < lockTime;
+  })();
 
   const normalizeVoteTeam = (team) => {
     if (!team) return null;
@@ -735,7 +744,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const getRankColor = (rank) => {
     const rankColors = {
-      'Rookie': '#8B4513',
+      'Mortal': '#8B4513',
       'Novice': '#CD853F',
       'Fighter': '#32CD32',
       'Warrior': '#1E90FF',
@@ -918,7 +927,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           <div className="author-info">
             <ChampionUsername user={post.author} />
             <span className="post-meta">
-              {post.author?.rank || 'Rookie'} • {formatTimeAgo(post.createdAt)}
+              {post.author?.rank || 'Mortal'} • {formatTimeAgo(post.createdAt)}
             </span>
           </div>
         </Link>
@@ -1044,7 +1053,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           <span className="action-text">{t('react')}</span>
         </button>
         
-        {post.type === 'fight' && post.fight && (
+        {bettingEligible && (
           <button
             className={`action-btn betting-btn ${showBetting ? 'active' : ''}`}
             onClick={toggleBetting}
@@ -1053,10 +1062,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             <span className="action-text">{t('betting') || 'Betting'}</span>
           </button>
         )}
-        <button className="action-btn share-btn">
-          <span className="action-icon">📤</span>
-          <span className="action-text">{t('share')}</span>
-        </button>
+        
 
         {currentUserId === post.author?.id && (
           <button className="action-btn edit-btn" onClick={handleEditToggle}>
@@ -1066,18 +1072,18 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         )}
         {(currentUserId === post.author?.id || canModerate) && (
           <button className="action-btn delete-btn" onClick={handleDelete}>
-            <span className="action-icon">DEL</span>
             <span className="action-text">{t('delete')}</span>
           </button>
         )}
       </div>
-      {post.type === 'fight' && post.fight && showBetting && (
+      {post.type === 'fight' && post.fight && showBetting && bettingEligible && (
         <div className="betting-inline" onClick={(e) => e.stopPropagation()}>
           <BettingPanel
             fightId={post.id}
             fightTitle={post.title}
             teamA={post.fight.teamA || 'Team A'}
             teamB={post.fight.teamB || 'Team B'}
+            bettingEndsAt={post.fight.lockTime}
           />
         </div>
       )}

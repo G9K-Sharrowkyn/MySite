@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, updateDb } from '../services/jsonDb.js';
+import { syncRankFromPoints } from '../utils/rankSystem.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -420,6 +421,7 @@ export const endFight = async (req, res) => {
             if (votedUser) {
               votedUser.stats = votedUser.stats || {};
               votedUser.stats.points = (votedUser.stats.points || 0) + 10;
+              syncRankFromPoints(votedUser);
             }
           });
       }

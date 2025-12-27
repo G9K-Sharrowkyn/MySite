@@ -3,6 +3,7 @@ import auth from '../middleware/auth.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
 import { readDb, updateDb } from '../services/jsonDb.js';
 import { v4 as uuidv4 } from 'uuid';
+import { applyDailyBonus } from '../utils/coinBonus.js';
 
 const router = express.Router();
 
@@ -235,9 +236,9 @@ router.post('/fight/:fightId', auth, async (req, res) => {
         throw error;
       }
 
-      ensureCoinAccount(user);
+      applyDailyBonus(db, user);
       if (user.coins.balance < amount) {
-        const error = new Error('Insufficient coins');
+        const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
@@ -279,7 +280,7 @@ router.post('/fight/:fightId', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
-      return res.status(400).json({ message: 'Insufficient coins' });
+      return res.status(400).json({ message: 'Insufficient eurodolary' });
     }
     if (error.code === 'FIGHT_NOT_FOUND') {
       return res.status(404).json({ message: 'Fight not found' });
@@ -299,7 +300,7 @@ router.post('/place/:fightId', auth, async (req, res) => {
       return res.status(400).json({ error: 'Invalid prediction' });
     }
     if (!betAmount || betAmount < 1) {
-      return res.status(400).json({ error: 'Minimum bet is 1 coin' });
+      return res.status(400).json({ error: 'Minimum bet is 1 eurodolar' });
     }
 
     let betRecord;
@@ -312,7 +313,7 @@ router.post('/place/:fightId', auth, async (req, res) => {
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
-      ensureCoinAccount(user);
+      applyDailyBonus(db, user);
 
       const fight = findFightById(db, req.params.fightId);
       if (!fight) {
@@ -326,7 +327,7 @@ router.post('/place/:fightId', auth, async (req, res) => {
       const totalCost = betAmount + insuranceCost;
 
       if (user.coins.balance < totalCost) {
-        const error = new Error('Insufficient coins');
+        const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
@@ -366,7 +367,7 @@ router.post('/place/:fightId', auth, async (req, res) => {
       return res.status(404).json({ error: 'Fight not found' });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
-      return res.status(400).json({ error: 'Insufficient coins' });
+      return res.status(400).json({ error: 'Insufficient eurodolary' });
     }
     console.error('Error placing bet:', error);
     res.status(500).json({ error: 'Server error' });
@@ -397,9 +398,9 @@ router.post('/place-bet', async (req, res) => {
         throw error;
       }
 
-      ensureCoinAccount(user);
+      applyDailyBonus(db, user);
       if (user.coins.balance < betAmount) {
-        const error = new Error('Insufficient coins');
+        const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
@@ -432,7 +433,7 @@ router.post('/place-bet', async (req, res) => {
       return res.status(404).json({ error: 'User or fight not found' });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
-      return res.status(400).json({ error: 'Insufficient coins' });
+      return res.status(400).json({ error: 'Insufficient eurodolary' });
     }
     console.error('Error placing bet:', error);
     res.status(500).json({ error: 'Server error' });
@@ -461,12 +462,12 @@ router.post('/parlay', auth, async (req, res) => {
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
-      ensureCoinAccount(user);
+      applyDailyBonus(db, user);
 
       const insuranceCost = insurance ? Math.ceil(betAmount * 0.15) : 0;
       const totalCost = betAmount + insuranceCost;
       if (user.coins.balance < totalCost) {
-        const error = new Error('Insufficient coins');
+        const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
@@ -515,7 +516,7 @@ router.post('/parlay', auth, async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
-      return res.status(400).json({ error: 'Insufficient coins' });
+      return res.status(400).json({ error: 'Insufficient eurodolary' });
     }
     console.error('Error placing parlay bet:', error);
     res.status(500).json({ error: 'Server error' });
@@ -544,10 +545,10 @@ router.post('/place-parlay', async (req, res) => {
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
-      ensureCoinAccount(user);
+      applyDailyBonus(db, user);
 
       if (user.coins.balance < betAmount) {
-        const error = new Error('Insufficient coins');
+        const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
@@ -587,7 +588,7 @@ router.post('/place-parlay', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
-      return res.status(400).json({ error: 'Insufficient coins' });
+      return res.status(400).json({ error: 'Insufficient eurodolary' });
     }
     console.error('Error placing parlay bet:', error);
     res.status(500).json({ error: 'Server error' });

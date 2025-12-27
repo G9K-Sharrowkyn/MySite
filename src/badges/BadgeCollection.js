@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import BadgeDisplay from './BadgeDisplay';
+import { useLanguage } from '../i18n/LanguageContext';
 import './BadgeCollection.css';
 
 const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
+  const { t } = useLanguage();
   const [badges, setBadges] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -124,26 +126,27 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
     return { earned, total, byCategory };
   };
 
+  const categoryNames = {
+    fighting: t('badgesCategoryFighting'),
+    social: t('badgesCategorySocial'),
+    achievement: t('badgesCategoryAchievement'),
+    division: t('badgesCategoryDivision'),
+    championship: t('badgesCategoryChampionship'),
+    betting: t('badgesCategoryBetting'),
+    special: t('badgesCategorySpecial'),
+    milestone: t('badgesCategoryMilestone'),
+    community: t('badgesCategoryCommunity')
+  };
+
   const getCategoryDisplayName = (category) => {
-    const names = {
-      fighting: 'Walki',
-      social: 'Społeczność',
-      achievement: 'Osiągnięcia',
-      division: 'Dywizje',
-      championship: 'Mistrzostwa',
-      betting: 'Zakłady',
-      special: 'Specjalne',
-      milestone: 'Kamienie milowe',
-      community: 'Społeczność'
-    };
-    return names[category] || category;
+    return categoryNames[category] || category;
   };
 
   if (loading) {
     return (
       <div className="badge-collection-loading">
         <div className="loading-spinner"></div>
-        <p>Ładowanie odznak...</p>
+        <p>{t('badgesLoading')}</p>
       </div>
     );
   }
@@ -151,9 +154,9 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
   if (error) {
     return (
       <div className="badge-collection-error">
-        <p>Błąd podczas ładowania odznak: {error}</p>
+        <p>{t('badgesLoadError', { error })}</p>
         <button onClick={fetchBadges} className="retry-button">
-          Spróbuj ponownie
+          {t('badgesRetry')}
         </button>
       </div>
     );
@@ -168,10 +171,10 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
       {showAll && (
         <div className="badge-collection-header">
           <div className="badge-stats">
-            <h3>Kolekcja Odznak</h3>
+            <h3>{t('badgesCollectionTitle')}</h3>
             <div className="stats-summary">
               <span className="stat-item">
-                <strong>{stats.earned}</strong> / {stats.total} zdobyte
+                <strong>{stats.earned}</strong> / {stats.total} {t('badgesEarnedLabel')}
               </span>
               <span className="completion-percentage">
                 ({Math.round((stats.earned / stats.total) * 100)}%)
@@ -186,9 +189,9 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
                 onChange={(e) => setFilter(e.target.value)}
                 className="filter-select"
               >
-                <option value="all">Wszystkie</option>
-                <option value="earned">Zdobyte</option>
-                <option value="unearned">Niezdobyte</option>
+                <option value="all">{t('badgesFilterAll')}</option>
+                <option value="earned">{t('badgesFilterEarned')}</option>
+                <option value="unearned">{t('badgesFilterUnearned')}</option>
                 {categories.map(category => (
                   <option key={category} value={category}>
                     {getCategoryDisplayName(category)}
@@ -203,9 +206,9 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="sort-select"
               >
-                <option value="rarity">Rzadkość</option>
-                <option value="earned">Zdobyte</option>
-                <option value="category">Kategoria</option>
+                <option value="rarity">{t('badgesSortRarity')}</option>
+                <option value="earned">{t('badgesSortEarned')}</option>
+                <option value="category">{t('badgesSortCategory')}</option>
               </select>
             </div>
           </div>
@@ -238,10 +241,10 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
           <div className="no-badges">
             <p>
               {filter === 'earned' 
-                ? 'Nie zdobyto jeszcze żadnych odznak w tej kategorii.'
+                ? t('badgesNoBadgesEarned')
                 : filter === 'unearned'
-                ? 'Wszystkie odznaki w tej kategorii zostały zdobyte!'
-                : 'Brak odznak do wyświetlenia.'
+                ? t('badgesNoBadgesUnearned')
+                : t('badgesNoBadges')
               }
             </p>
           </div>
@@ -261,7 +264,7 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
       {!showAll && filteredBadges.length > 0 && (
         <div className="badge-collection-footer">
           <p className="earned-count">
-            Zdobyte odznaki: {stats.earned} / {stats.total}
+            {t('badgesEarnedCount', { earned: stats.earned, total: stats.total })}
           </p>
         </div>
       )}

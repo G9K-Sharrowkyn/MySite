@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { readDb, updateDb } from '../services/jsonDb.js';
 import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
+import { addRankPoints, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveCommentId = (comment) => comment?.id || comment?._id;
@@ -188,11 +189,20 @@ export const addPostComment = async (req, res) => {
       author.activity = author.activity || {
         postsCreated: 0,
         commentsPosted: 0,
+        reactionsGiven: 0,
         likesReceived: 0,
         tournamentsWon: 0,
         tournamentsParticipated: 0
       };
       author.activity.commentsPosted += 1;
+      addRankPoints(author, RANK_POINT_VALUES.comment);
+      updateLeveledBadgeProgress(
+        author,
+        'badge_commentator',
+        author.activity.commentsPosted,
+        100,
+        20
+      );
       author.updatedAt = now;
 
       if (parentComment) {
@@ -507,6 +517,24 @@ export const addUserComment = async (req, res) => {
           commentId
         });
       }
+      author.activity = author.activity || {
+        postsCreated: 0,
+        commentsPosted: 0,
+        reactionsGiven: 0,
+        likesReceived: 0,
+        tournamentsWon: 0,
+        tournamentsParticipated: 0
+      };
+      author.activity.commentsPosted += 1;
+      addRankPoints(author, RANK_POINT_VALUES.comment);
+      updateLeveledBadgeProgress(
+        author,
+        'badge_commentator',
+        author.activity.commentsPosted,
+        100,
+        20
+      );
+      author.updatedAt = now;
       return db;
     });
 
@@ -625,6 +653,24 @@ export const addFightComment = async (req, res) => {
           commentId
         });
       }
+      author.activity = author.activity || {
+        postsCreated: 0,
+        commentsPosted: 0,
+        reactionsGiven: 0,
+        likesReceived: 0,
+        tournamentsWon: 0,
+        tournamentsParticipated: 0
+      };
+      author.activity.commentsPosted += 1;
+      addRankPoints(author, RANK_POINT_VALUES.comment);
+      updateLeveledBadgeProgress(
+        author,
+        'badge_commentator',
+        author.activity.commentsPosted,
+        100,
+        20
+      );
+      author.updatedAt = now;
       return db;
     });
 
@@ -697,13 +743,15 @@ export const addCommentReaction = async (req, res) => {
       const existingReactionIndex = comment.reactions.findIndex(
         (reaction) => reaction.userId === req.user.id
       );
+      const isNewReaction = existingReactionIndex === -1;
 
+      const now = new Date().toISOString();
       const nextReaction = {
         userId: req.user.id,
         reactionId,
         reactionIcon,
         reactionName,
-        reactedAt: new Date().toISOString()
+        reactedAt: now
       };
 
       if (existingReactionIndex > -1) {
@@ -715,6 +763,30 @@ export const addCommentReaction = async (req, res) => {
       reactionsSummary = buildReactionSummary(comment.reactions);
       comment.updatedAt = new Date().toISOString();
       updatedComment = comment;
+
+      if (isNewReaction) {
+        const reactingUser = db.users.find((user) => resolveUserId(user) === req.user.id);
+        if (reactingUser) {
+          reactingUser.activity = reactingUser.activity || {
+            postsCreated: 0,
+            commentsPosted: 0,
+            reactionsGiven: 0,
+            likesReceived: 0,
+            tournamentsWon: 0,
+            tournamentsParticipated: 0
+          };
+          reactingUser.activity.reactionsGiven += 1;
+          addRankPoints(reactingUser, RANK_POINT_VALUES.reaction);
+          updateLeveledBadgeProgress(
+            reactingUser,
+            'badge_reactive',
+            reactingUser.activity.reactionsGiven,
+            100,
+            20
+          );
+          reactingUser.updatedAt = now;
+        }
+      }
       return db;
     });
 

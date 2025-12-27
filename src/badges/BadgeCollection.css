@@ -8,13 +8,14 @@
   align-items: center;
   justify-content: center;
   padding: 40px;
-  color: #6b7280;
+  color: var(--text-light);
+  opacity: 0.7;
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid #e5e7eb;
+  border: 3px solid var(--bg-dark);
   border-top: 3px solid #3b82f6;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -59,14 +60,14 @@
   align-items: flex-start;
   margin-bottom: 24px;
   padding: 20px;
-  background: #f8fafc;
+  background: var(--bg-dark);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--bg-dark);
 }
 
 .badge-stats h3 {
   margin: 0 0 8px 0;
-  color: #1f2937;
+  color: var(--text-light);
   font-size: 20px;
   font-weight: 600;
 }
@@ -75,12 +76,13 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #6b7280;
+  color: var(--text-light);
+  opacity: 0.7;
   font-size: 14px;
 }
 
 .stat-item {
-  color: #374151;
+  color: var(--text-light);
 }
 
 .completion-percentage {
@@ -97,11 +99,11 @@
 .filter-select,
 .sort-select {
   padding: 8px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--bg-dark);
   border-radius: 6px;
-  background: white;
+  background: var(--bg-light);
   font-size: 14px;
-  color: #374151;
+  color: var(--text-light);
   cursor: pointer;
   transition: border-color 0.2s;
 }
@@ -125,9 +127,9 @@
   gap: 16px;
   margin-bottom: 24px;
   padding: 16px;
-  background: #ffffff;
+  background: var(--bg-light);
   border-radius: 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--bg-dark);
 }
 
 .category-stat {
@@ -139,18 +141,19 @@
 .category-name {
   font-size: 14px;
   font-weight: 500;
-  color: #374151;
+  color: var(--text-light);
 }
 
 .category-progress {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-light);
+  opacity: 0.7;
   text-align: right;
 }
 
 .category-bar {
   height: 4px;
-  background: #e5e7eb;
+  background: var(--bg-dark);
   border-radius: 2px;
   overflow: hidden;
 }
@@ -170,7 +173,8 @@
   align-items: center;
   justify-content: center;
   padding: 60px 20px;
-  color: #6b7280;
+  color: var(--text-light);
+  opacity: 0.7;
   text-align: center;
 }
 
@@ -183,14 +187,14 @@
 .badge-collection-footer {
   margin-top: 20px;
   padding: 16px;
-  background: #f8fafc;
+  background: var(--bg-dark);
   border-radius: 8px;
   text-align: center;
 }
 
 .earned-count {
   margin: 0;
-  color: #374151;
+  color: var(--text-light);
   font-size: 14px;
   font-weight: 500;
 }
