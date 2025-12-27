@@ -1,89 +1,18 @@
-Read our docs for common ways to troubleshoot your deploy.
-
-All logs
-Search
-Search
-
-Dec 27, 11:53 PM - 11:58 PM
-GMT+1
-
-
-
-==> Cloning from https://github.com/G9K-Sharrowkyn/MySite
-==> Checking out commit 2ce57704a090a04875da1b9023066a0a1319a96b in branch main
-==> Using Node.js version 22.16.0 (default)
-==> Docs on specifying a Node.js version: https://render.com/docs/node-version
-==> Running build command 'npm install --legacy-peer-deps && npm --prefix backend install --legacy-peer-deps && npm run build'...
-added 1373 packages, and audited 1374 packages in 31s
-271 packages are looking for funding
-  run `npm fund` for details
-16 vulnerabilities (2 low, 4 moderate, 9 high, 1 critical)
-To address issues that do not require attention, run:
-  npm audit fix
-To address all issues (including breaking changes), run:
-  npm audit fix --force
-Run `npm audit` for details.
-up to date, audited 158 packages in 1s
-20 packages are looking for funding
-  run `npm fund` for details
-7 vulnerabilities (1 moderate, 5 high, 1 critical)
-To address all issues, run:
-  npm audit fix
-Run `npm audit` for details.
-> my-site@0.1.0 build
-> react-scripts build
-Creating an optimized production build...
-Compiled successfully.
-File sizes after gzip:
-  169.8 kB  build/static/js/main.066c2658.js
-  39.32 kB  build/static/css/main.94d230d7.css
-  1.76 kB   build/static/js/453.bd6db19c.chunk.js
-The project was built assuming it is hosted at /.
-You can control this with the homepage field in your package.json.
-The build folder is ready to be deployed.
-You may serve it with a static server:
-  npm install -g serve
-  serve -s build
-Find out more about deployment here:
-  https://cra.link/deployment
-==> Uploading build...
-==> Uploaded in 6.9s. Compression took 22.2s
-==> Build successful 🎉
-==> Setting WEB_CONCURRENCY=1 by default, based on available CPUs in the instance
-==> Deploying...
-==> Running 'node backend/server.js'
-[dotenv@17.0.1] injecting env (0) from .env – [tip] encrypt with dotenvx: https://dotenvx.com
-/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:73
-            throw new TypeError(`Missing parameter name at ${i}: ${DEBUG_URL}`);
-                  ^
-TypeError: Missing parameter name at 1: https://git.new/pathToRegexpError
-    at name (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:73:19)
-    at lexer (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:91:27)
-    at lexer.next (<anonymous>)
-    at Iter.peek (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:106:38)
-    at Iter.tryConsume (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:112:28)
-    at Iter.text (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:128:30)
-    at consume (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:152:29)
-    at parse (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:183:20)
-    at /opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:294:74
-    at Array.map (<anonymous>)
-Node.js v22.16.0
-==> Exited with status 1
-==> Common ways to troubleshoot your deploy: https://render.com/docs/troubleshooting-deploys
-==> Running 'node backend/server.js'
-[dotenv@17.0.1] injecting env (0) from .env – [tip] encrypt with dotenvx: https://dotenvx.com
-/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:73
-            throw new TypeError(`Missing parameter name at ${i}: ${DEBUG_URL}`);
-                  ^
-TypeError: Missing parameter name at 1: https://git.new/pathToRegexpError
-    at name (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:73:19)
-    at lexer (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:91:27)
-    at lexer.next (<anonymous>)
-    at Iter.peek (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:106:38)
-    at Iter.tryConsume (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:112:28)
-    at Iter.text (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:128:30)
-    at consume (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:152:29)
-    at parse (/opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:183:20)
-    at /opt/render/project/src/backend/node_modules/path-to-regexp/dist/index.js:294:74
-    at Array.map (<anonymous>)
-Node.js v22.16.0
+Uncaught (in promise) TypeError: Failed to execute 'put' on 'Cache': Request method 'POST' is unsupported
+    at sw.js:55:21Understand this error
+index.js:24 SW registered:  ServiceWorkerRegistration
+socket.io/?EIO=4&transport=polling&t=x41u3w6b&sid=oN5jTUKrprNev6ZcAAFn:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+GlobalChatSystem.js:103 Chat connection error: xhr post error
+(anonymous) @ GlobalChatSystem.js:103Understand this warning
+GlobalChatSystem.js:97 Disconnected from chat server: transport error
+websocket.js:81 WebSocket connection to 'wss://ubf-0z6i.onrender.com/socket.io/?EIO=4&transport=websocket&sid=oN5jTUKrprNev6ZcAAFn' failed: WebSocket is closed before the connection is established.
+doClose @ websocket.js:81Understand this warning
+socket.io/?EIO=4&transport=polling&t=x41x59ov&sid=oN5jTUKrprNev6ZcAAFn:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+socket.io/?EIO=4&transport=polling&t=x42przlm&sid=PWrFrkPhrpjkCR6cAAFo:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+GlobalChatSystem.js:103 Chat connection error: xhr post error
+(anonymous) @ GlobalChatSystem.js:103Understand this warning
+GlobalChatSystem.js:97 Disconnected from chat server: transport error
+websocket.js:81 WebSocket connection to 'wss://ubf-0z6i.onrender.com/socket.io/?EIO=4&transport=websocket&sid=PWrFrkPhrpjkCR6cAAFo' failed: WebSocket is closed before the connection is established.
+doClose @ websocket.js:81Understand this warning
+socket.io/?EIO=4&transport=polling&t=x42x1ucs&sid=PWrFrkPhrpjkCR6cAAFo:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
+socket.io/?EIO=4&transport=polling&t=x43q6eqw&sid=cRIvR8_a0VJwHQQOAAFp:1  Failed to load resource: the server responded with a status of 400 ()

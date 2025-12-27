@@ -1,5 +1,5 @@
 // Service Worker for PWA
-const CACHE_NAME = 'fight-site-v1';
+const CACHE_NAME = 'fight-site-v2';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -12,6 +12,7 @@ const urlsToCache = [
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -33,6 +34,16 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   // Only handle HTTP/HTTPS requests
   if (!event.request.url.startsWith('http')) return;
+  if (event.request.method !== 'GET') return;
+
+  const requestUrl = new URL(event.request.url);
+
+  // Skip API, socket, and cross-origin requests
+  if (requestUrl.origin !== self.location.origin) return;
+  if (requestUrl.pathname.startsWith('/api') || requestUrl.pathname.startsWith('/socket.io')) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -78,9 +89,10 @@ self.addEventListener('activate', (event) => {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
+          return null;
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
