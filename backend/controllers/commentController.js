@@ -245,9 +245,10 @@ export const getPostComments = async (req, res) => {
 
   try {
     const db = await readDb();
-    const filtered = db.comments.filter(
-      (comment) => comment.type === 'post' && comment.postId === postId
-    );
+    const filtered = db.comments.filter((comment) => {
+      const isPostComment = comment?.type === 'post' || !comment?.type;
+      return isPostComment && comment.postId === postId;
+    });
     const sorted = filtered.sort(
       (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
     );

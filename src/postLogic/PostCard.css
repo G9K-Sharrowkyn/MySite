@@ -1463,8 +1463,8 @@ body.dark-mode .post-card {
   opacity: 0.7;
   background-image: url("https://assets.codepen.io/13471/sparkles.gif");
   background-position: 50% 50%;
-  background-size: 100;
-  background-repeat: no-repeat;
+  background-size: auto;
+  background-repeat: repeat;
   mix-blend-mode: lighten;
   filter: brightness(1.2) contrast(1.2);
   transition: all .33s ease;
@@ -1761,14 +1761,15 @@ body.dark-mode .post-card {
 }
 
 .fight-vote-row-3col.has-voted {
-  gap: 0;
-  justify-content: space-between;
+  gap: clamp(12px, 2.2vw, 28px);
+  justify-content: center;
 }
 
 .fight-vote-row-3col.has-voted > .team-vote-col {
-  flex: 1 1 50%;
-  width: 50%;
-  max-width: 50%;
+  flex: 1 1 0;
+  width: auto;
+  max-width: none;
+  min-width: 0;
 }
 
 .fight-vote-row-3col > .team-vote-col {
@@ -2000,13 +2001,7 @@ body.dark-mode .post-card {
 }
 
 .voting-section.fight-voting {
-  background: linear-gradient(
-    to right,
-    var(--bg-secondary) 0%,
-    var(--bg-secondary) 50%,
-    var(--bg-tertiary) 50%,
-    var(--bg-tertiary) 100%
-  );
+  background: var(--bg-secondary);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2023,13 +2018,7 @@ body.dark-mode .post-card {
   justify-content: space-around;
   padding: 15px 25px;
   border-top: 1px solid var(--border-color);
-  background: linear-gradient(
-    to right,
-    var(--bg-secondary) 0%,
-    var(--bg-secondary) 50%,
-    var(--bg-tertiary) 50%,
-    var(--bg-tertiary) 100%
-  );
+  background: var(--bg-secondary);
 }
 
 .fight-voting-actions .animated-vote-btn {

@@ -72,14 +72,31 @@ const sortPosts = (posts, sortBy) => {
 const buildReactionSummary = (reactions = []) => {
   const reactionCounts = {};
   reactions.forEach((reaction) => {
-    const key = `${reaction.reactionIcon}-${reaction.reactionName}`;
+    const icon = reaction?.reactionIcon || reaction?.icon;
+    const name = reaction?.reactionName || reaction?.name || '';
+    if (!icon) return;
+    const key = `${icon}-${name}`;
     reactionCounts[key] = (reactionCounts[key] || 0) + 1;
   });
 
   return Object.entries(reactionCounts).map(([key, count]) => {
-    const [icon, name] = key.split('-', 2);
+    const separatorIndex = key.indexOf('-');
+    const icon = separatorIndex >= 0 ? key.slice(0, separatorIndex) : key;
+    const name = separatorIndex >= 0 ? key.slice(separatorIndex + 1) : '';
     return { icon, name, count };
   });
+};
+
+const buildCommentCountByPostId = (comments = []) => {
+  const counts = new Map();
+  comments.forEach((comment) => {
+    const isPostComment = comment?.type === 'post' || !comment?.type;
+    if (!isPostComment) return;
+    const postId = comment.postId;
+    if (!postId) return;
+    counts.set(postId, (counts.get(postId) || 0) + 1);
+  });
+  return counts;
 };
 
 const notifyAdminsForProfanity = async (db, payload) => {
@@ -112,6 +129,7 @@ export const getAllPosts = async (req, res) => {
     const db = await readDb();
     const normalizedCategory = String(category || '').toLowerCase();
     let filteredPosts = db.posts || [];
+    const commentCounts = buildCommentCountByPostId(db.comments || []);
 
     if (normalizedCategory && normalizedCategory !== 'all') {
       if (normalizedCategory === 'fight') {
@@ -135,9 +153,15 @@ export const getAllPosts = async (req, res) => {
       pageNumber * limitNumber
     );
 
-    const postsWithUserInfo = pagedPosts.map((post) =>
-      normalizePostForResponse(post, db.users)
-    );
+    const postsWithUserInfo = pagedPosts.map((post) => {
+      const normalized = normalizePostForResponse(post, db.users);
+      const postId = normalized.id;
+      return {
+        ...normalized,
+        commentCount: commentCounts.get(postId) || 0,
+        reactionsSummary: buildReactionSummary(post.reactions || [])
+      };
+    });
 
     res.json({
       posts: postsWithUserInfo,
@@ -158,10 +182,17 @@ export const getPostsByUser = async (req, res) => {
     const db = await readDb();
     const posts = db.posts.filter((post) => post.authorId === userId);
     const sorted = sortPosts(posts, 'createdAt');
+    const commentCounts = buildCommentCountByPostId(db.comments || []);
 
-    const postsWithUserInfo = sorted.map((post) =>
-      normalizePostForResponse(post, db.users)
-    );
+    const postsWithUserInfo = sorted.map((post) => {
+      const normalized = normalizePostForResponse(post, db.users);
+      const postId = normalized.id;
+      return {
+        ...normalized,
+        commentCount: commentCounts.get(postId) || 0,
+        reactionsSummary: buildReactionSummary(post.reactions || [])
+      };
+    });
 
     res.json(postsWithUserInfo);
   } catch (err) {
@@ -181,7 +212,17 @@ export const getPostById = async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
 
-    res.json(normalizePostForResponse(post, db.users));
+    const normalized = normalizePostForResponse(post, db.users);
+    const commentCount = (db.comments || []).filter((comment) => {
+      const isPostComment = comment?.type === 'post' || !comment?.type;
+      return isPostComment && comment.postId === normalized.id;
+    }).length;
+
+    res.json({
+      ...normalized,
+      commentCount,
+      reactionsSummary: buildReactionSummary(post.reactions || [])
+    });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -347,6 +388,8 @@ export const createPost = async (req, res) => {
 
     res.status(201).json({
       ...normalizePostForResponse(createdPost, [author]),
+      commentCount: 0,
+      reactionsSummary: buildReactionSummary(createdPost.reactions || []),
       author: buildAuthor(author)
     });
   } catch (err) {

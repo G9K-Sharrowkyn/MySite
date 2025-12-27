@@ -59,6 +59,36 @@ const buildTagIndex = (posts) => {
   return index;
 };
 
+const buildReactionSummary = (reactions = []) => {
+  const reactionCounts = {};
+  reactions.forEach((reaction) => {
+    const icon = reaction?.reactionIcon || reaction?.icon;
+    const name = reaction?.reactionName || reaction?.name || '';
+    if (!icon) return;
+    const key = `${icon}-${name}`;
+    reactionCounts[key] = (reactionCounts[key] || 0) + 1;
+  });
+
+  return Object.entries(reactionCounts).map(([key, count]) => {
+    const separatorIndex = key.indexOf('-');
+    const icon = separatorIndex >= 0 ? key.slice(0, separatorIndex) : key;
+    const name = separatorIndex >= 0 ? key.slice(separatorIndex + 1) : '';
+    return { icon, name, count };
+  });
+};
+
+const buildCommentCountByPostId = (comments = []) => {
+  const counts = new Map();
+  comments.forEach((comment) => {
+    const isPostComment = comment?.type === 'post' || !comment?.type;
+    if (!isPostComment) return;
+    const postId = comment.postId;
+    if (!postId) return;
+    counts.set(postId, (counts.get(postId) || 0) + 1);
+  });
+  return counts;
+};
+
 const mapTagEntries = (entries, category) =>
   [...entries.values()]
     .sort((a, b) => b.postCount - a.postCount)
@@ -230,6 +260,7 @@ router.post('/filter-posts', async (req, res) => {
       pageNumber * limitNumber
     );
 
+    const commentCounts = buildCommentCountByPostId(db.comments || []);
     const formatted = paged.map((post) => {
       const author = db.users.find(
         (user) => resolveUserId(user) === post.authorId
@@ -255,7 +286,9 @@ router.post('/filter-posts', async (req, res) => {
         ...post,
         id: post.id || post._id,
         fight,
-        author: buildAuthor(author)
+        author: buildAuthor(author),
+        commentCount: commentCounts.get(post.id || post._id) || 0,
+        reactionsSummary: buildReactionSummary(post.reactions || [])
       };
     });
 

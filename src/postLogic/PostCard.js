@@ -8,6 +8,7 @@ import {
   preloadImage,
   preloadCharacterImage
 } from '../utils/placeholderImage';
+import { normalizeReactionSummary } from '../utils/reactionSummary';
 import { ChampionUsername } from '../utils/championUtils';
 import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
@@ -44,6 +45,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(false);
+  const [hasLoadedComments, setHasLoadedComments] = useState(false);
   const [showBetting, setShowBetting] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
@@ -58,7 +60,13 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [showReactionMenu, setShowReactionMenu] = useState(false);
   const [userReaction, setUserReaction] = useState(null);
   const [commentReactionTarget, setCommentReactionTarget] = useState(null);
-  const [reactions, setReactions] = useState(post.reactions || []);
+  const reactionSeed =
+    Array.isArray(post.reactionsSummary) && post.reactionsSummary.length > 0
+      ? post.reactionsSummary
+      : post.reactions;
+  const [reactions, setReactions] = useState(() =>
+    normalizeReactionSummary(reactionSeed)
+  );
   const [characters, setCharacters] = useState(cachedCharacters || []);
   const [pollVote, setPollVote] = useState(null);
 
@@ -86,6 +94,19 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
       setUserVote(normalizeVoteTeam(vote?.team));
     }
   }, [post, currentUserId]);
+
+  useEffect(() => {
+    setComments([]);
+    setHasLoadedComments(false);
+  }, [post.id]);
+
+  useEffect(() => {
+    const nextSeed =
+      Array.isArray(post.reactionsSummary) && post.reactionsSummary.length > 0
+        ? post.reactionsSummary
+        : post.reactions;
+    setReactions(normalizeReactionSummary(nextSeed));
+  }, [post.id, post.reactionsSummary, post.reactions]);
 
   useEffect(() => {
     let isMounted = true;
@@ -137,7 +158,11 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const fetchComments = async () => {
     try {
       const response = await axios.get(`/api/comments/post/${post.id}`);
-      setComments(response.data);
+      const payload = Array.isArray(response.data)
+        ? response.data
+        : response.data?.comments || [];
+      setComments(payload);
+      setHasLoadedComments(true);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
@@ -642,7 +667,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const toggleComments = () => {
     setShowComments(!showComments);
-    if (!showComments && comments.length === 0) {
+    if (!showComments && !hasLoadedComments) {
       fetchComments();
     }
   };
@@ -858,6 +883,13 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const commentThreads = buildCommentThreads(comments);
+  const parsedCommentCount = Number(post.commentCount);
+  const baseCommentCount = Number.isFinite(parsedCommentCount)
+    ? parsedCommentCount
+    : Array.isArray(post.comments)
+      ? post.comments.length
+      : 0;
+  const displayCommentCount = hasLoadedComments ? comments.length : baseCommentCount;
 
   if (isEditing) {
     return (
@@ -1001,7 +1033,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           onClick={toggleComments}
         >
           <span className="action-icon">💬</span>
-          <span className="action-text">{comments.length}</span>
+          <span className="action-text">{displayCommentCount}</span>
         </button>
         
         <button 

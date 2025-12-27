@@ -272,8 +272,8 @@
         "experience": 0
       },
       "activity": {
-        "postsCreated": 5,
-        "commentsPosted": 11,
+        "postsCreated": 6,
+        "commentsPosted": 16,
         "likesReceived": 2,
         "tournamentsWon": 0,
         "tournamentsParticipated": 0
@@ -312,7 +312,7 @@
         "accountDeleted": false
       },
       "createdAt": "2025-12-25T21:39:34.481Z",
-      "updatedAt": "2025-12-27T01:01:35.766Z"
+      "updatedAt": "2025-12-27T01:23:59.681Z"
     }
   ],
   "posts": [
@@ -627,6 +627,78 @@
         "powerTiers": [],
         "categories": []
       }
+    },
+    {
+      "id": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "title": "dhsgfshh",
+      "content": "hsdshdsdsdsdhsdhsdh",
+      "type": "fight",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "createdAt": "2025-12-27T01:23:33.335Z",
+      "updatedAt": "2025-12-27T02:22:04.799Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Yoda (Legends)(SW)",
+          "Darth Plagueis (Legends)(SW)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Yoda (Legends)(SW)",
+        "teamB": "Darth Plagueis (Legends)(SW)",
+        "votes": {
+          "teamA": 0,
+          "teamB": 1,
+          "draw": 0,
+          "voters": [
+            {
+              "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+              "team": "B",
+              "votedAt": "2025-12-27T02:22:04.799Z"
+            }
+          ]
+        },
+        "status": "active",
+        "isOfficial": false,
+        "lockTime": null,
+        "winner": null,
+        "winnerTeam": null
+      },
+      "reactions": [
+        {
+          "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+          "reactionId": "love3",
+          "reactionIcon": "💕",
+          "reactionName": "Two Hearts",
+          "reactedAt": "2025-12-27T01:36:36.040Z"
+        }
+      ],
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": [
+        "Star Wars",
+        "Yoda (Legends)(SW)",
+        "Darth Plagueis (Legends)(SW)"
+      ],
+      "autoTags": {
+        "universes": [
+          "Star Wars"
+        ],
+        "characters": [
+          "Yoda (Legends)(SW)",
+          "Darth Plagueis (Legends)(SW)"
+        ],
+        "powerTiers": [],
+        "categories": []
+      }
     }
   ],
   "comments": [
@@ -661,6 +733,107 @@
       "createdAt": "2025-07-08T00:03:54.210Z",
       "likes": 0,
       "likedBy": []
+    },
+    {
+      "id": "82200c7b-5e23-4b79-8e17-7a6129c45706",
+      "type": "post",
+      "targetId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "postId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "parentId": null,
+      "threadId": "82200c7b-5e23-4b79-8e17-7a6129c45706",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "hdfhfdh",
+      "createdAt": "2025-12-27T01:23:46.771Z",
+      "updatedAt": "2025-12-27T01:24:07.970Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": [
+        {
+          "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+          "reactionId": "hate2",
+          "reactionIcon": "🤬",
+          "reactionName": "Cursing",
+          "reactedAt": "2025-12-27T01:24:07.970Z"
+        }
+      ]
+    },
+    {
+      "id": "75ae6692-d8e6-4b11-8fa6-5ddaefa66e6c",
+      "type": "post",
+      "targetId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "postId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "parentId": "82200c7b-5e23-4b79-8e17-7a6129c45706",
+      "threadId": "82200c7b-5e23-4b79-8e17-7a6129c45706",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "@aaa111 erherherher",
+      "createdAt": "2025-12-27T01:23:50.232Z",
+      "updatedAt": "2025-12-27T01:23:50.232Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "1bc656dd-d649-45f1-9559-262affaf4c8b",
+      "type": "post",
+      "targetId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "postId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "parentId": "75ae6692-d8e6-4b11-8fa6-5ddaefa66e6c",
+      "threadId": "82200c7b-5e23-4b79-8e17-7a6129c45706",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "@aaa111 erherherh",
+      "createdAt": "2025-12-27T01:23:53.346Z",
+      "updatedAt": "2025-12-27T01:23:53.346Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
+    },
+    {
+      "id": "99bc4e11-3d95-4e4e-b307-6575f229c280",
+      "type": "post",
+      "targetId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "postId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "parentId": null,
+      "threadId": "99bc4e11-3d95-4e4e-b307-6575f229c280",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "erherherh",
+      "createdAt": "2025-12-27T01:23:55.984Z",
+      "updatedAt": "2025-12-27T01:24:13.352Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": [
+        {
+          "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+          "reactionId": "shocked2",
+          "reactionIcon": "😨",
+          "reactionName": "Fearful",
+          "reactedAt": "2025-12-27T01:24:13.352Z"
+        }
+      ]
+    },
+    {
+      "id": "4685bc03-a0ce-4328-8a6d-e59190e2357e",
+      "type": "post",
+      "targetId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "postId": "cc494f8e-5a35-4bb9-8744-467065d47f95",
+      "parentId": "99bc4e11-3d95-4e4e-b307-6575f229c280",
+      "threadId": "99bc4e11-3d95-4e4e-b307-6575f229c280",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "authorUsername": "aaa111",
+      "authorAvatar": "",
+      "text": "@aaa111 herherherh",
+      "createdAt": "2025-12-27T01:23:59.681Z",
+      "updatedAt": "2025-12-27T01:23:59.681Z",
+      "likes": 0,
+      "likedBy": [],
+      "reactions": []
     }
   ],
   "characters": [

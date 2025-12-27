@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
+import { normalizeReactionSummary } from '../utils/reactionSummary';
 import ReactionMenu from './ReactionMenu';
 import BettingPanel from '../economy/BettingPanel';
 import './PostPage.css';
@@ -170,7 +171,11 @@ const PostPage = () => {
         }
       };
       setPost(postData);
-      setReactions(postData.reactions || []);
+      const reactionSeed =
+        Array.isArray(postData.reactionsSummary) && postData.reactionsSummary.length > 0
+          ? postData.reactionsSummary
+          : postData.reactions;
+      setReactions(normalizeReactionSummary(reactionSeed));
       
       if (postData.type === 'fight' && postData.fight?.votes?.voters && currentUserId) {
         const vote = postData.fight.votes.voters.find(
