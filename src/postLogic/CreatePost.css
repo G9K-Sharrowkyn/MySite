@@ -878,9 +878,9 @@
 .warrior-image-section {
   margin-top: 15px;
   padding: 15px;
-  background: #f8f9fa;
+  background: var(--bg-secondary);
   border-radius: 12px;
-  border: 2px solid #e9ecef;
+  border: 2px solid var(--border-color);
 }
 
 .warrior-image-display {
@@ -933,7 +933,7 @@
 .warrior-image-hint {
   margin: 8px 0 0 0;
   font-size: 0.85rem;
-  color: #666;
+  color: var(--text-secondary);
   text-align: center;
   font-style: italic;
 }
@@ -944,7 +944,8 @@
   max-width: 900px;
   margin-left: auto;
   margin-right: auto;
-  background: #fff;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   padding: 24px 16px 16px 16px;
@@ -962,12 +963,12 @@
   align-items: center;
   margin-bottom: 15px;
   padding-bottom: 10px;
-  border-bottom: 2px solid #e9ecef;
+  border-bottom: 2px solid var(--border-color);
 }
 
 .team-header h5 {
   margin: 0;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.1rem;
   font-weight: 600;
 }
@@ -995,14 +996,22 @@
   gap: 15px;
 }
 
+.character-label {
+  margin-bottom: 4px;
+  font-weight: 700;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--text-primary);
+}
+
 .warrior-pair {
   display: flex;
   align-items: flex-start;
   gap: 15px;
   padding: 15px;
-  background: white;
+  background: var(--bg-tertiary);
   border-radius: 12px;
-  border: 1px solid #e9ecef;
+  border: 1px solid var(--border-color);
   transition: all 0.3s ease;
 }
 
@@ -1026,8 +1035,17 @@
 
 .warrior-input label {
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   font-size: 0.95rem;
+}
+
+.warrior-preview-frame {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
 }
 
 .remove-warrior-btn {
@@ -1145,7 +1163,8 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #f7f7fa;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 8px 10px;
   margin: 0;

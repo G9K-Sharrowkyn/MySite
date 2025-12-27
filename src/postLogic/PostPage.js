@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import ReactionMenu from './ReactionMenu';
+import BettingPanel from '../economy/BettingPanel';
 import './PostPage.css';
 import { AuthContext } from '../auth/AuthContext';
 
@@ -13,6 +14,7 @@ const PostPage = () => {
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [showBetting, setShowBetting] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -379,6 +381,10 @@ const PostPage = () => {
     setShowReactionMenu(true);
   };
 
+  const toggleBetting = () => {
+    setShowBetting((prev) => !prev);
+  };
+
   const handleDelete = () => {
     setShowDeleteModal(true);
   };
@@ -588,6 +594,16 @@ const PostPage = () => {
             <span className="action-text">React</span>
           </button>
 
+          {post?.type === 'fight' && post.fight && (
+            <button
+              className={`action-btn betting-btn ${showBetting ? 'active' : ''}`}
+              onClick={toggleBetting}
+            >
+              <span className="action-icon">$</span>
+              <span className="action-text">Betting</span>
+            </button>
+          )}
+
           <button className="action-btn share-btn">
             <span className="action-icon">📤</span>
             <span className="action-text">Share</span>
@@ -628,6 +644,17 @@ const PostPage = () => {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+
+        {post?.type === 'fight' && post.fight && showBetting && (
+          <div className="betting-inline" onClick={(e) => e.stopPropagation()}>
+            <BettingPanel
+              fightId={post.id}
+              fightTitle={post.title}
+              teamA={post.fight.teamA || 'Team A'}
+              teamB={post.fight.teamB || 'Team B'}
+            />
           </div>
         )}
 

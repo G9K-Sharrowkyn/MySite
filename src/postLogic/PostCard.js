@@ -11,6 +11,7 @@ import {
 import { ChampionUsername } from '../utils/championUtils';
 import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
+import BettingPanel from '../economy/BettingPanel';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import HoloCard from '../shared/HoloCard';
@@ -43,6 +44,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(false);
+  const [showBetting, setShowBetting] = useState(false);
   const [expandedThreads, setExpandedThreads] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -645,6 +647,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     }
   };
 
+  const toggleBetting = () => {
+    setShowBetting((prev) => !prev);
+  };
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleDeleteConfirm = async () => {
@@ -1006,6 +1012,15 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           <span className="action-text">{t('react')}</span>
         </button>
         
+        {post.type === 'fight' && post.fight && (
+          <button
+            className={`action-btn betting-btn ${showBetting ? 'active' : ''}`}
+            onClick={toggleBetting}
+          >
+            <span className="action-icon">$</span>
+            <span className="action-text">{t('betting') || 'Betting'}</span>
+          </button>
+        )}
         <button className="action-btn share-btn">
           <span className="action-icon">📤</span>
           <span className="action-text">{t('share')}</span>
@@ -1024,6 +1039,16 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           </button>
         )}
       </div>
+      {post.type === 'fight' && post.fight && showBetting && (
+        <div className="betting-inline" onClick={(e) => e.stopPropagation()}>
+          <BettingPanel
+            fightId={post.id}
+            fightTitle={post.title}
+            teamA={post.fight.teamA || 'Team A'}
+            teamB={post.fight.teamB || 'Team B'}
+          />
+        </div>
+      )}
 
       {showDeleteModal && (
         <div className="modal-overlay" onClick={handleDeleteCancel}>

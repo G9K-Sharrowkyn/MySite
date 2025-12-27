@@ -2000,7 +2000,13 @@ body.dark-mode .post-card {
 }
 
 .voting-section.fight-voting {
-  background: linear-gradient(to right, #23242a 0%, #23242a 50%, #23232a 50%, #23232a 100%);
+  background: linear-gradient(
+    to right,
+    var(--bg-secondary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-tertiary) 50%,
+    var(--bg-tertiary) 100%
+  );
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2016,8 +2022,14 @@ body.dark-mode .post-card {
   display: flex;
   justify-content: space-around;
   padding: 15px 25px;
-  border-top: 1px solid #333;
-  background: linear-gradient(to right, #23242a 0%, #23242a 50%, #23232a 50%, #23232a 100%);
+  border-top: 1px solid var(--border-color);
+  background: linear-gradient(
+    to right,
+    var(--bg-secondary) 0%,
+    var(--bg-secondary) 50%,
+    var(--bg-tertiary) 50%,
+    var(--bg-tertiary) 100%
+  );
 }
 
 .fight-voting-actions .animated-vote-btn {

@@ -495,10 +495,10 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                         <div className="warriors horizontal-row">
                           {team.warriors.map((warrior, warriorIndex) => (
                             <div key={warriorIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                              <div className="character-label" style={{ marginBottom: '4px', fontWeight: 700, fontSize: '1rem', textAlign: 'center', color: '#222' }}>
+                              <div className="character-label">
                                 {getCharacterLabel(warriorIndex, t, lang)}
                               </div>
-                              <div className="warrior-pair compact" style={{ background: '#f7f7fa', boxShadow: '0 2px 8px rgba(102,126,234,0.06)', padding: '8px 10px', borderRadius: '10px', width: '220px', minWidth: '220px', maxWidth: '220px', flex: '0 0 220px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                              <div className="warrior-pair compact">
                                 <div className="warrior-inputs" style={{ width: '100%' }}>
                                   <div className="warrior-input" style={{ width: '100%' }}>
                                     <CharacterSelector
@@ -509,7 +509,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                   </div>
                                   {warrior.character && (
                                     <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
-                                      <div style={{ width: '100%', aspectRatio: '9/16', background: '#eee', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ccc' }}>
+                                      <div className="warrior-preview-frame">
                                         <img
                                           {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
                                           alt={warrior.character.name}
@@ -558,10 +558,10 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                     <div className="warriors horizontal-row">
                       {team.warriors.map((warrior, warriorIndex) => (
                         <div key={warriorIndex} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <div className="character-label" style={{ marginBottom: '4px', fontWeight: 700, fontSize: '1rem', textAlign: 'center', color: '#222' }}>
+                          <div className="character-label">
                             {getCharacterLabel(warriorIndex, t, lang)}
                           </div>
-                          <div className="warrior-pair compact" style={{ background: '#f7f7fa', boxShadow: '0 2px 8px rgba(102,126,234,0.06)', padding: '8px 10px', borderRadius: '10px', width: '220px', minWidth: '220px', maxWidth: '220px', flex: '0 0 220px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                          <div className="warrior-pair compact">
                             <div className="warrior-inputs" style={{ width: '100%' }}>
                               <div className="warrior-input" style={{ width: '100%' }}>
                                 <CharacterSelector
@@ -572,7 +572,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                               </div>
                               {warrior.character && (
                                 <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
-                                  <div style={{ width: '100%', aspectRatio: '9/16', background: '#eee', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ccc' }}>
+                                  <div className="warrior-preview-frame">
                                     <img
                                       {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
                                       alt={warrior.character.name}

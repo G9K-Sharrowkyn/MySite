@@ -151,11 +151,6 @@ const Header = () => {
           <Link to="/" className="nav-link">{t('home')}</Link>
           <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
           <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
-          {isLoggedIn && (
-            <>
-              <Link to="/betting" className="nav-link betting-link">💰 {t('betting')}</Link>
-            </>
-          )}
           {isModerator && (
             <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
           )}
