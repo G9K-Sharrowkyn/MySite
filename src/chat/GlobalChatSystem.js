@@ -126,7 +126,7 @@ const GlobalChatSystem = () => {
 
     // Handle active users
     newSocket.on('active-users', (users) => {
-      setActiveUsers(users.filter(u => u.userId !== user.id));
+      setActiveUsers(users.filter(u => u.userId !== userId));
     });
 
     // Handle user joined
@@ -172,7 +172,7 @@ const GlobalChatSystem = () => {
         socketRef.current = null;
       }
     };
-  }, [userId, token]);
+  }, [userId, token, username, profilePicture]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

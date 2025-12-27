@@ -20,13 +20,21 @@ const Header = () => {
   const isModerator = user?.role === 'moderator' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
 
+  const handleLogout = useCallback(() => {
+    logout();
+    setUnreadMessages(0);
+    setUnreadNotifications(0);
+    setShowUserMenu(false);
+    navigate('/');
+  }, [logout, navigate]);
+
   const fetchUserData = useCallback(async () => {
     if (!token) {
       return;
     }
 
     try {
-      const response = await axios.get('/api/profile/me', {
+      await axios.get('/api/profile/me', {
         headers: { 'x-auth-token': token }
       });
       // User data is already managed by AuthContext, so we don't need to set it here
@@ -36,7 +44,7 @@ const Header = () => {
         handleLogout();
       }
     }
-  }, [token]);
+  }, [token, handleLogout]);
 
   const fetchUnreadCounts = useCallback(async () => {
     if (!token) {
@@ -67,7 +75,7 @@ const Header = () => {
         setUnreadNotifications(0);
       }
     }
-  }, [token]);
+  }, [token, handleLogout]);
 
   useEffect(() => {
     if (isLoggedIn) {
@@ -93,14 +101,6 @@ const Header = () => {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  };
-
-  const handleLogout = () => {
-    logout();
-    setUnreadMessages(0);
-    setUnreadNotifications(0);
-    setShowUserMenu(false);
-    navigate('/');
   };
 
   const toggleNotifications = async () => {

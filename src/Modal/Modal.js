@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { useLanguage } from '../i18n/LanguageContext';
 import './Modal.css';
 
 const Modal = ({ 
@@ -16,8 +15,6 @@ const Modal = ({
   showCancelButton = true,
   confirmButtonType = 'primary' // 'primary', 'danger', 'success'
 }) => {
-  const { t } = useLanguage();
-
   useEffect(() => {
     const handleEscape = (e) => {
       if (e.key === 'Escape') {

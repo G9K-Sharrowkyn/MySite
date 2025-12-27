@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './EnhancedBettingSystem.css';
 
@@ -16,13 +15,8 @@ const EnhancedBettingSystem = ({ user }) => {
   const [showActiveBetsModal, setShowActiveBetsModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { t } = useLanguage();
 
-  useEffect(() => {
-    fetchBettingData();
-  }, []);
-
-  const fetchBettingData = async () => {
+  const fetchBettingData = useCallback(async () => {
     try {
       const [fightsRes, coinsRes, historyRes, activeRes] = await Promise.all([
         axios.get('/api/betting/available-fights'),
@@ -38,7 +32,11 @@ const EnhancedBettingSystem = ({ user }) => {
     } catch (error) {
       console.error('Error fetching betting data:', error);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchBettingData();
+  }, [fetchBettingData]);
 
   const placeBet = async (fightId, prediction, amount) => {
     if (!amount || amount <= 0) {
@@ -142,21 +140,6 @@ const EnhancedBettingSystem = ({ user }) => {
         (fight.totalBets?.team1 || 1) / (fight.totalBets?.team2 || 1);
       return total * Math.max(odds, 1.1); // Minimum 1.1 odds
     }, 1);
-  };
-
-  const calculatePotentialWinnings = (fightId, prediction, amount) => {
-    const fight = availableFights.find(f => f.id === fightId);
-    if (!fight) return amount;
-
-    const team1Bets = fight.totalBets?.team1 || 1;
-    const team2Bets = fight.totalBets?.team2 || 1;
-    const totalPool = team1Bets + team2Bets;
-
-    if (prediction === 'team1') {
-      return Math.floor((amount * totalPool) / team1Bets);
-    } else {
-      return Math.floor((amount * totalPool) / team2Bets);
-    }
   };
 
   const getBettingStats = () => {

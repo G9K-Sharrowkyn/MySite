@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useLanguage } from '../i18n/LanguageContext';
 import './PWAConfiguration.css';
 
 const PWAConfiguration = () => {
@@ -8,7 +7,6 @@ const PWAConfiguration = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
   const [pushSubscription, setPushSubscription] = useState(null);
-  const { t } = useLanguage();
 
   useEffect(() => {
     // Check if app is installed
@@ -441,7 +439,7 @@ export const PWAUtils = {
 
   // Check device orientation
   getOrientation: () => {
-    return screen.orientation?.type || 'unknown';
+    return window.screen?.orientation?.type || 'unknown';
   },
 
   // Check if device is mobile

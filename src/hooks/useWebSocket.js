@@ -48,7 +48,7 @@ const useWebSocket = (url, options = {}) => {
     return () => {
       ws.close();
     };
-  }, [url]);
+  }, [url, options]);
 
   const sendMessage = (message) => {
     if (readyState === 1) {

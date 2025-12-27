@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -7,24 +7,13 @@ import './LeaderboardPage.css';
 const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [rankingType, setRankingType] = useState('experience');
-  const [userAchievements, setUserAchievements] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   
   const { t } = useLanguage();
   const currentUserId = localStorage.getItem('userId');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchLeaderboard();
-  }, [rankingType]);
-
-  useEffect(() => {
-    if (currentUserId) {
-      fetchUserAchievements();
-    }
-  }, [currentUserId]);
-
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = useCallback(async () => {
     try {
       const response = await axios.get(`/api/stats/leaderboard?type=${rankingType}&limit=50`);
       const normalized = (response.data || []).map((entry, index) => {
@@ -66,32 +55,11 @@ const LeaderboardPage = () => {
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
     }
-  };
+  }, [rankingType]);
 
-  const fetchUserAchievements = async () => {
-    try {
-      const response = await axios.get(`/api/stats/user/${currentUserId}/achievements`);
-      setUserAchievements(response.data);
-    } catch (error) {
-      console.error('Error fetching user achievements:', error);
-    }
-  };
-
-  const fetchUserDetails = async (userId) => {
-    try {
-      const [statsResponse, achievementsResponse] = await Promise.all([
-        axios.get(`/api/stats/user/${userId}`),
-        axios.get(`/api/stats/user/${userId}/achievements`)
-      ]);
-      
-      setSelectedUser({
-        stats: statsResponse.data,
-        achievements: achievementsResponse.data
-      });
-    } catch (error) {
-      console.error('Error fetching user details:', error);
-    }
-  };
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [fetchLeaderboard]);
 
   const getRankingTypeLabel = (type) => {
     switch (type) {

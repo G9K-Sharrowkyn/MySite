@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
@@ -17,13 +17,13 @@ const ProfilePage = () => {
   // Initialize profile state from localStorage if available
   const storedProfile = localStorage.getItem('cachedProfile');
   const initialProfile = storedProfile ? JSON.parse(storedProfile) : null;
-  const normalizeDescription = (value) => {
+  const normalizeDescription = useCallback((value) => {
     if (typeof value !== 'string') return '';
     const trimmed = value.trim();
     if (!trimmed) return '';
     if (trimmed.toLowerCase() === 'nodescription') return '';
     return trimmed;
-  };
+  }, []);
 
   const [profile, setProfile] = useState(initialProfile);
   const [comments, setComments] = useState([]);
@@ -35,7 +35,6 @@ const ProfilePage = () => {
   const [profilePicture, setProfilePicture] = useState(initialProfile?.profilePicture || '');
   const [backgroundImage, setBackgroundImage] = useState(initialProfile?.profile?.backgroundImage || '');
   const [loading, setLoading] = useState(initialProfile === null); // only true if no profile yet
-  const [isFetching, setIsFetching] = useState(false); // new state for background fetching
   const [error, setError] = useState(null);
   const [posts, setPosts] = useState([]);
   const [contentFilter, setContentFilter] = useState('all');
@@ -51,21 +50,34 @@ const ProfilePage = () => {
     (userId === 'me' ? currentUserId : null);
   const isOwner = Boolean(currentUserId && resolvedUserId && currentUserId === resolvedUserId);
 
-  useEffect(() => {
-    if (!actualUserId) {
-      setError(t('profileNotFound') || 'Cannot find your profile. Please log in again.');
-      setLoading(false);
-      return;
-    }
-    fetchProfile(actualUserId);
-  }, [actualUserId]);
 
-  const fetchProfile = async (id) => {
-    if (profile === null) {
-      setLoading(true);
-    } else {
-      setIsFetching(true);
+  const fetchComments = useCallback(async (id) => {
+    try {
+      const res = await axios.get(`/api/comments/user/${id}`);
+      setComments(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error('Błąd podczas pobierania komentarzy:', err);
     }
+  }, []);
+
+  const fetchUserPosts = useCallback(async (id) => {
+    try {
+      const response = await axios.get(`/api/posts/user/${id}`);
+      const postsWithImages = response.data.map(post => ({
+        ...post,
+        author: {
+          ...post.author,
+          profilePicture: replacePlaceholderUrl(post.author?.profilePicture)
+        }
+      }));
+      setPosts(postsWithImages);
+    } catch (error) {
+      console.error('Error fetching user posts:', error);
+    }
+  }, []);
+
+  const fetchProfile = useCallback(async (id) => {
+    setLoading(true);
     setError(null);
     try {
       let res;
@@ -75,7 +87,6 @@ const ProfilePage = () => {
         if (!token) {
           setError(t('profileNotFound') || 'Cannot find your profile. Please log in again.');
           setLoading(false);
-          setIsFetching(false);
           return;
         }
         res = await axios.get('/api/profile/me', {
@@ -101,25 +112,24 @@ const ProfilePage = () => {
         navigate(`/profile/${res.data.username}`, { replace: true });
       }
       setLoading(false);
-      setIsFetching(false);
       // Update localStorage cache
       localStorage.setItem('cachedProfile', JSON.stringify(res.data));
     } catch (err) {
       console.error('Profile fetch error:', err);
       setError(t('profileFetchError') || 'Error loading profile or profile does not exist.');
       setLoading(false);
-      setIsFetching(false);
     }
-  };
+  }, [fetchComments, fetchUserPosts, navigate, normalizeDescription, t, userId]);
+  useEffect(() => {
+    if (!actualUserId) {
+      setError(t('profileNotFound') || 'Cannot find your profile. Please log in again.');
+      setLoading(false);
+      return;
+    }
+    fetchProfile(actualUserId);
+  }, [actualUserId, fetchProfile, t]);
 
-  const fetchComments = async (id) => {
-    try {
-      const res = await axios.get(`/api/comments/user/${id}`);
-      setComments(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error('Błąd podczas pobierania komentarzy:', err);
-    }
-  };
+
 
 const handleCommentSubmit = async (e) => {
   e.preventDefault();
@@ -164,21 +174,6 @@ const handleCommentSubmit = async (e) => {
     }
   };
 
-  const fetchUserPosts = async (id) => {
-    try {
-      const response = await axios.get(`/api/posts/user/${id}`);
-      const postsWithImages = response.data.map(post => ({
-        ...post,
-        author: {
-          ...post.author,
-          profilePicture: replacePlaceholderUrl(post.author?.profilePicture)
-        }
-      }));
-      setPosts(postsWithImages);
-    } catch (error) {
-      console.error('Error fetching user posts:', error);
-    }
-  };
 
   const handleFilterChange = (filter) => {
     setContentFilter(filter);

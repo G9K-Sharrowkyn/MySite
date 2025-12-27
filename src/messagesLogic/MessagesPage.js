@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Link, useSearchParams } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
@@ -20,25 +20,7 @@ const MessagesPage = () => {
   const token = localStorage.getItem('token');
   const currentUserId = localStorage.getItem('userId');
 
-  useEffect(() => {
-    if (token) {
-      fetchConversations();
-      
-      // Check if there's a 'to' parameter in URL and start conversation
-      const toUserId = searchParams.get('to');
-      const toUsername = searchParams.get('username');
-      if (toUserId && toUsername) {
-        const user = {
-          id: toUserId,
-          username: toUsername
-        };
-        startConversationWithUser(user);
-        setShowNewMessage(false); // Hide new message panel if open
-      }
-    }
-  }, [token, searchParams]);
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       const response = await axios.get('/api/messages', {
         headers: { 'x-auth-token': token }
@@ -77,9 +59,9 @@ const MessagesPage = () => {
       console.error('Error fetching conversations:', error);
       setLoading(false);
     }
-  };
+  }, [token, currentUserId]);
 
-  const searchUsers = async (query) => {
+  const searchUsers = useCallback(async (query) => {
     if (!query.trim()) {
       setUsers([]);
       return;
@@ -93,7 +75,7 @@ const MessagesPage = () => {
     } catch (error) {
       console.error('Error searching users:', error);
     }
-  };
+  }, [token]);
 
   // Debounce search
   useEffect(() => {
@@ -105,9 +87,9 @@ const MessagesPage = () => {
       }
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, showNewMessage]);
+  }, [searchQuery, showNewMessage, searchUsers]);
 
-  const fetchConversation = async (userId) => {
+  const fetchConversation = useCallback(async (userId) => {
     try {
       const response = await axios.get(`/api/messages/conversation/${userId}`, {
         headers: { 'x-auth-token': token }
@@ -120,7 +102,7 @@ const MessagesPage = () => {
     } catch (error) {
       console.error('Error fetching conversation:', error);
     }
-  };
+  }, [fetchConversations, token]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
@@ -143,10 +125,28 @@ const MessagesPage = () => {
     }
   };
 
-  const startConversationWithUser = (user) => {
+  const startConversationWithUser = useCallback((user) => {
     setSelectedConversation(user);
     fetchConversation(user.id);
-  };
+  }, [fetchConversation]);
+
+  useEffect(() => {
+    if (token) {
+      fetchConversations();
+
+      // Check if there's a 'to' parameter in URL and start conversation
+      const toUserId = searchParams.get('to');
+      const toUsername = searchParams.get('username');
+      if (toUserId && toUsername) {
+        const user = {
+          id: toUserId,
+          username: toUsername
+        };
+        startConversationWithUser(user);
+        setShowNewMessage(false); // Hide new message panel if open
+      }
+    }
+  }, [fetchConversations, searchParams, startConversationWithUser, token]);
 
   const startNewConversation = (user) => {
     setSelectedConversation(user);

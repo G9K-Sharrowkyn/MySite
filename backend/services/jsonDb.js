@@ -3,7 +3,11 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = path.resolve(__dirname, '..', 'db.json');
+const rawDbPath =
+  typeof process.env.JSON_DB_PATH === 'string' && process.env.JSON_DB_PATH.trim()
+    ? process.env.JSON_DB_PATH.trim()
+    : 'db.json';
+const DB_PATH = path.resolve(__dirname, '..', rawDbPath);
 
 const DEFAULT_DB = {
   users: [],

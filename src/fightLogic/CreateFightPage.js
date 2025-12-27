@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
@@ -24,31 +24,25 @@ const CreateFightPage = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchCategories();
-    fetchCharacters();
-    fetchUserData();
-  }, []);
-
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await axios.get('/api/fights/categories');
       setCategories(response.data);
     } catch (error) {
       console.error('Error fetching categories:', error);
     }
-  };
+  }, []);
 
-  const fetchCharacters = async () => {
+  const fetchCharacters = useCallback(async () => {
     try {
       const response = await axios.get('/api/characters');
       setCharacters(response.data);
     } catch (error) {
       console.error('Error fetching characters:', error);
     }
-  };
+  }, []);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) {
       navigate('/login');
@@ -64,7 +58,13 @@ const CreateFightPage = () => {
       console.error('Error fetching user data:', error);
       navigate('/login');
     }
-  };
+  }, [navigate]);
+
+  useEffect(() => {
+    fetchCategories();
+    fetchCharacters();
+    fetchUserData();
+  }, [fetchCategories, fetchCharacters, fetchUserData]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;

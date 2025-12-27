@@ -1,19 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import './VirtualCoinsSystem.css';
 
 const VirtualCoinsSystem = ({ user }) => {
   const [userCoins, setUserCoins] = useState(0);
   const [coinHistory, setCoinHistory] = useState([]);
-  const [storeItems, setStoreItems] = useState([]);
   const [userInventory, setUserInventory] = useState([]);
   const [dailyTasks, setDailyTasks] = useState([]);
-  const [achievements, setAchievements] = useState([]);
   const [bettingHistory, setBettingHistory] = useState([]);
   const [currentBets, setCurrentBets] = useState([]);
   const [selectedStoreCategory, setSelectedStoreCategory] = useState('titles');
-  const { t } = useLanguage();
 
   // Store categories and items
   const storeCategories = {
@@ -87,18 +83,13 @@ const VirtualCoinsSystem = ({ user }) => {
     { action: 'Friend Referral', amount: 100, icon: '👥' }
   ];
 
-  useEffect(() => {
-    fetchEconomyData();
-  }, []);
-
-  const fetchEconomyData = async () => {
+  const fetchEconomyData = useCallback(async () => {
     try {
       const [
         coinsRes,
         historyRes,
         inventoryRes,
         tasksRes,
-        achievementsRes,
         bettingHistoryRes,
         currentBetsRes
       ] = await Promise.all([
@@ -106,7 +97,6 @@ const VirtualCoinsSystem = ({ user }) => {
         axios.get(`/api/users/${user?.id}/coin-history`),
         axios.get(`/api/users/${user?.id}/inventory`),
         axios.get(`/api/users/${user?.id}/daily-tasks`),
-        axios.get(`/api/users/${user?.id}/achievements`),
         axios.get(`/api/users/${user?.id}/betting-history`),
         axios.get(`/api/users/${user?.id}/current-bets`)
       ]);
@@ -115,13 +105,16 @@ const VirtualCoinsSystem = ({ user }) => {
       setCoinHistory(historyRes.data || []);
       setUserInventory(inventoryRes.data || []);
       setDailyTasks(tasksRes.data || []);
-      setAchievements(achievementsRes.data || []);
       setBettingHistory(bettingHistoryRes.data || []);
       setCurrentBets(currentBetsRes.data || []);
     } catch (error) {
       console.error('Error fetching economy data:', error);
     }
-  };
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchEconomyData();
+  }, [fetchEconomyData]);
 
   const purchaseItem = async (itemId, category) => {
     const item = storeCategories[category].items.find(i => i.id === itemId);

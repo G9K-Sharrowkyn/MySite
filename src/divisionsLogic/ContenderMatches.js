@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import PostCard from '../postLogic/PostCard';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
@@ -13,14 +13,7 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    fetchContenderMatches();
-    if (currentUser?.role === 'moderator') {
-      fetchDivisionMembers();
-    }
-  }, [divisionId]);
-
-  const fetchContenderMatches = async () => {
+  const fetchContenderMatches = useCallback(async () => {
     try {
       const response = await axios.get(`/api/divisions/${divisionId}/contender-matches`);
       setContenderMatches(response.data);
@@ -29,9 +22,9 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
       console.error('Error fetching contender matches:', error);
       setLoading(false);
     }
-  };
+  }, [divisionId]);
 
-  const fetchDivisionMembers = async () => {
+  const fetchDivisionMembers = useCallback(async () => {
     try {
       const response = await axios.get(`/api/divisions/${divisionId}/members`);
       // Filter out current champion and #1 contenders
@@ -43,7 +36,14 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
     } catch (error) {
       console.error('Error fetching division members:', error);
     }
-  };
+  }, [divisionId]);
+
+  useEffect(() => {
+    fetchContenderMatches();
+    if (currentUser?.role === 'moderator') {
+      fetchDivisionMembers();
+    }
+  }, [currentUser?.role, fetchContenderMatches, fetchDivisionMembers]);
 
   const handleCreateContenderMatch = async (e) => {
     e.preventDefault();

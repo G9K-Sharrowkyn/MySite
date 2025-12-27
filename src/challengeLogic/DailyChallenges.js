@@ -1,22 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
 import './DailyChallenges.css';
 
 const DailyChallenges = ({ user }) => {
   const [challenges, setChallenges] = useState([]);
-  const [userProgress, setUserProgress] = useState({});
+  const [, setUserProgress] = useState({});
   const [streak, setStreak] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
   const { t } = useLanguage();
 
-  useEffect(() => {
-    fetchDailyChallenges();
-    fetchUserProgress();
-  }, []);
 
-  const challengeTypes = {
+  const challengeTypes = useMemo(() => ({
     FIGHT_CREATION: {
       id: 'fight_creation',
       title: t('createFightsChallenge') || 'Fight Creator',
@@ -101,38 +97,16 @@ const DailyChallenges = ({ user }) => {
         { goal: 3, reward: { xp: 750, coins: 375 }, description: 'Join 3 tournaments' }
       ]
     }
-  };
+  }), [t]);
 
-  const fetchDailyChallenges = async () => {
-    try {
-      // Generate daily challenges based on current date
-      const today = new Date().toDateString();
-      const storedDate = localStorage.getItem('dailyChallengesDate');
-      
-      if (storedDate === today) {
-        const storedChallenges = JSON.parse(localStorage.getItem('dailyChallenges') || '[]');
-        if (storedChallenges.length > 0) {
-          setChallenges(storedChallenges);
-          setLoading(false);
-          return;
-        }
-      }
+  const getTimeUntilMidnight = useCallback(() => {
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setHours(24, 0, 0, 0);
+    return midnight.getTime() - now.getTime();
+  }, []);
 
-      // Generate new challenges for today
-      const todayChallenges = generateDailyChallenges();
-      setChallenges(todayChallenges);
-      
-      localStorage.setItem('dailyChallenges', JSON.stringify(todayChallenges));
-      localStorage.setItem('dailyChallengesDate', today);
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching daily challenges:', error);
-      setLoading(false);
-    }
-  };
-
-  const generateDailyChallenges = () => {
+  const generateDailyChallenges = useCallback(() => {
     const availableTypes = Object.values(challengeTypes);
     const selectedTypes = [];
     
@@ -172,16 +146,42 @@ const DailyChallenges = ({ user }) => {
         completed: false
       };
     });
-  };
+  }, [challengeTypes, getTimeUntilMidnight]);
 
-  const getTimeUntilMidnight = () => {
-    const now = new Date();
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
-    return midnight.getTime() - now.getTime();
-  };
+  const fetchDailyChallenges = useCallback(async () => {
+    try {
+      // Generate daily challenges based on current date
+      const today = new Date().toDateString();
+      const storedDate = localStorage.getItem('dailyChallengesDate');
+      
+      if (storedDate === today) {
+        const storedChallenges = JSON.parse(localStorage.getItem('dailyChallenges') || '[]');
+        if (storedChallenges.length > 0) {
+          setChallenges(storedChallenges);
+          setLoading(false);
+          return;
+        }
+      }
 
-  const fetchUserProgress = async () => {
+      // Generate new challenges for today
+      const todayChallenges = generateDailyChallenges();
+      setChallenges(todayChallenges);
+      
+      localStorage.setItem('dailyChallenges', JSON.stringify(todayChallenges));
+      localStorage.setItem('dailyChallengesDate', today);
+      
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching daily challenges:', error);
+      setLoading(false);
+    }
+  }, [generateDailyChallenges]);
+
+  const fetchUserProgress = useCallback(async () => {
+    if (!user?.id) {
+      return;
+    }
+
     try {
       const response = await axios.get(`/api/challenges/progress/${user?.id}`);
       setUserProgress(response.data.progress || {});
@@ -189,93 +189,12 @@ const DailyChallenges = ({ user }) => {
     } catch (error) {
       console.error('Error fetching user progress:', error);
     }
-  };
+  }, [user?.id]);
 
-  const completeChallenge = async (challengeId) => {
-    try {
-      const challenge = challenges.find(c => c.id === challengeId);
-      if (!challenge || challenge.completed) return;
-
-      const updatedChallenges = challenges.map(c => 
-        c.id === challengeId 
-          ? { ...c, completed: true, progress: c.goal }
-          : c
-      );
-      
-      setChallenges(updatedChallenges);
-      
-      // Award rewards
-      await awardRewards(challenge.reward);
-      
-      // Show completion notification
-      showCompletionNotification(challenge);
-      
-      // Update streak if all daily challenges completed
-      const allCompleted = updatedChallenges.every(c => c.completed);
-      if (allCompleted) {
-        setStreak(prev => prev + 1);
-        showStreakNotification(streak + 1);
-      }
-      
-    } catch (error) {
-      console.error('Error completing challenge:', error);
-    }
-  };
-
-  const awardRewards = async (reward) => {
-    try {
-      await axios.post('/api/user/rewards', {
-        userId: user.id,
-        reward
-      });
-    } catch (error) {
-      console.error('Error awarding rewards:', error);
-    }
-  };
-
-  const showCompletionNotification = (challenge) => {
-    // Create floating notification
-    const notification = document.createElement('div');
-    notification.className = 'challenge-completion-notification';
-    notification.innerHTML = `
-      <div class="notification-content">
-        <div class="notification-icon">${challenge.icon}</div>
-        <div class="notification-text">
-          <h4>Challenge Completed!</h4>
-          <p>${challenge.title}</p>
-          <div class="rewards">
-            +${challenge.reward.xp} XP • +${challenge.reward.coins} Coins
-          </div>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.classList.add('fade-out');
-      setTimeout(() => document.body.removeChild(notification), 500);
-    }, 3000);
-  };
-
-  const showStreakNotification = (streakCount) => {
-    const notification = document.createElement('div');
-    notification.className = 'streak-notification';
-    notification.innerHTML = `
-      <div class="streak-content">
-        <div class="streak-icon">🔥</div>
-        <h3>${streakCount} Day Streak!</h3>
-        <p>All daily challenges completed!</p>
-      </div>
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.classList.add('fade-out');
-      setTimeout(() => document.body.removeChild(notification), 500);
-    }, 4000);
-  };
+  useEffect(() => {
+    fetchDailyChallenges();
+    fetchUserProgress();
+  }, [fetchDailyChallenges, fetchUserProgress]);
 
   const formatTimeLeft = (milliseconds) => {
     const hours = Math.floor(milliseconds / (1000 * 60 * 60));
@@ -470,3 +389,6 @@ const DailyChallenges = ({ user }) => {
 };
 
 export default DailyChallenges;
+
+
+

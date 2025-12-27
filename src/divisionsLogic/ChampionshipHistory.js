@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import './ChampionshipHistory.css';
 
 const ChampionshipHistory = ({ divisionId, divisionName, initialHistory }) => {
@@ -9,7 +8,17 @@ const ChampionshipHistory = ({ divisionId, divisionName, initialHistory }) => {
   );
   const [loading, setLoading] = useState(!Array.isArray(initialHistory));
   const [showModal, setShowModal] = useState(false);
-  const { t } = useLanguage();
+
+  const fetchChampionshipHistory = useCallback(async () => {
+    try {
+      const response = await axios.get(`/api/divisions/${divisionId}/championship-history`);
+      setHistory(response.data || []);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching championship history:', error);
+      setLoading(false);
+    }
+  }, [divisionId]);
 
   useEffect(() => {
     if (Array.isArray(initialHistory)) {
@@ -19,18 +28,7 @@ const ChampionshipHistory = ({ divisionId, divisionName, initialHistory }) => {
     }
 
     fetchChampionshipHistory();
-  }, [divisionId, initialHistory]);
-
-  const fetchChampionshipHistory = async () => {
-    try {
-      const response = await axios.get(`/api/divisions/${divisionId}/championship-history`);
-      setHistory(response.data || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching championship history:', error);
-      setLoading(false);
-    }
-  };
+  }, [divisionId, initialHistory, fetchChampionshipHistory]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -49,10 +47,6 @@ const ChampionshipHistory = ({ divisionId, divisionName, initialHistory }) => {
     return history.reduce((most, current) => 
       current.titleDefenses > most.titleDefenses ? current : most
     );
-  };
-
-  const getCurrentChampion = () => {
-    return history.find(h => !h.endDate) || (history.length > 0 && !history[0].endDate ? history[0] : null);
   };
 
   if (loading) return <div className="loading">Loading championship history...</div>;

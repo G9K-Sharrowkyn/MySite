@@ -1,155 +1,53 @@
-PS F:\Teksty\Programming\Site1\my-site> npm run dev
+                                        npm run lint 
 
-> my-site@0.1.0 dev
-> concurrently "npm run backend" "npm start"
+> my-site@0.1.0 lint
+> eslint src
 
-[0] 
-[0] > my-site@0.1.0 backend
-[0] > cd backend && node server.js
-[0] 
-[1] 
-[1] > my-site@0.1.0 start
-[1] > react-scripts start
-[1] 
-[0] [dotenv@17.0.1] injecting env (5) from .env – [tip] encrypt with dotenvx: https://dotenvx.com
-[0] Server is running on port 5001
-[1] (node:4020) [DEP0176] DeprecationWarning: fs.F_OK is deprecated, use fs.constants.F_OK instead
-[1] (Use `node --trace-deprecation ...` to show where the warning was created)
-[1] Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
-[1]   npx update-browserslist-db@latest
-[1]   Why you should do it regularly: https://github.com/browserslist/update-db#readme
-[1] [HPM] Proxy created: /  -> http://localhost:5001
-[1] [HPM] Proxy created: /  -> http://localhost:5001
-[1] (node:4020) [DEP_WEBPACK_DEV_SERVER_ON_AFTER_SETUP_MIDDLEWARE] DeprecationWarning: 'onAfterSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-[1] (node:4020) [DEP_WEBPACK_DEV_SERVER_ON_BEFORE_SETUP_MIDDLEWARE] DeprecationWarning: 'onBeforeSetupMiddleware' option is deprecated. Please use the 'setupMiddlewares' option.
-[1] Starting the development server...
-[1]
-[1] Compiled with warnings.
-[1]
-[1] [eslint]
-[1] src\chat\GlobalChatSystem.js
-[1]   Line 167:6:  React Hook useEffect has missing dependencies: 'profilePicture', 'user.id', and 'username'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
-[1]
-[1] Search for the keywords to learn more about each warning.
-[1] To ignore, add // eslint-disable-next-line to the line before.       
-[1]
-[1] WARNING in [eslint]
-[1] src\chat\GlobalChatSystem.js
-[1]   Line 167:6:  React Hook useEffect has missing dependencies: 'profilePicture', 'user.id', and 'username'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
-[1]
-[1] webpack compiled with 1 warning
-[1] (node:4020) [DEP0060] DeprecationWarning: The `util._extend` API is deprecated. Please use Object.assign() instead.
-[0] GET /api/profile/me 304 27.015 ms - -
-[0] GET /api/profile/me 304 24.179 ms - -
-[0] GET /api/profile/me 304 28.395 ms - -
-[0] New client connected: Nw0ZoK040NmpxU_JAAAC
-[0] GET /api/notifications/unread/count 304 9.925 ms - -
-[0] GET /api/messages/unread/count 304 18.792 ms - -
-[0] GET /api/characters 304 21.247 ms - -
-[0] GET /api/profile/me 304 28.250 ms - -
-[0] GET /api/posts?page=1&limit=10&sortBy=createdAt 304 43.501 ms - -    
-[0] GET /api/notifications/unread/count 304 52.879 ms - -
-[0] GET /api/messages/unread/count 304 24.753 ms - -
-[0] GET /api/characters 304 15.050 ms - -
-[0] GET /api/posts?page=1&limit=10&sortBy=createdAt 304 25.356 ms - -    
-[0] GET /api/characters 304 9.481 ms - -
-[0] GET /characters/Yoda%20(Legends)(SW).webp 304 0.886 ms - -
-[0] New client connected: pQHtqvjJLrV-F0jQAAAE
-[0] GET /characters/Darth%20Plagueis%20(Legends)(SW).webp 304 1.031 ms - -
-[0] GET /characters/Batman%20(New52).jpg 304 0.956 ms - -
-[0] GET /characters/Black%20Adam%20(New52).jpg 304 0.983 ms - -
-[0] GET /characters/Anti-Monitor%20(New52).webp 304 1.646 ms - -
-[0] GET /characters/Scarlet%20King.jpg 304 0.797 ms - -
-[0] GET /characters/Azrael%20(Dark%20Multiverse).jpg 304 0.236 ms - -    
-[0] GET /characters/Sentry%20(Composite).jpg 304 0.776 ms - -
-[0] GET /characters/Darkseid%20(New52).jpg 304 0.782 ms - -
-[0] GET /characters/Deadpool%20(DKMU).jpg 304 1.685 ms - -
-[0] GET /characters/Vegeta%20(SSJ4).webp 304 1.101 ms - -
-[0] GET /characters/Broly%20(DBZ).jpg 304 1.130 ms - -
-[0] GET /characters/Superman%20(New52).webp 304 1.073 ms - -
-[0] GET /characters/thumbs/Yoda%20(Legends)(SW).webp 304 0.544 ms - -
-[0] GET /characters/thumbs/Darth%20Plagueis%20(Legends)(SW).webp 304 0.627 ms - -
-[0] GET /characters/thumbs/Batman%20(New52).webp 304 1.473 ms - -        
-[0] GET /characters/thumbs/Black%20Adam%20(New52).webp 304 0.964 ms - -  
-[0] GET /characters/thumbs/Anti-Monitor%20(New52).webp 304 0.999 ms - -  
-[0] GET /characters/thumbs/Scarlet%20King.webp 304 0.929 ms - -
-[0] GET /characters/thumbs/Azrael%20(Dark%20Multiverse).webp 304 0.499 ms - -
-[0] GET /characters/thumbs/Sentry%20(Composite).webp 304 0.756 ms - -    
-[0] GET /characters/thumbs/Darkseid%20(New52).webp 304 0.406 ms - -      
-[0] GET /characters/thumbs/Deadpool%20(DKMU).webp 304 0.684 ms - -       
-[0] GET /characters/thumbs/Vegeta%20(SSJ4).webp 304 0.698 ms - -
-[0] GET /characters/thumbs/Broly%20(DBZ).webp 304 0.713 ms - -
-[0] New client connected: C-pJeI4ijhaSzkIhAAAG
-[0] Client disconnected: C-pJeI4ijhaSzkIhAAAG transport error
-[0] GET /characters/thumbs/Superman%20(New52).webp 304 0.262 ms - -
-[0] New client connected: 7B3wpJuXeT_wP5LoAAAI
-[0] New client connected: PLfl8_PhaLAAkN-7AAAK
-[0] New client connected: PFsFht-Ixl1W45iVAAAM
-[0] New client connected: oFxDPYwcTRlt-krGAAAO
-[0] New client connected: 9scWQChTn-JzCn6OAAAQ
-[0] New client connected: fM0qvv_alC1LNYPlAAAS
-[0] Client disconnected: fM0qvv_alC1LNYPlAAAS transport error
-[0] New client connected: LNX5zh5sgXlIMp33AAAU
-[0] New client connected: 0IaxA3RFu7oxiGWgAAAW
-[0] New client connected: LMKOjlsPwmCeMaT-AAAY
-[0] New client connected: vCRZTOS1N8NsTPbzAAAa
-[0] New client connected: gfkfWQyhZMmyyhZtAAAc
-[0] New client connected: robMQe3YqdRorD1YAAAe
-[0] Client disconnected: robMQe3YqdRorD1YAAAe transport error
-[0] New client connected: 46gbroRYtdmUaG0YAAAg
-[0] New client connected: q1LrKDPHPgGo7g91AAAi
+PS F:\Teksty\Programming\Site1\my-site> npm test -- --watchAll=false  
 
-GlobalChatSystem.js:81 
- POST http://localhost:5001/socket.io/?EIO=4&transport=polling&t=nm8zgusq&sid=GiRgPIC50wNK0NdBAAA3 413 (Payload Too Large)
-(anonymous)	@	GlobalChatSystem.js:81
-XMLHttpRequest.send		
-(anonymous)	@	GlobalChatSystem.js:81
-XMLHttpRequest.send		
-(anonymous)	@	GlobalChatSystem.js:81
+> my-site@0.1.0 test
+> react-scripts test --watchAll=false
 
-GlobalChatSystem.js:89 Disconnected from chat server: transport error
-GlobalChatSystem.js:77 Connected to chat server
-GlobalChatSystem.js:81 
- POST http://localhost:5001/socket.io/?EIO=4&transport=polling&t=nma09fh7&sid=ekIqJZVZMcaCYpKVAAA5 413 (Payload Too Large)
-(anonymous)	@	GlobalChatSystem.js:81
-XMLHttpRequest.send		
-(anonymous)	@	GlobalChatSystem.js:81
-XMLHttpRequest.send		
-(anonymous)	@	GlobalChatSystem.js:81
-XMLHttpRequest.send		
-(anonymous)	@	GlobalChatSystem.js:81
-GlobalChatSystem.js:89 Disconnected from chat server: transport error
-GlobalChatSystem.js:77 Connected to chat server
-GlobalChatSystem.js:89 Disconnected from chat server: transport close
-Header.js:61 Error fetching unread counts: 
-AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
-code
-: 
-"ERR_NETWORK"
-config
-: 
-{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 0, …}
-message
-: 
-"Network Error"
-name
-: 
-"AxiosError"
-request
-: 
-XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 0, withCredentials: false, upload: XMLHttpRequestUpload, …}
-stack
-: 
-"AxiosError: Network Error\n    at XMLHttpRequest.handleError (http://localhost:3000/static/js/bundle.js:1045:14)\n    at Axios.request (http://localhost:3000/static/js/bundle.js:1495:41)\n    at async Promise.all (index 1)\n    at async http://localhost:3000/static/js/bundle.js:61742:57"
-[[Prototype]]
-: 
-Error
-(anonymous)	@	Header.js:61
-await in (anonymous)		
-(anonymous)	@	Header.js:78
-Header.js:52 
- GET http://localhost:3000/api/notifications/unread/count net::ERR_CONNECTION_RESET
-(anonymous)	@	Header.js:52
-(anonymous)	@	Header.js:78
-GlobalChatSystem.js:81 
- GET http://localhost:5001/socket.io/?EIO=4&transport=polling&t=nma07qd9&sid=ekIqJZVZMcaCYpKVAAA5 net::ERR_CONNECTION_REFUSED
+ PASS  src/postLogic/Feed.test.js
+ PASS  src/postLogic/PostPage.test.js
+ PASS  src/profileLogic/ProfilePage.test.js                              
+ PASS  src/App.test.js
+
+Test Suites: 4 passed, 4 total
+Tests:       4 passed, 4 total
+Snapshots:   0 total
+Time:        1.947 s, estimated 4 s
+Ran all test suites.
+PS F:\Teksty\Programming\Site1\my-site> cd backend
+PS F:\Teksty\Programming\Site1\my-site\backend> npm test
+
+> backend@1.0.0 test
+> node --experimental-vm-modules ./node_modules/jest/bin/jest.js
+
+(node:34508) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)  
+(node:27676) ExperimentalWarning: VM Modules is an experimental feature and might change at any time                                              
+(Use `node --trace-warnings ...` to show where the warning was created)  
+ PASS  tests/commentController.test.js                                   
+ PASS  tests/postController.test.js
+(node:24732) ExperimentalWarning: VM Modules is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)  
+ PASS  tests/authController.test.js
+
+Test Suites: 3 passed, 3 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        1.076 s, estimated 5 s
+Ran all test suites.
+PS F:\Teksty\Programming\Site1\my-site\backend> cd ..
+PS F:\Teksty\Programming\Site1\my-site> npm run test:e2e
+
+> my-site@0.1.0 test:e2e
+> playwright test
+
+
+Running 3 tests using 1 worker
+
+  ✓  1 …e.spec.js:3:1 › guest sees the landing page call to action (1.3s)  ✓  2 …at.spec.js:10:1 › user can log in and open the global chat (5.1s)  ✓  3 …e.spec.js:10:1 › user can register and reach their profile (2.7s)
+                                                                          3 passed (11.0s)
+PS F:\Teksty\Programming\Site1\my-site> 

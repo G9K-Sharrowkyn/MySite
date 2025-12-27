@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './CharacterRecommendations.css';
 
@@ -10,7 +9,6 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
-  const { t } = useLanguage();
 
   const categories = {
     all: { name: 'All Recommendations', icon: '🌟' },
@@ -22,12 +20,9 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
     perfectMatch: { name: 'Perfect Matches', icon: '🎯' }
   };
 
-  useEffect(() => {
-    analyzeUserProfile();
-    generateRecommendations();
-  }, [user]);
 
-  const analyzeUserProfile = async () => {
+  const analyzeUserProfile = useCallback(async () => {
+    if (!user?.id) return;
     try {
       // Analyze user's fighting history, character preferences, voting patterns
       const response = await axios.get(`/api/users/${user.id}/profile-analysis`);
@@ -57,46 +52,9 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
         activityLevel: 'moderate'
       });
     }
-  };
+  }, [user?.id]);
 
-  const generateRecommendations = async () => {
-    try {
-      const allCharacters = await fetchAllCharacters();
-      const userBehavior = await fetchUserBehavior();
-      
-      const recommendations = {
-        similar: generateSimilarRecommendations(allCharacters, userBehavior),
-        popular: generatePopularRecommendations(allCharacters),
-        powerful: generatePowerfulRecommendations(allCharacters),
-        underrated: generateUnderratedRecommendations(allCharacters, userBehavior),
-        newToYou: generateNewDiscoveries(allCharacters, userBehavior),
-        perfectMatch: generatePerfectMatches(allCharacters, userBehavior)
-      };
-
-      setRecommendations(recommendations);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error generating recommendations:', error);
-      setLoading(false);
-    }
-  };
-
-  const fetchAllCharacters = async () => {
-    const response = await axios.get('/api/characters');
-    return response.data.map(char => ({
-      ...char,
-      powerScore: calculatePowerScore(char),
-      popularityScore: Math.random() * 100,
-      compatibilityScore: 0
-    }));
-  };
-
-  const fetchUserBehavior = async () => {
-    const response = await axios.get(`/api/users/${user.id}/behavior`);
-    return response.data;
-  };
-
-  const calculatePowerScore = (character) => {
+  const calculatePowerScore = useCallback((character) => {
     const universePowerMap = {
       'Dragon Ball': 95,
       'Marvel': 85,
@@ -114,9 +72,51 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
     const namePowerBoost2 = character.name.toLowerCase().includes('ultra') ? 15 : 0;
     
     return Math.min(100, basePower + namePowerBoost + namePowerBoost2 + Math.random() * 10);
-  };
+  }, []);
 
-  const calculateCompatibilityScore = (character, userBehavior) => {
+  const getPowerCategory = useCallback((powerScore) => {
+    if (powerScore >= 90) return 'cosmic';
+    if (powerScore >= 75) return 'high';
+    if (powerScore >= 50) return 'medium';
+    return 'low';
+  }, []);
+
+  const fetchAllCharacters = useCallback(async () => {
+    const response = await axios.get('/api/characters');
+    return response.data.map(char => ({
+      ...char,
+      powerScore: calculatePowerScore(char),
+      popularityScore: Math.random() * 100,
+      compatibilityScore: 0
+    }));
+  }, [calculatePowerScore]);
+
+  const fetchUserBehavior = useCallback(async () => {
+    if (!user?.id) return {};
+    const response = await axios.get(`/api/users/${user.id}/behavior`);
+    return response.data;
+  }, [user?.id]);
+
+
+
+
+
+
+
+
+  const calculateSimilarCharacterWinRate = useCallback((character, userBehavior) => {
+    // Calculate win rate with characters from the same universe
+    const sameUniverseChars = userBehavior.fightResults?.filter(
+      fight => fight.character?.universe === character.universe
+    ) || [];
+    
+    if (sameUniverseChars.length === 0) return 50;
+    
+    const wins = sameUniverseChars.filter(fight => fight.won).length;
+    return (wins / sameUniverseChars.length) * 100;
+  }, []);
+
+  const calculateCompatibilityScore = useCallback((character, userBehavior) => {
     let score = 0;
 
     // Universe preference (30% weight)
@@ -145,28 +145,11 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
     }
 
     return Math.min(100, score);
-  };
+  }, [calculateSimilarCharacterWinRate, getPowerCategory, userProfile]);
 
-  const getPowerCategory = (powerScore) => {
-    if (powerScore >= 90) return 'cosmic';
-    if (powerScore >= 75) return 'high';
-    if (powerScore >= 50) return 'medium';
-    return 'low';
-  };
 
-  const calculateSimilarCharacterWinRate = (character, userBehavior) => {
-    // Calculate win rate with characters from the same universe
-    const sameUniverseChars = userBehavior.fightResults?.filter(
-      fight => fight.character?.universe === character.universe
-    ) || [];
-    
-    if (sameUniverseChars.length === 0) return 50;
-    
-    const wins = sameUniverseChars.filter(fight => fight.won).length;
-    return (wins / sameUniverseChars.length) * 100;
-  };
 
-  const generateSimilarRecommendations = (characters, userBehavior) => {
+  const generateSimilarRecommendations = useCallback((characters, userBehavior) => {
     const favoriteChars = userBehavior.mostUsedCharacters || [];
     const similarChars = [];
 
@@ -187,9 +170,9 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
       }))
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
       .slice(0, 8);
-  };
+  }, [calculateCompatibilityScore]);
 
-  const generatePopularRecommendations = (characters) => {
+  const generatePopularRecommendations = useCallback((characters) => {
     return characters
       .map(char => ({
         ...char,
@@ -197,9 +180,9 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
       }))
       .sort((a, b) => b.popularityScore - a.popularityScore)
       .slice(0, 8);
-  };
+  }, []);
 
-  const generatePowerfulRecommendations = (characters) => {
+  const generatePowerfulRecommendations = useCallback((characters) => {
     return characters
       .map(char => ({
         ...char,
@@ -207,9 +190,9 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
       }))
       .sort((a, b) => b.powerScore - a.powerScore)
       .slice(0, 8);
-  };
+  }, []);
 
-  const generateUnderratedRecommendations = (characters, userBehavior) => {
+  const generateUnderratedRecommendations = useCallback((characters, userBehavior) => {
     return characters
       .filter(char => 
         char.popularityScore < 40 && 
@@ -223,9 +206,9 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
       }))
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
       .slice(0, 8);
-  };
+  }, [calculateCompatibilityScore]);
 
-  const generateNewDiscoveries = (characters, userBehavior) => {
+  const generateNewDiscoveries = useCallback((characters, userBehavior) => {
     const usedCharacterIds = Object.keys(userBehavior.characterUsage || {});
     
     return characters
@@ -237,9 +220,9 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
       }))
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
       .slice(0, 8);
-  };
+  }, [calculateCompatibilityScore]);
 
-  const generatePerfectMatches = (characters, userBehavior) => {
+  const generatePerfectMatches = useCallback((characters, userBehavior) => {
     return characters
       .map(char => ({
         ...char,
@@ -249,7 +232,35 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
       .filter(char => char.compatibilityScore > 70)
       .sort((a, b) => b.compatibilityScore - a.compatibilityScore)
       .slice(0, 8);
-  };
+  }, [calculateCompatibilityScore]);
+
+  const generateRecommendations = useCallback(async () => {
+    try {
+      const allCharacters = await fetchAllCharacters();
+      const userBehavior = await fetchUserBehavior();
+      
+      const recommendations = {
+        similar: generateSimilarRecommendations(allCharacters, userBehavior),
+        popular: generatePopularRecommendations(allCharacters),
+        powerful: generatePowerfulRecommendations(allCharacters),
+        underrated: generateUnderratedRecommendations(allCharacters, userBehavior),
+        newToYou: generateNewDiscoveries(allCharacters, userBehavior),
+        perfectMatch: generatePerfectMatches(allCharacters, userBehavior)
+      };
+
+      setRecommendations(recommendations);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error generating recommendations:', error);
+      setLoading(false);
+    }
+  }, [fetchAllCharacters, fetchUserBehavior, generateNewDiscoveries, generatePerfectMatches, generatePopularRecommendations, generatePowerfulRecommendations, generateSimilarRecommendations, generateUnderratedRecommendations]);
+
+  useEffect(() => {
+    analyzeUserProfile();
+    generateRecommendations();
+  }, [analyzeUserProfile, generateRecommendations]);
+
 
   const handleCharacterClick = (character) => {
     // Track recommendation interaction

@@ -313,6 +313,344 @@
       },
       "createdAt": "2025-12-25T21:39:34.481Z",
       "updatedAt": "2025-12-27T02:45:09.828Z"
+    },
+    {
+      "id": "6ac4b436-789f-4903-acdd-61ff0c4644b7",
+      "username": "e2elogin1766872995010",
+      "email": "e2elogin1766872995010@example.com",
+      "password": "$2b$10$8lYZi6DIrY4enJUE2R/MbO4rN1l1UBAHN1EUeOzQ8KJlYLjWiCnrS",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-12-27T22:03:15.109Z",
+        "lastActive": "2025-12-27T22:03:16.071Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 0,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        }
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-12-27T22:03:15.109Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-12-27T22:03:15.109Z",
+      "updatedAt": "2025-12-27T22:03:16.071Z",
+      "virtualCoins": 1000
+    },
+    {
+      "id": "d347aaee-f6bf-47c8-9013-20a1106a99d2",
+      "username": "e2euser1766872998364",
+      "email": "e2e1766872998364@example.com",
+      "password": "$2b$10$Ss6sNPC3Dr7RrSEXnM7UuOy3623eoRH27yifzh0U73AO3ycYRjUO.",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-12-27T22:03:19.348Z",
+        "lastActive": "2025-12-27T22:03:19.348Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 0,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        }
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-12-27T22:03:19.348Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-12-27T22:03:19.348Z",
+      "updatedAt": "2025-12-27T22:03:19.348Z"
+    },
+    {
+      "id": "47874d24-2a6b-4fec-b189-0b9c0331bf4d",
+      "username": "e2elogin1766873484549",
+      "email": "e2elogin1766873484549@example.com",
+      "password": "$2b$10$ePD3iwEFePBiypJVaNmtrul70db0mfNILGNMnAkgdpVpdenVkhL4S",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-12-27T22:11:24.623Z",
+        "lastActive": "2025-12-27T22:11:27.742Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 0,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        }
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-12-27T22:11:24.623Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-12-27T22:11:24.623Z",
+      "updatedAt": "2025-12-27T22:11:27.742Z",
+      "virtualCoins": 1000
+    },
+    {
+      "id": "3a421041-36e3-4d1e-99e2-2fad5936e585",
+      "username": "e2euser1766873489691",
+      "email": "e2e1766873489691@example.com",
+      "password": "$2b$10$6Qz0ycX.bntmWH7MyI1/ueYlKFbZ.f1w1JPviM.gm1YZY9rx7euJy",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-12-27T22:11:30.516Z",
+        "lastActive": "2025-12-27T22:11:30.516Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 0,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        }
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-12-27T22:11:30.516Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-12-27T22:11:30.516Z",
+      "updatedAt": "2025-12-27T22:11:30.516Z"
     }
   ],
   "posts": [

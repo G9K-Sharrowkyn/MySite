@@ -109,7 +109,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         ]
       }));
     }
-  }, [postData.type]);
+  }, [postData.type, postData.teams.length]);
 
   const fetchCharacters = async () => {
     try {
@@ -164,43 +164,10 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     }));
   };
 
-  const handlePollOptionChange = (index, value) => {
-    const newPollOptions = [...postData.pollOptions];
-    newPollOptions[index] = value;
-    setPostData(prev => ({
-      ...prev,
-      pollOptions: newPollOptions
-    }));
-  };
-
-  const addPollOption = () => {
-    setPostData(prev => ({
-      ...prev,
-      pollOptions: [...prev.pollOptions, '']
-    }));
-  };
-
-  const removePollOption = (index) => {
-    if (postData.pollOptions.length > 2) {
-      const newPollOptions = postData.pollOptions.filter((_, i) => i !== index);
-      setPostData(prev => ({
-        ...prev,
-        pollOptions: newPollOptions
-      }));
-    }
-  };
-
   const addTeam = () => {
     setPostData(prev => ({
       ...prev,
       teams: [...prev.teams, { name: '', warriors: [] }]
-    }));
-  };
-
-  const updateTeam = (index, team) => {
-    setPostData(prev => ({
-      ...prev,
-      teams: prev.teams.map((t, i) => i === index ? team : t)
     }));
   };
 
@@ -236,29 +203,6 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     }));
   };
 
-  const updateWarriorImage = (teamIndex, warriorIndex, customImage) => {
-    const newTeams = [...postData.teams];
-    newTeams[teamIndex] = {
-      ...newTeams[teamIndex],
-      warriors: newTeams[teamIndex].warriors.map((w, i) => i === warriorIndex ? { ...w, customImage } : w)
-    };
-    setPostData(prev => ({
-      ...prev,
-      teams: newTeams
-    }));
-  };
-
-  const handleWarriorImageUpload = (teamIndex, warriorIndex, e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateWarriorImage(teamIndex, warriorIndex, reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const removeWarrior = (teamIndex, warriorIndex) => {
     const newTeams = [...postData.teams];
     newTeams[teamIndex] = {
@@ -268,34 +212,6 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     setPostData(prev => ({
       ...prev,
       teams: newTeams
-    }));
-  };
-
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPostData(prev => ({
-          ...prev,
-          photos: [...prev.photos, { url: reader.result, type: 'upload' }]
-        }));
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const selectPhotoFromDatabase = (photoUrl) => {
-    setPostData(prev => ({
-      ...prev,
-      photos: [...prev.photos, { url: photoUrl, type: 'database' }]
-    }));
-  };
-
-  const removePhoto = (index) => {
-    setPostData(prev => ({
-      ...prev,
-      photos: prev.photos.filter((_, i) => i !== index)
     }));
   };
 

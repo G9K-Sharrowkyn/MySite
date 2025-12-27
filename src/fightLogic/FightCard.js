@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -15,21 +15,16 @@ const FightCard = ({ fight }) => {
   });
   const [isVoting, setIsVoting] = useState(false);
 
-  useEffect(() => {
-    fetchVoteStats();
-    fetchUserVote();
-  }, [fight.id]);
-
-  const fetchVoteStats = async () => {
+  const fetchVoteStats = useCallback(async () => {
     try {
       const response = await axios.get(`/api/votes/fight/${fight.id}/stats`);
       setVoteStats(response.data);
     } catch (error) {
       console.error('Error fetching vote stats:', error);
     }
-  };
+  }, [fight.id]);
 
-  const fetchUserVote = async () => {
+  const fetchUserVote = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -42,7 +37,12 @@ const FightCard = ({ fight }) => {
       // User hasn't voted yet
       setUserVote(null);
     }
-  };
+  }, [fight.id]);
+
+  useEffect(() => {
+    fetchVoteStats();
+    fetchUserVote();
+  }, [fetchVoteStats, fetchUserVote]);
 
   const handleVote = async (choice) => {
     const token = localStorage.getItem('token');

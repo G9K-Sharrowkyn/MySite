@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './CommunityHub.css';
 
@@ -12,7 +11,6 @@ const CommunityHub = ({ user }) => {
   const [communityPolls, setCommunityPolls] = useState([]);
   const [newDiscussion, setNewDiscussion] = useState({ title: '', content: '', category: 'general' });
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
 
   const tabs = {
     discussions: { name: 'Discussions', icon: '💬', count: discussions.length },

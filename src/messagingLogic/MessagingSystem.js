@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import './MessagingSystem.css';
 
 const MessagingSystem = ({ user }) => {
@@ -15,26 +14,41 @@ const MessagingSystem = ({ user }) => {
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typing, setTyping] = useState({});
   const messagesEndRef = useRef(null);
-  const { t } = useLanguage();
-
-  useEffect(() => {
-    if (user) {
-      fetchConversations();
-      setupWebSocket();
-    }
-    return () => {
-      if (window.messageSocket) {
-        window.messageSocket.close();
-      }
-    };
-  }, [user]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const setupWebSocket = () => {
-    const socket = new WebSocket(`ws://localhost:8080/messages?userId=${user.id}`);
+  const fetchConversations = useCallback(async () => {
+    try {
+      const userId = user?.id;
+      if (!userId) return;
+      const response = await axios.get(`/api/messages/conversations/${userId}`);
+      setConversations(response.data || []);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    }
+  }, [user?.id]);
+
+  const handleNewMessage = useCallback((message) => {
+    if (activeConversation && message.conversationId === activeConversation.id) {
+      setMessages(prev => [...prev, message]);
+    }
+    
+    // Update conversation list
+    setConversations(prev => 
+      prev.map(conv => 
+        conv.id === message.conversationId 
+          ? { ...conv, lastMessage: message, unreadCount: conv.unreadCount + 1 }
+          : conv
+      )
+    );
+  }, [activeConversation]);
+
+  const setupWebSocket = useCallback(() => {
+    const userId = user?.id;
+    if (!userId) return;
+    const socket = new WebSocket(`ws://localhost:8080/messages?userId=${userId}`);
     
     socket.onopen = () => {
       console.log('Connected to message server');
@@ -59,6 +73,8 @@ const MessagingSystem = ({ user }) => {
         case 'user_offline':
           setOnlineUsers(prev => prev.filter(id => id !== data.userId));
           break;
+        default:
+          break;
       }
     };
     
@@ -67,18 +83,22 @@ const MessagingSystem = ({ user }) => {
       // Attempt to reconnect after 3 seconds
       setTimeout(setupWebSocket, 3000);
     };
-    
-    window.messageSocket = socket;
-  };
 
-  const fetchConversations = async () => {
-    try {
-      const response = await axios.get(`/api/messages/conversations/${user.id}`);
-      setConversations(response.data || []);
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
+    window.messageSocket = socket;
+  }, [handleNewMessage, user?.id]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchConversations();
+      setupWebSocket();
     }
-  };
+    return () => {
+      if (window.messageSocket) {
+        window.messageSocket.close();
+      }
+    };
+  }, [fetchConversations, setupWebSocket, user?.id]);
+
 
   const fetchMessages = async (conversationId) => {
     try {
@@ -92,20 +112,6 @@ const MessagingSystem = ({ user }) => {
     }
   };
 
-  const handleNewMessage = (message) => {
-    if (activeConversation && message.conversationId === activeConversation.id) {
-      setMessages(prev => [...prev, message]);
-    }
-    
-    // Update conversation list
-    setConversations(prev => 
-      prev.map(conv => 
-        conv.id === message.conversationId 
-          ? { ...conv, lastMessage: message, unreadCount: conv.unreadCount + 1 }
-          : conv
-      )
-    );
-  };
 
   const sendMessage = async () => {
     if (!newMessage.trim() || !activeConversation) return;

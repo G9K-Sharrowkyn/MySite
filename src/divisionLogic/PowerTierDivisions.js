@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './PowerTierDivisions.css';
 
 const PowerTierDivisions = ({ user, isModerator }) => {
-  const [divisions, setDivisions] = useState([]);
   const [userTeams, setUserTeams] = useState({});
   const [activeFights, setActiveFights] = useState([]);
   const [bettingFights, setBettingFights] = useState([]);
@@ -13,8 +11,8 @@ const PowerTierDivisions = ({ user, isModerator }) => {
   const [championshipHistory, setChampionshipHistory] = useState({});
   const [userCoins, setUserCoins] = useState(0);
   const [selectedBets, setSelectedBets] = useState({});
-  const [showBetting, setShowBetting] = useState(false);
-  const { t } = useLanguage();
+  const [betAmounts, setBetAmounts] = useState({});
+  const [showHistoryDivisionId, setShowHistoryDivisionId] = useState(null);
 
   // Power-tier division definitions
   const divisionTiers = {
@@ -22,7 +20,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       id: 'regular_people',
       name: 'Regular People',
       description: 'Ordinary humans with no superpowers',
-      icon: '🧑',
+      icon: 'RP',
       color: '#6c757d',
       powerRange: '1-10',
       examples: ['Jim Ross', 'Lois Lane', 'Ivan Drago', 'John Wick', 'Rocky Balboa']
@@ -31,7 +29,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       id: 'metahuman',
       name: 'Metahuman',
       description: 'Enhanced humans with moderate superpowers',
-      icon: '🦸',
+      icon: 'MH',
       color: '#28a745',
       powerRange: '11-100',
       examples: ['Spider-Man', 'Cyclops', 'Captain America', 'Daredevil', 'Green Arrow']
@@ -40,7 +38,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       id: 'planet_busters',
       name: 'Planet Busters',
       description: 'Beings capable of destroying planets',
-      icon: '💥',
+      icon: 'PB',
       color: '#ffc107',
       powerRange: '101-1000',
       examples: ['Hulk', 'Krillin', 'Piccolo', 'Iron Man', 'Wonder Woman']
@@ -49,7 +47,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       id: 'god_tier',
       name: 'God Tier',
       description: 'Divine or god-like beings',
-      icon: '⚡',
+      icon: 'GT',
       color: '#dc3545',
       powerRange: '1001-10000',
       examples: ['Thor', 'Zeus', 'Cell', 'Silver Surfer', 'Doctor Strange']
@@ -58,7 +56,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       id: 'universal_threat',
       name: 'Universal Threat',
       description: 'Beings that threaten entire universes',
-      icon: '🌌',
+      icon: 'UT',
       color: '#6f42c1',
       powerRange: '10001-100000',
       examples: ['Anti-Monitor', 'Fused Zamasu', 'Galactus', 'Thanos (with Infinity Gauntlet)']
@@ -67,21 +65,16 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       id: 'omnipotent',
       name: 'Omnipotent',
       description: 'Reality-altering, omnipotent beings',
-      icon: '∞',
+      icon: 'OM',
       color: '#fd7e14',
       powerRange: '100000+',
       examples: ['Living Tribunal', 'Beyonder', 'Cosmic Armor Superman', 'The One Above All']
     }
   };
 
-  useEffect(() => {
-    fetchAllDivisionData();
-  }, []);
-
-  const fetchAllDivisionData = async () => {
+  const fetchAllDivisionData = useCallback(async () => {
     try {
       const [
-        divisionsRes,
         userTeamsRes,
         activeFightsRes,
         bettingFightsRes,
@@ -89,7 +82,6 @@ const PowerTierDivisions = ({ user, isModerator }) => {
         historyRes,
         coinsRes
       ] = await Promise.all([
-        axios.get('/api/divisions/power-tiers'),
         axios.get(`/api/divisions/user-teams/${user?.id}`),
         axios.get('/api/divisions/active-fights'),
         axios.get('/api/divisions/betting-fights'),
@@ -97,8 +89,6 @@ const PowerTierDivisions = ({ user, isModerator }) => {
         axios.get('/api/divisions/championship-history'),
         axios.get(`/api/users/${user?.id}/coins`)
       ]);
-
-      setDivisions(Object.values(divisionTiers));
       setUserTeams(userTeamsRes.data || {});
       setActiveFights(activeFightsRes.data || []);
       setBettingFights(bettingFightsRes.data || []);
@@ -108,7 +98,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
     } catch (error) {
       console.error('Error fetching division data:', error);
     }
-  };
+  }, [user?.id]);
 
   const createOfficialFight = async (team1Id, team2Id, divisionId, isTitle = false, isContender = false) => {
     if (!isModerator) return;
@@ -168,6 +158,149 @@ const PowerTierDivisions = ({ user, isModerator }) => {
     } else {
       return Math.floor((amount * totalPool) / team2Bets);
     }
+  };
+
+  useEffect(() => {
+    fetchAllDivisionData();
+  }, [fetchAllDivisionData]);
+
+  const setBetAmount = (fightId, teamKey, amount) => {
+    const normalized = Number.isFinite(amount) && amount > 0 ? amount : 0;
+    setBetAmounts(prev => ({
+      ...prev,
+      [fightId]: {
+        ...(prev[fightId] || {}),
+        [teamKey]: normalized
+      }
+    }));
+  };
+
+  const getBetAmount = (fightId, teamKey) => {
+    return betAmounts[fightId]?.[teamKey] || 0;
+  };
+
+  const calculateOdds = (fight, teamKey) => {
+    const team1Bets = Number(fight?.totalBets?.team1 || 0);
+    const team2Bets = Number(fight?.totalBets?.team2 || 0);
+    const base = teamKey === 'team1' ? team1Bets : team2Bets;
+    const other = teamKey === 'team1' ? team2Bets : team1Bets;
+    const ratio = (other + 1) / (base + 1);
+    return Math.max(1, Math.round(ratio * 10) / 10);
+  };
+
+  const calculateParlayMultiplier = () => {
+    const entries = Object.entries(selectedBets);
+    if (entries.length === 0) return 1;
+    const multiplier = entries.reduce((total, [fightId, bet]) => {
+      const fight = bettingFights.find((entry) => entry.id === fightId);
+      if (!fight) return total;
+      return total * calculateOdds(fight, bet.prediction);
+    }, 1);
+    return Math.round(multiplier * 100) / 100;
+  };
+
+  const placeParlayBet = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to place a parlay bet.');
+      return;
+    }
+
+    const bets = Object.entries(selectedBets).map(([fightId, bet]) => ({
+      fightId,
+      prediction: bet.prediction
+    }));
+    const amount = Object.values(selectedBets).reduce(
+      (sum, bet) => sum + (Number(bet.amount) || 0),
+      0
+    );
+
+    if (bets.length < 2 || amount <= 0) {
+      alert('Select at least two bets with valid amounts.');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        '/api/betting/parlay',
+        { bets, amount },
+        { headers: { 'x-auth-token': token } }
+      );
+      if (typeof response.data?.remainingCoins === 'number') {
+        setUserCoins(response.data.remainingCoins);
+      }
+      alert('Parlay bet placed successfully.');
+    } catch (error) {
+      console.error('Error placing parlay bet:', error);
+      alert('Failed to place parlay bet.');
+    }
+  };
+
+  const formatDate = (value) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const setShowHistory = (divisionId) => {
+    setShowHistoryDivisionId((prev) => (prev === divisionId ? null : divisionId));
+  };
+
+  const getDivisionTeams = (divisionId) => leaderboards[divisionId] || [];
+
+  const openFightCreator = (divisionId) => {
+    const teams = getDivisionTeams(divisionId);
+    if (teams.length < 2) {
+      alert('Not enough teams to create a fight.');
+      return;
+    }
+    createOfficialFight(teams[0].owner.id, teams[1].owner.id, divisionId);
+  };
+
+  const openContenderFightCreator = (divisionId) => {
+    const teams = getDivisionTeams(divisionId);
+    if (teams.length < 3) {
+      alert('Not enough teams to create a contender fight.');
+      return;
+    }
+    createOfficialFight(
+      teams[1].owner.id,
+      teams[2].owner.id,
+      divisionId,
+      false,
+      true
+    );
+  };
+
+  const openTitleFightCreator = (divisionId) => {
+    const teams = getDivisionTeams(divisionId);
+    if (teams.length < 2) {
+      alert('Not enough teams to create a title fight.');
+      return;
+    }
+    const champion = teams.find((team) => team.isChampion) || teams[0];
+    const challenger = teams.find((team) => team !== champion) || teams[1];
+    createOfficialFight(
+      champion.owner.id,
+      challenger.owner.id,
+      divisionId,
+      true,
+      false
+    );
+  };
+
+  const generateMatchSuggestions = (divisionId) => {
+    const teams = getDivisionTeams(divisionId);
+    const suggestions = [];
+    for (let i = 0; i < teams.length - 1 && suggestions.length < 3; i += 2) {
+      suggestions.push({ team1: teams[i], team2: teams[i + 1] });
+    }
+    return suggestions;
   };
 
   const formatTimeRemaining = (endTime) => {
@@ -488,6 +621,18 @@ const PowerTierDivisions = ({ user, isModerator }) => {
             </div>
 
             <DivisionLeaderboard divisionId={division.id} />
+
+            {showHistoryDivisionId === division.id && (
+              <div className="championship-history-panel">
+                <button
+                  className="close-history-btn"
+                  onClick={() => setShowHistoryDivisionId(null)}
+                >
+                  Close
+                </button>
+                <ChampionshipHistory divisionId={division.id} />
+              </div>
+            )}
 
             {userTeams[division.id] && (
               <div className="user-team-status">

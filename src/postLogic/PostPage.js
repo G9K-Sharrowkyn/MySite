@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
@@ -44,14 +44,14 @@ const PostPage = () => {
     return new Date() < lockTime;
   })();
 
-  const normalizeVoteTeam = (team) => {
+  const normalizeVoteTeam = useCallback((team) => {
     if (!team) return null;
     const value = String(team).toLowerCase();
     if (['a', 'teama', 'team a', 'fighter1', 'fighterone'].includes(value)) return 'A';
     if (['b', 'teamb', 'team b', 'fighter2', 'fightertwo'].includes(value)) return 'B';
     if (['draw', 'tie'].includes(value)) return 'draw';
     return team;
-  };
+  }, []);
 
   const buildTeamEntries = (team) => {
     if (Array.isArray(team)) {
@@ -155,11 +155,6 @@ const PostPage = () => {
   };
 
   useEffect(() => {
-    fetchPost();
-    fetchComments();
-  }, [postId]);
-
-  useEffect(() => {
     const fetchCharacters = async () => {
       try {
         const response = await axios.get('/api/characters');
@@ -171,7 +166,7 @@ const PostPage = () => {
     fetchCharacters();
   }, []);
 
-  const fetchPost = async () => {
+  const fetchPost = useCallback(async () => {
     try {
       const response = await axios.get(`/api/posts/${postId}`);
       const postData = {
@@ -201,16 +196,21 @@ const PostPage = () => {
       setError('Post not found or error loading post.');
       setLoading(false);
     }
-  };
+  }, [currentUserId, normalizeVoteTeam, postId]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const response = await axios.get(`/api/comments/post/${postId}`);
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
-  };
+  }, [postId]);
+
+  useEffect(() => {
+    fetchPost();
+    fetchComments();
+  }, [fetchComments, fetchPost]);
 
   const buildCommentThreads = (allComments) => {
     const commentList = Array.isArray(allComments) ? allComments : [];

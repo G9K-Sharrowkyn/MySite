@@ -370,7 +370,7 @@ export const translations = {
     bettingWindowClosed: 'Okno zakładów dla tej walki zostało zamknięte',
     
     // Moderator Panel
-    moderator: {
+    moderatorPanel: {
       panel: 'Panel Moderatora',
       createFight: 'Stwórz Walkę Główną',
       managePosts: 'Zarządzaj Postami',
@@ -816,7 +816,7 @@ export const translations = {
     bettingWindowClosed: 'Betting window for this fight is closed',
     
     // Moderator Panel
-    moderator: {
+    moderatorPanel: {
       panel: 'Moderator Panel',
       createFight: 'Create Main Fight',
       managePosts: 'Manage Posts',
@@ -1262,7 +1262,7 @@ export const translations = {
     bettingWindowClosed: 'La ventana de apuestas para esta pelea está cerrada',
     
     // Moderator Panel
-    moderator: {
+    moderatorPanel: {
       panel: 'Panel de Moderador',
       createFight: 'Crear Pelea Principal',
       managePosts: 'Gestionar Publicaciones',

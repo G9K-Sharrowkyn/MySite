@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import Notification from '../notificationLogic/Notification';
@@ -9,16 +9,20 @@ const CharacterSelectionPage = () => {
   const [selectedCharacters, setSelectedCharacters] = useState([]);
   const [notification, setNotification] = useState(null);
 
-  const fetchCharacters = async () => {
+  const showNotification = useCallback((message, type) => {
+    setNotification({ message, type });
+  }, []);
+
+  const fetchCharacters = useCallback(async () => {
     try {
       const res = await axios.get('/api/characters');
       setCharacters(res.data);
     } catch (err) {
       showNotification('Błąd podczas pobierania postaci.', 'error');
     }
-  };
+  }, [showNotification]);
 
-  const fetchSelectedCharacters = async () => {
+  const fetchSelectedCharacters = useCallback(async () => {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('userId');
     if (!token || !userId) return;
@@ -28,16 +32,13 @@ const CharacterSelectionPage = () => {
     } catch (err) {
       showNotification('Błąd podczas pobierania wybranych postaci.', 'error');
     }
-  };
+  }, [showNotification]);
 
   useEffect(() => {
     fetchCharacters();
     fetchSelectedCharacters();
-  }, []);
+  }, [fetchCharacters, fetchSelectedCharacters]);
 
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-  };
 
   const clearNotification = () => {
     setNotification(null);
@@ -90,3 +91,4 @@ const CharacterSelectionPage = () => {
 };
 
 export default CharacterSelectionPage;
+

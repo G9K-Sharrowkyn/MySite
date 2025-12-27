@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
-import { useLanguage } from '../i18n/LanguageContext';
 import './BattleEngine.css';
 
 const BattleEngine = ({ character1, character2, onBattleEnd }) => {
@@ -8,35 +7,37 @@ const BattleEngine = ({ character1, character2, onBattleEnd }) => {
   const [fighter1, setFighter1] = useState(null);
   const [fighter2, setFighter2] = useState(null);
   const [battleLog, setBattleLog] = useState([]);
-  const [currentTurn, setCurrentTurn] = useState(1);
   const [winner, setWinner] = useState(null);
-  const { t } = useLanguage();
 
-  useEffect(() => {
-    if (character1 && character2) {
-      initializeBattle();
-    }
-  }, [character1, character2]);
+  const generateAbilities = useCallback((character) => {
+    const abilityPool = {
+      'Dragon Ball': [
+        { name: 'Kamehameha', damage: 1.5, cost: 30, description: 'Devastating energy wave' },
+        { name: 'Spirit Bomb', damage: 2.0, cost: 50, description: 'Energy from all living things' },
+        { name: 'Instant Transmission', effect: 'dodge', cost: 20, description: 'Teleport to avoid damage' }
+      ],
+      'Marvel': [
+        { name: 'Web Swing', damage: 1.2, cost: 15, description: 'Agile web-based attack' },
+        { name: 'Repulsor Ray', damage: 1.4, cost: 25, description: 'High-tech energy beam' },
+        { name: 'Healing Factor', effect: 'heal', cost: 30, description: 'Regenerate health' }
+      ],
+      'DC': [
+        { name: 'Heat Vision', damage: 1.3, cost: 20, description: 'Laser beam from eyes' },
+        { name: 'Speed Force', effect: 'speed', cost: 25, description: 'Increase speed dramatically' },
+        { name: 'Batarang Combo', damage: 1.1, cost: 10, description: 'Precise thrown weapons' }
+      ],
+      'default': [
+        { name: 'Power Strike', damage: 1.3, cost: 20, description: 'Enhanced physical attack' },
+        { name: 'Energy Blast', damage: 1.4, cost: 25, description: 'Concentrated energy attack' },
+        { name: 'Defensive Stance', effect: 'defense', cost: 15, description: 'Increase defense' }
+      ]
+    };
 
-  const initializeBattle = () => {
-    // Enhanced character stats based on universe and power level
-    const enhancedChar1 = enhanceCharacter(character1);
-    const enhancedChar2 = enhanceCharacter(character2);
-    
-    setFighter1(enhancedChar1);
-    setFighter2(enhancedChar2);
-    
-    addToBattleLog(`🔥 Battle begins: ${character1.name} vs ${character2.name}!`);
-    addToBattleLog(`⚡ ${character1.name} enters with ${enhancedChar1.powerLevel} power!`);
-    addToBattleLog(`⚡ ${character2.name} enters with ${enhancedChar2.powerLevel} power!`);
-    
-    setBattleState('fighting');
-    
-    // Start battle simulation
-    setTimeout(() => simulateBattle(enhancedChar1, enhancedChar2), 2000);
-  };
+    const abilities = abilityPool[character.universe] || abilityPool['default'];
+    return abilities.slice(0, 3); // Each character gets 3 abilities
+  }, []);
 
-  const enhanceCharacter = (character) => {
+  const enhanceCharacter = useCallback((character) => {
     // Base stats calculation based on universe and character type
     const universePowerMultipliers = {
       'Dragon Ball': 2.5,
@@ -67,93 +68,15 @@ const BattleEngine = ({ character1, character2, onBattleEnd }) => {
       statusEffects: [],
       energy: 100
     };
-  };
+  }, [generateAbilities]);
 
-  const generateAbilities = (character) => {
-    const abilityPool = {
-      'Dragon Ball': [
-        { name: 'Kamehameha', damage: 1.5, cost: 30, description: 'Devastating energy wave' },
-        { name: 'Spirit Bomb', damage: 2.0, cost: 50, description: 'Energy from all living things' },
-        { name: 'Instant Transmission', effect: 'dodge', cost: 20, description: 'Teleport to avoid damage' }
-      ],
-      'Marvel': [
-        { name: 'Web Swing', damage: 1.2, cost: 15, description: 'Agile web-based attack' },
-        { name: 'Repulsor Ray', damage: 1.4, cost: 25, description: 'High-tech energy beam' },
-        { name: 'Healing Factor', effect: 'heal', cost: 30, description: 'Regenerate health' }
-      ],
-      'DC': [
-        { name: 'Heat Vision', damage: 1.3, cost: 20, description: 'Laser beam from eyes' },
-        { name: 'Speed Force', effect: 'speed', cost: 25, description: 'Increase speed dramatically' },
-        { name: 'Batarang Combo', damage: 1.1, cost: 10, description: 'Precise thrown weapons' }
-      ],
-      'default': [
-        { name: 'Power Strike', damage: 1.3, cost: 20, description: 'Enhanced physical attack' },
-        { name: 'Energy Blast', damage: 1.4, cost: 25, description: 'Concentrated energy attack' },
-        { name: 'Defensive Stance', effect: 'defense', cost: 15, description: 'Increase defense' }
-      ]
-    };
+  const addToBattleLog = useCallback((message, turn) => {
+    const resolvedTurn = Number.isFinite(turn) ? turn : 1;
+    setBattleLog(prev => [...prev, { message, turn: resolvedTurn, timestamp: Date.now() }]);
+  }, []);
 
-    const abilities = abilityPool[character.universe] || abilityPool['default'];
-    return abilities.slice(0, 3); // Each character gets 3 abilities
-  };
 
-  const addToBattleLog = (message) => {
-    setBattleLog(prev => [...prev, { message, turn: currentTurn, timestamp: Date.now() }]);
-  };
-
-  const simulateBattle = async (f1, f2) => {
-    let attacker = f1;
-    let defender = f2;
-    let turn = 1;
-
-    while (f1.hp > 0 && f2.hp > 0 && turn < 20) {
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Determine action (basic attack, ability, or special move)
-      const action = determineAction(attacker);
-      const damage = calculateDamage(attacker, defender, action);
-      
-      // Apply damage and effects
-      if (action.effect === 'dodge' && Math.random() < 0.3) {
-        addToBattleLog(`💨 ${attacker.name} uses ${action.name} and dodges the attack!`);
-      } else if (action.effect === 'heal') {
-        const healAmount = Math.floor(attacker.maxHp * 0.2);
-        attacker.hp = Math.min(attacker.hp + healAmount, attacker.maxHp);
-        addToBattleLog(`💚 ${attacker.name} uses ${action.name} and heals for ${healAmount} HP!`);
-      } else {
-        defender.hp = Math.max(0, defender.hp - damage);
-        addToBattleLog(`💥 ${attacker.name} uses ${action.name} and deals ${damage} damage to ${defender.name}!`);
-        
-        if (defender.hp <= 0) {
-          addToBattleLog(`🏆 ${attacker.name} wins the battle!`);
-          setWinner(attacker);
-          break;
-        }
-      }
-
-      // Update states
-      setFighter1({...f1});
-      setFighter2({...f2});
-      
-      // Switch turns
-      [attacker, defender] = [defender, attacker];
-      turn++;
-      setCurrentTurn(turn);
-    }
-
-    if (turn >= 20) {
-      const winner = f1.hp > f2.hp ? f1 : f2;
-      addToBattleLog(`⏰ Battle reaches time limit! ${winner.name} wins by health advantage!`);
-      setWinner(winner);
-    }
-
-    setBattleState('finished');
-    if (onBattleEnd) {
-      onBattleEnd(winner);
-    }
-  };
-
-  const determineAction = (fighter) => {
+  const determineAction = useCallback((fighter) => {
     if (fighter.energy >= 30 && Math.random() < 0.4) {
       // Use special ability
       const availableAbilities = fighter.abilities.filter(ab => ab.cost <= fighter.energy);
@@ -166,15 +89,92 @@ const BattleEngine = ({ character1, character2, onBattleEnd }) => {
     
     // Basic attack
     return { name: 'Basic Attack', damage: 1.0, cost: 5, description: 'Standard physical attack' };
-  };
+  }, []);
 
-  const calculateDamage = (attacker, defender, action) => {
+  const calculateDamage = useCallback((attacker, defender, action) => {
     const baseDamage = attacker.attack * (action.damage || 1.0);
     const defensiveReduction = defender.defense * 0.5;
     const randomFactor = 0.8 + Math.random() * 0.4; // 80-120% damage variance
     
     return Math.floor(Math.max(1, (baseDamage - defensiveReduction) * randomFactor));
-  };
+  }, []);
+  const simulateBattle = useCallback(async (f1, f2) => {
+    let attacker = f1;
+    let defender = f2;
+    let turn = 1;
+    let winningFighter = null;
+
+    while (f1.hp > 0 && f2.hp > 0 && turn < 20) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      // Determine action (basic attack, ability, or special move)
+      const action = determineAction(attacker);
+      const damage = calculateDamage(attacker, defender, action);
+      
+      // Apply damage and effects
+      if (action.effect === 'dodge' && Math.random() < 0.3) {
+        addToBattleLog(`💨 ${attacker.name} uses ${action.name} and dodges the attack!`, turn);
+      } else if (action.effect === 'heal') {
+        const healAmount = Math.floor(attacker.maxHp * 0.2);
+        attacker.hp = Math.min(attacker.hp + healAmount, attacker.maxHp);
+        addToBattleLog(`💚 ${attacker.name} uses ${action.name} and heals for ${healAmount} HP!`, turn);
+      } else {
+        defender.hp = Math.max(0, defender.hp - damage);
+        addToBattleLog(`💥 ${attacker.name} uses ${action.name} and deals ${damage} damage to ${defender.name}!`, turn);
+        
+        if (defender.hp <= 0) {
+          addToBattleLog(`🏆 ${attacker.name} wins the battle!`, turn);
+          winningFighter = attacker;
+          break;
+        }
+      }
+
+      // Update states
+      setFighter1({...f1});
+      setFighter2({...f2});
+      
+      // Switch turns
+      [attacker, defender] = [defender, attacker];
+      turn++;
+    }
+
+    if (turn >= 20) {
+      winningFighter = f1.hp > f2.hp ? f1 : f2;
+      addToBattleLog(`⏰ Battle reaches time limit! ${winningFighter.name} wins by health advantage!`, turn);
+    }
+
+    if (winningFighter) {
+      setWinner(winningFighter);
+    }
+    setBattleState('finished');
+    if (onBattleEnd) {
+      onBattleEnd(winningFighter);
+    }
+  }, [addToBattleLog, calculateDamage, determineAction, onBattleEnd]);
+
+  const initializeBattle = useCallback(() => {
+    // Enhanced character stats based on universe and power level
+    const enhancedChar1 = enhanceCharacter(character1);
+    const enhancedChar2 = enhanceCharacter(character2);
+    
+    setFighter1(enhancedChar1);
+    setFighter2(enhancedChar2);
+    
+    addToBattleLog(`Ð«"¤ Battle begins: ${character1.name} vs ${character2.name}!`, 1);
+    addToBattleLog(`ƒçó ${character1.name} enters with ${enhancedChar1.powerLevel} power!`, 1);
+    addToBattleLog(`ƒçó ${character2.name} enters with ${enhancedChar2.powerLevel} power!`, 1);
+    
+    setBattleState('fighting');
+    
+    // Start battle simulation
+    setTimeout(() => simulateBattle(enhancedChar1, enhancedChar2), 2000);
+  }, [addToBattleLog, character1, character2, enhanceCharacter, simulateBattle]);
+
+  useEffect(() => {
+    if (character1 && character2) {
+      initializeBattle();
+    }
+  }, [character1, character2, initializeBattle]);
 
   const getHealthPercentage = (current, max) => {
     return Math.max(0, (current / max) * 100);
@@ -301,3 +301,6 @@ const BattleEngine = ({ character1, character2, onBattleEnd }) => {
 };
 
 export default BattleEngine;
+
+
+

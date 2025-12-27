@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
@@ -15,7 +15,6 @@ import ReactionMenu from './ReactionMenu';
 import BettingPanel from '../economy/BettingPanel';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
-import HoloCard from '../shared/HoloCard';
 import FightTimer from './FightTimer';
 import { AuthContext } from '../auth/AuthContext';
 
@@ -40,6 +39,36 @@ const loadCharactersOnce = async () => {
   }
   return cachedCharactersPromise;
 };
+
+const normalizeTag = (value) => {
+  const cleaned = String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const compact = cleaned.replace(/\s+/g, '');
+  if (compact === 'dragonballz' || cleaned === 'dragon ball z') return 'dbz';
+  if (compact === 'dragonballgt' || cleaned === 'dragon ball gt') return 'dbgt';
+  if (compact === 'dragonballsuper' || cleaned === 'dragon ball super') return 'dbs';
+  if (compact === 'dragonballheroes' || cleaned === 'dragon ball heroes') return 'dbh';
+  return cleaned;
+};
+
+const extractTags = (value) => {
+  const tags = [];
+  const regex = /\(([^)]+)\)/g;
+  let match;
+  while ((match = regex.exec(String(value || '')))) {
+    tags.push(normalizeTag(match[1]));
+  }
+  return tags;
+};
+
+const normalizeBaseName = (value) =>
+  String(value || '')
+    .replace(/\s*\([^)]*\)/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+
+const normalizeFullName = (value) =>
+  String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
 
 const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false }) => {
   const [comments, setComments] = useState([]);
@@ -135,6 +164,36 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     };
   }, []);
 
+  const getCharacterByName = useCallback((name) => {
+    if (!name) return null;
+    const normalized = normalizeFullName(name);
+    const base = normalizeBaseName(name);
+    const tags = extractTags(name);
+
+    let match = characters.find(
+      (character) => normalizeFullName(character.name) === normalized
+    );
+    if (match) return match;
+
+    const baseMatches = characters.filter((character) => {
+      const candidateBase = normalizeBaseName(character.baseName || character.name);
+      return candidateBase === base;
+    });
+    if (!baseMatches.length) return null;
+
+    if (tags.length) {
+      match = baseMatches.find((character) => {
+        const characterTags = Array.isArray(character.tags)
+          ? character.tags.map(normalizeTag)
+          : [];
+        return tags.every((tag) => characterTags.includes(tag));
+      });
+      if (match) return match;
+    }
+
+    return baseMatches[0];
+  }, [characters]);
+
   useEffect(() => {
     if (!prefetchImages && !eagerImages) return;
     const authorImage =
@@ -162,7 +221,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         }
       });
     }
-  }, [prefetchImages, eagerImages, post, characters]);
+  }, [prefetchImages, eagerImages, post, characters, getCharacterByName]);
 
   const fetchComments = async () => {
     try {
@@ -395,66 +454,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return null;
   };
 
-  const normalizeTag = (value) => {
-    const cleaned = String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
-    const compact = cleaned.replace(/\s+/g, '');
-    if (compact === 'dragonballz' || cleaned === 'dragon ball z') return 'dbz';
-    if (compact === 'dragonballgt' || cleaned === 'dragon ball gt') return 'dbgt';
-    if (compact === 'dragonballsuper' || cleaned === 'dragon ball super') return 'dbs';
-    if (compact === 'dragonballheroes' || cleaned === 'dragon ball heroes') return 'dbh';
-    return cleaned;
-  };
-
-  const extractTags = (value) => {
-    const tags = [];
-    const regex = /\(([^)]+)\)/g;
-    let match;
-    while ((match = regex.exec(String(value || '')))) {
-      tags.push(normalizeTag(match[1]));
-    }
-    return tags;
-  };
-
-  const normalizeBaseName = (value) =>
-    String(value || '')
-      .replace(/\s*\([^)]*\)/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .toLowerCase();
-
-  const normalizeFullName = (value) =>
-    String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
-
   // Helper to get character object by name
-  const getCharacterByName = (name) => {
-    if (!name) return null;
-    const normalized = normalizeFullName(name);
-    const base = normalizeBaseName(name);
-    const tags = extractTags(name);
-
-    let match = characters.find(
-      (character) => normalizeFullName(character.name) === normalized
-    );
-    if (match) return match;
-
-    const baseMatches = characters.filter((character) => {
-      const candidateBase = normalizeBaseName(character.baseName || character.name);
-      return candidateBase === base;
-    });
-    if (!baseMatches.length) return null;
-
-    if (tags.length) {
-      match = baseMatches.find((character) => {
-        const characterTags = Array.isArray(character.tags)
-          ? character.tags.map(normalizeTag)
-          : [];
-        return tags.every((tag) => characterTags.includes(tag));
-      });
-      if (match) return match;
-    }
-
-    return baseMatches[0];
-  };
 
   const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey) => {
     const isVoted = userVote === teamKey;
@@ -555,7 +555,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const renderFightVoting = () => {
     const teamAVotes = post.fight.votes?.teamA || 0;
     const teamBVotes = post.fight.votes?.teamB || 0;
-    const drawVotes = post.fight.votes?.draw || 0;
 
     const teamAList = (post.fight.teamA || '').split(',').map(n => n.trim()).filter(Boolean);
     const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
@@ -742,21 +741,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     }
   };
 
-  const getRankColor = (rank) => {
-    const rankColors = {
-      'Mortal': '#8B4513',
-      'Novice': '#CD853F',
-      'Fighter': '#32CD32',
-      'Warrior': '#1E90FF',
-      'Champion': '#9932CC',
-      'Master': '#FF4500',
-      'Grandmaster': '#DC143C',
-      'Legend': '#FFD700',
-      'Mythic': '#FF1493'
-    };
-    return rankColors[rank] || '#666';
-  };
-
   // Show translate button for all languages when content is in a different language
   const needsTranslation = () => {
     if (!post.content) return false;
@@ -855,40 +839,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
       return;
     }
     setShowReactionMenu(true);
-  };
-
-  // SparkleOverlay component
-  const SparkleOverlay = ({ count = 7 }) => {
-    const [sparkles, setSparkles] = useState([]);
-
-    useEffect(() => {
-      // Generate random sparkles
-      const newSparkles = Array.from({ length: count }).map((_, i) => {
-        const angle = Math.random() * 2 * Math.PI;
-        const radius = 90 + Math.random() * 30; // px from center
-        const x = 50 + Math.cos(angle) * radius;
-        const y = 50 + Math.sin(angle) * radius;
-        const delay = Math.random() * 1.2;
-        return { id: i, x, y, delay };
-      });
-      setSparkles(newSparkles);
-    }, [count]);
-
-    return (
-      <div className="sparkle-overlay">
-        {sparkles.map(s => (
-          <div
-            key={s.id}
-            className="sparkle"
-            style={{
-              left: `${s.x}%`,
-              top: `${s.y}%`,
-              animationDelay: `${s.delay}s`,
-            }}
-          />
-        ))}
-      </div>
-    );
   };
 
   const commentThreads = buildCommentThreads(comments);

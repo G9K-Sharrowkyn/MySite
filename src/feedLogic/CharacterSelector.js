@@ -46,7 +46,7 @@ const CharacterSelector = ({ selectedCharacter, onSelect }) => {
       );
     });
     setFilteredCharacters(filtered);
-  }, [inputValue, characters]);
+  }, [inputValue, characters, onSelect]);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);

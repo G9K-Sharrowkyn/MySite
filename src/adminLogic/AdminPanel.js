@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../auth/AuthContext';
@@ -10,7 +10,7 @@ const AdminPanel = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const fetchModeration = async () => {
+  const fetchModeration = useCallback(async () => {
     if (!token) {
       return;
     }
@@ -27,7 +27,7 @@ const AdminPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!token || user?.role !== 'admin') {
@@ -38,7 +38,7 @@ const AdminPanel = () => {
     fetchModeration();
     const interval = setInterval(fetchModeration, 10000);
     return () => clearInterval(interval);
-  }, [token, user?.role]);
+  }, [token, user?.role, fetchModeration]);
 
   const handleDeletePost = async (postId) => {
     if (!token || !postId) return;

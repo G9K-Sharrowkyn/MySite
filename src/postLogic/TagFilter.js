@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import './TagFilter.css';
 
 const TagFilter = ({ onTagsChange, selectedTags = [] }) => {
@@ -9,7 +8,6 @@ const TagFilter = ({ onTagsChange, selectedTags = [] }) => {
   const [showAllTags, setShowAllTags] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
 
   useEffect(() => {
     fetchTags();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BadgeCollection from './BadgeCollection';
 import './BadgesPage.css';
@@ -20,13 +20,29 @@ const BadgesPage = () => {
     mythicCount: 0
   });
 
-  useEffect(() => {
-    if (user) {
-      fetchBadgesData();
-    }
-  }, [user]);
+  const calculateStats = useCallback((earned, available) => {
+    const totalEarned = earned.length;
+    const totalAvailable = available.length;
+    const completionPercentage =
+      totalAvailable > 0 ? Math.round((totalEarned / totalAvailable) * 100) : 0;
+    
+    const rareCount = earned.filter(badge => badge.badge.rarity === 'rare').length;
+    const epicCount = earned.filter(badge => badge.badge.rarity === 'epic').length;
+    const legendaryCount = earned.filter(badge => badge.badge.rarity === 'legendary').length;
+    const mythicCount = earned.filter(badge => badge.badge.rarity === 'mythic').length;
+    
+    setStats({
+      totalEarned,
+      totalAvailable,
+      completionPercentage,
+      rareCount,
+      epicCount,
+      legendaryCount,
+      mythicCount
+    });
+  }, []);
 
-  const fetchBadgesData = async () => {
+  const fetchBadgesData = useCallback(async () => {
     try {
       setLoading(true);
       
@@ -67,28 +83,13 @@ const BadgesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [calculateStats]);
 
-  const calculateStats = (earned, available) => {
-    const totalEarned = earned.length;
-    const totalAvailable = available.length;
-    const completionPercentage = totalAvailable > 0 ? Math.round((totalEarned / totalAvailable) * 100) : 0;
-    
-    const rareCount = earned.filter(badge => badge.badge.rarity === 'rare').length;
-    const epicCount = earned.filter(badge => badge.badge.rarity === 'epic').length;
-    const legendaryCount = earned.filter(badge => badge.badge.rarity === 'legendary').length;
-    const mythicCount = earned.filter(badge => badge.badge.rarity === 'mythic').length;
-    
-    setStats({
-      totalEarned,
-      totalAvailable,
-      completionPercentage,
-      rareCount,
-      epicCount,
-      legendaryCount,
-      mythicCount
-    });
-  };
+  useEffect(() => {
+    if (user) {
+      fetchBadgesData();
+    }
+  }, [user, fetchBadgesData]);
 
   const getFilteredBadges = () => {
     if (activeTab === 'earned') {

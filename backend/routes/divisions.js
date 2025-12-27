@@ -46,6 +46,20 @@ const normalizeTeam = (team) => {
   };
 };
 
+const normalizeVoteTeam = (value) => {
+  const normalized = String(value || '').toLowerCase();
+  if (['team1', 'team_a', 'teama', 'a', 'team-a', 'team a'].includes(normalized)) {
+    return 'team1';
+  }
+  if (['team2', 'team_b', 'teamb', 'b', 'team-b', 'team b'].includes(normalized)) {
+    return 'team2';
+  }
+  if (['draw', 'tie'].includes(normalized)) {
+    return 'draw';
+  }
+  return null;
+};
+
 const buildTeamName = (team) =>
   [team?.mainCharacter?.name, team?.secondaryCharacter?.name]
     .filter(Boolean)
@@ -377,6 +391,81 @@ router.get('/active-fights', async (_req, res) => {
     res.json(fights);
   } catch (error) {
     console.error('Error getting active fights:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Vote in an official division fight
+router.post('/vote', auth, async (req, res) => {
+  try {
+    const { fightId, team } = req.body;
+    const normalizedTeam = normalizeVoteTeam(team);
+
+    if (!fightId || !normalizedTeam) {
+      return res.status(400).json({ msg: 'Invalid vote data' });
+    }
+
+    let updatedFight;
+
+    await updateDb((db) => {
+      db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
+      const fight = db.divisionFights.find(
+        (entry) => (entry.id || entry._id) === fightId
+      );
+      if (!fight) {
+        const error = new Error('Fight not found');
+        error.code = 'NOT_FOUND';
+        throw error;
+      }
+
+      fight.votes = Array.isArray(fight.votes) ? fight.votes : [];
+      const existingIndex = fight.votes.findIndex(
+        (vote) => String(vote.userId) === String(req.user.id)
+      );
+      if (existingIndex >= 0) {
+        fight.votes[existingIndex].team = normalizedTeam;
+      } else {
+        fight.votes.push({ userId: req.user.id, team: normalizedTeam });
+      }
+
+      const counts = { team1: 0, team2: 0, draw: 0 };
+      fight.votes.forEach((vote) => {
+        if (counts[vote.team] !== undefined) {
+          counts[vote.team] += 1;
+        }
+      });
+
+      fight.team1Votes = counts.team1;
+      fight.team2Votes = counts.team2;
+      fight.drawVotes = counts.draw;
+      fight.fight = fight.fight || {};
+      fight.fight.votes = fight.fight.votes || { teamA: 0, teamB: 0, draw: 0, voters: [] };
+      fight.fight.votes.teamA = counts.team1;
+      fight.fight.votes.teamB = counts.team2;
+      fight.fight.votes.draw = counts.draw;
+      fight.fight.votes.voters = fight.votes.map((vote) => ({
+        userId: vote.userId,
+        team: vote.team === 'team1' ? 'A' : vote.team === 'team2' ? 'B' : 'draw'
+      }));
+
+      updatedFight = fight;
+      return db;
+    });
+
+    res.json({
+      msg: 'Vote recorded',
+      fight: updatedFight,
+      votes: {
+        team1: updatedFight.team1Votes || 0,
+        team2: updatedFight.team2Votes || 0,
+        draw: updatedFight.drawVotes || 0
+      }
+    });
+  } catch (error) {
+    if (error.code === 'NOT_FOUND') {
+      return res.status(404).json({ msg: 'Fight not found' });
+    }
+    console.error('Error recording vote:', error);
     res.status(500).json({ msg: 'Server error' });
   }
 });

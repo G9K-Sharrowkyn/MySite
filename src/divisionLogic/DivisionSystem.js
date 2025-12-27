@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './DivisionSystem.css';
 
@@ -12,10 +11,9 @@ const DivisionSystem = ({ user, isModerator }) => {
   const [registrationMode, setRegistrationMode] = useState(false);
   const [selectedFighters, setSelectedFighters] = useState([]);
   const [availableCharacters, setAvailableCharacters] = useState([]);
-  const { t } = useLanguage();
 
   // Division definitions with unique character rosters
-  const divisionTemplates = {
+  const divisionTemplates = useMemo(() => ({
     dragonball: {
       name: 'Dragon Ball Division',
       description: 'The most powerful warriors in the multiverse',
@@ -88,15 +86,9 @@ const DivisionSystem = ({ user, isModerator }) => {
         { id: 'levi', name: 'Levi', image: '/characters/levi.jpg', universe: 'Attack on Titan' }
       ]
     }
-  };
+  }), []);
 
-  useEffect(() => {
-    fetchDivisions();
-    fetchUserTeams();
-    fetchActiveFights();
-  }, []);
-
-  const fetchDivisions = async () => {
+  const fetchDivisions = useCallback(async () => {
     try {
       const response = await axios.get('/api/divisions');
       setDivisions(response.data || Object.values(divisionTemplates));
@@ -104,26 +96,32 @@ const DivisionSystem = ({ user, isModerator }) => {
       console.error('Error fetching divisions:', error);
       setDivisions(Object.values(divisionTemplates));
     }
-  };
+  }, [divisionTemplates]);
 
-  const fetchUserTeams = async () => {
-    if (!user) return;
+  const fetchUserTeams = useCallback(async () => {
+    if (!user?.id) return;
     try {
       const response = await axios.get(`/api/divisions/user-teams/${user.id}`);
       setUserTeams(response.data || {});
     } catch (error) {
       console.error('Error fetching user teams:', error);
     }
-  };
+  }, [user?.id]);
 
-  const fetchActiveFights = async () => {
+  const fetchActiveFights = useCallback(async () => {
     try {
       const response = await axios.get('/api/divisions/active-fights');
       setActiveFights(response.data || []);
     } catch (error) {
       console.error('Error fetching active fights:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchDivisions();
+    fetchUserTeams();
+    fetchActiveFights();
+  }, [fetchDivisions, fetchUserTeams, fetchActiveFights]);
 
   const handleJoinDivision = (division) => {
     setSelectedDivision(division);
@@ -198,6 +196,57 @@ const DivisionSystem = ({ user, isModerator }) => {
       console.error('Error creating fight:', error);
       alert('Failed to create fight.');
     }
+  };
+
+  const voteInOfficialFight = async (fightId, team) => {
+    if (!user) {
+      alert('Please log in to vote.');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please log in to vote.');
+      return;
+    }
+
+    try {
+      await axios.post(
+        '/api/divisions/vote',
+        { fightId, team },
+        { headers: { 'x-auth-token': token } }
+      );
+      fetchActiveFights();
+    } catch (error) {
+      console.error('Error voting in official fight:', error);
+      alert('Failed to submit vote.');
+    }
+  };
+
+  const getDivisionTeams = (divisionId) => {
+    const division = divisions.find((entry) => entry.id === divisionId);
+    const teams = division?.registeredTeams || division?.teams || [];
+    return Array.isArray(teams) ? teams : [];
+  };
+
+  const openFightCreator = (divisionId) => {
+    const teams = getDivisionTeams(divisionId);
+    if (teams.length < 2) {
+      alert('Not enough teams to create a fight.');
+      return;
+    }
+    createOfficialFight(teams[0], teams[1], divisionId, false);
+  };
+
+  const openTitleFightCreator = (divisionId) => {
+    const teams = getDivisionTeams(divisionId);
+    if (teams.length < 2) {
+      alert('Not enough teams to create a title fight.');
+      return;
+    }
+    const champion = teams.find((team) => team.isChampion) || teams[0];
+    const challenger = teams.find((team) => team !== champion) || teams[1];
+    createOfficialFight(champion, challenger, divisionId, true);
   };
 
   const getUserRecord = (userId, divisionId) => {
@@ -463,3 +512,4 @@ const DivisionSystem = ({ user, isModerator }) => {
 };
 
 export default DivisionSystem;
+

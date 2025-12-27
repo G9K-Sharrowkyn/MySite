@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './EnhancedProfile.css';
 
@@ -14,7 +13,6 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
   const [divisionRecords, setDivisionRecords] = useState([]);
   const [fightHistory, setFightHistory] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { t } = useLanguage();
 
   const tabs = {
     overview: { name: 'Overview', icon: '👤' },
@@ -24,16 +22,7 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
     comments: { name: 'Comments', icon: '💬' }
   };
 
-  useEffect(() => {
-    if (userId) {
-      fetchProfile();
-      fetchProfileComments();
-      fetchDivisionRecords();
-      fetchFightHistory();
-    }
-  }, [userId]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await axios.get(`/api/users/${userId}/profile`);
       const userData = response.data;
@@ -52,34 +41,43 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
       console.error('Error fetching profile:', error);
       setLoading(false);
     }
-  };
+  }, [userId]);
 
-  const fetchProfileComments = async () => {
+  const fetchProfileComments = useCallback(async () => {
     try {
       const response = await axios.get(`/api/users/${userId}/profile-comments`);
       setProfileComments(response.data || []);
     } catch (error) {
       console.error('Error fetching profile comments:', error);
     }
-  };
+  }, [userId]);
 
-  const fetchDivisionRecords = async () => {
+  const fetchDivisionRecords = useCallback(async () => {
     try {
       const response = await axios.get(`/api/users/${userId}/division-records`);
       setDivisionRecords(response.data || []);
     } catch (error) {
       console.error('Error fetching division records:', error);
     }
-  };
+  }, [userId]);
 
-  const fetchFightHistory = async () => {
+  const fetchFightHistory = useCallback(async () => {
     try {
       const response = await axios.get(`/api/users/${userId}/fight-history`);
       setFightHistory(response.data || []);
     } catch (error) {
       console.error('Error fetching fight history:', error);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    if (userId) {
+      fetchProfile();
+      fetchProfileComments();
+      fetchDivisionRecords();
+      fetchFightHistory();
+    }
+  }, [fetchDivisionRecords, fetchFightHistory, fetchProfile, fetchProfileComments, userId]);
 
   const handleSaveProfile = async () => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
@@ -16,14 +16,7 @@ const FightDetailPage = () => {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchFight();
-    fetchComments();
-    fetchUserVote();
-    fetchUserData();
-  }, [fightId]);
-
-  const fetchFight = async () => {
+  const fetchFight = useCallback(async () => {
     try {
       const response = await axios.get(`/api/fights/${fightId}`);
       setFight(response.data);
@@ -31,12 +24,12 @@ const FightDetailPage = () => {
       setLoading(false);
     } catch (error) {
       console.error('Error fetching fight:', error);
-      setError('Nie można załadować walki');
+      setError('Nie mozna zaladowac walki');
       setLoading(false);
     }
-  };
+  }, [fightId]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const response = await axios.get(`/api/comments/fight/${fightId}`);
       const payload = response.data;
@@ -44,9 +37,9 @@ const FightDetailPage = () => {
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
-  };
+  }, [fightId]);
 
-  const fetchUserVote = async () => {
+  const fetchUserVote = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -59,9 +52,9 @@ const FightDetailPage = () => {
       // User hasn't voted yet
       setUserVote(null);
     }
-  };
+  }, [fightId]);
 
-  const fetchUserData = async () => {
+  const fetchUserData = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -73,7 +66,14 @@ const FightDetailPage = () => {
     } catch (error) {
       console.error('Error fetching user data:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFight();
+    fetchComments();
+    fetchUserVote();
+    fetchUserData();
+  }, [fetchFight, fetchComments, fetchUserVote, fetchUserData]);
 
   const handleVote = async (choice) => {
     const token = localStorage.getItem('token');
@@ -376,3 +376,4 @@ const FightDetailPage = () => {
 };
 
 export default FightDetailPage;
+

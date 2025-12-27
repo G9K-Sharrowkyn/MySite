@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import BadgeDisplay from './BadgeDisplay';
 import { useLanguage } from '../i18n/LanguageContext';
 import './BadgeCollection.css';
@@ -12,11 +12,7 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
   const [filter, setFilter] = useState('all');
   const [sortBy, setSortBy] = useState('rarity');
 
-  useEffect(() => {
-    fetchBadges();
-  }, [userId]);
-
-  const fetchBadges = async () => {
+  const fetchBadges = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
@@ -55,7 +51,11 @@ const BadgeCollection = ({ userId, showAll = false, size = 'medium' }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchBadges();
+  }, [fetchBadges]);
 
   const getCombinedBadges = () => {
     return badges.map(badge => {

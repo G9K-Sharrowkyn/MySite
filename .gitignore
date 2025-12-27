@@ -7,9 +7,14 @@
 
 # testing
 /coverage
+/test-results
+/playwright-report
 
 # production
 /build
+
+# e2e
+/backend/.tmp
 
 # misc
 .DS_Store

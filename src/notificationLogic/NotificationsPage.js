@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Modal from '../Modal/Modal';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -16,16 +16,7 @@ const NotificationsPage = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
-    fetchNotifications();
-  }, [currentPage, filter]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
@@ -50,7 +41,16 @@ const NotificationsPage = () => {
       console.error('Error fetching notifications:', error);
       setLoading(false);
     }
-  };
+  }, [currentPage, filter]);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+    fetchNotifications();
+  }, [fetchNotifications, navigate]);
 
   const markAsRead = async (notificationId) => {
     const token = localStorage.getItem('token');

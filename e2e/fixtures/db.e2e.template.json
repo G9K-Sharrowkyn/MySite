@@ -1,0 +1,88 @@
+{
+  "users": [
+    {
+      "id": "e2e-user-1",
+      "username": "e2euser",
+      "email": "e2euser@example.com",
+      "password": "$2b$10$eErjwQw9A7U8b0/HRTPgP.s38Opgz3/EmkMV01mUkw9kqY6sJfdX2",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-01-01T00:00:00.000Z",
+        "lastActive": "2025-01-01T00:00:00.000Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 0,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        }
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-01-01T00:00:00.000Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    }
+  ]
+}

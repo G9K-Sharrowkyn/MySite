@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './VotingSystem.css';
 
@@ -14,17 +13,8 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [trending, setTrending] = useState(false);
-  const { t } = useLanguage();
 
-  useEffect(() => {
-    if (fight?.id) {
-      fetchVoteResults();
-      fetchComments();
-      checkUserVote();
-    }
-  }, [fight?.id, user?.id]);
-
-  const fetchVoteResults = async () => {
+  const fetchVoteResults = useCallback(async () => {
     try {
       const response = await axios.get(`/api/fights/${fight.id}/votes`);
       const results = response.data;
@@ -40,25 +30,33 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
     } catch (error) {
       console.error('Error fetching vote results:', error);
     }
-  };
+  }, [fight?.id]);
 
-  const fetchComments = async () => {
+  const fetchComments = useCallback(async () => {
     try {
       const response = await axios.get(`/api/fights/${fight.id}/comments`);
       setComments(response.data || []);
     } catch (error) {
       console.error('Error fetching comments:', error);
     }
-  };
+  }, [fight?.id]);
 
-  const checkUserVote = async () => {
+  const checkUserVote = useCallback(async () => {
     try {
       const response = await axios.get(`/api/fights/${fight.id}/user-vote/${user?.id}`);
       setUserVote(response.data.vote || null);
     } catch (error) {
       console.error('Error checking user vote:', error);
     }
-  };
+  }, [fight?.id, user?.id]);
+
+  useEffect(() => {
+    if (fight?.id) {
+      fetchVoteResults();
+      fetchComments();
+      checkUserVote();
+    }
+  }, [checkUserVote, fetchComments, fetchVoteResults, fight?.id]);
 
   const handleVote = async (characterChoice) => {
     if (!user) {

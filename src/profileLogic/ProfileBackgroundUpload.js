@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import './ProfileBackgroundUpload.css';
 
 const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [error, setError] = useState('');
-  const { t } = useLanguage();
   const token = localStorage.getItem('token');
 
   const handleFileSelect = (e) => {

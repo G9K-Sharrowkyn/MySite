@@ -6,7 +6,7 @@ import BadgeDisplay from '../badges/BadgeDisplay';
 import './UserBadges.css';
 
 const UserBadges = ({ userId, isOwner = false }) => {
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
   const [leveledBadges, setLeveledBadges] = useState([]);
   const [loadingLeveled, setLoadingLeveled] = useState(true);
 

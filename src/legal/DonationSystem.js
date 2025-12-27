@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import './DonationSystem.css';
 
 const DonationSystem = () => {
@@ -19,7 +18,6 @@ const DonationSystem = () => {
   const [donationMessage, setDonationMessage] = useState('');
   const [selectedPlatform, setSelectedPlatform] = useState('buymeacoffee');
   const [isLoading, setIsLoading] = useState(false);
-  const { t } = useLanguage();
 
   const presetAmounts = [1, 3, 5, 10, 25, 50];
 

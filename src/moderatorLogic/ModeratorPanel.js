@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
+import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import CharacterSelector from '../feedLogic/CharacterSelector';
 import Modal from '../Modal/Modal';
 import './ModeratorPanel.css';
@@ -32,19 +32,26 @@ const ModeratorPanel = () => {
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const currentUserId = localStorage.getItem('userId');
 
-  useEffect(() => {
-    if (!token) {
-      navigate('/login');
-      return;
+  const showNotification = useCallback((message, type) => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 5000);
+  }, []);
+
+  const fetchDivisions = useCallback(async () => {
+    if (!token) return;
+
+    try {
+      const response = await axios.get('/api/divisions', {
+        headers: { 'x-auth-token': token }
+      });
+      setDivisions(response.data || []);
+    } catch (error) {
+      console.error('Error fetching divisions:', error);
     }
-    
-    checkModeratorAccess();
-    fetchData();
-  }, [token, navigate]);
+  }, [token]);
 
-  const checkModeratorAccess = async () => {
+  const checkModeratorAccess = useCallback(async () => {
     try {
       const response = await axios.get('/api/profile/me', {
         headers: { 'x-auth-token': token }
@@ -58,9 +65,9 @@ const ModeratorPanel = () => {
       console.error('Error checking moderator access:', error);
       navigate('/login');
     }
-  };
+  }, [navigate, showNotification, token]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
       const [fightsRes, postsRes, usersRes, charactersRes, betsRes, divisionsRes] = await Promise.all([
@@ -91,12 +98,17 @@ const ModeratorPanel = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchDivisions, showNotification, token]);
 
-  const showNotification = (message, type) => {
-    setNotification({ message, type });
-    setTimeout(() => setNotification(null), 5000);
-  };
+  useEffect(() => {
+    if (!token) {
+      navigate('/login');
+      return;
+    }
+
+    checkModeratorAccess();
+    fetchData();
+  }, [checkModeratorAccess, fetchData, navigate, token]);
 
   const handleFightSubmit = async (e) => {
     e.preventDefault();
@@ -141,20 +153,6 @@ const ModeratorPanel = () => {
       showNotification('Błąd podczas tworzenia walki', 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Divisions Management
-  const fetchDivisions = async () => {
-    if (!token) return;
-    
-    try {
-      const response = await axios.get('/api/divisions', {
-        headers: { 'x-auth-token': token }
-      });
-      setDivisions(response.data || []);
-    } catch (error) {
-      console.error('Error fetching divisions:', error);
     }
   };
 

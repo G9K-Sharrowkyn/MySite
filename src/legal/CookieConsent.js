@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import './CookieConsent.css';
 
 const CookieConsent = () => {
@@ -13,7 +12,6 @@ const CookieConsent = () => {
     functional: false
   });
   const [isLoading, setIsLoading] = useState(false);
-  const { t } = useLanguage();
 
   useEffect(() => {
     // Check if user has already made a choice
