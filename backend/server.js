@@ -179,10 +179,19 @@ app.use('/api/store', storeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
 
-// Basic route
-app.get('/', (req, res) => {
-  res.send('API is running...');
-});
+// Basic route or static frontend for production
+if (process.env.NODE_ENV === 'production') {
+  const buildPath = path.join(__dirname, '..', 'build');
+  app.use(express.static(buildPath));
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(buildPath, 'index.html'));
+  });
+} else {
+  app.get('/', (req, res) => {
+    res.send('API is running...');
+  });
+}
 
 // Socket.io chat functionality
 const activeUsers = new Map(); // Track active users in chat
