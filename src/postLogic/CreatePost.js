@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import CharacterSelector from '../feedLogic/CharacterSelector';
 import './CreatePost.css';
 
@@ -15,6 +16,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     content: '',
     type: 'discussion', // discussion, fight, other
     photos: [],
+    category: 'discussion',
     voteDuration: '3d',
     pollOptions: ['', ''], // For fight posts (mandatory) or other posts (optional)
     teams: [] // For fight posts: array of {name: '', warriors: [{ character, customImage }] }
@@ -80,6 +82,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         content: initialData.content || '',
         type: initialData.type || 'discussion',
         photos: initialData.photos ? initialData.photos.map(url => ({ url, type: 'database' })) : [],
+        category: initialData.category || 'discussion',
         voteDuration: mappedVoteDuration,
         pollOptions: mappedPollOptions,
         teams: mappedTeams
@@ -286,7 +289,8 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         type: postData.type,
         photos: postData.photos.map(p => p.url),
         pollOptions: postData.pollOptions.filter(opt => opt.trim()),
-        voteDuration: postData.voteDuration
+        voteDuration: postData.voteDuration,
+        category: postData.type === 'fight' ? null : postData.category
       };
 
       if (postData.type === 'fight') {
@@ -318,15 +322,16 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
 
       // Reset form only if creating new post
       if (!initialData) {
-        setPostData({
-          title: '',
-          content: '',
-          type: 'discussion',
-          photos: [],
-          voteDuration: '3d',
-          pollOptions: ['', ''],
-          teams: []
-        });
+      setPostData({
+        title: '',
+        content: '',
+        type: 'discussion',
+        photos: [],
+        category: 'discussion',
+        voteDuration: '3d',
+        pollOptions: ['', ''],
+        teams: []
+      });
         setIsExpanded(false);
       }
     } catch (error) {
@@ -404,6 +409,25 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
               {t('fight') || 'Fight'}
             </button>
           </div>
+
+          {postData.type !== 'fight' && (
+            <div className="post-category">
+              <label htmlFor="postCategory">
+                {t('postCategory') || 'Post category'}
+              </label>
+              <select
+                id="postCategory"
+                name="category"
+                value={postData.category}
+                onChange={handleInputChange}
+                className="post-category-select"
+              >
+                <option value="question">{t('categoryQuestion') || 'Question'}</option>
+                <option value="discussion">{t('categoryDiscussion') || 'Discussion'}</option>
+                <option value="article">{t('categoryArticle') || 'Article'}</option>
+              </select>
+            </div>
+          )}
 
           {/* Basic Post Fields */}
           <div className="form-fields">
@@ -487,7 +511,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                     <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
                                       <div style={{ width: '100%', aspectRatio: '9/16', background: '#eee', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ccc' }}>
                                         <img
-                                          src={warrior.character.image}
+                                          {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
                                           alt={warrior.character.name}
                                           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                         />
@@ -550,7 +574,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                 <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
                                   <div style={{ width: '100%', aspectRatio: '9/16', background: '#eee', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ccc' }}>
                                     <img
-                                      src={warrior.character.image}
+                                      {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
                                       alt={warrior.character.name}
                                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                     />

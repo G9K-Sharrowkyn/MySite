@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { placeholderImages } from '../utils/placeholderImage';
+import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import './FightDetailPage.css';
 
 const FightDetailPage = () => {
@@ -223,7 +223,7 @@ const FightDetailPage = () => {
       <div className="fighters-section">
         <div className="fighter fighter1">
           <div className="fighter-image">
-            <img src={fight.fighter1Image} alt={fight.fighter1} />
+            <img {...getOptimizedImageProps(fight.fighter1Image, { size: 200 })} alt={fight.fighter1} />
             {userVote === 'fighter1' && <div className="vote-indicator">✓ Zagłosowano</div>}
           </div>
           <h2>{fight.fighter1}</h2>
@@ -269,7 +269,7 @@ const FightDetailPage = () => {
 
         <div className="fighter fighter2">
           <div className="fighter-image">
-            <img src={fight.fighter2Image} alt={fight.fighter2} />
+            <img {...getOptimizedImageProps(fight.fighter2Image, { size: 200 })} alt={fight.fighter2} />
             {userVote === 'fighter2' && <div className="vote-indicator">✓ Zagłosowano</div>}
           </div>
           <h2>{fight.fighter2}</h2>
@@ -312,7 +312,10 @@ const FightDetailPage = () => {
           <form onSubmit={handleCommentSubmit} className="comment-form">
             <div className="comment-input">
               <img 
-                src={user.profilePicture || placeholderImages.userSmall}
+                {...getOptimizedImageProps(
+                  user.profilePicture || placeholderImages.userSmall,
+                  { size: 50 }
+                )}
                 alt="Your avatar" 
                 className="comment-avatar"
               />
@@ -335,7 +338,7 @@ const FightDetailPage = () => {
               <div key={comment.id} className="comment-item">
                 <div className="comment-header">
                   <img 
-                    src={placeholderImages.userSmall}
+                    {...getOptimizedImageProps(placeholderImages.userSmall, { size: 50 })}
                     alt={comment.authorUsername} 
                     className="comment-avatar"
                   />

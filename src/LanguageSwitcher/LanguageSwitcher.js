@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './LanguageSwitcher.css';
 
 const LanguageSwitcher = () => {
@@ -37,7 +38,11 @@ const LanguageSwitcher = () => {
           onClick={() => setShowLanguageMenu(!showLanguageMenu)}
           title="Change Language"
         >
-          <img className="flag" src={currentLang?.flag} alt={currentLang?.name} />
+          <img
+            {...getOptimizedImageProps(currentLang?.flag, { size: 24 })}
+            className="flag"
+            alt={currentLang?.name}
+          />
           <span className="dropdown-arrow">▼</span>
         </button>
 
@@ -49,7 +54,11 @@ const LanguageSwitcher = () => {
                 className={`language-option ${currentLanguage === language.code ? 'active' : ''}`}
                 onClick={() => handleLanguageChange(language.code)}
               >
-                <img className="flag" src={language.flag} alt={language.name} />
+                <img
+                  {...getOptimizedImageProps(language.flag, { size: 24 })}
+                  className="flag"
+                  alt={language.name}
+                />
                 <span className="language-name">{language.name}</span>
                 {currentLanguage === language.code && <span className="check">✓</span>}
               </button>

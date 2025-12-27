@@ -1,8 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, updateDb } from '../services/jsonDb.js';
 import { autoTagPost } from '../utils/tagging.js';
+import { createNotification } from './notificationController.js';
+import { findProfanityMatches } from '../utils/profanity.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
+const resolveRole = (user) => user?.role || 'user';
 
 const buildAuthor = (user) => {
   if (!user) return null;
@@ -79,11 +82,52 @@ const buildReactionSummary = (reactions = []) => {
   });
 };
 
+const notifyAdminsForProfanity = async (db, payload) => {
+  const { author, postId, text, matches } = payload || {};
+  if (!matches || matches.length === 0) return;
+  const admins = (db.users || []).filter((user) => resolveRole(user) === 'admin');
+  if (!admins.length) return;
+
+  const authorId = resolveUserId(author);
+  const summary = matches.join(', ');
+  const title = 'Profanity detected in post';
+  const content = `${author?.username || 'User'} used flagged words: ${summary}`;
+
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification(db, resolveUserId(admin), 'moderation', title, content, {
+        sourceType: 'post',
+        postId,
+        authorId,
+        matches,
+        text
+      })
+    )
+  );
+};
+
 export const getAllPosts = async (req, res) => {
-  const { page = 1, limit = 10, sortBy = 'createdAt' } = req.query;
+  const { page = 1, limit = 10, sortBy = 'createdAt', category } = req.query;
   try {
     const db = await readDb();
-    const sortedPosts = sortPosts(db.posts, sortBy);
+    const normalizedCategory = String(category || '').toLowerCase();
+    let filteredPosts = db.posts || [];
+
+    if (normalizedCategory && normalizedCategory !== 'all') {
+      if (normalizedCategory === 'fight') {
+        filteredPosts = filteredPosts.filter((post) => post.type === 'fight');
+      } else {
+        filteredPosts = filteredPosts.filter((post) => {
+          if (post.type === 'fight') return false;
+          const postCategory = String(
+            post.category || (post.type !== 'fight' ? 'discussion' : '')
+          ).toLowerCase();
+          return postCategory === normalizedCategory;
+        });
+      }
+    }
+
+    const sortedPosts = sortPosts(filteredPosts, sortBy);
     const pageNumber = Number(page);
     const limitNumber = Number(limit);
     const pagedPosts = sortedPosts.slice(
@@ -97,9 +141,9 @@ export const getAllPosts = async (req, res) => {
 
     res.json({
       posts: postsWithUserInfo,
-      totalPosts: db.posts.length,
+      totalPosts: filteredPosts.length,
       currentPage: pageNumber,
-      totalPages: Math.ceil(db.posts.length / limitNumber)
+      totalPages: Math.ceil(filteredPosts.length / limitNumber)
     });
   } catch (err) {
     console.error('Error fetching all posts from JSON:', err.message);
@@ -187,8 +231,9 @@ export const createPost = async (req, res) => {
 
     let createdPost;
     let author;
+    const resolvedCategory = postType === 'fight' ? null : (category || 'discussion');
 
-    await updateDb((db) => {
+    await updateDb(async (db) => {
       author = db.users.find((user) => resolveUserId(user) === req.user.id);
       if (!author) {
         const error = new Error('User not found');
@@ -196,8 +241,8 @@ export const createPost = async (req, res) => {
         throw error;
       }
 
-      if (isOfficial && author.role !== 'moderator') {
-        const error = new Error('Only moderators can create official fights');
+      if (isOfficial && author.role !== 'moderator' && author.role !== 'admin') {
+        const error = new Error('Only moderators or admins can create official fights');
         error.code = 'FORBIDDEN_OFFICIAL';
         throw error;
       }
@@ -219,7 +264,7 @@ export const createPost = async (req, res) => {
         reactions: [],
         isOfficial: Boolean(isOfficial),
         moderatorCreated: Boolean(moderatorCreated),
-        category: category || null,
+        category: resolvedCategory,
         featured: false,
         tags: [],
         autoTags: {
@@ -273,6 +318,16 @@ export const createPost = async (req, res) => {
       postData.autoTags = autoTagPayload.autoTags;
 
       db.posts.push(postData);
+
+      const matches = findProfanityMatches(`${title} ${content}`);
+      if (matches.length) {
+        await notifyAdminsForProfanity(db, {
+          author,
+          postId: postData.id,
+          text: content,
+          matches
+        });
+      }
 
       if (!author.activity) {
         author.activity = {
@@ -328,7 +383,11 @@ export const updatePost = async (req, res) => {
         throw error;
       }
 
-      if (post.authorId !== req.user.id && user.role !== 'moderator') {
+      if (
+        post.authorId !== req.user.id &&
+        user.role !== 'moderator' &&
+        user.role !== 'admin'
+      ) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
@@ -375,7 +434,11 @@ export const deletePost = async (req, res) => {
         throw error;
       }
 
-      if (post.authorId !== req.user.id && user.role !== 'moderator') {
+      if (
+        post.authorId !== req.user.id &&
+        user.role !== 'moderator' &&
+        user.role !== 'admin'
+      ) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;

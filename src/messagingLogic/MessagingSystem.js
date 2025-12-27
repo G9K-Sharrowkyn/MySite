@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
 import './MessagingSystem.css';
@@ -259,7 +260,7 @@ const MessagingSystem = ({ user }) => {
                   className="search-result-item"
                   onClick={() => startConversation(foundUser.id)}
                 >
-                  <img src={foundUser.avatar} alt={foundUser.username} />
+                  <img {...getOptimizedImageProps(foundUser.avatar, { size: 40 })} alt={foundUser.username} />
                   <div className="user-info">
                     <span className="username">{foundUser.username}</span>
                     {foundUser.isModerator && <span className="mod-badge">MOD</span>}
@@ -286,7 +287,7 @@ const MessagingSystem = ({ user }) => {
                 }}
               >
                 <div className="participant-avatar">
-                  <img src={otherParticipant?.avatar} alt={otherParticipant?.username} />
+                  <img {...getOptimizedImageProps(otherParticipant?.avatar, { size: 40 })} alt={otherParticipant?.username} />
                   {isUserOnline(otherParticipant?.id) && (
                     <div className="online-status"></div>
                   )}
@@ -331,7 +332,10 @@ const MessagingSystem = ({ user }) => {
             <div className="chat-header">
               <div className="participant-info">
                 <img 
-                  src={getOtherParticipant(activeConversation)?.avatar} 
+                  {...getOptimizedImageProps(
+                    getOtherParticipant(activeConversation)?.avatar,
+                    { size: 40 }
+                  )}
                   alt={getOtherParticipant(activeConversation)?.username} 
                 />
                 <div className="participant-details">
@@ -446,7 +450,7 @@ const MessagingSystem = ({ user }) => {
                   startConversation(userId);
                 }}
               >
-                <img src={`/avatars/${userId}.jpg`} alt="User" />
+                <img {...getOptimizedImageProps(`/avatars/${userId}.jpg`, { size: 32 })} alt="User" />
               </div>
             ))
           }

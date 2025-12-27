@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './EnhancedProfile.css';
 
 const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
@@ -260,7 +261,7 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
               </div>
               <div className="team-fighters">
                 {division.team?.fighters.map(fighter => (
-                  <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                  <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                 ))}
               </div>
             </div>
@@ -319,7 +320,7 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
             
             <div className="fight-info">
               <div className="opponent-info">
-                <img src={fight.opponent.avatar} alt={fight.opponent.username} />
+                <img {...getOptimizedImageProps(fight.opponent.avatar, { size: 40 })} alt={fight.opponent.username} />
                 <span className="opponent-name">{fight.opponent.username}</span>
               </div>
               
@@ -367,7 +368,7 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
       {currentUser && !isOwnProfile && (
         <div className="comment-input">
           <div className="user-avatar">
-            <img src={currentUser.avatar} alt={currentUser.username} />
+            <img {...getOptimizedImageProps(currentUser.avatar, { size: 40 })} alt={currentUser.username} />
           </div>
           <div className="input-area">
             <textarea
@@ -391,7 +392,7 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
         {profileComments.map(comment => (
           <div key={comment.id} className="profile-comment">
             <div className="comment-avatar">
-              <img src={comment.author.avatar} alt={comment.author.username} />
+              <img {...getOptimizedImageProps(comment.author.avatar, { size: 40 })} alt={comment.author.username} />
             </div>
             <div className="comment-content">
               <div className="comment-header">
@@ -435,7 +436,7 @@ const EnhancedProfile = ({ userId, currentUser, isOwnProfile }) => {
         
         <div className="profile-main-info">
           <div className="profile-avatar">
-            <img src={profile?.avatar} alt={profile?.username} />
+            <img {...getOptimizedImageProps(profile?.avatar, { size: 60 })} alt={profile?.username} />
             {profile?.isChampion && <div className="champion-ring"></div>}
           </div>
           

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './i18n/LanguageContext';
-import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
+import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from './utils/placeholderImage';
 import LanguageSwitcher from './LanguageSwitcher/LanguageSwitcher';
 import { AuthContext } from './auth/AuthContext';
 import './Header.css';
@@ -17,6 +17,8 @@ const Header = () => {
   const navigate = useNavigate();
   const { t } = useLanguage();
   const isLoggedIn = !!user;
+  const isModerator = user?.role === 'moderator' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   const fetchUserData = useCallback(async () => {
     if (!token) {
@@ -154,8 +156,11 @@ const Header = () => {
               <Link to="/betting" className="nav-link betting-link">💰 {t('betting')}</Link>
             </>
           )}
-          {user && user.role === 'moderator' && (
+          {isModerator && (
             <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
+          )}
+          {isAdmin && (
+            <Link to="/admin" className="nav-link admin-link">{t('adminPanel') || 'Admin'}</Link>
           )}
         </nav>
 
@@ -234,7 +239,10 @@ const Header = () => {
                   onClick={() => setShowUserMenu(!showUserMenu)}
                 >
                   <img 
-                    src={replacePlaceholderUrl(user?.profilePicture) || placeholderImages.userSmall} 
+                    {...getOptimizedImageProps(
+                      replacePlaceholderUrl(user?.profilePicture) || placeholderImages.userSmall,
+                      { size: 40 }
+                    )}
                     alt="Profile" 
                     className="user-avatar"
                   />

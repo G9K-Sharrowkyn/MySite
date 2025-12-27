@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import io from 'socket.io-client';
 import { AuthContext } from '../auth/AuthContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './GlobalChatSystem.css';
 
 const GlobalChatSystem = () => {
@@ -21,13 +22,27 @@ const GlobalChatSystem = () => {
 
   const emojis = ['😀', '😂', '❤️', '👍', '👎', '🔥', '🎉', '😎', '😭', '🤔'];
 
+  const resolveSocketUrl = () => {
+    if (process.env.REACT_APP_SOCKET_URL) {
+      return process.env.REACT_APP_SOCKET_URL;
+    }
+    if (typeof window === 'undefined') {
+      return 'http://localhost:5001';
+    }
+    const { protocol, hostname, port } = window.location;
+    if (port === '3000') {
+      return `${protocol}//${hostname}:5001`;
+    }
+    return window.location.origin;
+  };
+
   useEffect(() => {
     if (!user || !token) return;
 
     // Connect to Socket.io server
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io(resolveSocketUrl(), {
       auth: { token },
-      transports: ['websocket']
+      transports: ['websocket', 'polling']
     });
 
     newSocket.on('connect', () => {
@@ -235,7 +250,10 @@ const GlobalChatSystem = () => {
                   <div key={message.id} className={`message ${isOwn ? 'own' : 'other'}`}>
                     {!isOwn && (
                       <img 
-                        src={message.profilePicture || '/placeholder-avatar.png'} 
+                        {...getOptimizedImageProps(
+                          message.profilePicture || '/placeholder-avatar.png',
+                          { size: 36 }
+                        )}
                         alt={message.username}
                         className="message-avatar"
                       />
@@ -313,7 +331,10 @@ const GlobalChatSystem = () => {
               <div className="users-list">
                 <div className="user-item current-user">
                   <img 
-                    src={user.profilePicture || '/placeholder-avatar.png'} 
+                    {...getOptimizedImageProps(
+                      user.profilePicture || '/placeholder-avatar.png',
+                      { size: 28 }
+                    )}
                     alt={user.username}
                   />
                   <span>{user.username} (You)</span>
@@ -321,7 +342,10 @@ const GlobalChatSystem = () => {
                 {activeUsers.map(activeUser => (
                   <div key={activeUser.userId} className="user-item">
                     <img 
-                      src={activeUser.profilePicture || '/placeholder-avatar.png'} 
+                      {...getOptimizedImageProps(
+                        activeUser.profilePicture || '/placeholder-avatar.png',
+                        { size: 28 }
+                      )}
                       alt={activeUser.username}
                     />
                     <span>{activeUser.username}</span>

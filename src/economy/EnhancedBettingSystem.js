@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './EnhancedBettingSystem.css';
 
 const EnhancedBettingSystem = ({ user }) => {
@@ -522,7 +523,7 @@ const EnhancedBettingSystem = ({ user }) => {
                   </div>
                   <div className="team-fighters">
                     {fight.team1.fighters.map(fighter => (
-                      <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                      <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 100 })} alt={fighter.name} />
                     ))}
                   </div>
                 </div>
@@ -541,7 +542,7 @@ const EnhancedBettingSystem = ({ user }) => {
                   </div>
                   <div className="team-fighters">
                     {fight.team2.fighters.map(fighter => (
-                      <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                      <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 100 })} alt={fighter.name} />
                     ))}
                   </div>
                 </div>

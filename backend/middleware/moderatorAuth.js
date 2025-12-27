@@ -14,8 +14,11 @@ const moderatorAuth = async (req, res, next) => {
       return res.status(401).json({ msg: 'User not found' });
     }
 
-    if (user.role !== 'moderator') {
-      return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
+    const hasAccess = user.role === 'moderator' || user.role === 'admin';
+    if (!hasAccess) {
+      return res
+        .status(403)
+        .json({ msg: 'Access denied. Moderator or admin role required.' });
     }
 
     next();

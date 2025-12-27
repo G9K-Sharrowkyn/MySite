@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from './utils/placeholderImage';
+import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from './utils/placeholderImage';
 import { useLanguage } from './i18n/LanguageContext';
 import './Home.css';
 
@@ -250,7 +250,10 @@ const Home = () => {
                 <div key={user.id} className="user-preview">
                   <div className="user-rank">#{index + 1}</div>
                   <img 
-                    src={replacePlaceholderUrl(user.profilePicture) || placeholderImages.userSmall}
+                    {...getOptimizedImageProps(
+                      replacePlaceholderUrl(user.profilePicture) || placeholderImages.userSmall,
+                      { size: 45 }
+                    )}
                     alt={user.username}
                     className="user-avatar"
                   />

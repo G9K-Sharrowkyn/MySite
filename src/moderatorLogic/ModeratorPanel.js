@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import CharacterSelector from '../feedLogic/CharacterSelector';
 import Modal from '../Modal/Modal';
 import './ModeratorPanel.css';
@@ -648,7 +648,7 @@ const ModeratorPanel = () => {
               {users.map(user => (
                 <div key={user.id} className="user-card">
                   <img 
-                    src={placeholderImages.userSmall} 
+                    {...getOptimizedImageProps(placeholderImages.userSmall, { size: 60 })}
                     alt={user.username}
                     className="user-avatar"
                   />

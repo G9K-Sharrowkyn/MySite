@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import Notification from '../notificationLogic/Notification';
 import './CharacterSelectionPage.css';
 
@@ -77,7 +78,7 @@ const CharacterSelectionPage = () => {
       <div className="character-list">
         {characters.map(char => (
           <div key={char.id} className={`character-card${selectedCharacters.includes(char.id) ? ' selected' : ''}`} onClick={() => handleSelect(char.id)}>
-            <img src={char.image} alt={char.name} />
+            <img {...getOptimizedImageProps(char.image, { size: 160 })} alt={char.name} />
             <h3>{char.name}</h3>
             <p>{char.universe}</p>
           </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
-import { replacePlaceholderUrl } from '../utils/placeholderImage';
+import { replacePlaceholderUrl, getOptimizedImageProps } from '../utils/placeholderImage';
 import './TeamSelection.css';
 
 const TeamSelection = ({ division, onTeamSelected, onCancel }) => {
@@ -101,7 +101,10 @@ const TeamSelection = ({ division, onTeamSelected, onCancel }) => {
               {selectedCharacters[index] ? (
                 <div className="selected-character">
                   <img 
-                    src={replacePlaceholderUrl(selectedCharacters[index].image)}
+                    {...getOptimizedImageProps(
+                      replacePlaceholderUrl(selectedCharacters[index].image),
+                      { size: 100 }
+                    )}
                     alt={selectedCharacters[index].name}
                     className="character-image"
                   />
@@ -164,7 +167,7 @@ const TeamSelection = ({ division, onTeamSelected, onCancel }) => {
                 </div>
                 
                 <img 
-                  src={replacePlaceholderUrl(character.image)}
+                  {...getOptimizedImageProps(replacePlaceholderUrl(character.image), { size: 150 })}
                   alt={character.name}
                   className="character-image"
                 />

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './DivisionSystem.css';
 
 const DivisionSystem = ({ user, isModerator }) => {
@@ -263,7 +264,7 @@ const DivisionSystem = ({ user, isModerator }) => {
                   <div className="team-side">
                     <div className="team-fighters">
                       {fight.team1.fighters.map(fighter => (
-                        <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                        <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                       ))}
                     </div>
                     <div className="team-info">
@@ -284,7 +285,7 @@ const DivisionSystem = ({ user, isModerator }) => {
                   <div className="team-side">
                     <div className="team-fighters">
                       {fight.team2.fighters.map(fighter => (
-                        <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                        <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                       ))}
                     </div>
                     <div className="team-info">
@@ -334,7 +335,7 @@ const DivisionSystem = ({ user, isModerator }) => {
                     <span className="champion-name">{champion.username}</span>
                     <div className="champion-team">
                       {champion.team.fighters.map(fighter => (
-                        <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                        <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                       ))}
                     </div>
                   </div>
@@ -362,7 +363,7 @@ const DivisionSystem = ({ user, isModerator }) => {
                   <div className="team-fighters">
                     {userTeam.fighters.map(fighter => (
                       <div key={fighter.id} className="fighter-card">
-                        <img src={fighter.image} alt={fighter.name} />
+                        <img {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                         <span>{fighter.name}</span>
                       </div>
                     ))}
@@ -423,7 +424,7 @@ const DivisionSystem = ({ user, isModerator }) => {
                         : handleCharacterSelect(character)
                     }
                   >
-                    <img src={character.image} alt={character.name} />
+                    <img {...getOptimizedImageProps(character.image, { size: 120 })} alt={character.name} />
                     <span>{character.name}</span>
                     {selectedFighters.find(f => f.id === character.id) && (
                       <div className="selected-overlay">✓</div>
@@ -438,7 +439,7 @@ const DivisionSystem = ({ user, isModerator }) => {
               <div className="team-preview">
                 {selectedFighters.map(fighter => (
                   <div key={fighter.id} className="selected-fighter">
-                    <img src={fighter.image} alt={fighter.name} />
+                    <img {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                     <span>{fighter.name}</span>
                   </div>
                 ))}

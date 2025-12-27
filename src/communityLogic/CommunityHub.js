@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './CommunityHub.css';
 
 const CommunityHub = ({ user }) => {
@@ -146,7 +147,10 @@ const CommunityHub = ({ user }) => {
             
             <div className="discussion-footer">
               <div className="discussion-author">
-                <img src={discussion.user?.avatar} alt={discussion.user?.username} />
+                <img
+                  {...getOptimizedImageProps(discussion.user?.avatar, { size: 40 })}
+                  alt={discussion.user?.username}
+                />
                 <span>{discussion.user?.username}</span>
                 {discussion.user?.isModerator && <span className="mod-badge">MOD</span>}
               </div>
@@ -228,7 +232,7 @@ const CommunityHub = ({ user }) => {
               {[1, 2, 3, 4, 5].map(rank => (
                 <div key={rank} className="ranking-item">
                   <span className="rank-number">#{rank}</span>
-                  <img src={`/characters/placeholder.jpg`} alt="Character" />
+                  <img {...getOptimizedImageProps(`/characters/placeholder.jpg`, { size: 40 })} alt="Character" />
                   <div className="character-info">
                     <span className="character-name">Character {rank}</span>
                     <span className="character-universe">Universe</span>
@@ -363,7 +367,7 @@ const CommunityHub = ({ user }) => {
           <div className="users-list">
             {[1, 2, 3, 4, 5].map(i => (
               <div key={i} className="active-user">
-                <img src={`/avatars/user${i}.jpg`} alt={`User ${i}`} />
+                <img {...getOptimizedImageProps(`/avatars/user${i}.jpg`, { size: 40 })} alt={`User ${i}`} />
                 <div className="user-info">
                   <span className="username">User{i}</span>
                   <span className="user-points">{1000 - i * 100} points</span>

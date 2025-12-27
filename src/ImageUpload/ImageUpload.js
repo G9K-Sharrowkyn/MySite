@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './ImageUpload.css';
 
 const ImageUpload = ({ currentImage, onImageChange, className = '' }) => {
@@ -90,7 +91,11 @@ const ImageUpload = ({ currentImage, onImageChange, className = '' }) => {
       
       {preview ? (
         <div className="image-preview">
-          <img src={preview} alt="Preview" className="preview-image" />
+          <img
+            {...getOptimizedImageProps(preview, { size: 300 })}
+            alt="Preview"
+            className="preview-image"
+          />
           <div className="image-overlay">
             <button
               type="button"

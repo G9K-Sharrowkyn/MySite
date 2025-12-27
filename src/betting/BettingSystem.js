@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import { AuthContext } from '../auth/AuthContext';
 import './BettingSystem.css';
 
@@ -169,7 +170,7 @@ const AvailableFights = ({ fights, onBetClick, formatTimeRemaining, isLoading })
                 <div className="team-characters">
                   {fight.teamA.map((char, idx) => (
                     <div key={idx} className="character">
-                      <img src={char.characterImage} alt={char.characterName} />
+                      <img {...getOptimizedImageProps(char.characterImage, { size: 40 })} alt={char.characterName} />
                       <span>{char.characterName}</span>
                     </div>
                   ))}
@@ -193,7 +194,7 @@ const AvailableFights = ({ fights, onBetClick, formatTimeRemaining, isLoading })
                 <div className="team-characters">
                   {fight.teamB.map((char, idx) => (
                     <div key={idx} className="character">
-                      <img src={char.characterImage} alt={char.characterName} />
+                      <img {...getOptimizedImageProps(char.characterImage, { size: 40 })} alt={char.characterName} />
                       <span>{char.characterName}</span>
                     </div>
                   ))}
@@ -619,7 +620,7 @@ const BetModal = ({ fight, onClose, onBetPlaced }) => {
                 <div className="team-characters">
                   {fight.teamA.map((char, idx) => (
                     <div key={idx} className="character">
-                      <img src={char.characterImage} alt={char.characterName} />
+                      <img {...getOptimizedImageProps(char.characterImage, { size: 40 })} alt={char.characterName} />
                       <span>{char.characterName}</span>
                     </div>
                   ))}
@@ -634,7 +635,7 @@ const BetModal = ({ fight, onClose, onBetPlaced }) => {
                 <div className="team-characters">
                   {fight.teamB.map((char, idx) => (
                     <div key={idx} className="character">
-                      <img src={char.characterImage} alt={char.characterName} />
+                      <img {...getOptimizedImageProps(char.characterImage, { size: 40 })} alt={char.characterName} />
                       <span>{char.characterName}</span>
                     </div>
                   ))}

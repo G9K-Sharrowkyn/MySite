@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
 import './DonationSystem.css';
@@ -159,7 +160,7 @@ const DonationSystem = () => {
                   onChange={(e) => setSelectedPlatform(e.target.value)}
                 />
                 <div className="platform-info">
-                  <img src="/buymeacoffee-logo.png" alt="Buy Me a Coffee" />
+                  <img {...getOptimizedImageProps("/buymeacoffee-logo.png", { size: 32 })} alt="Buy Me a Coffee" />
                   <span>Buy Me a Coffee</span>
                 </div>
               </label>
@@ -173,7 +174,7 @@ const DonationSystem = () => {
                   onChange={(e) => setSelectedPlatform(e.target.value)}
                 />
                 <div className="platform-info">
-                  <img src="/paypal-logo.png" alt="PayPal" />
+                  <img {...getOptimizedImageProps("/paypal-logo.png", { size: 32 })} alt="PayPal" />
                   <span>PayPal</span>
                 </div>
               </label>

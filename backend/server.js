@@ -113,6 +113,10 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(
+  '/characters',
+  express.static(path.join(__dirname, '..', 'public', 'characters'))
+);
 
 // Make io accessible to routes
 app.use((req, res, next) => {

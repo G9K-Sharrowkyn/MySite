@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './CreateFightPage.css';
 
 const CreateFightPage = () => {
@@ -298,7 +299,7 @@ const CreateFightPage = () => {
               <h4>Wojownik 1</h4>
               <div className="fighter-preview">
                 {formData.fighter1Image && (
-                  <img src={formData.fighter1Image} alt={formData.fighter1} />
+                  <img {...getOptimizedImageProps(formData.fighter1Image, { size: 100 })} alt={formData.fighter1} />
                 )}
                 <div className="fighter-info">
                   <input
@@ -326,7 +327,7 @@ const CreateFightPage = () => {
                     className={`character-option ${formData.fighter1 === character.name ? 'selected' : ''}`}
                     onClick={() => handleCharacterSelect(1, character)}
                   >
-                    <img src={character.image} alt={character.name} />
+                    <img {...getOptimizedImageProps(character.image, { size: 60 })} alt={character.name} />
                     <span>{character.name}</span>
                   </div>
                 ))}
@@ -342,7 +343,7 @@ const CreateFightPage = () => {
               <h4>Wojownik 2</h4>
               <div className="fighter-preview">
                 {formData.fighter2Image && (
-                  <img src={formData.fighter2Image} alt={formData.fighter2} />
+                  <img {...getOptimizedImageProps(formData.fighter2Image, { size: 100 })} alt={formData.fighter2} />
                 )}
                 <div className="fighter-info">
                   <input
@@ -370,7 +371,7 @@ const CreateFightPage = () => {
                     className={`character-option ${formData.fighter2 === character.name ? 'selected' : ''}`}
                     onClick={() => handleCharacterSelect(2, character)}
                   >
-                    <img src={character.image} alt={character.name} />
+                    <img {...getOptimizedImageProps(character.image, { size: 60 })} alt={character.name} />
                     <span>{character.name}</span>
                   </div>
                 ))}

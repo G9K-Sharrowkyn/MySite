@@ -76,6 +76,16 @@
   background-color: #e67e22;
 }
 
+.admin-link {
+  background-color: var(--danger-color);
+  color: white;
+  font-weight: bold;
+}
+
+.admin-link:hover {
+  background-color: #c0392b;
+}
+
 /* Header Controls (Language Switcher) */
 .header-controls {
   margin-left: auto;

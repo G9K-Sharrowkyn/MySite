@@ -17,10 +17,122 @@ export const placeholderImages = {
   character: generatePlaceholderImage(150, 200, '#444', '#fff', 'Char'),
 };
 
+const isExternalUrl = (url) => /^https?:\/\//i.test(url);
+const isCharacterAsset = (url) => typeof url === 'string' && url.startsWith('/characters/');
+
+const safeDecode = (value) => {
+  try {
+    return decodeURIComponent(value);
+  } catch (error) {
+    return value;
+  }
+};
+
+const fullyDecode = (value) => {
+  let current = value;
+  for (let i = 0; i < 3; i += 1) {
+    const decoded = safeDecode(current);
+    if (decoded === current) {
+      break;
+    }
+    current = decoded;
+  }
+  return current;
+};
+
+export const normalizeAssetUrl = (url) => {
+  if (!url || typeof url !== 'string') {
+    return url;
+  }
+  if (url.startsWith('data:') || url.startsWith('blob:') || isExternalUrl(url)) {
+    return url;
+  }
+
+  const parts = url.split('/');
+  return parts
+    .map((part, index) => (index === 0 ? part : encodeURIComponent(fullyDecode(part))))
+    .join('/');
+};
+
+const buildCharacterThumbUrl = (url) => {
+  if (!isCharacterAsset(url)) return null;
+  const filename = fullyDecode(url.split('/').pop() || '');
+  if (!filename) return null;
+  const base = filename.replace(/\.[^.]+$/, '');
+  if (!base) return null;
+  return normalizeAssetUrl(`/characters/thumbs/${base}.webp`);
+};
+
+export const getCharacterImageSources = (url) => {
+  const src = normalizeAssetUrl(url);
+  const thumb = buildCharacterThumbUrl(src);
+  if (!thumb || !src) {
+    return { src, thumb: null, srcSet: null };
+  }
+  return {
+    src,
+    thumb,
+    srcSet: `${thumb} 320w, ${src} 1024w`
+  };
+};
+
+export const getOptimizedImageProps = (
+  url,
+  { size = 200, preferFull = false, lazy = true, fetchPriority, decoding = 'async' } = {}
+) => {
+  const { src, thumb, srcSet } = getCharacterImageSources(url);
+  const primarySrc = preferFull || !thumb ? src : thumb;
+  const props = {
+    src: primarySrc,
+    decoding
+  };
+  props.loading = lazy ? 'lazy' : 'eager';
+  if (fetchPriority) {
+    props.fetchPriority = fetchPriority;
+  }
+  if (srcSet && size) {
+    props.srcSet = srcSet;
+    props.sizes = `${size}px`;
+  }
+  return props;
+};
+
+const preloadedImages = new Set();
+
+export const preloadImage = (url) => {
+  const src = normalizeAssetUrl(url);
+  if (!src || typeof src !== 'string') {
+    return;
+  }
+  if (src.startsWith('data:') || src.startsWith('blob:')) {
+    return;
+  }
+  if (preloadedImages.has(src)) {
+    return;
+  }
+  const img = new Image();
+  img.decoding = 'async';
+  img.src = src;
+  preloadedImages.add(src);
+};
+
+export const preloadCharacterImage = (url) => {
+  const { src, thumb } = getCharacterImageSources(url);
+  if (thumb) {
+    preloadImage(thumb);
+  }
+  if (src) {
+    preloadImage(src);
+  }
+};
+
 // Function to replace via.placeholder.com URLs with local alternatives
 export const replacePlaceholderUrl = (url) => {
-  if (!url || !url.includes('via.placeholder.com')) {
+  if (!url) {
     return url;
+  }
+  if (!url.includes('via.placeholder.com')) {
+    return normalizeAssetUrl(url);
   }
   
   // Extract dimensions and text from via.placeholder.com URL

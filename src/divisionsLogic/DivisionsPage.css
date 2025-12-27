@@ -1,8 +1,9 @@
 /* Divisions Page */
 .divisions-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-tertiary) 100%);
   padding: 20px;
+  color: var(--text-primary);
 }
 
 .loading-container {
@@ -11,15 +12,15 @@
   align-items: center;
   justify-content: center;
   height: 60vh;
-  color: white;
+  color: var(--text-primary);
   text-align: center;
 }
 
 .loading-container .spinner {
   width: 50px;
   height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.3);
-  border-top: 4px solid white;
+  border: 4px solid rgba(0, 0, 0, 0.15);
+  border-top: 4px solid var(--accent-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
@@ -29,7 +30,7 @@
 .divisions-header {
   text-align: center;
   margin-bottom: 50px;
-  color: white;
+  color: var(--text-primary);
 }
 
 .divisions-header h1 {
@@ -55,13 +56,13 @@
 }
 
 .division-card {
-  background: rgba(255, 255, 255, 0.98);
+  background: var(--bg-secondary);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
-  border: 3px solid transparent;
+  border: 3px solid var(--border-color);
   position: relative;
   overflow: hidden;
 }
@@ -78,13 +79,13 @@
 
 .division-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-hover);
   border-color: var(--division-color);
 }
 
 .division-card.joined {
   border-color: var(--division-color);
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--bg-secondary);
 }
 
 .division-card.joined::before {
@@ -118,13 +119,13 @@
 
 .division-info h3 {
   margin: 0 0 10px 0;
-  color: #333;
+  color: var(--text-primary);
   font-size: 1.5rem;
   font-weight: 700;
 }
 
 .division-description {
-  color: #666;
+  color: var(--text-secondary);
   margin: 0 0 10px 0;
   line-height: 1.5;
 }
@@ -141,7 +142,7 @@
 
 /* User Team */
 .user-team {
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--bg-tertiary);
   border-radius: 15px;
   padding: 20px;
   margin: 20px 0;
@@ -150,7 +151,7 @@
 
 .user-team h4 {
   margin: 0 0 15px 0;
-  color: #333;
+  color: var(--text-primary);
   font-weight: 600;
 }
 
@@ -192,7 +193,7 @@
 .team-character .character-name {
   font-size: 0.85rem;
   font-weight: 600;
-  color: #333;
+  color: var(--text-primary);
   text-align: center;
 }
 

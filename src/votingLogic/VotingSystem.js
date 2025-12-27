@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './VotingSystem.css';
 
 const VotingSystem = ({ fight, user, onVoteComplete }) => {
@@ -184,7 +185,7 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
         <div className={`character-side left ${userVote === 'character1' ? 'voted' : ''}`}>
           <div className="character-card" onClick={() => handleVote('character1')}>
             <div className="character-image">
-              <img src={fight.character1?.image} alt={fight.character1?.name} />
+              <img {...getOptimizedImageProps(fight.character1?.image, { size: 150 })} alt={fight.character1?.name} />
               {userVote === 'character1' && <div className="vote-overlay">✓ YOUR VOTE</div>}
             </div>
             <div className="character-info">
@@ -238,7 +239,7 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
         <div className={`character-side right ${userVote === 'character2' ? 'voted' : ''}`}>
           <div className="character-card" onClick={() => handleVote('character2')}>
             <div className="character-image">
-              <img src={fight.character2?.image} alt={fight.character2?.name} />
+              <img {...getOptimizedImageProps(fight.character2?.image, { size: 150 })} alt={fight.character2?.name} />
               {userVote === 'character2' && <div className="vote-overlay">✓ YOUR VOTE</div>}
             </div>
             <div className="character-info">
@@ -271,7 +272,7 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
           <div className="voters-list">
             {recentVoters.slice(0, 10).map(voter => (
               <div key={voter.id} className="voter-item">
-                <img src={voter.avatar} alt={voter.username} />
+                <img {...getOptimizedImageProps(voter.avatar, { size: 40 })} alt={voter.username} />
                 <span className="voter-name">{voter.username}</span>
                 <span className="voter-choice">
                   voted for {voter.choice === 'character1' ? fight.character1?.name : fight.character2?.name}
@@ -296,7 +297,10 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
               <h3>🏆 Community Winner</h3>
               <div className="winner-character">
                 <img 
-                  src={getWinner() === 'character1' ? fight.character1?.image : fight.character2?.image} 
+                  {...getOptimizedImageProps(
+                    getWinner() === 'character1' ? fight.character1?.image : fight.character2?.image,
+                    { size: 80 }
+                  )}
                   alt="Winner" 
                 />
                 <span className="winner-name">
@@ -318,7 +322,7 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
         {user && (
           <div className="comment-input">
             <div className="user-avatar">
-              <img src={user.avatar} alt={user.username} />
+              <img {...getOptimizedImageProps(user.avatar, { size: 50 })} alt={user.username} />
             </div>
             <div className="input-area">
               <textarea
@@ -344,7 +348,7 @@ const VotingSystem = ({ fight, user, onVoteComplete }) => {
           {comments.map(comment => (
             <div key={comment.id} className="comment-item">
               <div className="comment-avatar">
-                <img src={comment.user?.avatar} alt={comment.user?.username} />
+                <img {...getOptimizedImageProps(comment.user?.avatar, { size: 50 })} alt={comment.user?.username} />
               </div>
               <div className="comment-content">
                 <div className="comment-header">

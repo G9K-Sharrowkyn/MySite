@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { ChampionUsername, getChampionTitle } from '../utils/championUtils';
 import ImageUpload from '../ImageUpload/ImageUpload';
 import ProfileBackgroundUpload from './ProfileBackgroundUpload';
@@ -203,7 +203,14 @@ const ProfilePage = () => {
              backgroundSize: 'cover',
              backgroundPosition: 'center'
            } : {}}>
-        <img src={replacePlaceholderUrl(profile.profilePicture) || placeholderImages.user} alt="Profilowe" className="profile-picture" />
+        <img
+          {...getOptimizedImageProps(
+            replacePlaceholderUrl(profile.profilePicture) || placeholderImages.user,
+            { size: 150 }
+          )}
+          alt="Profilowe"
+          className="profile-picture"
+        />
         <div className="profile-info">
           <h2>
             <ChampionUsername user={profile} showCrown={true} />
@@ -324,7 +331,11 @@ const ProfilePage = () => {
                 {division.selectedCharacter && (
                   <div className="division-character">
                     <img 
-                      src={replacePlaceholderUrl(division.selectedCharacter.image) || placeholderImages.character} 
+                      {...getOptimizedImageProps(
+                        replacePlaceholderUrl(division.selectedCharacter.image) ||
+                          placeholderImages.character,
+                        { size: 80 }
+                      )}
                       alt={division.selectedCharacter.name} 
                       className="character-image" 
                     />
@@ -405,7 +416,10 @@ const ProfilePage = () => {
                   <div className="comment-author">
                     <Link to={`/profile/${comment.authorId}`}>
                       <img 
-                        src={replacePlaceholderUrl(comment.authorAvatar) || placeholderImages.userSmall} 
+                        {...getOptimizedImageProps(
+                          replacePlaceholderUrl(comment.authorAvatar) || placeholderImages.userSmall,
+                          { size: 24 }
+                        )}
                         alt={comment.authorUsername} 
                         className="author-avatar"
                       />

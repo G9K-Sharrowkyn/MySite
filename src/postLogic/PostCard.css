@@ -1404,6 +1404,7 @@ body.dark-mode .post-card {
   flex-direction: column;
   align-items: center;
   width: 100%;
+  flex: 1 1 auto;
 }
 
 .fight-teams-symmetrical {
@@ -1433,6 +1434,8 @@ body.dark-mode .post-card {
   align-items: center;
   justify-content: flex-start;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
   box-sizing: border-box;
   transition: background 0.4s;
   box-shadow: 0 2px 16px #0002;
@@ -1455,7 +1458,7 @@ body.dark-mode .post-card {
   position: absolute;
   left: 0; right: 0; top: 0; bottom: 0;
   pointer-events: none;
-  border-radius: 20px;
+  border-radius: inherit;
   z-index: 1;
   opacity: 0.7;
   background-image: url("https://assets.codepen.io/13471/sparkles.gif");
@@ -1488,6 +1491,14 @@ body.dark-mode .post-card {
   padding: 0;
 }
 
+.character-name-simple {
+  max-width: 100%;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* Center the image/frame inside the now-full-width team-zone */
 .character-panel {
   display: flex;
@@ -1500,7 +1511,11 @@ body.dark-mode .post-card {
 .character-frame {
   margin-left: auto;
   margin-right: auto;
-  max-width: 180px;
+  width: 100%;
+  max-width: var(--team-zone-width, 200px);
+  aspect-ratio: 9 / 16;
+  box-sizing: border-box;
+  flex: 0 0 auto;
 }
 
 @property --α {
@@ -1543,7 +1558,8 @@ body.dark-mode .post-card {
 .character-frame img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
   border-radius: 0.75em;
   position: relative;
   z-index: 2;
@@ -1559,13 +1575,24 @@ body.dark-mode .post-card {
 
 .team-image-large {
   width: 100%;
-  height: 80%;
-  aspect-ratio: 9/16;
+  height: 100%;
   object-fit: cover;
   object-position: top;
   border-radius: 12px;
   box-shadow: 0 2px 12px #0004;
   background: none;
+}
+
+@media (max-width: 768px) {
+  .character-frame {
+    max-width: var(--team-zone-width, 170px);
+  }
+}
+
+@media (max-width: 480px) {
+  .character-frame {
+    max-width: var(--team-zone-width, 150px);
+  }
 }
 
 .team-vote-panel {
@@ -1612,8 +1639,9 @@ body.dark-mode .post-card {
     gap: 1rem;
   }
   .team-zone, .team-panel {
-    max-width: 160px;
-    min-width: 120px;
+    max-width: var(--team-zone-width, 220px);
+    min-width: 0;
+    width: 100%;
     padding: 0.7rem 0.7rem 1rem 0.7rem;
   }
   
@@ -1687,8 +1715,10 @@ body.dark-mode .post-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1 1 0;
-  min-width: 180px;
+  flex: 0 0 auto;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .vote-button,
@@ -1714,18 +1744,37 @@ body.dark-mode .post-card {
 
 /* 3-column fight voting layout */
 .fight-vote-row-3col {
+  --team-zone-width: clamp(220px, 28vw, 360px);
   display: flex;
   flex-direction: row;
-  width: 100%; /* Stretch to full width for symmetry */
-  max-width: none;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  gap: 32px; /* Slightly larger gap for visual balance */
+  gap: clamp(16px, 4vw, 48px);
+  justify-content: space-evenly;
+  align-items: flex-start;
+}
+
+.fight-vote-row-3col.has-voted {
+  width: 100%;
+  max-width: 100%;
+}
+
+.fight-vote-row-3col.has-voted {
+  gap: 0;
+  justify-content: space-between;
+}
+
+.fight-vote-row-3col.has-voted > .team-vote-col {
+  flex: 1 1 50%;
+  width: 50%;
+  max-width: 50%;
 }
 
 .fight-vote-row-3col > .team-vote-col {
-  flex: 1 1 0;
-  max-width: none;
-  width: 100%;
+  flex: 1 1 var(--team-zone-width);
+  max-width: var(--team-zone-width);
+  width: var(--team-zone-width);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1740,12 +1789,14 @@ body.dark-mode .post-card {
 }
 
 .team-vote-col {
-  flex: 1 1 0;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  min-width: 180px;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .draw-vote-col {
@@ -1785,10 +1836,25 @@ body.dark-mode .post-card {
     flex-direction: column;
     align-items: center;
     gap: 1.2rem;
+    --team-zone-width: clamp(180px, 35vw, 280px);
+  }
+  .fight-vote-row-3col.has-voted {
+    gap: 1.2rem;
+    justify-content: center;
+  }
+  .fight-vote-row-3col.has-voted > .team-vote-col {
+    width: var(--team-zone-width);
+    max-width: var(--team-zone-width);
+    flex: 0 1 auto;
   }
   .team-vote-col, .draw-vote-col {
     min-width: 0;
-    width: 100%;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .fight-vote-row-3col > .team-vote-col {
+    width: var(--team-zone-width);
+    max-width: var(--team-zone-width);
   }
   .vote-button,
   .draw-btn,
@@ -1935,6 +2001,14 @@ body.dark-mode .post-card {
 
 .voting-section.fight-voting {
   background: linear-gradient(to right, #23242a 0%, #23242a 50%, #23232a 50%, #23232a 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Fight Voting Actions - New frame for fight voting buttons */

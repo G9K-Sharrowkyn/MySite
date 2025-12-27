@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PostCard from '../postLogic/PostCard';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './ContenderMatches.css';
 
 const ContenderMatches = ({ divisionId, currentUser }) => {
@@ -119,7 +120,10 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
               <div className="match-header">
                 <div className="challenger-info">
                   <img 
-                    src={match.challenger1?.profilePicture || '/placeholder-avatar.png'} 
+                    {...getOptimizedImageProps(
+                      match.challenger1?.profilePicture || '/placeholder-avatar.png',
+                      { size: 60 }
+                    )}
                     alt={match.challenger1?.username}
                   />
                   <div>
@@ -134,7 +138,10 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
                 <span className="vs-text">VS</span>
                 <div className="challenger-info">
                   <img 
-                    src={match.challenger2?.profilePicture || '/placeholder-avatar.png'} 
+                    {...getOptimizedImageProps(
+                      match.challenger2?.profilePicture || '/placeholder-avatar.png',
+                      { size: 60 }
+                    )}
                     alt={match.challenger2?.username}
                   />
                   <div>

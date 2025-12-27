@@ -1,4 +1,5 @@
 import React from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import './TitleFightNotification.css';
@@ -58,12 +59,18 @@ const TitleFightNotification = ({ titleFights, divisionName, currentUser }) => {
               <div className="fighter-info">
                 <div className="fighter-avatar">
                   <img 
-                    src={fight.team1?.mainCharacter?.image || '/placeholder-character.png'} 
+                    {...getOptimizedImageProps(
+                      fight.team1?.mainCharacter?.image || '/placeholder-character.png',
+                      { size: 50 }
+                    )}
                     alt={fight.team1?.mainCharacter?.name}
                   />
                   {fight.team1?.secondaryCharacter && (
                     <img 
-                      src={fight.team1?.secondaryCharacter?.image || '/placeholder-character.png'} 
+                      {...getOptimizedImageProps(
+                        fight.team1?.secondaryCharacter?.image || '/placeholder-character.png',
+                        { size: 30 }
+                      )}
                       alt={fight.team1?.secondaryCharacter?.name}
                       className="secondary-character"
                     />
@@ -91,12 +98,18 @@ const TitleFightNotification = ({ titleFights, divisionName, currentUser }) => {
               <div className="fighter-info">
                 <div className="fighter-avatar">
                   <img 
-                    src={fight.team2?.mainCharacter?.image || '/placeholder-character.png'} 
+                    {...getOptimizedImageProps(
+                      fight.team2?.mainCharacter?.image || '/placeholder-character.png',
+                      { size: 50 }
+                    )}
                     alt={fight.team2?.mainCharacter?.name}
                   />
                   {fight.team2?.secondaryCharacter && (
                     <img 
-                      src={fight.team2?.secondaryCharacter?.image || '/placeholder-character.png'} 
+                      {...getOptimizedImageProps(
+                        fight.team2?.secondaryCharacter?.image || '/placeholder-character.png',
+                        { size: 30 }
+                      )}
                       alt={fight.team2?.secondaryCharacter?.name}
                       className="secondary-character"
                     />

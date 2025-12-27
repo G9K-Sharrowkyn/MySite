@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './BattleEngine.css';
 
@@ -197,7 +198,7 @@ const BattleEngine = ({ character1, character2, onBattleEnd }) => {
           {fighter1 && (
             <div className="fighter-panel left">
               <div className="fighter-portrait">
-                <img src={fighter1.image} alt={fighter1.name} />
+                <img {...getOptimizedImageProps(fighter1.image, { size: 120 })} alt={fighter1.name} />
                 <div className="power-aura"></div>
               </div>
               <div className="fighter-stats">
@@ -238,7 +239,7 @@ const BattleEngine = ({ character1, character2, onBattleEnd }) => {
           {fighter2 && (
             <div className="fighter-panel right">
               <div className="fighter-portrait">
-                <img src={fighter2.image} alt={fighter2.name} />
+                <img {...getOptimizedImageProps(fighter2.image, { size: 120 })} alt={fighter2.name} />
                 <div className="power-aura"></div>
               </div>
               <div className="fighter-stats">

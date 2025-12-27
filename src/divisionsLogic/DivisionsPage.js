@@ -8,6 +8,7 @@ import HoloCard from '../shared/HoloCard';
 import ChampionshipHistory from './ChampionshipHistory';
 import ContenderMatches from './ContenderMatches';
 import TitleFightNotification from './TitleFightNotification';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './DivisionsPage.css';
 
 const DivisionsPage = () => {
@@ -270,7 +271,10 @@ const DivisionsPage = () => {
                   <div className="champion-info">
                     <div className="champion-avatar">
                       <img 
-                        src={divisionChampions[division.id].profilePicture || '/placeholder-character.png'} 
+                        {...getOptimizedImageProps(
+                          divisionChampions[division.id].profilePicture || '/placeholder-character.png',
+                          { size: 60 }
+                        )}
                         alt={divisionChampions[division.id].username}
                         className="champion-image"
                       />
@@ -365,7 +369,7 @@ const DivisionsPage = () => {
                     <div className="team-field">
                       <div className="team-images">
                         <img 
-                          src={userTeam.team.mainCharacter.image} 
+                          {...getOptimizedImageProps(userTeam.team.mainCharacter.image, { size: 180 })}
                           alt={userTeam.team.mainCharacter.name}
                           className="team-image"
                           style={userTeam.team.secondaryCharacter ? {height: '50%'} : {height: '100%'}}
@@ -374,7 +378,7 @@ const DivisionsPage = () => {
                           <>
                             <div className="team-divider" />
                             <img 
-                              src={userTeam.team.secondaryCharacter.image} 
+                              {...getOptimizedImageProps(userTeam.team.secondaryCharacter.image, { size: 180 })}
                               alt={userTeam.team.secondaryCharacter.name}
                               className="team-image"
                               style={{height: '50%'}}

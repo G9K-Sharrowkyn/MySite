@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './FightCard.css';
@@ -124,7 +125,7 @@ const FightCard = ({ fight }) => {
       <div className="fighters">
         <div className="fighter fighter1">
           <div className="fighter-image">
-            <img src={fight.fighter1Image} alt={fight.fighter1} />
+            <img {...getOptimizedImageProps(fight.fighter1Image, { size: 100 })} alt={fight.fighter1} />
             {userVote === 'fighter1' && <div className="vote-indicator">✓</div>}
           </div>
           <h4>{fight.fighter1}</h4>
@@ -150,7 +151,7 @@ const FightCard = ({ fight }) => {
 
         <div className="fighter fighter2">
           <div className="fighter-image">
-            <img src={fight.fighter2Image} alt={fight.fighter2} />
+            <img {...getOptimizedImageProps(fight.fighter2Image, { size: 100 })} alt={fight.fighter2} />
             {userVote === 'fighter2' && <div className="vote-indicator">✓</div>}
           </div>
           <h4>{fight.fighter2}</h4>

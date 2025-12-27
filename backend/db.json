@@ -79,6 +79,39 @@
       "selectedCharacters": []
     },
     {
+      "id": "ADMIN-UNIQUE-ID-0001",
+      "username": "admin",
+      "email": "admin@site.local",
+      "password": "$2b$10$7U0CrapNGOsI8oT01HrPPeMn7ZMv6rVYEyZaXDDxJqLN6YMOgPnl.",
+      "role": "admin",
+      "profile": {
+        "bio": "Site administrator.",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-12-26T00:00:00.000Z",
+        "lastActive": "2025-12-26T00:00:00.000Z"
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Administrator",
+        "points": 0,
+        "level": 1,
+        "experience": 0
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      }
+    },
+    {
       "id": "280ec015-edc9-4be3-87ca-b6be62093bf5",
       "username": "testuser",
       "email": "testuser@example.com",
@@ -221,7 +254,7 @@
         "profilePicture": "",
         "favoriteCharacters": [],
         "joinDate": "2025-12-25T21:39:34.481Z",
-        "lastActive": "2025-12-26T03:43:26.093Z",
+        "lastActive": "2025-12-26T21:53:35.273Z",
         "avatar": "",
         "description": "",
         "backgroundImage": ""
@@ -239,7 +272,7 @@
         "experience": 0
       },
       "activity": {
-        "postsCreated": 2,
+        "postsCreated": 4,
         "commentsPosted": 11,
         "likesReceived": 2,
         "tournamentsWon": 0,
@@ -279,7 +312,7 @@
         "accountDeleted": false
       },
       "createdAt": "2025-12-25T21:39:34.481Z",
-      "updatedAt": "2025-12-26T18:16:26.733Z"
+      "updatedAt": "2025-12-26T21:53:35.273Z"
     }
   ],
   "posts": [
@@ -407,7 +440,7 @@
       "type": "fight",
       "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
       "createdAt": "2025-07-09T07:08:23.015Z",
-      "updatedAt": "2025-12-26T03:44:00.609Z",
+      "updatedAt": "2025-12-26T22:59:43.216Z",
       "likes": [],
       "comments": [],
       "views": 0,
@@ -425,8 +458,8 @@
         "teamA": "Anti-Monitor (New52), Azrael (Dark Multiverse), Scarlet King, Sentry (Composite)",
         "teamB": "Darkseid (New52), Deadpool (DKMU), Vegeta (SSJ4), Broly (Dragon Ball Z)",
         "votes": {
-          "teamA": 2,
-          "teamB": 0,
+          "teamA": 1,
+          "teamB": 1,
           "voters": [
             {
               "userId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
@@ -435,8 +468,8 @@
             },
             {
               "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
-              "team": "A",
-              "votedAt": "2025-12-26T03:44:00.609Z"
+              "team": "B",
+              "votedAt": "2025-12-26T22:59:43.216Z"
             }
           ],
           "draw": 0
@@ -602,7 +635,7 @@
       "type": "fight",
       "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
       "createdAt": "2025-12-26T03:03:23.111Z",
-      "updatedAt": "2025-12-26T16:59:42.220Z",
+      "updatedAt": "2025-12-26T23:33:49.190Z",
       "likes": [],
       "comments": [],
       "views": 0,
@@ -620,14 +653,14 @@
         "teamA": "Superman (New52)",
         "teamB": "Sentry (Composite)",
         "votes": {
-          "teamA": 1,
-          "teamB": 0,
+          "teamA": 0,
+          "teamB": 1,
           "draw": 0,
           "voters": [
             {
               "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
-              "team": "A",
-              "votedAt": "2025-12-26T03:43:46.676Z"
+              "team": "B",
+              "votedAt": "2025-12-26T23:33:49.190Z"
             }
           ]
         },
@@ -676,7 +709,7 @@
       "type": "fight",
       "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
       "createdAt": "2025-12-26T18:15:50.137Z",
-      "updatedAt": "2025-12-26T18:16:58.845Z",
+      "updatedAt": "2025-12-26T23:33:44.533Z",
       "likes": [],
       "comments": [],
       "views": 0,
@@ -695,13 +728,13 @@
         "teamB": "Vegeta (SSJ4)",
         "votes": {
           "teamA": 0,
-          "teamB": 0,
-          "draw": 1,
+          "teamB": 1,
+          "draw": 0,
           "voters": [
             {
               "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
-              "team": "draw",
-              "votedAt": "2025-12-26T18:16:58.845Z"
+              "team": "B",
+              "votedAt": "2025-12-26T23:33:44.533Z"
             }
           ]
         },
@@ -730,6 +763,101 @@
         "characters": [
           "Franklin Richards (Adult)",
           "Vegeta (SSJ4)"
+        ],
+        "powerTiers": [],
+        "categories": []
+      }
+    },
+    {
+      "id": "5f56f0de-c957-4db3-9514-e2a85d0eb814",
+      "title": "VegetaVegetaVegetaVegeta",
+      "content": "VegetaVegetaVegetaVegeta",
+      "type": "discussion",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "createdAt": "2025-12-26T18:22:51.544Z",
+      "updatedAt": "2025-12-26T18:22:51.544Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": null,
+      "fight": null,
+      "reactions": [],
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": [
+        "Dragon Ball"
+      ],
+      "autoTags": {
+        "universes": [
+          "Dragon Ball"
+        ],
+        "characters": [],
+        "powerTiers": [],
+        "categories": []
+      }
+    },
+    {
+      "id": "8e91a192-7ee6-4951-8244-87cfa4b19435",
+      "title": "fgfdgfd",
+      "content": "gdfgdfgfdg",
+      "type": "fight",
+      "authorId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "createdAt": "2025-12-26T21:21:29.408Z",
+      "updatedAt": "2025-12-27T00:35:31.831Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Vegeta (Ultra Ego)(DBS)",
+          "Goku (Golden Oouzaru)(DBGT)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Vegeta (Ultra Ego)(DBS)",
+        "teamB": "Goku (Golden Oouzaru)(DBGT)",
+        "votes": {
+          "teamA": 1,
+          "teamB": 0,
+          "draw": 0,
+          "voters": [
+            {
+              "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+              "team": "A",
+              "votedAt": "2025-12-27T00:35:31.831Z"
+            }
+          ]
+        },
+        "status": "active",
+        "isOfficial": false,
+        "lockTime": "2025-12-29T21:21:29.408Z",
+        "winner": null,
+        "winnerTeam": null
+      },
+      "reactions": [],
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": [
+        "Dragon Ball",
+        "Vegeta (Ultra Ego)(DBS)",
+        "Goku (Golden Oouzaru)(DBGT)"
+      ],
+      "autoTags": {
+        "universes": [
+          "Dragon Ball"
+        ],
+        "characters": [
+          "Vegeta (Ultra Ego)(DBS)",
+          "Goku (Golden Oouzaru)(DBGT)"
         ],
         "powerTiers": [],
         "categories": []
@@ -947,124 +1075,1357 @@
   ],
   "characters": [
     {
-      "id": "char1",
+      "id": "ajunta-pall-legends-sw",
+      "name": "Ajunta Pall (Legends)(SW)",
+      "baseName": "Ajunta Pall",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Ajunta Pall (Legends)(SW).jpg"
+    },
+    {
+      "id": "android-super-17-dbgt",
+      "name": "Android Super 17 (DBGT)",
+      "baseName": "Android Super 17",
+      "tags": [
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Android Super 17 (DBGT).jpg"
+    },
+    {
+      "id": "anti-monitor-dc-new52",
+      "name": "Anti-Monitor (DC)(New52)",
+      "baseName": "Anti-Monitor",
+      "tags": [
+        "DC",
+        "New52"
+      ],
+      "universe": "DC",
+      "image": "/characters/Anti-Monitor (DC)(New52).webp"
+    },
+    {
+      "id": "anti-monitor-new52",
       "name": "Anti-Monitor (New52)",
-      "universe": "DC",
-      "image": "/characters/Anti-Monitor(New52).webp"
+      "baseName": "Anti-Monitor",
+      "tags": [
+        "New52"
+      ],
+      "universe": "New52",
+      "image": "/characters/Anti-Monitor (New52).webp"
     },
     {
-      "id": "char2",
+      "id": "apocalypse-marvel",
+      "name": "Apocalypse (Marvel)",
+      "baseName": "Apocalypse",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Apocalypse (Marvel).jpg"
+    },
+    {
+      "id": "arcann-legends-sw",
+      "name": "Arcann (Legends)(SW)",
+      "baseName": "Arcann",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Arcann (Legends)(SW).webp"
+    },
+    {
+      "id": "azrael-dark-multiverse",
       "name": "Azrael (Dark Multiverse)",
-      "universe": "DC",
-      "image": "/characters/Azrael(DarkMultiverse).jpg"
+      "baseName": "Azrael",
+      "tags": [
+        "Dark Multiverse"
+      ],
+      "universe": "Dark Multiverse",
+      "image": "/characters/Azrael (Dark Multiverse).jpg"
     },
     {
-      "id": "char3",
+      "id": "azrael-dc-dark-multiverse",
+      "name": "Azrael (DC)(Dark Multiverse)",
+      "baseName": "Azrael",
+      "tags": [
+        "DC",
+        "Dark Multiverse"
+      ],
+      "universe": "DC",
+      "image": "/characters/Azrael (DC)(Dark Multiverse).jpg"
+    },
+    {
+      "id": "baby-vegeta-dbgt",
+      "name": "Baby Vegeta (DBGT)",
+      "baseName": "Baby Vegeta",
+      "tags": [
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Baby Vegeta (DBGT).jpg"
+    },
+    {
+      "id": "batman-dc-dark-multiverse",
+      "name": "Batman (DC)(Dark Multiverse)",
+      "baseName": "Batman",
+      "tags": [
+        "DC",
+        "Dark Multiverse"
+      ],
+      "universe": "DC",
+      "image": "/characters/Batman (DC)(Dark Multiverse).jpg"
+    },
+    {
+      "id": "batman-dc-new52",
+      "name": "Batman (DC)(New52)",
+      "baseName": "Batman",
+      "tags": [
+        "DC",
+        "New52"
+      ],
+      "universe": "DC",
+      "image": "/characters/Batman (DC)(New52).jpg"
+    },
+    {
+      "id": "batman-dc-undead",
+      "name": "Batman (DC)(Undead)",
+      "baseName": "Batman",
+      "tags": [
+        "DC",
+        "Undead"
+      ],
+      "universe": "DC",
+      "image": "/characters/Batman (DC)(Undead).jpg"
+    },
+    {
+      "id": "batman-new52",
       "name": "Batman (New52)",
-      "universe": "DC",
-      "image": "/characters/Batman(New52).jpg"
+      "baseName": "Batman",
+      "tags": [
+        "New52"
+      ],
+      "universe": "New52",
+      "image": "/characters/Batman (New52).jpg"
     },
     {
-      "id": "char4",
+      "id": "black-adam-dc",
+      "name": "Black Adam (DC)",
+      "baseName": "Black Adam",
+      "tags": [
+        "DC"
+      ],
+      "universe": "DC",
+      "image": "/characters/Black Adam (DC).jpg"
+    },
+    {
+      "id": "black-adam-new52",
       "name": "Black Adam (New52)",
-      "universe": "DC",
-      "image": "/characters/Black_Adam(New52).jpg"
+      "baseName": "Black Adam",
+      "tags": [
+        "New52"
+      ],
+      "universe": "New52",
+      "image": "/characters/Black Adam (New52).jpg"
     },
     {
-      "id": "char5",
+      "id": "black-winter-marvel",
+      "name": "Black Winter (Marvel)",
+      "baseName": "Black Winter",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Black Winter (Marvel).jpg"
+    },
+    {
+      "id": "black-winter-prime",
       "name": "Black Winter (Prime)",
+      "baseName": "Black Winter",
+      "tags": [
+        "Prime"
+      ],
+      "universe": "Prime",
+      "image": "/characters/Black Winter (Prime).jpg"
+    },
+    {
+      "id": "black-adam-faces-the-justice-society-of-america-cropped",
+      "name": "Black-Adam-faces-the-Justice-Society-of-America-Cropped",
+      "baseName": "Black-Adam-faces-the-Justice-Society-of-America-Cropped",
+      "tags": [],
+      "universe": "Other",
+      "image": "/characters/Black-Adam-faces-the-Justice-Society-of-America-Cropped.png"
+    },
+    {
+      "id": "boba-fett-legends-sw",
+      "name": "Boba Fett (Legends)(SW)",
+      "baseName": "Boba Fett",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Boba Fett (Legends)(SW).jpg"
+    },
+    {
+      "id": "brolly-lssj-dbs",
+      "name": "Brolly (LSSJ)(DBS)",
+      "baseName": "Brolly",
+      "tags": [
+        "LSSJ",
+        "DBS"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Brolly (LSSJ)(DBS).jpg"
+    },
+    {
+      "id": "broly-dbz",
+      "name": "Broly (DBZ)",
+      "baseName": "Broly",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Broly (DBZ).jpg"
+    },
+    {
+      "id": "broly-lss4-dbh",
+      "name": "Broly (LSS4)(DBH)",
+      "baseName": "Broly",
+      "tags": [
+        "LSS4",
+        "DBH"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Broly (LSS4)(DBH).jpg"
+    },
+    {
+      "id": "broly-lssj-dbz",
+      "name": "Broly (LSSJ)(DBZ)",
+      "baseName": "Broly",
+      "tags": [
+        "LSSJ",
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Broly (LSSJ)(DBZ).jpg"
+    },
+    {
+      "id": "buuhan-dbz",
+      "name": "Buuhan (DBZ)",
+      "baseName": "Buuhan",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Buuhan (DBZ).jpg"
+    },
+    {
+      "id": "cade-legends-sw",
+      "name": "Cade (Legends)(SW)",
+      "baseName": "Cade",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Cade (Legends)(SW).jpg"
+    },
+    {
+      "id": "caedus-legends-sw",
+      "name": "Caedus (Legends)(SW)",
+      "baseName": "Caedus",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Caedus (Legends)(SW).webp"
+    },
+    {
+      "id": "captain-america-marvel",
+      "name": "Captain America (Marvel)",
+      "baseName": "Captain America",
+      "tags": [
+        "Marvel"
+      ],
       "universe": "Marvel",
-      "image": "/characters/Black_Winter(Prime).jpg"
+      "image": "/characters/Captain America (Marvel).jpg"
     },
     {
-      "id": "char6",
-      "name": "Broly (Dragon Ball Z)",
-      "universe": "Dragon Ball Z",
-      "image": "/characters/Broly(DragonBallZ).jpg"
+      "id": "cin-drallig-legends-sw",
+      "name": "Cin Drallig (Legends)(SW)",
+      "baseName": "Cin Drallig",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Cin Drallig (Legends)(SW).jpg"
     },
     {
-      "id": "char7",
+      "id": "darkseid-dc-new52",
+      "name": "Darkseid (DC)(New52)",
+      "baseName": "Darkseid",
+      "tags": [
+        "DC",
+        "New52"
+      ],
+      "universe": "DC",
+      "image": "/characters/Darkseid (DC)(New52).jpg"
+    },
+    {
+      "id": "darkseid-new52",
       "name": "Darkseid (New52)",
-      "universe": "DC",
-      "image": "/characters/Darkseid_(New52).jpg"
+      "baseName": "Darkseid",
+      "tags": [
+        "New52"
+      ],
+      "universe": "New52",
+      "image": "/characters/Darkseid (New52).jpg"
     },
     {
-      "id": "char8",
+      "id": "darth-bane-legends-sw",
+      "name": "Darth Bane (Legends)(SW)",
+      "baseName": "Darth Bane",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Darth Bane (Legends)(SW).jpg"
+    },
+    {
+      "id": "darth-baras-legends-sw",
+      "name": "Darth Baras (Legends)(SW)",
+      "baseName": "Darth Baras",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Darth Baras (Legends)(SW).webp"
+    },
+    {
+      "id": "darth-jadus-legends-sw",
+      "name": "Darth Jadus (Legends)(SW)",
+      "baseName": "Darth Jadus",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Darth Jadus (Legends)(SW).jpg"
+    },
+    {
+      "id": "darth-malak-legends-sw",
+      "name": "Darth Malak (Legends)(SW)",
+      "baseName": "Darth Malak",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Darth Malak (Legends)(SW).jpg"
+    },
+    {
+      "id": "darth-marr-legends-sw",
+      "name": "Darth Marr (Legends)(SW)",
+      "baseName": "Darth Marr",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Darth Marr (Legends)(SW).webp"
+    },
+    {
+      "id": "darth-plagueis-legends-sw",
+      "name": "Darth Plagueis (Legends)(SW)",
+      "baseName": "Darth Plagueis",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Darth Plagueis (Legends)(SW).webp"
+    },
+    {
+      "id": "darth-tenebrous-legends-sw",
+      "name": "Darth Tenebrous (Legends)(SW)",
+      "baseName": "Darth Tenebrous",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Darth Tenebrous (Legends)(SW).webp"
+    },
+    {
+      "id": "deadpool-dkmu",
       "name": "Deadpool (DKMU)",
-      "universe": "Marvel",
-      "image": "/characters/Deadpool(DKMU).jpg"
+      "baseName": "Deadpool",
+      "tags": [
+        "DKMU"
+      ],
+      "universe": "DKMU",
+      "image": "/characters/Deadpool (DKMU).jpg"
     },
     {
-      "id": "char9",
+      "id": "deadpool-marvel",
+      "name": "Deadpool (Marvel)",
+      "baseName": "Deadpool",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Deadpool (Marvel).jpg"
+    },
+    {
+      "id": "dooku-legends-sw",
+      "name": "Dooku (Legends)(SW)",
+      "baseName": "Dooku",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Dooku (Legends)(SW).webp"
+    },
+    {
+      "id": "doomsday-dc",
+      "name": "Doomsday (DC)",
+      "baseName": "Doomsday",
+      "tags": [
+        "DC"
+      ],
+      "universe": "DC",
+      "image": "/characters/Doomsday (DC).jpg"
+    },
+    {
+      "id": "evil-buu-dbz",
+      "name": "Evil Buu (DBZ)",
+      "baseName": "Evil Buu",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Evil Buu (DBZ).jpg"
+    },
+    {
+      "id": "exar-kun-legends-sw",
+      "name": "Exar Kun (Legends)(SW)",
+      "baseName": "Exar Kun",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Exar Kun (Legends)(SW).jpg"
+    },
+    {
+      "id": "franklin-richards-adult",
       "name": "Franklin Richards (Adult)",
-      "universe": "Marvel",
-      "image": "/characters/Franklin_Richards(Adult).webp"
+      "baseName": "Franklin Richards",
+      "tags": [
+        "Adult"
+      ],
+      "universe": "Adult",
+      "image": "/characters/Franklin Richards (Adult).webp"
     },
     {
-      "id": "char10",
+      "id": "freedon-nadd-legends-sw",
+      "name": "Freedon Nadd (Legends)(SW)",
+      "baseName": "Freedon Nadd",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Freedon Nadd (Legends)(SW).jpg"
+    },
+    {
+      "id": "frezzer-4th-form-dbz",
+      "name": "Frezzer (4th form)(DBZ)",
+      "baseName": "Frezzer",
+      "tags": [
+        "4th form",
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Frezzer (4th form)(DBZ).jpg"
+    },
+    {
+      "id": "future-gohan-dbz",
+      "name": "Future Gohan (DBZ)",
+      "baseName": "Future Gohan",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Future Gohan (DBZ).jpg"
+    },
+    {
+      "id": "galen-marek-legends-sw",
+      "name": "Galen Marek (Legends)(SW)",
+      "baseName": "Galen Marek",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Galen Marek (Legends)(SW).jpg"
+    },
+    {
+      "id": "general-zodd-dc",
+      "name": "General Zodd (DC)",
+      "baseName": "General Zodd",
+      "tags": [
+        "DC"
+      ],
+      "universe": "DC",
+      "image": "/characters/General Zodd (DC).jpg"
+    },
+    {
+      "id": "gethzerion-legends-sw",
+      "name": "Gethzerion (Legends)(SW)",
+      "baseName": "Gethzerion",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Gethzerion (Legends)(SW).webp"
+    },
+    {
+      "id": "ghost-rider-marvel",
+      "name": "Ghost Rider (Marvel)",
+      "baseName": "Ghost Rider",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Ghost Rider (Marvel).jpg"
+    },
+    {
+      "id": "gogeta-ssj1-dbz",
+      "name": "Gogeta (SSJ1)(DBZ)",
+      "baseName": "Gogeta",
+      "tags": [
+        "SSJ1",
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Gogeta (SSJ1)(DBZ).jpg"
+    },
+    {
+      "id": "gogeta-ssj4-dbgt",
+      "name": "Gogeta (SSJ4)(DBGT)",
+      "baseName": "Gogeta",
+      "tags": [
+        "SSJ4",
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Gogeta (SSJ4)(DBGT).jpg"
+    },
+    {
+      "id": "gogeta-ssjb-dbs",
+      "name": "Gogeta (SSJB)(DBS)",
+      "baseName": "Gogeta",
+      "tags": [
+        "SSJB",
+        "DBS"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Gogeta (SSJB)(DBS).jpg"
+    },
+    {
+      "id": "gogeta-ultra-ego-instinct-dbh",
+      "name": "Gogeta (Ultra Ego Instinct)(DBH)",
+      "baseName": "Gogeta",
+      "tags": [
+        "Ultra Ego Instinct",
+        "DBH"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Gogeta (Ultra Ego Instinct)(DBH).jpg"
+    },
+    {
+      "id": "goku-vegeta-ssj4-dbgt",
+      "name": "Goku & Vegeta (SSJ4)(DBGT)",
+      "baseName": "Goku & Vegeta",
+      "tags": [
+        "SSJ4",
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Goku & Vegeta (SSJ4)(DBGT).jpg"
+    },
+    {
+      "id": "goku-golden-oouzaru-dbgt",
+      "name": "Goku (Golden Oouzaru)(DBGT)",
+      "baseName": "Goku",
+      "tags": [
+        "Golden Oouzaru",
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Goku (Golden Oouzaru)(DBGT).jpg"
+    },
+    {
+      "id": "goku-ssj2-dbz",
+      "name": "Goku (SSJ2)(DBZ)",
+      "baseName": "Goku",
+      "tags": [
+        "SSJ2",
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Goku (SSJ2)(DBZ).jpg"
+    },
+    {
+      "id": "goku-ssj3-dbz",
+      "name": "Goku (SSJ3)(DBZ)",
+      "baseName": "Goku",
+      "tags": [
+        "SSJ3",
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Goku (SSJ3)(DBZ).jpg"
+    },
+    {
+      "id": "goku-ssj4-dbgt",
+      "name": "Goku (SSJ4)(DBGT)",
+      "baseName": "Goku",
+      "tags": [
+        "SSJ4",
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Goku (SSJ4)(DBGT).jpg"
+    },
+    {
+      "id": "goku-ssj4",
       "name": "Goku (SSJ4)",
-      "universe": "Dragon Ball GT",
-      "image": "/characters/Goku(SSJ4).jpg"
+      "baseName": "Goku",
+      "tags": [
+        "SSJ4"
+      ],
+      "universe": "SSJ4",
+      "image": "/characters/Goku (SSJ4).jpg"
     },
     {
-      "id": "char11",
+      "id": "goku-ultra-instinct-dbs",
+      "name": "Goku (Ultra Instinct)(DBS)",
+      "baseName": "Goku",
+      "tags": [
+        "Ultra Instinct",
+        "DBS"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Goku (Ultra Instinct)(DBS).jpg"
+    },
+    {
+      "id": "goku-ultra-instinct",
       "name": "Goku (Ultra Instinct)",
-      "universe": "Dragon Ball Super",
-      "image": "/characters/Goku(UltraInstinct).webp"
+      "baseName": "Goku",
+      "tags": [
+        "Ultra Instinct"
+      ],
+      "universe": "Ultra Instinct",
+      "image": "/characters/Goku (Ultra Instinct).webp"
     },
     {
-      "id": "char12",
+      "id": "hk-47-legends-sw",
+      "name": "HK-47 (Legends)(SW)",
+      "baseName": "HK-47",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/HK-47 (Legends)(SW).webp"
+    },
+    {
+      "id": "hulk-marvel",
+      "name": "Hulk (Marvel)",
+      "baseName": "Hulk",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Hulk (Marvel).jpg"
+    },
+    {
+      "id": "hyperion-marvel",
+      "name": "Hyperion (Marvel)",
+      "baseName": "Hyperion",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Hyperion (Marvel).jpg"
+    },
+    {
+      "id": "hyperion-prime",
       "name": "Hyperion (Prime)",
-      "universe": "Marvel",
-      "image": "/characters/Hyperion(Prime).jpg"
+      "baseName": "Hyperion",
+      "tags": [
+        "Prime"
+      ],
+      "universe": "Prime",
+      "image": "/characters/Hyperion (Prime).jpg"
     },
     {
-      "id": "char13",
+      "id": "iron-man-marvel",
+      "name": "Iron Man (Marvel)",
+      "baseName": "Iron Man",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Iron Man (Marvel).jpg"
+    },
+    {
+      "id": "ivar-workan-legends-sw",
+      "name": "Ivar Workan (Legends)(SW)",
+      "baseName": "Ivar Workan",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Ivar Workan (Legends)(SW).webp"
+    },
+    {
+      "id": "jacen-solo-legends-sw",
+      "name": "Jacen Solo (Legends)(SW)",
+      "baseName": "Jacen Solo",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Jacen Solo (Legends)(SW).jpg"
+    },
+    {
+      "id": "jaina-solo-legends-sw",
+      "name": "Jaina Solo (Legends)(SW)",
+      "baseName": "Jaina Solo",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Jaina Solo (Legends)(SW).jpg"
+    },
+    {
+      "id": "janemba-dbz",
+      "name": "Janemba (DBZ)",
+      "baseName": "Janemba",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Janemba (DBZ).jpg"
+    },
+    {
+      "id": "jerec-legends-sw",
+      "name": "Jerec (Legends)(SW)",
+      "baseName": "Jerec",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Jerec (Legends)(SW).webp"
+    },
+    {
+      "id": "joker-new52",
       "name": "Joker (New52)",
-      "universe": "DC",
-      "image": "/characters/Joker(New52).webp"
+      "baseName": "Joker",
+      "tags": [
+        "New52"
+      ],
+      "universe": "New52",
+      "image": "/characters/Joker (New52).webp"
     },
     {
-      "id": "char14",
+      "id": "juggernaut-marvel",
+      "name": "Juggernaut (Marvel)",
+      "baseName": "Juggernaut",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Juggernaut (Marvel).jpg"
+    },
+    {
+      "id": "kar-vastor-legends-sw",
+      "name": "Kar Vastor (Legends)(SW)",
+      "baseName": "Kar Vastor",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Kar Vastor (Legends)(SW).webp"
+    },
+    {
+      "id": "karness-muur-legends-sw",
+      "name": "Karness Muur (Legends)(SW)",
+      "baseName": "Karness Muur",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Karness Muur (Legends)(SW).webp"
+    },
+    {
+      "id": "king-thanos-prime",
       "name": "King Thanos (Prime)",
+      "baseName": "King Thanos",
+      "tags": [
+        "Prime"
+      ],
+      "universe": "Prime",
+      "image": "/characters/King Thanos (Prime).jpg"
+    },
+    {
+      "id": "knightfall-anakin-legends-sw",
+      "name": "Knightfall Anakin (Legends)(SW)",
+      "baseName": "Knightfall Anakin",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Knightfall Anakin (Legends)(SW).jpg"
+    },
+    {
+      "id": "knull-marvel",
+      "name": "Knull (Marvel)",
+      "baseName": "Knull",
+      "tags": [
+        "Marvel"
+      ],
       "universe": "Marvel",
-      "image": "/characters/King_Thanos(Prime).jpg"
+      "image": "/characters/Knull (Marvel).jpg"
     },
     {
-      "id": "char15",
-      "name": "Nate Grey (Uncanny X-Men)",
-      "universe": "Marvel",
-      "image": "/characters/Nate_Grey(Uncanny X-Men).webp"
+      "id": "leia-organa-solo-legends-sw",
+      "name": "Leia Organa Solo (Legends)(SW)",
+      "baseName": "Leia Organa Solo",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Leia Organa Solo (Legends)(SW).jpg"
     },
     {
-      "id": "char16",
-      "name": "Scarlet King",
-      "universe": "SCP Foundation",
-      "image": "/characters/Scarlet_King.jpg"
+      "id": "lord-raptus-legends-sw",
+      "name": "Lord Raptus (Legends)(SW)",
+      "baseName": "Lord Raptus",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Lord Raptus (Legends)(SW).webp"
     },
     {
-      "id": "char17",
-      "name": "Sentry (Composite)",
-      "universe": "Marvel",
-      "image": "/characters/Sentry(Composite).jpg"
+      "id": "lotekk-legends-sw",
+      "name": "Lotekk (Legends)(SW)",
+      "baseName": "Lotekk",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Lotekk (Legends)(SW).webp"
     },
     {
-      "id": "char18",
-      "name": "Superman (New52)",
+      "id": "luke-dark-empire-legends-sw",
+      "name": "Luke (Dark Empire)(Legends)(SW)",
+      "baseName": "Luke",
+      "tags": [
+        "Dark Empire",
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Luke (Dark Empire)(Legends)(SW).webp"
+    },
+    {
+      "id": "luke-skywalker-grand-master-legends-sw",
+      "name": "Luke Skywalker (Grand Master)(Legends)(SW)",
+      "baseName": "Luke Skywalker",
+      "tags": [
+        "Grand Master",
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Luke Skywalker (Grand Master)(Legends)(SW).jpg"
+    },
+    {
+      "id": "mace-windu-legends-sw",
+      "name": "Mace Windu (Legends)(SW)",
+      "baseName": "Mace Windu",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Mace Windu (Legends)(SW).jpg"
+    },
+    {
+      "id": "majin-vegeta-dbz",
+      "name": "Majin Vegeta (DBZ)",
+      "baseName": "Majin Vegeta",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Majin Vegeta (DBZ).jpg"
+    },
+    {
+      "id": "malak-legends-sw",
+      "name": "Malak (Legends)(SW)",
+      "baseName": "Malak",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Malak (Legends)(SW).webp"
+    },
+    {
+      "id": "malgus-legends-sw",
+      "name": "Malgus (Legends)(SW)",
+      "baseName": "Malgus",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Malgus (Legends)(SW).jpg"
+    },
+    {
+      "id": "mara-legends-sw",
+      "name": "Mara (Legends)(SW)",
+      "baseName": "Mara",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Mara (Legends)(SW).webp"
+    },
+    {
+      "id": "marka-ragnos-legends-sw",
+      "name": "Marka Ragnos (Legends)(SW)",
+      "baseName": "Marka Ragnos",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Marka Ragnos (Legends)(SW).webp"
+    },
+    {
+      "id": "masked-goku-black-ssjr3-dbh",
+      "name": "Masked Goku Black (SSJR3)(DBH)",
+      "baseName": "Masked Goku Black",
+      "tags": [
+        "SSJR3",
+        "DBH"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Masked Goku Black (SSJR3)(DBH).jpg"
+    },
+    {
+      "id": "mr-freeze-dc",
+      "name": "Mr. Freeze (DC)",
+      "baseName": "Mr. Freeze",
+      "tags": [
+        "DC"
+      ],
       "universe": "DC",
-      "image": "/characters/Superman(New52).webp"
+      "image": "/characters/Mr. Freeze (DC).jpg"
     },
     {
-      "id": "char19",
+      "id": "nate-grey-uncanny-x-men",
+      "name": "Nate Grey (Uncanny X-Men)",
+      "baseName": "Nate Grey",
+      "tags": [
+        "Uncanny X-Men"
+      ],
+      "universe": "Uncanny X-Men",
+      "image": "/characters/Nate Grey (Uncanny X-Men).webp"
+    },
+    {
+      "id": "omega-shenron-dbgt",
+      "name": "Omega Shenron (DBGT)",
+      "baseName": "Omega Shenron",
+      "tags": [
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Omega Shenron (DBGT).jpg"
+    },
+    {
+      "id": "perfect-cell-dbz",
+      "name": "Perfect Cell (DBZ)",
+      "baseName": "Perfect Cell",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Perfect Cell (DBZ).jpg"
+    },
+    {
+      "id": "raditz-dbz",
+      "name": "Raditz (DBZ)",
+      "baseName": "Raditz",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Raditz (DBZ).jpg"
+    },
+    {
+      "id": "revan-reborn-legends-sw",
+      "name": "Revan (Reborn)(Legends)(SW)",
+      "baseName": "Revan",
+      "tags": [
+        "Reborn",
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Revan (Reborn)(Legends)(SW).jpg"
+    },
+    {
+      "id": "revan-redeemed-legends-sw",
+      "name": "Revan (Redeemed)(Legends)(SW)",
+      "baseName": "Revan",
+      "tags": [
+        "Redeemed",
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Revan (Redeemed)(Legends)(SW).webp"
+    },
+    {
+      "id": "saba-sebatyne-legends-sw",
+      "name": "Saba Sebatyne (Legends)(SW)",
+      "baseName": "Saba Sebatyne",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Saba Sebatyne (Legends)(SW).webp"
+    },
+    {
+      "id": "sabretooth-marvel",
+      "name": "Sabretooth (Marvel)",
+      "baseName": "Sabretooth",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Sabretooth (Marvel).jpg"
+    },
+    {
+      "id": "scarlet-king",
+      "name": "Scarlet King",
+      "baseName": "Scarlet King",
+      "tags": [],
+      "universe": "Other",
+      "image": "/characters/Scarlet King.jpg"
+    },
+    {
+      "id": "scarlett-witch-marvel",
+      "name": "Scarlett Witch (Marvel)",
+      "baseName": "Scarlett Witch",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Scarlett Witch (Marvel).jpg"
+    },
+    {
+      "id": "sentry-composite",
+      "name": "Sentry (Composite)",
+      "baseName": "Sentry",
+      "tags": [
+        "Composite"
+      ],
+      "universe": "Composite",
+      "image": "/characters/Sentry (Composite).jpg"
+    },
+    {
+      "id": "shaak-ti-legends-sw",
+      "name": "Shaak Ti (Legends)(SW)",
+      "baseName": "Shaak Ti",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Shaak Ti (Legends)(SW).webp"
+    },
+    {
+      "id": "sidious-legends-sw",
+      "name": "Sidious (Legends)(SW)",
+      "baseName": "Sidious",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Sidious (Legends)(SW).jpg"
+    },
+    {
+      "id": "silver-surfer-marvel",
+      "name": "Silver Surfer (Marvel)",
+      "baseName": "Silver Surfer",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Silver Surfer (Marvel).jpg"
+    },
+    {
+      "id": "spider-man-marvel",
+      "name": "Spider-Man (Marvel)",
+      "baseName": "Spider-Man",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Spider-Man (Marvel).jpg"
+    },
+    {
+      "id": "superman-dc",
+      "name": "Superman (DC)",
+      "baseName": "Superman",
+      "tags": [
+        "DC"
+      ],
+      "universe": "DC",
+      "image": "/characters/Superman (DC).jpg"
+    },
+    {
+      "id": "superman-new52",
+      "name": "Superman (New52)",
+      "baseName": "Superman",
+      "tags": [
+        "New52"
+      ],
+      "universe": "New52",
+      "image": "/characters/Superman (New52).webp"
+    },
+    {
+      "id": "talzin-legends-sw",
+      "name": "Talzin (Legends)(SW)",
+      "baseName": "Talzin",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Talzin (Legends)(SW).jpg"
+    },
+    {
+      "id": "teen-gohan-ssj2-dbz",
+      "name": "Teen Gohan (SSJ2)(DBZ)",
+      "baseName": "Teen Gohan",
+      "tags": [
+        "SSJ2",
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Teen Gohan (SSJ2)(DBZ).jpg"
+    },
+    {
+      "id": "thon-legends-sw",
+      "name": "Thon (Legends)(SW)",
+      "baseName": "Thon",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Thon (Legends)(SW).webp"
+    },
+    {
+      "id": "tulak-hord-legends-sw",
+      "name": "Tulak Hord (Legends)(SW)",
+      "baseName": "Tulak Hord",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Tulak Hord (Legends)(SW).jpg"
+    },
+    {
+      "id": "turles-dbz",
+      "name": "Turles (DBZ)",
+      "baseName": "Turles",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Turles (DBZ).jpg"
+    },
+    {
+      "id": "ultimate-gohan-dbz",
+      "name": "Ultimate Gohan (DBZ)",
+      "baseName": "Ultimate Gohan",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Ultimate Gohan (DBZ).jpg"
+    },
+    {
+      "id": "vader-legends-sw",
+      "name": "Vader (Legends)(SW)",
+      "baseName": "Vader",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Vader (Legends)(SW).jpg"
+    },
+    {
+      "id": "vegeta-ssj4-dbgt",
+      "name": "Vegeta (SSJ4)(DBGT)",
+      "baseName": "Vegeta",
+      "tags": [
+        "SSJ4",
+        "DBGT"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Vegeta (SSJ4)(DBGT).jpg"
+    },
+    {
+      "id": "vegeta-ssj4",
       "name": "Vegeta (SSJ4)",
-      "universe": "Dragon Ball GT",
-      "image": "/characters/Vegeta(SSJ4).webp"
+      "baseName": "Vegeta",
+      "tags": [
+        "SSJ4"
+      ],
+      "universe": "SSJ4",
+      "image": "/characters/Vegeta (SSJ4).webp"
     },
     {
-      "id": "char20",
+      "id": "vegeta-ultra-ego-dbs",
+      "name": "Vegeta (Ultra Ego)(DBS)",
+      "baseName": "Vegeta",
+      "tags": [
+        "Ultra Ego",
+        "DBS"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Vegeta (Ultra Ego)(DBS).jpg"
+    },
+    {
+      "id": "vegeta-ultra-ego",
       "name": "Vegeta (Ultra Ego)",
-      "universe": "Dragon Ball Super",
-      "image": "/characters/Vegeta(UltraEgo).jpg"
+      "baseName": "Vegeta",
+      "tags": [
+        "Ultra Ego"
+      ],
+      "universe": "Ultra Ego",
+      "image": "/characters/Vegeta (Ultra Ego).jpg"
+    },
+    {
+      "id": "vegito-dbz",
+      "name": "Vegito (DBZ)",
+      "baseName": "Vegito",
+      "tags": [
+        "DBZ"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Vegito (DBZ).jpg"
+    },
+    {
+      "id": "vegito-ssj4-dbh",
+      "name": "Vegito (SSJ4)(DBH)",
+      "baseName": "Vegito",
+      "tags": [
+        "SSJ4",
+        "DBH"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Vegito (SSJ4)(DBH).jpg"
+    },
+    {
+      "id": "vegito-ssjb-dbs",
+      "name": "Vegito (SSJB)(DBS)",
+      "baseName": "Vegito",
+      "tags": [
+        "SSJB",
+        "DBS"
+      ],
+      "universe": "Dragon Ball",
+      "image": "/characters/Vegito (SSJB)(DBS).jpg"
+    },
+    {
+      "id": "venom-marvel",
+      "name": "Venom (Marvel)",
+      "baseName": "Venom",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Venom (Marvel).jpg"
+    },
+    {
+      "id": "wolverine-marvel",
+      "name": "Wolverine (Marvel)",
+      "baseName": "Wolverine",
+      "tags": [
+        "Marvel"
+      ],
+      "universe": "Marvel",
+      "image": "/characters/Wolverine (Marvel).jpg"
+    },
+    {
+      "id": "yoda-legends-sw",
+      "name": "Yoda (Legends)(SW)",
+      "baseName": "Yoda",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Yoda (Legends)(SW).webp"
+    },
+    {
+      "id": "zannah-legends-sw",
+      "name": "Zannah (Legends)(SW)",
+      "baseName": "Zannah",
+      "tags": [
+        "Legends",
+        "SW"
+      ],
+      "universe": "Star Wars",
+      "image": "/characters/Zannah (Legends)(SW).webp"
     }
   ],
   "notifications": [
@@ -1097,7 +2458,17 @@
       "deleted": false
     }
   ],
-  "chatMessages": [],
+  "chatMessages": [
+    {
+      "id": "49c0c698-11d5-4f27-ad51-01693339776e",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "username": "aaa111",
+      "profilePicture": null,
+      "text": "wdqwdqwd",
+      "reactions": [],
+      "createdAt": "2025-12-26T21:53:40.801Z"
+    }
+  ],
   "divisionFights": [],
   "fights": [],
   "votes": [],

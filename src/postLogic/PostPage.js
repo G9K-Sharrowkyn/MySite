@@ -1,12 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { useParams, Link } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import ReactionMenu from './ReactionMenu';
 import './PostPage.css';
+import { AuthContext } from '../auth/AuthContext';
 
 const PostPage = () => {
   const { postId } = useParams();
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
@@ -21,9 +24,11 @@ const PostPage = () => {
   const [characters, setCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
+  const canModerate = user?.role === 'admin' || user?.role === 'moderator';
 
   const normalizeVoteTeam = (team) => {
     if (!team) return null;
@@ -67,9 +72,64 @@ const PostPage = () => {
     return [];
   };
 
+  const normalizeTag = (value) => {
+    const cleaned = String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const compact = cleaned.replace(/\s+/g, '');
+    if (compact === 'dragonballz' || cleaned === 'dragon ball z') return 'dbz';
+    if (compact === 'dragonballgt' || cleaned === 'dragon ball gt') return 'dbgt';
+    if (compact === 'dragonballsuper' || cleaned === 'dragon ball super') return 'dbs';
+    if (compact === 'dragonballheroes' || cleaned === 'dragon ball heroes') return 'dbh';
+    return cleaned;
+  };
+
+  const extractTags = (value) => {
+    const tags = [];
+    const regex = /\(([^)]+)\)/g;
+    let match;
+    while ((match = regex.exec(String(value || '')))) {
+      tags.push(normalizeTag(match[1]));
+    }
+    return tags;
+  };
+
+  const normalizeBaseName = (value) =>
+    String(value || '')
+      .replace(/\s*\([^)]*\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+  const normalizeFullName = (value) =>
+    String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
   const getCharacterByName = (name) => {
     if (!name) return null;
-    return characters.find((character) => character.name === name);
+    const normalized = normalizeFullName(name);
+    const base = normalizeBaseName(name);
+    const tags = extractTags(name);
+
+    let match = characters.find(
+      (character) => normalizeFullName(character.name) === normalized
+    );
+    if (match) return match;
+
+    const baseMatches = characters.filter((character) => {
+      const candidateBase = normalizeBaseName(character.baseName || character.name);
+      return candidateBase === base;
+    });
+    if (!baseMatches.length) return null;
+
+    if (tags.length) {
+      match = baseMatches.find((character) => {
+        const characterTags = Array.isArray(character.tags)
+          ? character.tags.map(normalizeTag)
+          : [];
+        return tags.every((tag) => characterTags.includes(tag));
+      });
+      if (match) return match;
+    }
+
+    return baseMatches[0];
   };
 
   const resolveCharacterImage = (entry) => {
@@ -319,6 +379,28 @@ const PostPage = () => {
     setShowReactionMenu(true);
   };
 
+  const handleDelete = () => {
+    setShowDeleteModal(true);
+  };
+
+  const handleDeleteCancel = () => {
+    setShowDeleteModal(false);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!token) return;
+
+    try {
+      await axios.delete(`/api/posts/${postId}`, {
+        headers: { 'x-auth-token': token }
+      });
+      setShowDeleteModal(false);
+      navigate('/feed');
+    } catch (err) {
+      console.error('Error deleting post:', err);
+    }
+  };
+
   const handleVote = async (team) => {
     if (!token || userVote) return;
     
@@ -377,6 +459,8 @@ const PostPage = () => {
   const teamBEntry = teamBEntries[0] || null;
   const commentThreads = buildCommentThreads(comments);
 
+  const canDelete = post && (post.author?.id === currentUserId || canModerate);
+
   if (loading) return <div className="post-page loading">Loading...</div>;
   if (error) return <div className="post-page error">{error}</div>;
   if (!post) return <div className="post-page not-found">Post not found</div>;
@@ -388,7 +472,10 @@ const PostPage = () => {
           <div className="author-info">
             <Link to={`/profile/${post.author?.id}`} className="author-link">
               <img 
-                src={post.author?.profilePicture || placeholderImages.userSmall} 
+                {...getOptimizedImageProps(
+                  replacePlaceholderUrl(post.author?.profilePicture) || placeholderImages.userSmall,
+                  { size: 50 }
+                )}
                 alt={post.author?.username}
                 className="author-avatar"
               />
@@ -410,7 +497,10 @@ const PostPage = () => {
           
           {post.image && (
             <div className="post-image">
-              <img src={replacePlaceholderUrl(post.image)} alt="Post content" />
+              <img
+                {...getOptimizedImageProps(replacePlaceholderUrl(post.image), { preferFull: true, size: 800 })}
+                alt="Post content"
+              />
             </div>
           )}
           
@@ -425,7 +515,7 @@ const PostPage = () => {
                     <div className="character-stack">
                       <div className={`character-frame${userVote === 'A' ? '' : ' not-chosen'}`}>
                         <img
-                          src={resolveCharacterImage(teamAEntry)}
+                          {...getOptimizedImageProps(resolveCharacterImage(teamAEntry), { size: 360 })}
                           alt={teamAEntry?.name || post.fight.teamA}
                         />
                       </div>
@@ -444,7 +534,7 @@ const PostPage = () => {
                     <div className="character-stack">
                       <div className={`character-frame${userVote === 'B' ? '' : ' not-chosen'}`}>
                         <img
-                          src={resolveCharacterImage(teamBEntry)}
+                          {...getOptimizedImageProps(resolveCharacterImage(teamBEntry), { size: 360 })}
                           alt={teamBEntry?.name || post.fight.teamB}
                         />
                       </div>
@@ -502,6 +592,13 @@ const PostPage = () => {
             <span className="action-icon">📤</span>
             <span className="action-text">Share</span>
           </button>
+
+          {canDelete && (
+            <button className="action-btn delete-btn" onClick={handleDelete}>
+              <span className="action-icon">DEL</span>
+              <span className="action-text">Delete</span>
+            </button>
+          )}
         </div>
 
         {reactions.length > 0 && (
@@ -513,6 +610,23 @@ const PostPage = () => {
                   <span className="reaction-count">{reaction.count}</span>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {showDeleteModal && (
+          <div className="modal-overlay" onClick={handleDeleteCancel}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+              <h3>Confirm delete</h3>
+              <p>Are you sure you want to delete this post? This cannot be undone.</p>
+              <div className="modal-actions">
+                <button className="btn btn-cancel" onClick={handleDeleteCancel}>
+                  Cancel
+                </button>
+                <button className="btn btn-delete" onClick={handleDeleteConfirm}>
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -557,10 +671,11 @@ const PostPage = () => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <img
-                          src={
+                          {...getOptimizedImageProps(
                             replacePlaceholderUrl(root.authorAvatar) ||
-                            placeholderImages.userSmall
-                          }
+                              placeholderImages.userSmall,
+                            { size: 30 }
+                          )}
                           alt={root.authorUsername}
                           className="comment-avatar"
                         />
@@ -635,10 +750,11 @@ const PostPage = () => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <img
-                                src={
+                                {...getOptimizedImageProps(
                                   replacePlaceholderUrl(reply.authorAvatar) ||
-                                  placeholderImages.userSmall
-                                }
+                                    placeholderImages.userSmall,
+                                  { size: 30 }
+                                )}
                                 alt={reply.authorUsername}
                                 className="comment-avatar"
                               />

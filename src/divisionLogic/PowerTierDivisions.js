@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './PowerTierDivisions.css';
 
 const PowerTierDivisions = ({ user, isModerator }) => {
@@ -202,7 +203,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
               <div className="team-info">
                 <div className="team-fighters">
                   {team.fighters.map(fighter => (
-                    <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                    <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                   ))}
                 </div>
                 <span className="team-owner">{team.owner.username}</span>
@@ -272,7 +273,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
                 <div className="team-info">
                   <div className="team-fighters">
                     {fight.team1.fighters.map(fighter => (
-                      <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                      <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                     ))}
                   </div>
                   <span className="team-owner">{fight.team1.owner.username}</span>
@@ -311,7 +312,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
                 <div className="team-info">
                   <div className="team-fighters">
                     {fight.team2.fighters.map(fighter => (
-                      <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                      <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                     ))}
                   </div>
                   <span className="team-owner">{fight.team2.owner.username}</span>
@@ -402,7 +403,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
               <div className="champion-info">
                 <div className="champion-team">
                   {reign.team.fighters.map(fighter => (
-                    <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                    <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                   ))}
                 </div>
                 <div className="reign-details">
@@ -478,7 +479,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
                     <span className="champion-name">{leaderboards[division.id][0].owner.username}</span>
                     <div className="champion-team">
                       {leaderboards[division.id][0].fighters.map(fighter => (
-                        <img key={fighter.id} src={fighter.image} alt={fighter.name} />
+                        <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                       ))}
                     </div>
                   </div>
@@ -494,7 +495,7 @@ const PowerTierDivisions = ({ user, isModerator }) => {
                 <div className="team-display">
                   {userTeams[division.id].fighters.map(fighter => (
                     <div key={fighter.id} className="fighter-card">
-                      <img src={fighter.image} alt={fighter.name} />
+                      <img {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
                       <span>{fighter.name}</span>
                     </div>
                   ))}

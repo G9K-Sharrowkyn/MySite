@@ -26,15 +26,25 @@ const CharacterSelector = ({ selectedCharacter, onSelect }) => {
   }, []);
 
   useEffect(() => {
-    if (inputValue.trim() === '') {
+    const query = inputValue.trim().toLowerCase();
+    if (!query) {
       setFilteredCharacters([]);
       setShowSuggestions(false);
       onSelect(null);
       return;
     }
-    const filtered = characters.filter(c =>
-      c.name.toLowerCase().startsWith(inputValue.toLowerCase())
-    );
+    const filtered = characters.filter((character) => {
+      const name = (character.name || '').toLowerCase();
+      const baseName = (character.baseName || '').toLowerCase();
+      const tags = Array.isArray(character.tags)
+        ? character.tags.join(' ').toLowerCase()
+        : '';
+      return (
+        name.includes(query) ||
+        baseName.includes(query) ||
+        tags.includes(query)
+      );
+    });
     setFilteredCharacters(filtered);
   }, [inputValue, characters]);
 

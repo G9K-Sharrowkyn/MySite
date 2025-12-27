@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
 import './ProfileBackgroundUpload.css';
@@ -111,7 +112,7 @@ const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
       {currentBackground && !previewUrl && (
         <div className="current-background">
           <img 
-            src={currentBackground} 
+            {...getOptimizedImageProps(currentBackground, { size: 800 })}
             alt="Current background" 
             className="background-preview"
           />
@@ -128,7 +129,7 @@ const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
       {previewUrl && (
         <div className="preview-section">
           <img 
-            src={previewUrl} 
+            {...getOptimizedImageProps(previewUrl, { size: 800 })}
             alt="Preview" 
             className="background-preview"
           />

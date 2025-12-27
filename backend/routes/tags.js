@@ -171,7 +171,13 @@ router.get('/trending', async (req, res) => {
 // POST /api/tags/filter-posts - filter posts by tags
 router.post('/filter-posts', async (req, res) => {
   try {
-    const { page = 1, limit = 10, sortBy = 'createdAt', ...filters } = req.body || {};
+    const {
+      page = 1,
+      limit = 10,
+      sortBy = 'createdAt',
+      postCategory,
+      ...filters
+    } = req.body || {};
     const db = await readDb();
 
     const hasFilters = CATEGORY_KEYS.some(
@@ -179,6 +185,20 @@ router.post('/filter-posts', async (req, res) => {
     );
 
     let posts = db.posts || [];
+
+    const normalizedCategory = String(postCategory || '').toLowerCase();
+    if (normalizedCategory && normalizedCategory !== 'all') {
+      posts = posts.filter((post) => {
+        if (normalizedCategory === 'fight') {
+          return post.type === 'fight';
+        }
+        if (post.type === 'fight') return false;
+        const postCategory = String(
+          post.category || (post.type !== 'fight' ? 'discussion' : '')
+        ).toLowerCase();
+        return postCategory === normalizedCategory;
+      });
+    }
 
     if (hasFilters) {
       posts = posts.filter((post) => {

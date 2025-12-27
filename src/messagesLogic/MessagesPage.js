@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link, useSearchParams } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './MessagesPage.css';
 
@@ -224,7 +224,7 @@ const MessagesPage = () => {
                   onClick={() => startNewConversation(user)}
                 >
                   <img
-                    src={placeholderImages.userSmall}
+                    {...getOptimizedImageProps(placeholderImages.userSmall, { size: 35 })}
                     alt={user.username}
                     className="user-avatar"
                   />
@@ -249,7 +249,7 @@ const MessagesPage = () => {
                   onClick={() => fetchConversation(conversation.userId)}
                 >
                   <img 
-                    src={placeholderImages.userSmall} 
+                    {...getOptimizedImageProps(placeholderImages.userSmall, { size: 50 })}
                     alt={conversation.username}
                     className="conversation-avatar"
                   />
@@ -293,7 +293,10 @@ const MessagesPage = () => {
                   className="chat-user-info"
                 >
                   <img 
-                    src={replacePlaceholderUrl(selectedConversation.profilePicture) || placeholderImages.userSmall} 
+                    {...getOptimizedImageProps(
+                      replacePlaceholderUrl(selectedConversation.profilePicture) || placeholderImages.userSmall,
+                      { size: 45 }
+                    )}
                     alt={selectedConversation.username}
                     className="chat-avatar"
                   />

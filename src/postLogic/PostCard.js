@@ -1,7 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages } from '../utils/placeholderImage';
+import {
+  replacePlaceholderUrl,
+  placeholderImages,
+  getOptimizedImageProps,
+  preloadImage,
+  preloadCharacterImage
+} from '../utils/placeholderImage';
 import { ChampionUsername } from '../utils/championUtils';
 import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
@@ -9,8 +15,31 @@ import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import HoloCard from '../shared/HoloCard';
 import FightTimer from './FightTimer';
+import { AuthContext } from '../auth/AuthContext';
 
-const PostCard = ({ post, onUpdate }) => {
+let cachedCharacters = null;
+let cachedCharactersPromise = null;
+
+const loadCharactersOnce = async () => {
+  if (cachedCharacters) {
+    return cachedCharacters;
+  }
+  if (!cachedCharactersPromise) {
+    cachedCharactersPromise = axios
+      .get('/api/characters')
+      .then((response) => {
+        cachedCharacters = response.data || [];
+        return cachedCharacters;
+      })
+      .catch(() => {
+        cachedCharacters = [];
+        return cachedCharacters;
+      });
+  }
+  return cachedCharactersPromise;
+};
+
+const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false }) => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [showComments, setShowComments] = useState(false);
@@ -28,11 +57,16 @@ const PostCard = ({ post, onUpdate }) => {
   const [userReaction, setUserReaction] = useState(null);
   const [commentReactionTarget, setCommentReactionTarget] = useState(null);
   const [reactions, setReactions] = useState(post.reactions || []);
-  const [characters, setCharacters] = useState([]);
+  const [characters, setCharacters] = useState(cachedCharacters || []);
   const [pollVote, setPollVote] = useState(null);
 
+  const { user } = useContext(AuthContext);
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
+  const canModerate = user?.role === 'admin' || user?.role === 'moderator';
+  const imageLazy = !eagerImages;
+  const imagePriority = eagerImages ? 'high' : undefined;
+  const imageDecoding = eagerImages ? 'sync' : 'async';
 
   const normalizeVoteTeam = (team) => {
     if (!team) return null;
@@ -49,18 +83,54 @@ const PostCard = ({ post, onUpdate }) => {
       const vote = post.fight.votes.voters.find(v => v.userId === currentUserId);
       setUserVote(normalizeVoteTeam(vote?.team));
     }
-
-    // Fetch character list for mapping names to images
-    const fetchCharacters = async () => {
-      try {
-        const response = await axios.get('/api/characters');
-        setCharacters(response.data);
-      } catch (err) {
-        // Ignore error, fallback to name only
-      }
-    };
-    fetchCharacters();
   }, [post, currentUserId]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (cachedCharacters && cachedCharacters.length) {
+      setCharacters(cachedCharacters);
+      return () => {
+        isMounted = false;
+      };
+    }
+    loadCharactersOnce().then((data) => {
+      if (isMounted) {
+        setCharacters(data);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!prefetchImages && !eagerImages) return;
+    const authorImage =
+      replacePlaceholderUrl(post.author?.profilePicture) ||
+      '/placeholder-character.png';
+    preloadImage(authorImage);
+
+    if (post.image) {
+      preloadImage(replacePlaceholderUrl(post.image));
+    }
+
+    if (post.type === 'fight' && characters.length) {
+      const teamAList = (post.fight?.teamA || '')
+        .split(',')
+        .map((n) => n.trim())
+        .filter(Boolean);
+      const teamBList = (post.fight?.teamB || '')
+        .split(',')
+        .map((n) => n.trim())
+        .filter(Boolean);
+      [...teamAList, ...teamBList].forEach((name) => {
+        const character = getCharacterByName(name);
+        if (character?.image) {
+          preloadCharacterImage(character.image);
+        }
+      });
+    }
+  }, [prefetchImages, eagerImages, post, characters]);
 
   const fetchComments = async () => {
     try {
@@ -289,10 +359,65 @@ const PostCard = ({ post, onUpdate }) => {
     return null;
   };
 
+  const normalizeTag = (value) => {
+    const cleaned = String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const compact = cleaned.replace(/\s+/g, '');
+    if (compact === 'dragonballz' || cleaned === 'dragon ball z') return 'dbz';
+    if (compact === 'dragonballgt' || cleaned === 'dragon ball gt') return 'dbgt';
+    if (compact === 'dragonballsuper' || cleaned === 'dragon ball super') return 'dbs';
+    if (compact === 'dragonballheroes' || cleaned === 'dragon ball heroes') return 'dbh';
+    return cleaned;
+  };
+
+  const extractTags = (value) => {
+    const tags = [];
+    const regex = /\(([^)]+)\)/g;
+    let match;
+    while ((match = regex.exec(String(value || '')))) {
+      tags.push(normalizeTag(match[1]));
+    }
+    return tags;
+  };
+
+  const normalizeBaseName = (value) =>
+    String(value || '')
+      .replace(/\s*\([^)]*\)/g, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+
+  const normalizeFullName = (value) =>
+    String(value || '').replace(/\s+/g, ' ').trim().toLowerCase();
+
   // Helper to get character object by name
   const getCharacterByName = (name) => {
     if (!name) return null;
-    return characters.find(c => c.name === name);
+    const normalized = normalizeFullName(name);
+    const base = normalizeBaseName(name);
+    const tags = extractTags(name);
+
+    let match = characters.find(
+      (character) => normalizeFullName(character.name) === normalized
+    );
+    if (match) return match;
+
+    const baseMatches = characters.filter((character) => {
+      const candidateBase = normalizeBaseName(character.baseName || character.name);
+      return candidateBase === base;
+    });
+    if (!baseMatches.length) return null;
+
+    if (tags.length) {
+      match = baseMatches.find((character) => {
+        const characterTags = Array.isArray(character.tags)
+          ? character.tags.map(normalizeTag)
+          : [];
+        return tags.every((tag) => characterTags.includes(tag));
+      });
+      if (match) return match;
+    }
+
+    return baseMatches[0];
   };
 
   const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey) => {
@@ -318,7 +443,15 @@ const PostCard = ({ post, onUpdate }) => {
                       <div className="character-name-simple">{name}</div>
                       <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                         <img
-                          src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
+                          {...getOptimizedImageProps(
+                            replacePlaceholderUrl(char?.image) || placeholderImages.character,
+                            {
+                              size: 360,
+                              lazy: imageLazy,
+                              fetchPriority: imagePriority,
+                              decoding: imageDecoding
+                            }
+                          )}
                           alt={name}
                           className="team-image-large"
                         />
@@ -335,7 +468,15 @@ const PostCard = ({ post, onUpdate }) => {
                       <div className="character-name-simple">{name}</div>
                       <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                         <img
-                          src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
+                          {...getOptimizedImageProps(
+                            replacePlaceholderUrl(char?.image) || placeholderImages.character,
+                            {
+                              size: 360,
+                              lazy: imageLazy,
+                              fetchPriority: imagePriority,
+                              decoding: imageDecoding
+                            }
+                          )}
                           alt={name}
                           className="team-image-large"
                         />
@@ -353,7 +494,15 @@ const PostCard = ({ post, onUpdate }) => {
                   <div className="character-name-simple">{name}</div>
                   <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                     <img
-                      src={replacePlaceholderUrl(char?.image) || placeholderImages.character}
+                      {...getOptimizedImageProps(
+                        replacePlaceholderUrl(char?.image) || placeholderImages.character,
+                        {
+                          size: 360,
+                          lazy: imageLazy,
+                          fetchPriority: imagePriority,
+                          decoding: imageDecoding
+                        }
+                      )}
                       alt={name}
                       className="team-image-large"
                     />
@@ -721,7 +870,10 @@ const PostCard = ({ post, onUpdate }) => {
       <div className="post-header">
         <Link to={`/profile/${post.author?.id}`} className="author-link">
           <img 
-            src={replacePlaceholderUrl(post.author?.profilePicture) || '/placeholder-character.png'} 
+            {...getOptimizedImageProps(
+              replacePlaceholderUrl(post.author?.profilePicture) || '/placeholder-character.png',
+              { size: 50, lazy: imageLazy, decoding: imageDecoding }
+            )} 
             alt={post.author?.username} 
             className="author-avatar"
           />
@@ -761,7 +913,16 @@ const PostCard = ({ post, onUpdate }) => {
         {post.image && (
           <Link to={`/post/${post.id}`} className="post-image-link">
             <div className="post-image">
-              <img src={replacePlaceholderUrl(post.image)} alt="Post content" />
+              <img
+                {...getOptimizedImageProps(replacePlaceholderUrl(post.image), {
+                  preferFull: true,
+                  size: 600,
+                  lazy: imageLazy,
+                  fetchPriority: imagePriority,
+                  decoding: imageDecoding
+                })}
+                alt="Post content"
+              />
             </div>
           </Link>
         )}
@@ -851,16 +1012,16 @@ const PostCard = ({ post, onUpdate }) => {
         </button>
 
         {currentUserId === post.author?.id && (
-          <>
-            <button className="action-btn edit-btn" onClick={handleEditToggle}>
-              <span className="action-icon">✏️</span>
-              <span className="action-text">{t('edit')}</span>
-            </button>
-            <button className="action-btn delete-btn" onClick={handleDelete}>
-              <span className="action-icon">🗑️</span>
-              <span className="action-text">{t('delete')}</span>
-            </button>
-          </>
+          <button className="action-btn edit-btn" onClick={handleEditToggle}>
+            <span className="action-icon">E</span>
+            <span className="action-text">{t('edit')}</span>
+          </button>
+        )}
+        {(currentUserId === post.author?.id || canModerate) && (
+          <button className="action-btn delete-btn" onClick={handleDelete}>
+            <span className="action-icon">DEL</span>
+            <span className="action-text">{t('delete')}</span>
+          </button>
         )}
       </div>
 
@@ -930,10 +1091,11 @@ const PostCard = ({ post, onUpdate }) => {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <img
-                          src={
+                          {...getOptimizedImageProps(
                             replacePlaceholderUrl(root.authorAvatar) ||
-                            placeholderImages.userSmall
-                          }
+                              placeholderImages.userSmall,
+                            { size: 32, lazy: imageLazy, decoding: imageDecoding }
+                          )}
                           alt={root.authorUsername}
                           className="comment-avatar"
                         />
@@ -1027,10 +1189,11 @@ const PostCard = ({ post, onUpdate }) => {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <img
-                                src={
+                                {...getOptimizedImageProps(
                                   replacePlaceholderUrl(reply.authorAvatar) ||
-                                  placeholderImages.userSmall
-                                }
+                                    placeholderImages.userSmall,
+                                  { size: 32, lazy: imageLazy, decoding: imageDecoding }
+                                )}
                                 alt={reply.authorUsername}
                                 className="comment-avatar"
                               />

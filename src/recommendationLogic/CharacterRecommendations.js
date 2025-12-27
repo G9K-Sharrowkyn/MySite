@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './CharacterRecommendations.css';
 
 const CharacterRecommendations = ({ user, onCharacterSelect }) => {
@@ -370,7 +371,7 @@ const CharacterRecommendations = ({ user, onCharacterSelect }) => {
             style={{ animationDelay: `${index * 0.1}s` }}
           >
             <div className="card-image">
-              <img src={character.image} alt={character.name} />
+              <img {...getOptimizedImageProps(character.image, { size: 240 })} alt={character.name} />
               <div className="compatibility-badge">
                 {Math.floor(character.compatibilityScore || character.powerScore || 75)}%
               </div>

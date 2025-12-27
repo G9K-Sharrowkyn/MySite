@@ -1,9 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, updateDb } from '../services/jsonDb.js';
 import { createNotification } from './notificationController.js';
+import { findProfanityMatches } from '../utils/profanity.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveCommentId = (comment) => comment?.id || comment?._id;
+const resolveRole = (user) => user?.role || 'user';
 
 const buildAuthorAvatar = (user) => {
   const profile = user.profile || {};
@@ -24,6 +26,43 @@ const buildReactionSummary = (reactions = []) => {
     const name = separatorIndex >= 0 ? key.slice(separatorIndex + 1) : '';
     return { icon, name, count };
   });
+};
+
+const notifyAdminsForProfanity = async (db, payload) => {
+  const {
+    author,
+    matches,
+    text,
+    sourceType,
+    postId,
+    fightId,
+    userId,
+    commentId
+  } = payload || {};
+  if (!matches || matches.length === 0) return;
+
+  const admins = (db.users || []).filter((user) => resolveRole(user) === 'admin');
+  if (!admins.length) return;
+
+  const authorId = resolveUserId(author);
+  const summary = matches.join(', ');
+  const title = 'Profanity detected in comment';
+  const content = `${author?.username || 'User'} used flagged words: ${summary}`;
+
+  await Promise.all(
+    admins.map((admin) =>
+      createNotification(db, resolveUserId(admin), 'moderation', title, content, {
+        sourceType,
+        postId,
+        fightId,
+        userId,
+        commentId,
+        authorId,
+        matches,
+        text
+      })
+    )
+  );
 };
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -134,6 +173,18 @@ export const addPostComment = async (req, res) => {
 
       db.comments.push(createdComment);
 
+      const matches = findProfanityMatches(commentText);
+      if (matches.length) {
+        await notifyAdminsForProfanity(db, {
+          author,
+          matches,
+          text: commentText,
+          sourceType: 'post_comment',
+          postId,
+          commentId
+        });
+      }
+
       author.activity = author.activity || {
         postsCreated: 0,
         commentsPosted: 0,
@@ -222,7 +273,7 @@ export const updateComment = async (req, res) => {
   try {
     let updatedComment;
 
-    await updateDb((db) => {
+    await updateDb(async (db) => {
       const comment = db.comments.find(
         (entry) => resolveCommentId(entry) === req.params.id
       );
@@ -280,7 +331,11 @@ export const deleteComment = async (req, res) => {
         throw error;
       }
 
-      if (comment.authorId !== req.user.id && user.role !== 'moderator') {
+      if (
+        comment.authorId !== req.user.id &&
+        user.role !== 'moderator' &&
+        user.role !== 'admin'
+      ) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
@@ -387,7 +442,7 @@ export const addUserComment = async (req, res) => {
   try {
     let createdComment;
 
-    await updateDb((db) => {
+    await updateDb(async (db) => {
       const targetUser = db.users.find((user) => resolveUserId(user) === userId);
       if (!targetUser) {
         const error = new Error('User not found');
@@ -440,6 +495,17 @@ export const addUserComment = async (req, res) => {
       };
 
       db.comments.push(createdComment);
+      const matches = findProfanityMatches(createdComment.text);
+      if (matches.length) {
+        await notifyAdminsForProfanity(db, {
+          author,
+          matches,
+          text: createdComment.text,
+          sourceType: 'profile_comment',
+          userId,
+          commentId
+        });
+      }
       return db;
     });
 
@@ -488,7 +554,7 @@ export const addFightComment = async (req, res) => {
   try {
     let createdComment;
 
-    await updateDb((db) => {
+    await updateDb(async (db) => {
       const fightExists =
         db.fights?.some((fight) => fight.id === fightId) ||
         db.posts.some(
@@ -547,6 +613,17 @@ export const addFightComment = async (req, res) => {
       };
 
       db.comments.push(createdComment);
+      const matches = findProfanityMatches(createdComment.text);
+      if (matches.length) {
+        await notifyAdminsForProfanity(db, {
+          author,
+          matches,
+          text: createdComment.text,
+          sourceType: 'fight_comment',
+          fightId,
+          commentId
+        });
+      }
       return db;
     });
 
