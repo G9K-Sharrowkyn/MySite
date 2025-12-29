@@ -19,6 +19,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-dark);
   color: var(--text-light);
+  min-height: 100vh;
+}
+
+html {
+  background-color: var(--bg-dark);
+}
+
+#root {
+  min-height: 100vh;
+  background-color: var(--bg-dark);
 }
 .container {
   max-width: 1000px;

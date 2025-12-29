@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchUser = useCallback(
-    async (authToken = token) => {
+    async (authToken) => {
       if (!authToken) {
         setLoading(false);
         return;
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
     },
-    [token, logout]
+    [logout]
   );
 
   const login = useCallback(
@@ -85,13 +85,17 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (!token) {
       setLoading(false);
+      setUser(null);
       return;
     }
 
+    // Only fetch user if we have a token but no user data
     if (!user) {
       fetchUser(token);
+    } else {
+      setLoading(false);
     }
-  }, [token, user, fetchUser]);
+  }, [token]); // Removed user and fetchUser from dependencies to prevent infinite loops
 
   const value = {
     user,

@@ -530,31 +530,41 @@ export const awardStreakAchievement = async (req, res) => {
   }
 };
 
+// Simple in-memory cache for leaderboard
+const leaderboardCache = {
+  data: null,
+  timestamp: 0,
+  ttl: 10000 // 10 seconds
+};
+
 export const getLeaderboard = async (req, res) => {
   const { type = 'experience', limit = 10 } = req.query;
+  const cacheKey = `${type}-${limit}`;
+  
+  // Check cache
+  const now = Date.now();
+  if (leaderboardCache.data && 
+      leaderboardCache.key === cacheKey && 
+      now - leaderboardCache.timestamp < leaderboardCache.ttl) {
+    return res.json(leaderboardCache.data);
+  }
   
   try {
     const db = await readDb();
     
-    // Get all users and calculate their stats
+    // Get all users and use their cached stats instead of calculating
     let users = (db.users || []).map((user) => {
-      // Calculate user fights and wins
-      const userFights = (db.fights || []).filter(
-        (fight) => Array.isArray(fight.participants) && fight.participants.some((p) => p.userId === user.id)
-      );
-      const userWins = userFights.filter(f => f.winner === user.id);
+      // Use pre-calculated stats from user profile
+      const stats = user.stats || {};
+      const fights = stats.fights || {};
       
-      // Get user posts for activity
-      const userPosts = (db.posts || []).filter((p) => p.authorId === user.id);
-      
-      // Combine stats from different sources
       const combinedStats = {
-        experience: user.stats?.experience || user.profile?.stats?.experience || 0,
-        points: user.stats?.points || user.profile?.stats?.points || user.profile?.score || 0,
-        level: user.stats?.level || Math.floor((user.stats?.experience || 0) / 100) + 1,
-        victories: userWins.length,
-        fights: userFights.length,
-        posts: userPosts.length
+        experience: stats.experience || 0,
+        points: stats.points || 0,
+        level: stats.level || Math.floor((stats.experience || 0) / 100) + 1,
+        victories: fights.wins || 0,
+        fights: fights.total || 0,
+        posts: stats.posts || 0
       };
       
       return {
@@ -593,6 +603,11 @@ export const getLeaderboard = async (req, res) => {
     }
     
     const leaderboard = users.slice(0, limit);
+    
+    // Update cache
+    leaderboardCache.data = leaderboard;
+    leaderboardCache.key = cacheKey;
+    leaderboardCache.timestamp = Date.now();
     
     res.json(leaderboard);
   } catch (err) {

@@ -80,6 +80,13 @@ export const vote = async (req, res) => {
           updatedAt: now
         };
         db.votes.push(storedVote);
+        
+        // Update user stats for new votes only
+        const user = db.users.find(u => (u.id || u._id) === req.user.id);
+        if (user) {
+          if (!user.stats) user.stats = {};
+          user.stats.votes = (user.stats.votes || 0) + 1;
+        }
       }
 
       return db;

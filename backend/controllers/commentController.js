@@ -195,6 +195,11 @@ export const addPostComment = async (req, res) => {
         tournamentsParticipated: 0
       };
       author.activity.commentsPosted += 1;
+      
+      // Update stats.comments for leaderboard
+      if (!author.stats) author.stats = {};
+      author.stats.comments = (author.stats.comments || 0) + 1;
+      
       addRankPoints(author, RANK_POINT_VALUES.comment);
       updateLeveledBadgeProgress(
         author,
@@ -526,6 +531,11 @@ export const addUserComment = async (req, res) => {
         tournamentsParticipated: 0
       };
       author.activity.commentsPosted += 1;
+      
+      // Update stats.comments for leaderboard
+      if (!author.stats) author.stats = {};
+      author.stats.comments = (author.stats.comments || 0) + 1;
+      
       addRankPoints(author, RANK_POINT_VALUES.comment);
       updateLeveledBadgeProgress(
         author,
@@ -662,6 +672,11 @@ export const addFightComment = async (req, res) => {
         tournamentsParticipated: 0
       };
       author.activity.commentsPosted += 1;
+      
+      // Update stats.comments for leaderboard
+      if (!author.stats) author.stats = {};
+      author.stats.comments = (author.stats.comments || 0) + 1;
+      
       addRankPoints(author, RANK_POINT_VALUES.comment);
       updateLeveledBadgeProgress(
         author,

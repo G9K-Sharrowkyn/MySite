@@ -1,59 +1,99 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef, memo } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './LeaderboardPage.css';
 
+// Memoized leaderboard row component for better performance
+const LeaderboardRow = memo(({ user, isCurrentUser, onClick, getRankIcon, rankingType, t }) => {
+  return (
+    <div 
+      className={`leaderboard-row ${isCurrentUser ? 'current-user' : ''}`}
+      onClick={onClick}
+    >
+      <div className="rank">
+        <span className="rank-icon">{getRankIcon(user.rank)}</span>
+      </div>
+      <div className="user-info">
+        <span className="username">{user.username}</span>
+        {isCurrentUser && (
+          <span className="current-user-badge">👈 {t('you') || 'You'}</span>
+        )}
+      </div>
+      <div className="level">
+        <span className="level-badge">Lv.{user.level}</span>
+      </div>
+      <div className="value">
+        {rankingType === 'experience' && (
+          <span>{user.stats.experience || 0} XP</span>
+        )}
+        {rankingType === 'points' && (
+          <span>{user.stats.points || 0} {t('points') || 'Points'}</span>
+        )}
+        {rankingType === 'achievements' && (
+          <span>{user.achievements} {t('achievements') || 'Achievements'}</span>
+        )}
+        {rankingType === 'fights' && (
+          <span>{user.stats.fights?.total || 0} {t('fights') || 'Fights'}</span>
+        )}
+      </div>
+      <div className="achievements">
+        <span className="achievement-count">
+          {user.achievements} 🏆
+        </span>
+      </div>
+    </div>
+  );
+});
+
+LeaderboardRow.displayName = 'LeaderboardRow';
+
 const LeaderboardPage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
+  const [displayedCount, setDisplayedCount] = useState(10); // Show only first 10 initially
   const [rankingType, setRankingType] = useState('experience');
   const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const fetchingRef = useRef(false);
   
   const { t } = useLanguage();
   const currentUserId = localStorage.getItem('userId');
   const navigate = useNavigate();
 
   const fetchLeaderboard = useCallback(async () => {
+    // Prevent duplicate calls in StrictMode
+    if (fetchingRef.current) {
+      return;
+    }
+    
+    fetchingRef.current = true;
+    setLoading(true);
+    setDisplayedCount(10);
+    
     try {
-      const response = await axios.get(`/api/stats/leaderboard?type=${rankingType}&limit=50`);
-      const normalized = (response.data || []).map((entry, index) => {
-        const fallbackStats = entry?.stats || {};
-        const fightsValue = entry?.fights;
-        const fightsObject = typeof fightsValue === 'object' && fightsValue !== null
-          ? fightsValue
-          : fallbackStats.fights || {};
-        const fightsTotal =
-          typeof fightsValue === 'number'
-            ? fightsValue
-            : fightsObject.total ?? 0;
-
-        const stats = {
-          experience: entry?.experience ?? fallbackStats.experience ?? 0,
-          points: entry?.points ?? fallbackStats.points ?? 0,
-          level: entry?.level ?? fallbackStats.level ?? 1,
-          fights: {
-            total: fightsTotal,
-            wins: fightsObject.wins ?? 0,
-            losses: fightsObject.losses ?? 0,
-            winRate: fightsObject.winRate ?? 0
-          }
-        };
-
-        return {
-          ...entry,
-          userId: entry?.userId || entry?.id || entry?._id || String(index),
-          stats,
-          level: stats.level,
-          achievements:
-            entry?.achievements ??
-            (Array.isArray(fallbackStats.achievements)
-              ? fallbackStats.achievements.length
-              : 0)
-        };
-      });
+      const apiUrl = process.env.REACT_APP_API_URL || '';
+      const response = await axios.get(`${apiUrl}/api/stats/leaderboard?type=${rankingType}&limit=50`);
+      
+      // Backend now returns properly structured data, minimal normalization needed
+      const normalized = (response.data || []).map((entry, index) => ({
+        ...entry,
+        userId: entry.id || entry._id || String(index),
+        rank: index + 1,
+        stats: {
+          experience: entry.experience || 0,
+          points: entry.points || 0,
+          level: entry.level || 1,
+          fights: entry.fights || { total: 0, wins: 0, losses: 0, winRate: 0 }
+        },
+        achievements: entry.achievements || 0
+      }));
+      
       setLeaderboard(normalized);
     } catch (error) {
       console.error('Error fetching leaderboard:', error);
+    } finally {
+      setLoading(false);
+      fetchingRef.current = false;
     }
   }, [rankingType]);
 
@@ -61,7 +101,17 @@ const LeaderboardPage = () => {
     fetchLeaderboard();
   }, [fetchLeaderboard]);
 
-  const getRankingTypeLabel = (type) => {
+  // Progressive rendering - show more rows gradually
+  useEffect(() => {
+    if (!loading && leaderboard.length > displayedCount) {
+      const timer = setTimeout(() => {
+        setDisplayedCount(prev => Math.min(prev + 20, leaderboard.length));
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, leaderboard.length, displayedCount]);
+
+  const getRankingTypeLabel = useCallback((type) => {
     switch (type) {
       case 'experience':
         return t('experience') || 'Experience';
@@ -74,14 +124,14 @@ const LeaderboardPage = () => {
       default:
         return t('experience') || 'Experience';
     }
-  };
+  }, [t]);
 
-  const getRankIcon = (rank) => {
+  const getRankIcon = useCallback((rank) => {
     if (rank === 1) return '🥇';
     if (rank === 2) return '🥈';
     if (rank === 3) return '🥉';
     return `#${rank}`;
-  };
+  }, []);
 
   const getAchievementIcon = (type) => {
     switch (type) {
@@ -283,49 +333,31 @@ const LeaderboardPage = () => {
             <div className="header-achievements">{t('achievements') || 'Achievements'}</div>
           </div>
 
-          {leaderboard.map((user, index) => {
-            const userId = user.userId || user.id || user._id || String(index);
-            const isCurrentUser = userId === currentUserId;
-            return (
-            <div 
-              key={userId} 
-              className={`leaderboard-row ${isCurrentUser ? 'current-user' : ''}`}
-              onClick={() => navigate(`/profile/${userId}`)}
-            >
-              <div className="rank">
-                <span className="rank-icon">{getRankIcon(user.rank)}</span>
-              </div>
-              <div className="user-info">
-                <span className="username">{user.username}</span>
-                {isCurrentUser && (
-                  <span className="current-user-badge">??'? {t('you') || 'You'}</span>
-                )}
-              </div>
-              <div className="level">
-                <span className="level-badge">Lv.{user.level}</span>
-              </div>
-              <div className="value">
-                {rankingType === 'experience' && (
-                  <span>{user.stats.experience || 0} XP</span>
-                )}
-                {rankingType === 'points' && (
-                  <span>{user.stats.points || 0} {t('points') || 'Points'}</span>
-                )}
-                {rankingType === 'achievements' && (
-                  <span>{user.achievements} {t('achievements') || 'Achievements'}</span>
-                )}
-                {rankingType === 'fights' && (
-                  <span>{user.stats.fights?.total || 0} {t('fights') || 'Fights'}</span>
-                )}
-              </div>
-              <div className="achievements">
-                <span className="achievement-count">
-                  {user.achievements} ????
-                </span>
-              </div>
+          {loading ? (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <p>{t('loading') || 'Loading...'}</p>
             </div>
-            );
-          })}
+          ) : leaderboard.length === 0 ? (
+            <div style={{ padding: '2rem', textAlign: 'center' }}>
+              <p>{t('noData') || 'No data available'}</p>
+            </div>
+          ) : (
+            leaderboard.slice(0, displayedCount).map((user, index) => {
+              const userId = user.userId || user.id || user._id || String(index);
+              const isCurrentUser = userId === currentUserId;
+              return (
+                <LeaderboardRow
+                  key={userId}
+                  user={user}
+                  isCurrentUser={isCurrentUser}
+                  onClick={() => navigate(`/profile/${userId}`)}
+                  getRankIcon={getRankIcon}
+                  rankingType={rankingType}
+                  t={t}
+                />
+              );
+            })
+          )}
         </div>
       </div>
 

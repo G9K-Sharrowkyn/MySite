@@ -117,6 +117,28 @@ export const translations = {
     discussions: 'Dyskusje',
     articles: 'Artykuły',
     achievements: 'Osiągnięcia',
+    user: 'Użytkownik',
+    level: 'Poziom',
+    rank: 'Ranga',
+    username: 'Nazwa użytkownika',
+    title: 'Tytuł',
+    
+    // Feedback system
+    reportIssue: 'Zgłoś problem',
+    reportType: 'Typ zgłoszenia',
+    reportBug: 'Zgłoszenie błędu',
+    featureRequest: 'Propozycja funkcji',
+    reportUser: 'Zgłoś użytkownika',
+    other: 'Inne',
+    enterUsername: 'Podaj nazwę użytkownika do zgłoszenia',
+    shortDescription: 'Krótki opis',
+    detailedDescription: 'Szczegółowy opis...',
+    fillAllFields: 'Wypełnij wszystkie wymagane pola',
+    provideUsername: 'Podaj nazwę użytkownika do zgłoszenia',
+    feedbackSent: 'Dziękujemy! Twoje zgłoszenie zostało wysłane.',
+    feedbackError: 'Nie udało się wysłać zgłoszenia',
+    sending: 'Wysyłanie...',
+    
     // Common
     loading: 'Ładowanie...',
     error: 'Błąd',
@@ -158,12 +180,13 @@ export const translations = {
     goodJob: 'Dobra robota',
     
     // Stats
-    users: 'Użytkowników',
+    users: 'Użytkownicy',
     geeks: 'Geeków',
-    fights: 'Walk',
+    fights: 'Walki',
     posts: 'Postów',
     votes: 'Głosów',
-    points: 'Punktów',
+    points: 'Punkty',
+    experience: 'Doświadczenie',
     
     // Time
     now: 'Teraz',
@@ -638,6 +661,27 @@ export const translations = {
     discussions: 'Discussions',
     articles: 'Articles',
     achievements: 'Achievements',
+    user: 'User',
+    level: 'Level',
+    rank: 'Rank',
+    username: 'Username',
+    title: 'Title',
+    
+    // Feedback system
+    reportIssue: 'Report an Issue',
+    reportType: 'Report Type',
+    reportBug: 'Bug Report',
+    featureRequest: 'Feature Request',
+    reportUser: 'Report User',
+    other: 'Other',
+    enterUsername: 'Enter username to report',
+    shortDescription: 'Short description',
+    detailedDescription: 'Detailed description...',
+    fillAllFields: 'Please fill in all required fields',
+    provideUsername: 'Please provide the username to report',
+    feedbackSent: 'Thank you! Your report has been sent.',
+    feedbackError: 'Failed to send report',
+    sending: 'Sending...',
     
     // Common
     loading: 'Loading...',
@@ -686,6 +730,7 @@ export const translations = {
     posts: 'Posts',
     votes: 'Votes',
     points: 'Points',
+    experience: 'Experience',
     
     // Time
     now: 'Now',
@@ -1148,6 +1193,28 @@ export const translations = {
     discussions: 'Discusiones',
     articles: 'Artículos',
     achievements: 'Logros',
+    user: 'Usuario',
+    level: 'Nivel',
+    rank: 'Rango',
+    username: 'Nombre de usuario',
+    title: 'Título',
+    
+    // Feedback system
+    reportIssue: 'Reportar un problema',
+    reportType: 'Tipo de reporte',
+    reportBug: 'Reporte de error',
+    featureRequest: 'Solicitud de función',
+    reportUser: 'Reportar usuario',
+    other: 'Otro',
+    enterUsername: 'Ingresa el nombre de usuario a reportar',
+    shortDescription: 'Descripción corta',
+    detailedDescription: 'Descripción detallada...',
+    fillAllFields: 'Por favor completa todos los campos requeridos',
+    provideUsername: 'Por favor proporciona el nombre de usuario a reportar',
+    feedbackSent: '¡Gracias! Tu reporte ha sido enviado.',
+    feedbackError: 'No se pudo enviar el reporte',
+    sending: 'Enviando...',
+    
     officialRecord: 'Récord Oficial',
     feedRecord: 'Récord Feed',
     officialDivisions: 'Oficial (Divisiones)',
@@ -1200,6 +1267,7 @@ export const translations = {
     posts: 'Publicaciones',
     votes: 'Votos',
     points: 'Puntos',
+    experience: 'Experiencia',
     
     // Time
     now: 'Ahora',

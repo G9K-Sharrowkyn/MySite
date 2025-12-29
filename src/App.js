@@ -21,6 +21,7 @@ import NotificationsPage from './notificationLogic/NotificationsPage';
 import DivisionsPage from './divisionsLogic/DivisionsPage';
 import PostPage from './postLogic/PostPage';
 import GlobalChatSystem from './chat/GlobalChatSystem';
+import FeedbackButton from './shared/FeedbackButton';
 import './App.css';
 
 function AppContent() {
@@ -55,6 +56,8 @@ function AppContent() {
       </Routes>
       {/* Global Chat System - only show when logged in */}
       {isLoggedIn && <GlobalChatSystem />}
+      {/* Feedback Button - always visible */}
+      <FeedbackButton />
     </div>
   );
 }

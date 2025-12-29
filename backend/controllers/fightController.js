@@ -408,6 +408,37 @@ export const endFight = async (req, res) => {
       fight.result.method = 'moderator';
       fight.updatedAt = new Date().toISOString();
 
+      // Update participant stats
+      if (fight.participants && Array.isArray(fight.participants)) {
+        fight.participants.forEach(participant => {
+          const participantUser = findUserById(db, participant.userId);
+          if (participantUser) {
+            participantUser.stats = participantUser.stats || {};
+            participantUser.stats.fights = participantUser.stats.fights || { total: 0, wins: 0, losses: 0, winRate: 0 };
+            participantUser.stats.fights.total = (participantUser.stats.fights.total || 0) + 1;
+            
+            // Check if this participant won
+            const participantTeam = participant.team || participant.side;
+            const wonFight = (winner === 'A' && ['A', 'teamA', 'fighter1'].includes(participantTeam)) ||
+                           (winner === 'B' && ['B', 'teamB', 'fighter2'].includes(participantTeam));
+            
+            if (winner === 'draw') {
+              // Draw - no win/loss update
+            } else if (wonFight) {
+              participantUser.stats.fights.wins = (participantUser.stats.fights.wins || 0) + 1;
+            } else {
+              participantUser.stats.fights.losses = (participantUser.stats.fights.losses || 0) + 1;
+            }
+            
+            // Update win rate
+            if (participantUser.stats.fights.total > 0) {
+              participantUser.stats.fights.winRate = Math.round((participantUser.stats.fights.wins / participantUser.stats.fights.total) * 100);
+            }
+          }
+        });
+      }
+
+      // Award points to users who voted correctly
       if (winner !== 'draw') {
         (db.votes || [])
           .filter(

@@ -406,6 +406,11 @@ export const createPost = async (req, res) => {
             20
           );
         }
+        
+        // Update stats.posts for leaderboard
+        if (!author.stats) author.stats = {};
+        author.stats.posts = (author.stats.posts || 0) + 1;
+        
         addRankPoints(author, RANK_POINT_VALUES.post);
         author.updatedAt = now.toISOString();
 

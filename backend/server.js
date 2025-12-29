@@ -43,6 +43,7 @@ import challengesRoutes from './routes/challenges.js';
 import storeRoutes from './routes/store.js';
 import userRoutes from './routes/user.js';
 import pushRoutes from './routes/push.js';
+import feedbackRoutes from './routes/feedback.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -194,6 +195,7 @@ app.use('/api/challenges', challengesRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
+app.use('/api/feedback', feedbackRoutes);
 
 // Division seasons scheduler (auto + manual trigger support)
 const DIVISION_SCHEDULER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes

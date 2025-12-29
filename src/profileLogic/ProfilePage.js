@@ -358,8 +358,7 @@ const handleCommentSubmit = async (e) => {
                 to={`/messages/${resolvedUserId}`}
                 className="send-message-btn"
               >
-                <span className="send-message-icon">💬</span>
-                {t('sendMessage') || 'Send Message'}
+                Message me!
               </Link>
             )}
           </div>

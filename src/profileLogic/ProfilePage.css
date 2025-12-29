@@ -345,7 +345,7 @@ body.dark-mode .profile-page .stat-item {
   transition: all 0.3s ease;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
   border: none;
 }
 
@@ -355,12 +355,8 @@ body.dark-mode .profile-page .stat-item {
 }
 
 .send-message-btn {
-  background: linear-gradient(135deg, #0084ff, #0073e6);
+  background: #0084ff;
   color: #fff;
-}
-
-.send-message-icon {
-  font-size: 1.1rem;
 }
 
 .edit-profile-btn:hover,

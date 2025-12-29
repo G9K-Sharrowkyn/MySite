@@ -28,24 +28,6 @@ const Header = () => {
     navigate('/');
   }, [logout, navigate]);
 
-  const fetchUserData = useCallback(async () => {
-    if (!token) {
-      return;
-    }
-
-    try {
-      await axios.get('/api/profile/me', {
-        headers: { 'x-auth-token': token }
-      });
-      // User data is already managed by AuthContext, so we don't need to set it here
-    } catch (error) {
-      console.error('Error fetching user data:', error);
-      if (error.response?.status === 401) {
-        handleLogout();
-      }
-    }
-  }, [token, handleLogout]);
-
   const fetchUnreadCounts = useCallback(async () => {
     if (!token) {
       setUnreadMessages(0);
@@ -79,7 +61,6 @@ const Header = () => {
 
   useEffect(() => {
     if (isLoggedIn) {
-      fetchUserData();
       fetchUnreadCounts();
       // Set up polling for real-time updates
       const interval = setInterval(() => {
@@ -88,7 +69,7 @@ const Header = () => {
 
       return () => clearInterval(interval);
     }
-  }, [isLoggedIn, fetchUserData, fetchUnreadCounts]);
+  }, [isLoggedIn, fetchUnreadCounts]);
 
   const fetchNotifications = async () => {
     if (!token) return;

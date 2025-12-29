@@ -55,7 +55,16 @@
         "experience": 150,
         "points": 100,
         "rank": "Rookie",
-        "level": 2
+        "level": 2,
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 4,
+        "comments": 2,
+        "votes": 0
       }
     },
     {
@@ -76,7 +85,21 @@
         "rank": 10,
         "score": 1000
       },
-      "selectedCharacters": []
+      "selectedCharacters": [],
+      "stats": {
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0,
+        "experience": 0,
+        "points": 0,
+        "level": 1
+      }
     },
     {
       "id": "ADMIN-UNIQUE-ID-0001",
@@ -101,7 +124,16 @@
         "rank": "Administrator",
         "points": 0,
         "level": 1,
-        "experience": 0
+        "experience": 0,
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -134,7 +166,16 @@
         "rank": "Rookie",
         "points": 0,
         "level": 1,
-        "experience": 0
+        "experience": 0,
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -167,7 +208,16 @@
         "rank": "Rookie",
         "points": 0,
         "level": 1,
-        "experience": 0
+        "experience": 0,
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -200,7 +250,16 @@
         "rank": "Rookie",
         "points": 0,
         "level": 1,
-        "experience": 0
+        "experience": 0,
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -233,7 +292,16 @@
         "rank": "Rookie",
         "points": 0,
         "level": 1,
-        "experience": 0
+        "experience": 0,
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 1,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -269,7 +337,16 @@
         "rank": "Rookie",
         "points": 0,
         "level": 1,
-        "experience": 0
+        "experience": 0,
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 1,
+        "comments": 5,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 6,
@@ -353,7 +430,16 @@
           "fightsLost": 0,
           "fightsDrawn": 0,
           "winRate": 0
-        }
+        },
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -438,7 +524,16 @@
           "fightsLost": 0,
           "fightsDrawn": 0,
           "winRate": 0
-        }
+        },
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -522,7 +617,16 @@
           "fightsLost": 0,
           "fightsDrawn": 0,
           "winRate": 0
-        }
+        },
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
@@ -607,7 +711,16 @@
           "fightsLost": 0,
           "fightsDrawn": 0,
           "winRate": 0
-        }
+        },
+        "fights": {
+          "total": 0,
+          "wins": 0,
+          "losses": 0,
+          "winRate": 0
+        },
+        "posts": 0,
+        "comments": 0,
+        "votes": 0
       },
       "activity": {
         "postsCreated": 0,
