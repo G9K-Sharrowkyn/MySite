@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Link, useSearchParams } from 'react-router-dom';
+import io from 'socket.io-client';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './MessagesPage.css';
@@ -10,6 +11,7 @@ const MessagesPage = () => {
   const [users, setUsers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeUsers, setActiveUsers] = useState([]);
   const { t } = useLanguage();
 
   const token = localStorage.getItem('token');
@@ -71,6 +73,37 @@ const MessagesPage = () => {
       console.error('Error searching users:', error);
     }
   }, [token]);
+
+  // Socket.io for online status
+  useEffect(() => {
+    if (!token || !currentUserId) return;
+
+    const socketUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5001'
+      : window.location.origin;
+    
+    const socket = io(socketUrl, {
+      auth: { token }
+    });
+
+    socket.on('connect', () => {
+      // Join chat to be added to activeUsers
+      socket.emit('join-chat', {
+        userId: currentUserId,
+        username: localStorage.getItem('username'),
+        profilePicture: localStorage.getItem('profilePicture')
+      });
+    });
+
+    socket.on('active-users', (users) => {
+      console.log('Active users received:', users);
+      setActiveUsers(users || []);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [token, currentUserId]);
 
   // Debounce search
   useEffect(() => {
@@ -170,9 +203,7 @@ const MessagesPage = () => {
                     alt={conversation.username}
                     className="conversation-avatar"
                   />
-                  {conversation.unreadCount > 0 && (
-                    <span className="online-indicator"></span>
-                  )}
+                  <span className={`user-online-status ${activeUsers.some(u => u.userId === conversation.userId) ? 'online' : 'offline'}`}></span>
                 </div>
                 <div className="conversation-content">
                   <div className="conversation-top">

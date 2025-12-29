@@ -11,7 +11,6 @@ import AdminPanel from './adminLogic/AdminPanel';
 import ProfilePage from './profileLogic/ProfilePage';
 import MessagesPage from './messagesLogic/MessagesPage';
 import ConversationChat from './messagesLogic/ConversationChat';
-import CharacterSelectionPage from './characterLogic/CharacterSelectionPage';
 import LeaderboardPage from './leaderboardLogic/LeaderboardPage';
 import FeedPage from './feedLogic/FeedPage';
 import Home from './Home';
@@ -44,7 +43,6 @@ function AppContent() {
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/messages/:userId" element={<ConversationChat />} />
-        <Route path="/characters" element={<CharacterSelectionPage />} />
         <Route path="/divisions" element={<DivisionsPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/feed" element={<FeedPage />} />

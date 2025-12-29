@@ -539,6 +539,50 @@ body.dark-mode .profile-page .stat-item {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }
 
+.fight-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #333;
+}
+
+.fight-tab {
+  padding: 12px 24px;
+  background: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.fight-tab:hover {
+  color: var(--accent);
+}
+
+.fight-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+body:not(.dark-mode) .fight-tabs {
+  border-bottom: 2px solid #e0e0e0;
+}
+
+body:not(.dark-mode) .fight-tab {
+  color: #666;
+}
+
+body:not(.dark-mode) .fight-tab:hover {
+  color: var(--accent);
+}
+
+body:not(.dark-mode) .fight-tab.active {
+  color: var(--accent);
+}
+
 .profile-fights h3 {
   color: var(--accent);
   margin-bottom: 20px;
@@ -551,6 +595,17 @@ body.dark-mode .profile-page .stat-item {
   gap: 15px;
 }
 
+.fight-item-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.fight-item-link:hover {
+  transform: translateX(5px);
+}
+
 .fight-item {
   background-color: var(--bg-dark);
   padding: 20px;
@@ -560,6 +615,22 @@ body.dark-mode .profile-page .stat-item {
   grid-template-columns: 2fr 1fr 1fr;
   gap: 15px;
   align-items: center;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.fight-item-link:hover .fight-item {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+}
+
+body:not(.dark-mode) .fight-item {
+  background-color: #f9f9f9;
+  border: 1px solid #e0e0e0;
+}
+
+body:not(.dark-mode) .fight-item-link:hover .fight-item {
+  border-color: var(--accent);
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.1);
 }
 
 .fight-participants {

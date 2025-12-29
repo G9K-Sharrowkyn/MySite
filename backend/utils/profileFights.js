@@ -86,21 +86,8 @@ export const buildProfileFights = (db, userId) => {
     });
   });
 
-  (db.posts || []).forEach((post) => {
-    if (post.type !== 'fight' || post.authorId !== userId) {
-      return;
-    }
-
-    addFight({
-      id: post.id || post._id,
-      fighter1: resolveFightLabel(post.fight?.teamA || post.teamA),
-      fighter2: resolveFightLabel(post.fight?.teamB || post.teamB),
-      winnerId: post.fight?.winnerId || post.fight?.winnerUserId || null,
-      createdAt: post.createdAt,
-      status: post.fight?.status || 'active',
-      source: 'post'
-    });
-  });
+  // Posts with type 'fight' are community/curiosity fights for voting,
+  // not actual user vs user fights, so they should NOT be included in fight history
 
   return fights.sort(
     (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)

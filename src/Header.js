@@ -247,14 +247,6 @@ const Header = () => {
                         <span className="dropdown-badge">{unreadMessages}</span>
                       )}
                     </Link>
-                    <Link 
-                      to="/characters" 
-                      className="dropdown-item"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <span className="dropdown-icon">🎮</span>
-                      {t('characters')}
-                    </Link>
                     <div className="dropdown-divider"></div>
                     <button 
                       className="dropdown-item logout-item"

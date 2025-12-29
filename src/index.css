@@ -4,6 +4,7 @@
   --bg-light: #ffffff;
   --accent: #e74c3c;
   --text-light: #1b1f24;
+  --header-height: 85px;
 }
 
 body.dark-mode {

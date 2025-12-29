@@ -38,6 +38,7 @@ const ProfilePage = () => {
   const [error, setError] = useState(null);
   const [posts, setPosts] = useState([]);
   const [contentFilter, setContentFilter] = useState('all');
+  const [fightFilter, setFightFilter] = useState('division');
   const [isDarkMode, setIsDarkMode] = useState(() =>
     typeof document !== 'undefined' && document.body.classList.contains('dark-mode')
   );
@@ -506,35 +507,89 @@ const handleCommentSubmit = async (e) => {
       )}
 
       <div className="profile-fights">
-        <h3>{t('fightHistory') || 'Fight History'}:</h3>
-        {profile.fights && profile.fights.length > 0 ? (
+        <div className="fight-tabs">
+          <button 
+            className={`fight-tab ${fightFilter === 'division' ? 'active' : ''}`}
+            onClick={() => setFightFilter('division')}
+          >
+            {t('divisionFightHistory') || 'Division Fight History'}
+          </button>
+          <button 
+            className={`fight-tab ${fightFilter === 'unofficial' ? 'active' : ''}`}
+            onClick={() => setFightFilter('unofficial')}
+          >
+            {t('unofficialFightHistory') || 'Unofficial Fight History'}
+          </button>
+        </div>
+
+        {fightFilter === 'division' && (
           <div className="fights-list">
-            {profile.fights.slice(0, 10).map(fight => (
-              <div key={fight.id} className="fight-item">
-                <div className="fight-participants">
-                  <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
-                    {fight.fighter1 || (t('unknown') || 'Unknown')}
-                  </span>
-                  <span className="vs">vs</span>
-                  <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
-                    {fight.fighter2 || (t('unknown') || 'Unknown')}
-                  </span>
-                </div>
-                <div className="fight-result">
-                  {fight.winnerId === profile.id ? `🏆 ${t('victory') || 'Victory'}` :
-                   fight.winner === 'draw' ? `🤝 ${t('draw') || 'Draw'}` : `❌ ${t('defeat') || 'Defeat'}`}
-                </div>
-                <div className="fight-date">
-                  {new Date(fight.createdAt || fight.date).toLocaleDateString()}
-                </div>
-              </div>
-            ))}
-            {profile.fights.length > 10 && (
-              <p className="more-fights">... {t('andMore') || 'and'} {profile.fights.length - 10} {t('moreFights') || 'more fights'}</p>
+            {profile.fights && profile.fights.filter(f => f.source === 'division').length > 0 ? (
+              profile.fights.filter(f => f.source === 'division').slice(0, 10).map(fight => (
+                <Link 
+                  key={fight.id} 
+                  to={`/post/${fight.id}`}
+                  className="fight-item-link"
+                >
+                  <div className="fight-item">
+                    <div className="fight-participants">
+                      <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
+                        {fight.fighter1 || (t('unknown') || 'Unknown')}
+                      </span>
+                      <span className="vs">vs</span>
+                      <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
+                        {fight.fighter2 || (t('unknown') || 'Unknown')}
+                      </span>
+                    </div>
+                    <div className="fight-result">
+                      {fight.winnerId === profile.id ? `🏆 ${t('victory') || 'Victory'}` :
+                       fight.winner === 'draw' ? `🤝 ${t('draw') || 'Draw'}` : `❌ ${t('defeat') || 'Defeat'}`}
+                    </div>
+                    <div className="fight-date">
+                      {new Date(fight.createdAt || fight.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p>{t('noDivisionFights') || 'No division fights yet.'}</p>
             )}
           </div>
-        ) : (
-          <p>{t('noFightHistory') || 'No fight history.'}</p>
+        )}
+
+        {fightFilter === 'unofficial' && (
+          <div className="fights-list">
+            {profile.fights && profile.fights.filter(f => f.source === 'fight').length > 0 ? (
+              profile.fights.filter(f => f.source === 'fight').slice(0, 10).map(fight => (
+                <Link 
+                  key={fight.id} 
+                  to={`/post/${fight.id}`}
+                  className="fight-item-link"
+                >
+                  <div className="fight-item">
+                    <div className="fight-participants">
+                      <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
+                        {fight.fighter1 || (t('unknown') || 'Unknown')}
+                      </span>
+                      <span className="vs">vs</span>
+                      <span className={fight.winnerId === profile.id ? 'winner' : 'participant'}>
+                        {fight.fighter2 || (t('unknown') || 'Unknown')}
+                      </span>
+                    </div>
+                    <div className="fight-result">
+                      {fight.winnerId === profile.id ? `🏆 ${t('victory') || 'Victory'}` :
+                       fight.winner === 'draw' ? `🤝 ${t('draw') || 'Draw'}` : `❌ ${t('defeat') || 'Defeat'}`}
+                    </div>
+                    <div className="fight-date">
+                      {new Date(fight.createdAt || fight.date).toLocaleDateString()}
+                    </div>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p>{t('noUnofficialFights') || 'No unofficial fights yet.'}</p>
+            )}
+          </div>
         )}
       </div>
 

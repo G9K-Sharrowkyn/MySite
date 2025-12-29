@@ -177,7 +177,6 @@ body.dark-mode .language-option.active {
 /* Dark Mode Global Styles */
 body.dark-mode .home-page,
 body.dark-mode .feed-container,
-body.dark-mode .messages-page,
 body.dark-mode .moderator-panel {
   background: linear-gradient(135deg, #0b0e14 0%, #141b26 100%);
 }

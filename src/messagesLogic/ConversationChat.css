@@ -1,33 +1,32 @@
 /* CONVERSATION CHAT PAGE - Full screen chat with one user */
 
 .conversation-chat-page {
-  min-height: 100vh;
-  background: #0a0e27;
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
-  align-items: center;
   justify-content: center;
-  padding: 20px;
+  overflow: hidden;
 }
 
 body:not(.dark-mode) .conversation-chat-page {
-  background: #f0f2f5;
+  /* No background needed */
 }
 
 .chat-container {
   width: 100%;
   max-width: 900px;
-  height: calc(100vh - 40px);
-  background: #1c1e2e;
-  border-radius: 8px;
-  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.5);
+  height: calc(100vh - var(--header-height));
   display: flex;
   flex-direction: column;
+  background: #1c1e2e;
   overflow: hidden;
 }
 
 body:not(.dark-mode) .chat-container {
   background: #ffffff;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* Chat Header */

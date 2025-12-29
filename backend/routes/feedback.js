@@ -1,7 +1,7 @@
 import express from 'express';
 import { submitFeedback, getFeedback, updateFeedbackStatus } from '../controllers/feedbackController.js';
 import { optionalAuth } from '../middleware/optionalAuth.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
