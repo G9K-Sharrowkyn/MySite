@@ -471,20 +471,28 @@ const GlobalChatSystem = () => {
     e.preventDefault();
     if (!privateMessageInput.trim() || !selectedPrivateConversation) return;
 
+    const messageContent = privateMessageInput;
+    setPrivateMessageInput(''); // Clear immediately
+
     try {
-      await axios.post('/api/messages', {
+      const response = await axios.post('/api/messages', {
         recipientId: selectedPrivateConversation.id,
-        content: privateMessageInput,
+        content: messageContent,
         subject: 'Chat message'
       }, {
         headers: { 'x-auth-token': token }
       });
 
-      setPrivateMessageInput('');
+      // Add message immediately to state
+      if (response.data.message) {
+        setPrivateMessages(prev => [...prev, response.data.message]);
+      }
+      
       // Scroll to bottom after sending
       setTimeout(() => scrollPrivateToBottom(true), 100);
     } catch (error) {
       console.error('Error sending message:', error);
+      setPrivateMessageInput(messageContent); // Restore on error
     }
   };
 

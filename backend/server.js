@@ -398,6 +398,24 @@ io.on('connection', (socket) => {
   });
 });
 
+// One-time migration: Remove message-type notifications (they should only be on chat icon)
+import { readDb, updateDb } from './services/jsonDb.js';
+(async () => {
+  try {
+    const db = await readDb();
+    const messageNotifications = db.notifications?.filter(n => n.type === 'message') || [];
+    if (messageNotifications.length > 0) {
+      await updateDb((db) => {
+        db.notifications = db.notifications.filter(n => n.type !== 'message');
+        return db;
+      });
+      console.log(`Cleaned up ${messageNotifications.length} message notifications from bell`);
+    }
+  } catch (err) {
+    console.error('Migration error:', err);
+  }
+})();
+
 // Start the server
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

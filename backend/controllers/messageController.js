@@ -73,22 +73,8 @@ export const sendMessage = async (req, res) => {
       db.messages.push(message);
       createdMessage = message;
 
-      db.notifications = Array.isArray(db.notifications) ? db.notifications : [];
-      db.notifications.push({
-        id: uuidv4(),
-        userId: resolveUserId(recipient),
-        type: 'message',
-        title: 'New message',
-        content: `You received a message from ${sender.username}`,
-        message: `You received a message from ${sender.username}`,
-        data: {
-          messageId: message.id,
-          senderId: resolveUserId(sender),
-          senderUsername: sender.username
-        },
-        read: false,
-        createdAt: now
-      });
+      // Don't create bell notifications for messages - only chat icon counter
+      // Messages have their own notification system (unread count on chat icon)
 
       return db;
     });
