@@ -370,7 +370,9 @@ const GlobalChatSystem = () => {
 
   return (
     <>
-      <label className="chat-toggle-switch">
+      <div className="chat-toggle-wrapper">
+        <span className="chat-toggle-label">Chat</span>
+        <label className="chat-toggle-switch">
         <input 
           className="chat-toggle-input" 
           type="checkbox" 
@@ -414,6 +416,7 @@ const GlobalChatSystem = () => {
           <span className="chat-toggle-badge">{unreadCount}</span>
         )}
       </label>
+      </div>
 
       {(isChatOpen || isClosing) && (
       <div className={`global-chat-container ${isMinimized ? 'minimized' : ''} ${isClosing ? 'closing' : ''}`}>
