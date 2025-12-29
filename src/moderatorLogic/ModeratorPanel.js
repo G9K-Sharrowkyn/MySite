@@ -15,6 +15,7 @@ const ModeratorPanel = () => {
   const [bets, setBets] = useState([]);
   const [divisions, setDivisions] = useState([]);
   const [divisionStats, setDivisionStats] = useState({});
+  const [seasonConfigs, setSeasonConfigs] = useState([]);
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -48,6 +49,19 @@ const ModeratorPanel = () => {
       setDivisions(response.data || []);
     } catch (error) {
       console.error('Error fetching divisions:', error);
+    }
+  }, [token]);
+
+  const fetchSeasons = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get('/api/divisions/seasons', {
+        headers: { 'x-auth-token': token }
+      });
+      setSeasonConfigs(response.data || []);
+    } catch (error) {
+      console.error('Error fetching seasons:', error);
+      setSeasonConfigs([]);
     }
   }, [token]);
 
@@ -91,14 +105,14 @@ const ModeratorPanel = () => {
       setDivisionStats(divisionsRes.data || {});
       
       // Fetch divisions data
-      await fetchDivisions();
+      await Promise.all([fetchDivisions(), fetchSeasons()]);
     } catch (error) {
       console.error('Error fetching data:', error);
       showNotification('Błąd podczas ładowania danych', 'error');
     } finally {
       setLoading(false);
     }
-  }, [fetchDivisions, showNotification, token]);
+  }, [fetchDivisions, fetchSeasons, showNotification, token]);
 
   useEffect(() => {
     if (!token) {
@@ -231,6 +245,121 @@ const ModeratorPanel = () => {
   const formatCurrency = (amount) => {
     return `${amount} 🪙`;
   };
+  const getLocalDateTime = () => {
+    const now = new Date();
+    const offsetMs = now.getTimezoneOffset() * 60000;
+    return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
+  };
+
+  const getSeasonStatus = (season) => {
+    if (season.status) {
+      return season.status === 'active'
+        ? 'Aktywny'
+        : season.status === 'scheduled'
+          ? 'Zaplanowany'
+          : season.status === 'ended'
+            ? 'Zakończony'
+            : 'Zablokowany';
+    }
+
+    if (season.isLocked) {
+      return 'Zablokowany';
+    }
+    if (!season.startAt && !season.endAt) {
+      return 'Nieustawiony';
+    }
+    const now = new Date();
+    const start = season.startAt ? new Date(season.startAt) : null;
+    const end = season.endAt ? new Date(season.endAt) : null;
+
+    if (start && now < start) {
+      return 'Zaplanowany';
+    }
+    if (end && now > end) {
+      return 'Zakończony';
+    }
+    return 'Aktywny';
+  };
+
+  const updateSeasonField = (seasonId, field, value) => {
+    setSeasonConfigs((prev) =>
+      prev.map((season) =>
+        season.id === seasonId ? { ...season, [field]: value } : season
+      )
+    );
+  };
+
+  const handleScheduleSeason = async (seasonId) => {
+    const season = seasonConfigs.find((item) => item.id === seasonId);
+    if (!season) return;
+    if (!season.startAt && !season.endAt) {
+      showNotification('Ustaw start i/lub koniec sezonu', 'error');
+      return;
+    }
+    try {
+      await axios.patch(
+        `/api/divisions/seasons/${seasonId}`,
+        {
+          startAt: season.startAt || null,
+          endAt: season.endAt || null,
+          name: season.name,
+          bannerImage: season.bannerImage,
+          accentColor: season.accentColor,
+          description: season.description
+        },
+        { headers: { 'x-auth-token': token } }
+      );
+      showNotification('Harmonogram sezonu zapisany', 'success');
+      fetchSeasons();
+    } catch (error) {
+      console.error('Error scheduling season:', error);
+      showNotification('Błąd zapisu harmonogramu', 'error');
+    }
+  };
+
+  const handleStartSeasonNow = async (seasonId) => {
+    try {
+      await axios.post(
+        `/api/divisions/seasons/${seasonId}/activate`,
+        {},
+        { headers: { 'x-auth-token': token } }
+      );
+      showNotification('Sezon uruchomiony', 'success');
+      fetchSeasons();
+    } catch (error) {
+      console.error('Error activating season:', error);
+      showNotification('Błąd uruchamiania sezonu', 'error');
+    }
+  };
+
+  const handleEndSeasonNow = async (seasonId) => {
+    try {
+      await axios.post(
+        `/api/divisions/seasons/${seasonId}/deactivate`,
+        {},
+        { headers: { 'x-auth-token': token } }
+      );
+      showNotification('Sezon został zablokowany', 'success');
+      fetchSeasons();
+    } catch (error) {
+      console.error('Error deactivating season:', error);
+      showNotification('Błąd blokowania sezonu', 'error');
+    }
+  };
+
+  const handleRunScheduler = async () => {
+    try {
+      await axios.post('/api/divisions/seasons/run-scheduler', {}, {
+        headers: { 'x-auth-token': token }
+      });
+      showNotification('Scheduler uruchomiony', 'success');
+      fetchSeasons();
+    } catch (error) {
+      console.error('Error running scheduler:', error);
+      showNotification('Błąd uruchamiania scheduler', 'error');
+    }
+  };
+
 
   // Division Management Functions
   const handleCreateTitleFight = async (divisionId, challengerId) => {
@@ -487,6 +616,68 @@ const ModeratorPanel = () => {
               >
                 🔒 Zablokuj wygasłe walki
               </button>
+            </div>
+
+            <div className="seasons-section">
+              <div className="seasons-header">
+                <h4>Sezony i harmonogram</h4>
+                <div className="seasons-actions">
+                  <p>Moderator ustawia start/koniec. Sezon moze ruszyc automatycznie w przyszlosci.</p>
+                  <button className="season-btn run" onClick={handleRunScheduler}>
+                    ▶️ Uruchom scheduler
+                  </button>
+                </div>
+              </div>
+              <div className="seasons-grid">
+                {seasonConfigs.map((season) => (
+                  <div key={season.id} className="season-card">
+                    <div className="season-card-header">
+                      <h5>{season.name}</h5>
+                      <span className={`season-status status-${getSeasonStatus(season).toLowerCase()}`}>
+                        {getSeasonStatus(season)}
+                      </span>
+                    </div>
+                    <div className="season-fields">
+                      <label>
+                        Start
+                        <input
+                          type="datetime-local"
+                          value={season.startAt ? season.startAt.slice(0, 16) : ''}
+                          onChange={(e) => updateSeasonField(season.id, 'startAt', e.target.value)}
+                        />
+                      </label>
+                      <label>
+                        Koniec
+                        <input
+                          type="datetime-local"
+                          value={season.endAt ? season.endAt.slice(0, 16) : ''}
+                          onChange={(e) => updateSeasonField(season.id, 'endAt', e.target.value)}
+                        />
+                      </label>
+                    </div>
+                    <div className="season-actions">
+                      <button
+                        onClick={() => handleScheduleSeason(season.id)}
+                        className="season-btn schedule"
+                      >
+                        Zapisz harmonogram
+                      </button>
+                      <button
+                        onClick={() => handleStartSeasonNow(season.id)}
+                        className="season-btn start"
+                      >
+                        Start teraz
+                      </button>
+                      <button
+                        onClick={() => handleEndSeasonNow(season.id)}
+                        className="season-btn end"
+                      >
+                        Koniec teraz
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="division-stats">

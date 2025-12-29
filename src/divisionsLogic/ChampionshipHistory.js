@@ -65,19 +65,19 @@ const ChampionshipHistory = ({ divisionId, divisionName, initialHistory }) => {
       ) : (
         <div className="history-summary">
           <div className="history-stats">
-            <div className="stat-item">
-              <span className="stat-label">Total Champions</span>
-              <span className="stat-value">{history.length}</span>
+            <div className="championship-stat-item">
+              <span className="championship-stat-label">Total Champions</span>
+              <span className="championship-stat-value">{history.length}</span>
             </div>
-            <div className="stat-item">
-              <span className="stat-label">Longest Reign</span>
-              <span className="stat-value">
+            <div className="championship-stat-item">
+              <span className="championship-stat-label">Longest Reign</span>
+              <span className="championship-stat-value">
                 {getLongestReign()?.reignDuration || 0} days
               </span>
             </div>
-            <div className="stat-item">
-              <span className="stat-label">Most Defenses</span>
-              <span className="stat-value">
+            <div className="championship-stat-item">
+              <span className="championship-stat-label">Most Defenses</span>
+              <span className="championship-stat-value">
                 {getMostDefenses()?.titleDefenses || 0}
               </span>
             </div>

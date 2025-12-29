@@ -38,7 +38,19 @@ const ProfilePage = () => {
   const [error, setError] = useState(null);
   const [posts, setPosts] = useState([]);
   const [contentFilter, setContentFilter] = useState('all');
+  const [isDarkMode, setIsDarkMode] = useState(() =>
+    typeof document !== 'undefined' && document.body.classList.contains('dark-mode')
+  );
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const updateTheme = () => setIsDarkMode(document.body.classList.contains('dark-mode'));
+    updateTheme();
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
@@ -268,7 +280,7 @@ const handleCommentSubmit = async (e) => {
     <div className="profile-page">
       <div className={`profile-header ${isChampion ? 'champion-profile-background' : ''}`}
            style={backgroundImage ? {
-             backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url(${backgroundImage})`,
+             backgroundImage: `linear-gradient(${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'}, ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'}), url(${backgroundImage})`,
              backgroundSize: 'cover',
              backgroundPosition: 'center'
            } : {}}>
@@ -290,46 +302,49 @@ const handleCommentSubmit = async (e) => {
           <p className="profile-rank">
             {t('points') || 'Points'}: {profile.points || 0} | {t('rank') || 'Rank'}: {profile.rank}
           </p>
-          <div className="fight-stats-vertical">
-            <div className="stats-category official-stats">
-              <h4 className="stats-category-title">
-                {lang === 'pl' ? 'Oficjalne (Dywizje)' : lang === 'de' ? 'Offiziell (Divisionen)' : 'Official (Divisions)'}
+          
+          <div className="fight-stats-cards">
+            <div className="stats-card official-card">
+              <h4 className="stats-card-title">
+                {t('officialDivisions') || 'Official (Divisions)'}
               </h4>
-              <div className="stats-row">
-                  <span className="stat-item">
-                    <span className="stat-label">{t('wins') || 'Wins'}:</span>
-                    <span className="stat-value official">{profile.stats?.officialStats?.fightsWon || 0}</span>
-                  </span>
-                  <span className="stat-item">
-                    <span className="stat-label">{t('losses') || 'Losses'}:</span>
-                    <span className="stat-value official">{profile.stats?.officialStats?.fightsLost || 0}</span>
-                  </span>
-                  <span className="stat-item">
-                    <span className="stat-label">{t('draws') || 'Draws'}:</span>
-                    <span className="stat-value official">{profile.stats?.officialStats?.fightsDrawn || 0}</span>
-                  </span>
+              <div className="stats-grid">
+                <div className="stat-box">
+                  <div className="stat-number official">{profile.stats?.officialStats?.fightsWon || 0}</div>
+                  <div className="stat-label-bottom">{t('wins') || 'Wins'}</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-number official">{profile.stats?.officialStats?.fightsLost || 0}</div>
+                  <div className="stat-label-bottom">{t('losses') || 'Losses'}</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-number official">{profile.stats?.officialStats?.fightsDrawn || 0}</div>
+                  <div className="stat-label-bottom">{t('draws') || 'Draws'}</div>
+                </div>
               </div>
             </div>
-            <div className="stats-category unofficial-stats">
-              <h4 className="stats-category-title">
-                {lang === 'pl' ? 'Nieoficjalne (Społeczność)' : lang === 'de' ? 'Inoffiziell (Community)' : 'Unofficial (Community)'}
+            
+            <div className="stats-card unofficial-card">
+              <h4 className="stats-card-title">
+                {t('unofficialCommunity') || 'Unofficial (Community)'}
               </h4>
-              <div className="stats-row">
-                  <span className="stat-item">
-                    <span className="stat-label">{t('wins') || 'Wins'}:</span>
-                    <span className="stat-value unofficial">{profile.stats?.unofficialStats?.fightsWon || 0}</span>
-                  </span>
-                  <span className="stat-item">
-                    <span className="stat-label">{t('losses') || 'Losses'}:</span>
-                    <span className="stat-value unofficial">{profile.stats?.unofficialStats?.fightsLost || 0}</span>
-                  </span>
-                  <span className="stat-item">
-                    <span className="stat-label">{t('draws') || 'Draws'}:</span>
-                    <span className="stat-value unofficial">{profile.stats?.unofficialStats?.fightsDrawn || 0}</span>
-                  </span>
+              <div className="stats-grid">
+                <div className="stat-box">
+                  <div className="stat-number unofficial">{profile.stats?.unofficialStats?.fightsWon || 0}</div>
+                  <div className="stat-label-bottom">{t('wins') || 'Wins'}</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-number unofficial">{profile.stats?.unofficialStats?.fightsLost || 0}</div>
+                  <div className="stat-label-bottom">{t('losses') || 'Losses'}</div>
+                </div>
+                <div className="stat-box">
+                  <div className="stat-number unofficial">{profile.stats?.unofficialStats?.fightsDrawn || 0}</div>
+                  <div className="stat-label-bottom">{t('draws') || 'Draws'}</div>
+                </div>
               </div>
             </div>
           </div>
+          
           <div className="profile-actions">
             {isOwner && (
               <button onClick={() => setIsEditing(!isEditing)} className="edit-profile-btn">

@@ -1,7 +1,24 @@
 import React from 'react';
+import { useLanguage } from '../i18n/LanguageContext';
 import './BadgeDisplay.css';
 
 const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true, leveledData = null }) => {
+  const { t } = useLanguage();
+  
+  const translateBadgeName = (name) => {
+    if (!name) return '';
+    const translated = t(`badgeNames.${name}`);
+    // Jeśli tłumaczenie zwraca klucz (nie znaleziono), zwróć oryginalną nazwę
+    return translated.startsWith('badgeNames.') ? name : translated;
+  };
+  
+  const translateBadgeDescription = (description) => {
+    if (!description) return '';
+    const translated = t(`badgeDescriptions.${description}`);
+    // Jeśli tłumaczenie zwraca klucz (nie znaleziono), zwróć oryginalny opis
+    return translated.startsWith('badgeDescriptions.') ? description : translated;
+  };
+  
   const getRarityColor = (rarity) => {
     const colors = {
       common: '#9CA3AF',
@@ -91,18 +108,18 @@ const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true, l
 
       <div className="badge-info">
         <div className="badge-name" style={{ color: badgeColor }}>
-          {badge.name}
+          {translateBadgeName(badge.name)}
         </div>
-
+        
         {size !== 'small' && (
           <>
-            <div className="badge-description">{badge.description}</div>
+            <div className="badge-description">{translateBadgeDescription(badge.description)}</div>
 
             {/* Leveled badge progress */}
             {isLeveled && (
               <div className="badge-progress leveled-progress">
                 <div className="level-info">
-                  <span className="level-label">Poziom {level}/{badge.maxLevel || 20}</span>
+                  <span className="level-label">{t('badgeLevel')} {level}/{badge.maxLevel || 20}</span>
                 </div>
                 <div className="progress-bar">
                   <div
@@ -141,10 +158,10 @@ const BadgeDisplay = ({ badge, userBadge, size = 'medium', showTooltip = true, l
             {!isLeveled && isEarned && (
               <div className="badge-earned">
                 <span className="earned-icon">✓</span>
-                Zdobyte: {formatDate(userBadge.earnedAt)}
+                {t('badgeEarned')}: {formatDate(userBadge.earnedAt)}
                 {userBadge.championshipDate && (
                   <div className="championship-date">
-                    Mistrzostwo: {formatDate(userBadge.championshipDate)}
+                    {t('badgeChampionship')}: {formatDate(userBadge.championshipDate)}
                   </div>
                 )}
               </div>

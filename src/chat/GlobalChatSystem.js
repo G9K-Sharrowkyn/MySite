@@ -15,6 +15,9 @@ const GlobalChatSystem = () => {
   const [isMinimized, setIsMinimized] = useState(true);
   const [unreadCount, setUnreadCount] = useState(0);
   const [showUsers, setShowUsers] = useState(false);
+  const [activeTab, setActiveTab] = useState('global'); // 'global' or 'private'
+  const [privateSearchQuery, setPrivateSearchQuery] = useState('');
+  const [privateUsers, setPrivateUsers] = useState([]);
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -256,8 +259,26 @@ const GlobalChatSystem = () => {
     <div className={`global-chat-container ${isMinimized ? 'minimized' : ''}`}>
       <div className="chat-header" onClick={toggleMinimize}>
         <div className="chat-header-left">
-          <span className="chat-icon">💬</span>
-          <h3>Global Chat</h3>
+          <div className="chat-tabs">
+            <button 
+              className={`chat-tab ${activeTab === 'global' ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab('global');
+              }}
+            >
+              Global
+            </button>
+            <button 
+              className={`chat-tab ${activeTab === 'private' ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveTab('private');
+              }}
+            >
+              Private
+            </button>
+          </div>
           {isMinimized && unreadCount > 0 && (
             <span className="unread-badge">{unreadCount}</span>
           )}
@@ -266,146 +287,170 @@ const GlobalChatSystem = () => {
           <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
             {isConnected ? '🟢' : '🔴'}
           </span>
-          <span className="online-count">{activeUsers.length + 1} online</span>
+          <span 
+            className="online-count"
+            style={{ visibility: activeTab === 'global' ? 'visible' : 'hidden' }}
+          >
+            {activeUsers.length + 1} online
+          </span>
           <button
             className={`toggle-users-btn ${showUsers ? 'active' : ''}`}
+            style={{ visibility: activeTab === 'global' ? 'visible' : 'hidden' }}
             onClick={(event) => {
               event.stopPropagation();
-              setShowUsers(prev => !prev);
+              if (activeTab === 'global') {
+                setShowUsers(prev => !prev);
+              }
             }}
           >
             {showUsers ? 'Hide users' : 'Users'}
-          </button>
-          <button
-            className="minimize-btn"
-            onClick={(event) => {
-              event.stopPropagation();
-              toggleMinimize();
-            }}
-          >
-            {isMinimized ? '▲' : '▼'}
           </button>
         </div>
       </div>
       
       {!isMinimized && (
         <>
-          <div className="chat-body" ref={chatContainerRef}>
-            <div className="messages-container">
-              {messages.map((message) => {
-                const isOwn = message.userId === user.id;
-                const reactionCounts = getReactionCounts(message.reactions);
-                const hasReactions = Object.keys(reactionCounts).length > 0;
-                const authorLabel = message.username || (isOwn ? (username || 'Ty') : 'Unknown');
-                
-                return (
-                  <div key={message.id} className={`message ${isOwn ? 'own' : 'other'}`}>
-                    {!isOwn && (
-                      <img 
-                        {...getOptimizedImageProps(
-                          message.profilePicture || '/placeholder-avatar.png',
-                          { size: 36 }
+          {activeTab === 'global' ? (
+            <>
+              <div className="chat-body" ref={chatContainerRef}>
+                <div className="messages-container">
+                  {messages.map((message) => {
+                    const isOwn = message.userId === user.id;
+                    const reactionCounts = getReactionCounts(message.reactions);
+                    const hasReactions = Object.keys(reactionCounts).length > 0;
+                    const authorLabel = message.username || (isOwn ? (username || 'Ty') : 'Unknown');
+                    
+                    return (
+                      <div key={message.id} className={`message ${isOwn ? 'own' : 'other'}`}>
+                        {!isOwn && (
+                          <img 
+                            {...getOptimizedImageProps(
+                              message.profilePicture || '/placeholder-avatar.png',
+                              { size: 36 }
+                            )}
+                            alt={message.username}
+                            className="message-avatar"
+                          />
                         )}
-                        alt={message.username}
-                        className="message-avatar"
-                      />
-                    )}
-                    <div className="message-content">
-                      <span className="message-author">{authorLabel}</span>
-                      <div className="message-bubble">
-                        <p className="message-text">{message.text}</p>
-                      </div>
-                      <span className="message-time">{formatTime(message.timestamp)}</span>
-                      
-                      {/* Reactions */}
-                      {hasReactions && (
-                        <div className="message-reactions">
-                          {Object.entries(reactionCounts).map(([emoji, users]) => (
-                            <div 
-                              key={emoji} 
-                              className="reaction-pill"
-                              title={users.join(', ')}
-                            >
-                              <span>{emoji}</span>
-                              <span className="reaction-count">{users.length}</span>
+                        <div className="message-content">
+                          <span className="message-author">{authorLabel}</span>
+                          <div className="message-bubble">
+                            <p className="message-text">{message.text}</p>
+                          </div>
+                          <span className="message-time">{formatTime(message.timestamp)}</span>
+                          
+                          {/* Reactions */}
+                          {hasReactions && (
+                            <div className="message-reactions">
+                              {Object.entries(reactionCounts).map(([emoji, users]) => (
+                                <div 
+                                  key={emoji} 
+                                  className="reaction-pill"
+                                  title={users.join(', ')}
+                                >
+                                  <span>{emoji}</span>
+                                  <span className="reaction-count">{users.length}</span>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
                         </div>
-                      )}
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Typing Indicator */}
+                  {typingUsers.size > 0 && (
+                    <div className="typing-indicator">
+                      <span className="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                      </span>
+                      <span className="typing-text">
+                        {Array.from(typingUsers.values()).join(', ')} typing...
+                      </span>
+                    </div>
+                  )}
+                  
+                  <div ref={messagesEndRef} />
+                </div>
+                
+                {/* Active Users Sidebar */}
+                {showUsers && (
+                  <div className="active-users-sidebar">
+                    <h4>Online Users</h4>
+                    <div className="users-list">
+                      <div className="user-item current-user">
+                        <img 
+                          {...getOptimizedImageProps(
+                            user.profilePicture || '/placeholder-avatar.png',
+                            { size: 28 }
+                          )}
+                          alt={user.username}
+                        />
+                        <span>{user.username} (You)</span>
+                      </div>
+                      {activeUsers.map(activeUser => (
+                        <div key={activeUser.userId} className="user-item">
+                          <img 
+                            {...getOptimizedImageProps(
+                              activeUser.profilePicture || '/placeholder-avatar.png',
+                              { size: 28 }
+                            )}
+                            alt={activeUser.username}
+                          />
+                          <span>{activeUser.username}</span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                );
-              })}
-              
-              {/* Typing Indicator */}
-              {typingUsers.size > 0 && (
-                <div className="typing-indicator">
-                  <span className="typing-dots">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                  </span>
-                  <span className="typing-text">
-                    {Array.from(typingUsers.values()).join(', ')} typing...
-                  </span>
-                </div>
-              )}
-              
-              <div ref={messagesEndRef} />
-            </div>
-            
-            {/* Active Users Sidebar */}
-            {showUsers && (
-              <div className="active-users-sidebar">
-                <h4>Online Users</h4>
-                <div className="users-list">
-                  <div className="user-item current-user">
-                    <img 
-                      {...getOptimizedImageProps(
-                        user.profilePicture || '/placeholder-avatar.png',
-                        { size: 28 }
-                      )}
-                      alt={user.username}
-                    />
-                    <span>{user.username} (You)</span>
-                  </div>
-                  {activeUsers.map(activeUser => (
-                    <div key={activeUser.userId} className="user-item">
-                      <img 
-                        {...getOptimizedImageProps(
-                          activeUser.profilePicture || '/placeholder-avatar.png',
-                          { size: 28 }
-                        )}
-                        alt={activeUser.username}
-                      />
-                      <span>{activeUser.username}</span>
-                    </div>
-                  ))}
-                </div>
+                )}
               </div>
-            )}
-          </div>
-          
-          <form className="chat-input-form" onSubmit={handleSendMessage}>
-            <input
-              type="text"
-              value={inputMessage}
-              onChange={(e) => {
-                setInputMessage(e.target.value);
-                handleTyping();
-              }}
-              placeholder="Type a message..."
-              className="chat-input"
-              disabled={!isConnected}
-            />
-            <button 
-              type="submit" 
-              className="send-btn"
-              disabled={!isConnected || !inputMessage.trim()}
-            >
-              <span>Send</span>
-            </button>
-          </form>
+              
+              <form className="chat-input-form" onSubmit={handleSendMessage}>
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => {
+                    setInputMessage(e.target.value);
+                    handleTyping();
+                  }}
+                  placeholder="Type a message..."
+                  className="chat-input"
+                  disabled={!isConnected}
+                />
+                <button 
+                  type="submit" 
+                  className="send-btn"
+                  disabled={!isConnected || !inputMessage.trim()}
+                >
+                  <span>Send</span>
+                </button>
+              </form>
+            </>
+          ) : (
+            <div className="private-messages-tab">
+              <div className="private-search-container">
+                <h3>Start Private Chat</h3>
+                <input
+                  type="text"
+                  placeholder="Enter username..."
+                  value={privateSearchQuery}
+                  onChange={(e) => setPrivateSearchQuery(e.target.value)}
+                  className="private-search-input"
+                />
+                {privateSearchQuery.trim() && (
+                  <div className="private-users-list">
+                    <p className="search-hint">Search users in Messages page</p>
+                    <a href="/messages" className="go-to-messages-btn">
+                      Go to Messages →
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

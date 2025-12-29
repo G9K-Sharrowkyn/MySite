@@ -29,9 +29,11 @@ export const LanguageProvider = ({ children }) => {
     if (savedTheme === 'light') {
       setIsDarkMode(false);
       document.body.classList.remove('dark-mode');
+      document.body.classList.add('light-mode');
     } else {
       setIsDarkMode(true);
       document.body.classList.add('dark-mode');
+      document.body.classList.remove('light-mode');
     }
   }, []);
 
@@ -48,9 +50,11 @@ export const LanguageProvider = ({ children }) => {
     
     if (newDarkMode) {
       document.body.classList.add('dark-mode');
+      document.body.classList.remove('light-mode');
       localStorage.setItem('geekfights-theme', 'dark');
     } else {
       document.body.classList.remove('dark-mode');
+      document.body.classList.add('light-mode');
       localStorage.setItem('geekfights-theme', 'light');
     }
   };

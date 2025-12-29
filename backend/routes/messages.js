@@ -73,6 +73,39 @@ router.get('/', auth, getMessages);
 // @access  Private
 router.get('/unread/count', auth, getUnreadCount);
 
+// @route   GET api/messages/conversation/:userId
+// @desc    Get conversation with specific user
+// @access  Private
+router.get('/conversation/:userId', auth, async (req, res) => {
+  try {
+    const db = await readDb();
+    const currentUserId = req.user.id;
+    const otherUserId = req.params.userId;
+
+    // Find all messages between these two users
+    const messages = (db.messages || []).filter(message => 
+      (message.senderId === currentUserId && message.recipientId === otherUserId) ||
+      (message.senderId === otherUserId && message.recipientId === currentUserId)
+    ).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    // Get other user info
+    const otherUser = findUserById(db, otherUserId);
+
+    res.json({
+      messages,
+      otherUser: {
+        id: otherUserId,
+        username: otherUser?.username || 'User',
+        profilePicture: otherUser?.profile?.profilePicture || '',
+        isModerator: otherUser?.role === 'moderator'
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching conversation:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET api/messages/conversations/:userId
 // @desc    List chat conversations (MessagingSystem)
 // @access  Public

@@ -12,9 +12,43 @@ const DEFAULT_DIVISIONS = [
   { id: 'metahuman', name: 'Metahuman', tier: 2 },
   { id: 'planetBusters', name: 'Planet Busters', tier: 3 },
   { id: 'godTier', name: 'God Tier', tier: 4 },
-  { id: 'universalThreat', name: 'Universal Threat', tier: 5 },
-  { id: 'omnipotent', name: 'Omnipotent', tier: 6 }
+  { id: 'universalThreat', name: 'Universal Threat', tier: 5 }
 ];
+
+const DEFAULT_SEASONS = [
+  { id: 'regular', name: 'Regular People' },
+  { id: 'metahuman', name: 'Metahumans' },
+  { id: 'planetBusters', name: 'Planet Busters' },
+  { id: 'godTier', name: 'God Tier' },
+  { id: 'universalThreat', name: 'Universal Threat' },
+  { id: 'star-wars', name: 'Star Wars' },
+  { id: 'dragon-ball', name: 'Dragon Ball' },
+  { id: 'dc', name: 'DC' },
+  { id: 'marvel', name: 'Marvel' }
+];
+
+const getDefaultSeasonBanner = (season) => {
+  const isRegular = season.id === 'regular';
+  const isMetahuman = season.id === 'metahuman';
+  const isPlanet = season.id === 'planetBusters';
+  const isGod = season.id === 'godTier';
+  const isUniversal = season.id === 'universalThreat';
+  const isStarWars = season.id === 'star-wars';
+  const isDragonBall = season.id === 'dragon-ball';
+  const isDc = season.id === 'dc';
+  const isMarvel = season.id === 'marvel';
+
+  if (isRegular) return '/site/regularpeople.jpg';
+  if (isMetahuman) return '/site/metahumans.jpg';
+  if (isPlanet) return '/site/planetbusters.jpg';
+  if (isGod) return '/site/gods.jpg';
+  if (isUniversal) return '/site/universal.jpg';
+  if (isStarWars) return '/site/starwarskoldvisions.jpg';
+  if (isDragonBall) return '/site/dragonball.jpg';
+  if (isDc) return '/site/dc.jpg';
+  if (isMarvel) return '/site/marvel.jpg';
+  return `/characters/${season.name}.jpg`;
+};
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -30,6 +64,258 @@ const getDivisionInfo = (divisionId) =>
 
 const getCharacterId = (character) =>
   character?.id || character?._id || character?.characterId;
+
+const buildDefaultSeasons = () =>
+  DEFAULT_SEASONS.map((season) => {
+    const now = new Date().toISOString();
+    return {
+      ...season,
+      startAt: null,
+      endAt: null,
+      isLocked: true,
+      bannerImage: getDefaultSeasonBanner(season),
+      accentColor: '#6c757d',
+      description: '',
+      updatedAt: now
+    };
+  });
+
+const ensureSeasons = (db) => {
+  db.divisionSeasons = Array.isArray(db.divisionSeasons)
+    ? db.divisionSeasons
+    : [];
+
+  // Drop deprecated divisions (e.g., omnipotent) to keep UI clean
+  db.divisionSeasons = db.divisionSeasons.filter((season) => season.id !== 'omnipotent');
+
+  if (db.divisionSeasons.length === 0) {
+    db.divisionSeasons = buildDefaultSeasons();
+    return;
+  }
+
+  // Normalize known defaults to uploaded banners
+  db.divisionSeasons = db.divisionSeasons.map((season) => {
+    if (season.id === 'regular') {
+      const legacyBanner = `/characters/${season.name || 'Regular People'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/regularpeople.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'metahuman') {
+      const legacyBanner = `/characters/${season.name || 'Metahumans'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/metahumans.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'planetBusters') {
+      const legacyBanner = `/characters/${season.name || 'Planet Busters'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/planetbusters.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'godTier') {
+      const legacyBanner = `/characters/${season.name || 'God Tier'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/gods.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'universalThreat') {
+      const legacyBanner = `/characters/${season.name || 'Universal Threat'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/universal.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'star-wars') {
+      const legacyBanner = `/characters/${season.name || 'Star Wars'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/starwarskoldvisions.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'dragon-ball') {
+      const legacyBanner = `/characters/${season.name || 'Dragon Ball'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/dragonball.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'dc') {
+      const legacyBanner = `/characters/${season.name || 'DC'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/dc.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    if (season.id === 'marvel') {
+      const legacyBanner = `/characters/${season.name || 'Marvel'}.jpg`;
+      const bannerImage =
+        !season.bannerImage || season.bannerImage === legacyBanner
+          ? '/site/marvel.jpg'
+          : season.bannerImage;
+      return { ...season, bannerImage };
+    }
+
+    return season;
+  });
+
+  const existingIds = new Set(db.divisionSeasons.map((season) => season.id));
+  DEFAULT_SEASONS.forEach((season) => {
+    if (!existingIds.has(season.id)) {
+      db.divisionSeasons.push({
+        ...season,
+        startAt: null,
+        endAt: null,
+        isLocked: true,
+        bannerImage: getDefaultSeasonBanner(season),
+        accentColor: '#6c757d',
+        description: '',
+        updatedAt: new Date().toISOString()
+      });
+    }
+  });
+};
+
+const getSeasonById = (db, seasonId) => {
+  ensureSeasons(db);
+  return db.divisionSeasons.find((season) => season.id === seasonId) || null;
+};
+
+const withSeasonStatus = (season, now = new Date()) => {
+  if (!season) return null;
+  return { ...season, status: getSeasonStatus(season, now) };
+};
+
+const cleanupDivisionTeams = (db, divisionId) => {
+  let removed = 0;
+  const now = new Date().toISOString();
+  (db.users || []).forEach((user) => {
+    if (user.divisions?.[divisionId]) {
+      delete user.divisions[divisionId];
+      user.updatedAt = now;
+      removed += 1;
+    }
+  });
+  return removed;
+};
+
+const getDivisionDefinitions = (db) => {
+  ensureSeasons(db);
+  const seasonMap = new Map(db.divisionSeasons.map((season) => [season.id, season]));
+  const definitions = DEFAULT_DIVISIONS.map((division) => {
+    const season = seasonMap.get(division.id);
+    return {
+      ...division,
+      name: season?.name || division.name,
+      seasonStatus: season ? getSeasonStatus(season) : 'locked',
+      season
+    };
+  });
+
+  seasonMap.forEach((season, seasonId) => {
+    const exists = definitions.some((division) => division.id === seasonId);
+    if (!exists) {
+      definitions.push({
+        id: season.id,
+        name: season.name,
+        tier: null,
+        seasonStatus: getSeasonStatus(season),
+        season
+      });
+    }
+  });
+
+  return definitions;
+};
+
+const isDivisionActive = (db, divisionId) => {
+  const season = getSeasonById(db, divisionId);
+  if (!season) return false;
+  return getSeasonStatus(season) === 'active';
+};
+
+const runSeasonScheduler = async (now = new Date()) => {
+  let activated = 0;
+  let deactivated = 0;
+  let cleanedTeams = 0;
+  const nowIso = now.toISOString();
+
+  await updateDb((db) => {
+    ensureSeasons(db);
+
+    db.divisionSeasons.forEach((season) => {
+      const startAt = season.startAt ? new Date(season.startAt) : null;
+      const endAt = season.endAt ? new Date(season.endAt) : null;
+
+      if (season.isLocked && startAt && now >= startAt && (!endAt || now < endAt)) {
+        season.isLocked = false;
+        season.updatedAt = nowIso;
+        activated += 1;
+      }
+
+      if (!season.isLocked && endAt && now >= endAt) {
+        season.isLocked = true;
+        season.updatedAt = nowIso;
+        deactivated += 1;
+        cleanedTeams += cleanupDivisionTeams(db, season.id);
+      }
+    });
+
+    return db;
+  });
+
+  return { activated, deactivated, cleanedTeams, timestamp: nowIso };
+};
+
+const parseDateValue = (value) => {
+  if (value === null || value === undefined || value === '') {
+    return { value: null, error: null };
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return { value: null, error: 'Invalid date format' };
+  }
+  return { value: parsed.toISOString(), error: null };
+};
+
+const getSeasonStatus = (season, now = new Date()) => {
+  if (season.isLocked) {
+    return 'locked';
+  }
+  if (!season.startAt && !season.endAt) {
+    return 'unset';
+  }
+  const start = season.startAt ? new Date(season.startAt) : null;
+  const end = season.endAt ? new Date(season.endAt) : null;
+
+  if (start && now < start) {
+    return 'scheduled';
+  }
+  if (end && now > end) {
+    return 'ended';
+  }
+  return 'active';
+};
 
 const normalizeTeam = (team) => {
   if (!team) return null;
@@ -270,10 +556,197 @@ const buildUserTeamMap = (user) => {
   return map;
 };
 
+// Seasons: list
+router.get('/seasons', async (_req, res) => {
+  try {
+    const db = await readDb();
+    ensureSeasons(db);
+    const now = new Date();
+    res.json(db.divisionSeasons.map((season) => withSeasonStatus(season, now)));
+  } catch (error) {
+    console.error('Error getting seasons:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Seasons: create
+router.post('/seasons', [auth, moderatorAuth], async (req, res) => {
+  try {
+    const { id, name, startAt, endAt, bannerImage, accentColor, description } = req.body;
+    if (!id || !name) {
+      return res.status(400).json({ msg: 'Season id and name are required' });
+    }
+
+    const { value: parsedStart, error: startError } = parseDateValue(startAt);
+    const { value: parsedEnd, error: endError } = parseDateValue(endAt);
+    if (startError || endError) {
+      return res.status(400).json({ msg: startError || endError });
+    }
+
+    let createdSeason;
+
+    await updateDb((db) => {
+      ensureSeasons(db);
+      const exists = db.divisionSeasons.find((season) => season.id === id);
+      if (exists) {
+        const error = new Error('Season already exists');
+        error.code = 'SEASON_EXISTS';
+        throw error;
+      }
+
+      const nowIso = new Date().toISOString();
+      const isRegular = id === 'regular' || name?.toLowerCase() === 'regular people';
+      const defaultBanner = isRegular ? '/site/regularpeople.jpg' : `/characters/${name}.jpg`;
+      createdSeason = {
+        id,
+        name,
+        startAt: parsedStart,
+        endAt: parsedEnd,
+        isLocked: true,
+        bannerImage: bannerImage || defaultBanner,
+        accentColor: accentColor || '#6c757d',
+        description: description || '',
+        updatedAt: nowIso
+      };
+
+      db.divisionSeasons.push(createdSeason);
+      return db;
+    });
+
+    res.status(201).json({ msg: 'Season created', season: createdSeason });
+  } catch (error) {
+    if (error.code === 'SEASON_EXISTS') {
+      return res.status(400).json({ msg: error.message });
+    }
+    console.error('Error creating season:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Seasons: update
+router.patch('/seasons/:seasonId', [auth, moderatorAuth], async (req, res) => {
+  try {
+    const { startAt, endAt, isLocked, name, bannerImage, accentColor, description } = req.body;
+    const startParsed = startAt !== undefined ? parseDateValue(startAt) : null;
+    const endParsed = endAt !== undefined ? parseDateValue(endAt) : null;
+    if (startParsed?.error || endParsed?.error) {
+      return res.status(400).json({ msg: startParsed?.error || endParsed?.error });
+    }
+
+    let updatedSeason;
+
+    await updateDb((db) => {
+      ensureSeasons(db);
+      const season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
+      if (!season) {
+        const error = new Error('Season not found');
+        error.code = 'SEASON_NOT_FOUND';
+        throw error;
+      }
+
+      const nowIso = new Date().toISOString();
+      if (name) season.name = name;
+      if (startParsed) season.startAt = startParsed.value;
+      if (endParsed) season.endAt = endParsed.value;
+      if (typeof isLocked === 'boolean') season.isLocked = isLocked;
+      if (bannerImage !== undefined) season.bannerImage = bannerImage;
+      if (accentColor !== undefined) season.accentColor = accentColor;
+      if (description !== undefined) season.description = description;
+      season.updatedAt = nowIso;
+      updatedSeason = season;
+      return db;
+    });
+
+    res.json({ msg: 'Season updated', season: withSeasonStatus(updatedSeason) });
+  } catch (error) {
+    if (error.code === 'SEASON_NOT_FOUND') {
+      return res.status(404).json({ msg: error.message });
+    }
+    console.error('Error updating season:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Seasons: activate now
+router.post('/seasons/:seasonId/activate', [auth, moderatorAuth], async (req, res) => {
+  try {
+    let season;
+    await updateDb((db) => {
+      ensureSeasons(db);
+      season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
+      if (!season) {
+        const error = new Error('Season not found');
+        error.code = 'SEASON_NOT_FOUND';
+        throw error;
+      }
+      const nowIso = new Date().toISOString();
+      season.isLocked = false;
+      season.startAt = nowIso;
+      season.updatedAt = nowIso;
+      return db;
+    });
+
+    res.json({ msg: 'Season activated', season: withSeasonStatus(season) });
+  } catch (error) {
+    if (error.code === 'SEASON_NOT_FOUND') {
+      return res.status(404).json({ msg: error.message });
+    }
+    console.error('Error activating season:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Seasons: deactivate now
+router.post('/seasons/:seasonId/deactivate', [auth, moderatorAuth], async (req, res) => {
+  try {
+    let season;
+    let removedTeams = 0;
+    await updateDb((db) => {
+      ensureSeasons(db);
+      season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
+      if (!season) {
+        const error = new Error('Season not found');
+        error.code = 'SEASON_NOT_FOUND';
+        throw error;
+      }
+      const nowIso = new Date().toISOString();
+      season.isLocked = true;
+      season.startAt = null; // prevent scheduler from re-activating after manual lock
+      season.updatedAt = nowIso;
+      removedTeams = cleanupDivisionTeams(db, season.id);
+      return db;
+    });
+
+    res.json({
+      msg: 'Season deactivated and teams cleared',
+      season: withSeasonStatus(season),
+      removedTeams
+    });
+  } catch (error) {
+    if (error.code === 'SEASON_NOT_FOUND') {
+      return res.status(404).json({ msg: error.message });
+    }
+    console.error('Error deactivating season:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
+// Seasons: manual scheduler trigger
+router.post('/seasons/run-scheduler', [auth, moderatorAuth], async (_req, res) => {
+  try {
+    const result = await runSeasonScheduler();
+    res.json({ msg: 'Scheduler executed', ...result });
+  } catch (error) {
+    console.error('Error running scheduler:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 // Global division stats for moderator panel
 router.get('/stats', async (_req, res) => {
   try {
     const db = await readDb();
+    ensureSeasons(db);
     const fights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
     const activeFights = fights.filter((fight) => fight.status === 'active').length;
     const titleFights = fights.filter((fight) => fight.fightType === 'title').length;
@@ -282,7 +755,7 @@ router.get('/stats', async (_req, res) => {
     ).length;
 
     res.json({
-      totalDivisions: DEFAULT_DIVISIONS.length,
+      totalDivisions: getDivisionDefinitions(db).length,
       activeFights,
       titleFights,
       contenderMatches
@@ -303,8 +776,9 @@ router.get('/', async (_req, res) => {
   try {
     const db = await readDb();
     const fights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
+    const definitions = getDivisionDefinitions(db);
 
-    const divisions = DEFAULT_DIVISIONS.map((division) => {
+    const divisions = definitions.map((division) => {
       const stats = buildDivisionStats(division.id, db);
       const championUser = (db.users || []).find(
         (user) => user.divisions?.[division.id]?.isChampion
@@ -338,7 +812,8 @@ router.get('/', async (_req, res) => {
         averageVotes: stats.averageVotes,
         activeTeams: stats.activeTeams,
         currentChampion,
-        recentFights
+        recentFights,
+        seasonStatus: division.seasonStatus || 'locked'
       };
     });
 
@@ -558,6 +1033,13 @@ router.post('/join', auth, async (req, res) => {
         throw error;
       }
 
+      const season = getSeasonById(db, divisionId);
+      if (!season || getSeasonStatus(season) !== 'active') {
+        const error = new Error('Division is locked');
+        error.code = 'DIVISION_LOCKED';
+        throw error;
+      }
+
       const takenByOthers = (db.users || []).some((entry) => {
         if (resolveUserId(entry) === resolveUserId(user)) {
           return false;
@@ -614,6 +1096,9 @@ router.post('/join', auth, async (req, res) => {
     }
     if (error.code === 'INVALID_TEAM') {
       return res.status(400).json({ msg: error.message });
+    }
+    if (error.code === 'DIVISION_LOCKED') {
+      return res.status(403).json({ msg: error.message });
     }
     console.error('Error joining division:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -733,8 +1218,11 @@ router.get('/overview', async (_req, res) => {
     const championshipHistory = {};
 
     const fights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
+    const divisions = getDivisionDefinitions(db).filter(
+      (division) => division.seasonStatus === 'active'
+    );
 
-    DEFAULT_DIVISIONS.forEach((division) => {
+    divisions.forEach((division) => {
       stats[division.id] = buildDivisionStats(division.id, db);
       champions[division.id] = buildChampion(division.id, db);
       titleFights[division.id] = fights.filter(
@@ -857,6 +1345,13 @@ router.post('/:divisionId/title-fight', [auth, moderatorAuth], async (req, res) 
     let createdFight;
 
     await updateDb((db) => {
+      const season = getSeasonById(db, req.params.divisionId);
+      if (!season || getSeasonStatus(season) !== 'active') {
+        const error = new Error('Division is locked');
+        error.code = 'DIVISION_LOCKED';
+        throw error;
+      }
+
       const champion = (db.users || []).find(
         (user) => user.divisions?.[req.params.divisionId]?.isChampion
       );
@@ -907,6 +1402,9 @@ router.post('/:divisionId/title-fight', [auth, moderatorAuth], async (req, res) 
     if (error.code === 'TEAM_NOT_FOUND') {
       return res.status(400).json({ msg: error.message });
     }
+    if (error.code === 'DIVISION_LOCKED') {
+      return res.status(403).json({ msg: error.message });
+    }
     console.error('Error creating title fight:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -929,6 +1427,13 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
     let createdFight;
 
     await updateDb((db) => {
+      const season = getSeasonById(db, req.params.divisionId);
+      if (!season || getSeasonStatus(season) !== 'active') {
+        const error = new Error('Division is locked');
+        error.code = 'DIVISION_LOCKED';
+        throw error;
+      }
+
       const challenger1 = findUserById(db, challenger1Id);
       const challenger2 = findUserById(db, challenger2Id);
       if (!challenger1 || !challenger2) {
@@ -968,6 +1473,9 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
     if (error.code === 'TEAM_NOT_FOUND') {
       return res.status(400).json({ msg: error.message });
     }
+    if (error.code === 'DIVISION_LOCKED') {
+      return res.status(403).json({ msg: error.message });
+    }
     console.error('Error creating contender match:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -982,6 +1490,13 @@ router.post('/register-team', async (req, res) => {
     }
 
     await updateDb((db) => {
+      const season = getSeasonById(db, divisionId);
+      if (!season || getSeasonStatus(season) !== 'active') {
+        const error = new Error('Division is locked');
+        error.code = 'DIVISION_LOCKED';
+        throw error;
+      }
+
       const user = findUserById(db, userId);
       if (!user) {
         const error = new Error('User not found');
@@ -1009,6 +1524,9 @@ router.post('/register-team', async (req, res) => {
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ msg: 'User not found' });
     }
+    if (error.code === 'DIVISION_LOCKED') {
+      return res.status(403).json({ msg: error.message });
+    }
     console.error('Error registering team:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -1026,6 +1544,13 @@ router.post('/create-fight', async (req, res) => {
     let createdFight;
 
     await updateDb((db) => {
+      const season = getSeasonById(db, divisionId);
+      if (!season || getSeasonStatus(season) !== 'active') {
+        const error = new Error('Division is locked');
+        error.code = 'DIVISION_LOCKED';
+        throw error;
+      }
+
       const normalizedTeam1 = buildTeamFromPayload(team1);
       const normalizedTeam2 = buildTeamFromPayload(team2);
       if (!normalizedTeam1 || !normalizedTeam2) {
@@ -1054,6 +1579,9 @@ router.post('/create-fight', async (req, res) => {
     if (error.code === 'INVALID_TEAM') {
       return res.status(400).json({ msg: error.message });
     }
+    if (error.code === 'DIVISION_LOCKED') {
+      return res.status(403).json({ msg: error.message });
+    }
     console.error('Error creating fight:', error);
     res.status(500).json({ msg: 'Server error' });
   }
@@ -1080,6 +1608,13 @@ router.post('/create-official-fight', async (req, res) => {
     let createdFight;
 
     await updateDb((db) => {
+      const season = getSeasonById(db, divisionId);
+      if (!season || getSeasonStatus(season) !== 'active') {
+        const error = new Error('Division is locked');
+        error.code = 'DIVISION_LOCKED';
+        throw error;
+      }
+
       const user1 = findUserById(db, team1Id);
       const user2 = findUserById(db, team2Id);
       const team1 = buildTeamFromUser(user1, divisionId);
@@ -1110,6 +1645,9 @@ router.post('/create-official-fight', async (req, res) => {
   } catch (error) {
     if (error.code === 'TEAM_NOT_FOUND') {
       return res.status(400).json({ msg: error.message });
+    }
+    if (error.code === 'DIVISION_LOCKED') {
+      return res.status(403).json({ msg: error.message });
     }
     console.error('Error creating official fight:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -1144,3 +1682,4 @@ router.post('/lock-expired-fights', async (_req, res) => {
 });
 
 export default router;
+export { runSeasonScheduler as runDivisionSeasonScheduler };

@@ -16,3 +16,4 @@ websocket.js:81 WebSocket connection to 'wss://ubf-0z6i.onrender.com/socket.io/?
 doClose @ websocket.js:81Understand this warning
 socket.io/?EIO=4&transport=polling&t=x42x1ucs&sid=PWrFrkPhrpjkCR6cAAFo:1  Failed to load resource: the server responded with a status of 400 ()Understand this error
 socket.io/?EIO=4&transport=polling&t=x43q6eqw&sid=cRIvR8_a0VJwHQQOAAFp:1  Failed to load resource: the server responded with a status of 400 ()
+

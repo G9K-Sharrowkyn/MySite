@@ -60,15 +60,6 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       color: '#6f42c1',
       powerRange: '10001-100000',
       examples: ['Anti-Monitor', 'Fused Zamasu', 'Galactus', 'Thanos (with Infinity Gauntlet)']
-    },
-    omnipotent: {
-      id: 'omnipotent',
-      name: 'Omnipotent',
-      description: 'Reality-altering, omnipotent beings',
-      icon: 'OM',
-      color: '#fd7e14',
-      powerRange: '100000+',
-      examples: ['Living Tribunal', 'Beyonder', 'Cosmic Armor Superman', 'The One Above All']
     }
   };
 

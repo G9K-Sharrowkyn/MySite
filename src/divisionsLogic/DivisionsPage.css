@@ -46,6 +46,204 @@
   margin: 0;
 }
 
+/* Division Categories */
+.category-note {
+  max-width: 100%;
+  margin: 0 auto 20px;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
+.division-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 100%;
+  margin: 0 auto 50px;
+}
+
+.category-banner {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  padding: 32px 36px;
+  border-radius: 24px;
+  border: 2px solid color-mix(in srgb, var(--banner-color) 45%, transparent);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--banner-color) 30%, #0b0f1c) 0%, #121827 55%, #0b0f1c 100%);
+  box-shadow: var(--shadow);
+  text-align: left;
+  color: var(--text-primary);
+  cursor: pointer;
+  overflow: hidden;
+  display: block;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.category-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 38%;
+  background-image: var(--banner-image);
+  background-size: cover;
+  background-position: center var(--banner-pos-y, 0%);
+  background-repeat: no-repeat;
+  border-left: 2px solid color-mix(in srgb, var(--banner-color) 60%, transparent);
+}
+
+.category-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.category-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  right: 0;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(12, 16, 26, 0.32) 0%, rgba(12, 16, 26, 0.5) 55%, rgba(12, 16, 26, 0.72) 100%);
+  pointer-events: none;
+}
+
+.category-banner:not(.locked):hover {
+  transform: translateY(-6px);
+  box-shadow: var(--shadow-hover);
+  border-color: color-mix(in srgb, var(--banner-color) 70%, white);
+}
+
+.category-banner.locked {
+  cursor: not-allowed;
+  opacity: 1;
+  filter: grayscale(0.12) brightness(0.96);
+}
+
+.category-banner.locked::after {
+  opacity: 0.3;
+}
+
+.category-banner:disabled {
+  cursor: not-allowed;
+}
+
+.category-content {
+  position: relative;
+  z-index: 2;
+  max-width: 38%;
+  padding-right: 18px;
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.category-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.category-lock {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(12, 16, 26, 0.6);
+}
+
+.category-description {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.category-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-season {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Light mode tweaks for banner cards (text area was staying dark) */
+body:not(.dark-mode) .category-banner {
+  background: linear-gradient(120deg, color-mix(in srgb, var(--banner-color) 30%, #f4f6fb) 0%, #eef2f8 55%, #e6ecf5 100%);
+  border-color: color-mix(in srgb, var(--banner-color) 35%, #e3e8f0);
+  color: #0f172a;
+}
+
+body:not(.dark-mode) .category-banner::after {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.45) 55%, rgba(255, 255, 255, 0.2) 100%);
+}
+
+body:not(.dark-mode) .category-description {
+  color: #1f2937;
+}
+
+body:not(.dark-mode) .category-season {
+  color: #334155;
+}
+
+body:not(.dark-mode) .category-lock {
+  background: rgba(255, 255, 255, 0.85);
+  color: #111827;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+.category-header {
+  max-width: 100%;
+  margin: 0 auto 25px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.category-header-info h2 {
+  margin: 0 0 6px;
+  font-size: 2rem;
+}
+
+.category-header-info p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.category-back {
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.category-back:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.18);
+}
+
 /* Divisions Grid */
 .divisions-grid {
   display: grid;
@@ -385,6 +583,40 @@ body.dark-mode .info-card li {
     grid-template-columns: 1fr;
     gap: 20px;
   }
+
+  .division-categories {
+    gap: 18px;
+  }
+
+  .category-banner {
+    min-height: 260px;
+    padding: 22px;
+    display: block;
+  }
+
+  .category-image {
+    position: relative;
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    width: 100%;
+    min-height: 180px;
+    height: 220px;
+    border-left: 0;
+    margin-top: 12px;
+  }
+
+  .category-title {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .category-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
   
   .division-card {
     padding: 20px;
@@ -437,6 +669,15 @@ body.dark-mode .info-card li {
   .division-card,
   .info-card {
     padding: 15px;
+  }
+
+  .category-banner {
+    min-height: 180px;
+    padding: 18px;
+  }
+
+  .category-name {
+    font-size: 1.4rem;
   }
   
   .division-icon {

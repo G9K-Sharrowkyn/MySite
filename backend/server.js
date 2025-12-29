@@ -25,7 +25,7 @@ import postRoutes from './routes/posts.js';
 import characterRoutes from './routes/characters.js';
 import messageRoutes from './routes/messages.js';
 import voteRoutes from './routes/votes.js';
-import divisionsRoutes from './routes/divisions.js';
+import divisionsRoutes, { runDivisionSeasonScheduler } from './routes/divisions.js';
 import notificationRoutes from './routes/notifications.js';
 import tournamentRoutes from './routes/tournaments.js';
 import statsRoutes from './routes/stats.js';
@@ -194,6 +194,22 @@ app.use('/api/challenges', challengesRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
+
+// Division seasons scheduler (auto + manual trigger support)
+const DIVISION_SCHEDULER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+const startDivisionScheduler = () => {
+  runDivisionSeasonScheduler().catch((error) => {
+    console.error('Initial division scheduler error:', error);
+  });
+
+  setInterval(() => {
+    runDivisionSeasonScheduler().catch((error) => {
+      console.error('Recurring division scheduler error:', error);
+    });
+  }, DIVISION_SCHEDULER_INTERVAL_MS);
+};
+
+startDivisionScheduler();
 
 // Basic route or static frontend for production
 if (process.env.NODE_ENV === 'production') {

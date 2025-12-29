@@ -47,25 +47,38 @@
   gap: 15px;
 }
 
-.stat-item {
+.championship-stat-item {
   background: #2a2a2a;
   padding: 15px;
   border-radius: 8px;
   text-align: center;
 }
 
-.stat-label {
+body:not(.dark-mode) .championship-stat-item {
+  background: #f8f9fa;
+  border: 1px solid #e0e0e0;
+}
+
+.championship-stat-label {
   display: block;
   color: #999;
   font-size: 0.85rem;
   margin-bottom: 5px;
 }
 
-.stat-value {
+body:not(.dark-mode) .championship-stat-label {
+  color: #666;
+}
+
+.championship-stat-value {
   display: block;
   color: #FFD700;
   font-size: 1.5rem;
   font-weight: bold;
+}
+
+body:not(.dark-mode) .championship-stat-value {
+  color: #333;
 }
 
 .recent-champions h4 {

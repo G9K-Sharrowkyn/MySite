@@ -73,6 +73,146 @@
   color: var(--text-light);
 }
 
+/* New Stats Cards Layout */
+.fight-stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.stats-card {
+  background: #242832;
+  border: 1px solid #3a3d44;
+  border-radius: 12px;
+  padding: 20px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+body:not(.dark-mode) .stats-card {
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark-mode) .stats-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card-title {
+  margin: 0 0 16px 0;
+  font-size: 1.1em;
+  font-weight: 600;
+  text-align: center;
+  color: #ffffff;
+}
+
+body:not(.dark-mode) .stats-card-title {
+  color: #333333;
+}
+
+.official-card .stats-card-title {
+  color: #60a5fa;
+}
+
+body:not(.dark-mode) .official-card .stats-card-title {
+  color: #2563eb;
+}
+
+.unofficial-card .stats-card-title {
+  color: #a78bfa;
+}
+
+body:not(.dark-mode) .unofficial-card .stats-card-title {
+  color: #7c3aed;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stat-box {
+  background: #1a1d24;
+  border: 1px solid #2a2d34;
+  border-radius: 8px;
+  padding: 12px 8px;
+  text-align: center;
+  transition: background 0.2s ease;
+}
+
+.stat-box:hover {
+  background: #2a2d34;
+}
+
+body:not(.dark-mode) .stat-box {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+}
+
+body:not(.dark-mode) .stat-box:hover {
+  background: #e9ecef;
+}
+
+.stat-number {
+  font-size: 2em;
+  font-weight: bold;
+  margin-bottom: 4px;
+  color: #ffffff;
+}
+
+body:not(.dark-mode) .stat-number {
+  color: #333333;
+}
+
+.stat-number.official {
+  color: #60a5fa;
+}
+
+body:not(.dark-mode) .stat-number.official {
+  color: #2563eb;
+}
+
+.stat-number.unofficial {
+  color: #a78bfa;
+}
+
+body:not(.dark-mode) .stat-number.unofficial {
+  color: #7c3aed;
+}
+
+.stat-label-bottom {
+  font-size: 0.85em;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+}
+
+body:not(.dark-mode) .stat-label-bottom {
+  color: #666666;
+}
+
+@media (max-width: 768px) {
+  .fight-stats-cards {
+    grid-template-columns: 1fr;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .stat-number {
+    font-size: 1.5em;
+  }
+}
+
 /* Vertical Stats Layout */
 .fight-stats-vertical {
   display: flex;
@@ -81,11 +221,64 @@
   margin-bottom: 15px;
 }
 
-.stats-category {
-  background-color: rgba(0, 0, 0, 0.3);
+/* Stats tiles - light by default */
+.profile-page .stats-category {
+  background-color: #f8fafc !important;
   padding: 12px 15px;
   border-radius: 10px;
-  border: 1px solid #333;
+  border: 1px solid #d7deea !important;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
+  color: #0f172a !important;
+}
+
+/* Dark mode override */
+body.dark-mode .profile-page .stats-category {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid #333 !important;
+  box-shadow: none !important;
+  color: #e0e0e0 !important;
+}
+
+/* Light mode page and header */
+body:not(.dark-mode) .profile-page,
+body.light-mode .profile-page {
+  background-color: #f6f7fb;
+  color: #0f172a;
+}
+
+body:not(.dark-mode) .profile-header,
+body.light-mode .profile-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5fb 100%);
+  color: #0f172a;
+}
+
+/* Stat text - light mode by default */
+.profile-page .stat-label {
+  font-size: 0.85em;
+  color: #334155 !important;
+}
+
+.profile-page .stat-value {
+  font-size: 1em;
+  font-weight: bold;
+  color: #0f172a !important;
+}
+
+.profile-page .stat-item {
+  color: #0f172a !important;
+}
+
+/* Dark mode stat text override */
+body.dark-mode .profile-page .stat-label {
+  color: #aaa !important;
+}
+
+body.dark-mode .profile-page .stat-value {
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode .profile-page .stat-item {
+  color: #e0e0e0 !important;
 }
 
 .stats-category-title {
@@ -135,23 +328,12 @@
 
 .stat-value.official {
   color: #FFD700;
+}value.official {
+  color: #FFD700 !important;
 }
 
 .stat-value.unofficial {
-  color: #00BFFF;
-}
-
-.profile-actions {
-  display: flex;
-  gap: 15px;
-}
-
-.edit-profile-btn, .send-message-btn {
-  background-color: var(--accent);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: 6px;
+  color: #00BFFF !important 6px;
   cursor: pointer;
   text-decoration: none;
   font-weight: bold;

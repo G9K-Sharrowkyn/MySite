@@ -1318,6 +1318,150 @@
   box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
 }
 
+.seasons-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8f9fb;
+  border-radius: 16px;
+  border: 1px solid #e6e8f0;
+}
+
+.seasons-header h4 {
+  margin: 0 0 6px 0;
+  font-size: 1.2rem;
+  color: #2d3436;
+}
+
+.seasons-header p {
+  margin: 0 0 16px 0;
+  color: #6c757d;
+  font-size: 0.95rem;
+}
+
+.seasons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.season-card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.season-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.season-card-header h5 {
+  margin: 0;
+  font-size: 1rem;
+  color: #2d3436;
+}
+
+.season-status {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+
+.season-status.status-aktywny {
+  background: rgba(40, 167, 69, 0.15);
+  color: #1e7e34;
+}
+
+.season-status.status-zaplanowany {
+  background: rgba(255, 193, 7, 0.2);
+  color: #b8860b;
+}
+
+.season-status.status-zakonczony,
+.season-status.status-zablokowany {
+  background: rgba(220, 53, 69, 0.15);
+  color: #b21f2d;
+}
+
+.season-status.status-nieustawiony {
+  background: rgba(108, 117, 125, 0.15);
+  color: #5a6268;
+}
+
+.season-fields {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.season-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #495057;
+  font-weight: 600;
+}
+
+.season-fields input {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #343a40;
+}
+
+.season-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.season-btn {
+  border: none;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.season-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+}
+
+.season-btn.schedule {
+  background: linear-gradient(45deg, #6c757d, #495057);
+  color: #fff;
+}
+
+.season-btn.start {
+  background: linear-gradient(45deg, #28a745, #20c997);
+  color: #fff;
+}
+
+.season-btn.end {
+  background: linear-gradient(45deg, #dc3545, #c82333);
+  color: #fff;
+}
+
+.season-btn.lock {
+  background: linear-gradient(45deg, #3f51b5, #5c6bc0);
+  color: #fff;
+}
+
 .division-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1516,6 +1660,18 @@
     gap: 15px;
     align-items: stretch;
   }
+
+  .seasons-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .season-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .season-actions {
+    grid-template-columns: 1fr;
+  }
   
   .divisions-grid {
     grid-template-columns: 1fr;
@@ -1545,6 +1701,14 @@
   .division-stats-mini {
     flex-direction: column;
     gap: 5px;
+  }
+
+  .seasons-section {
+    padding: 16px;
+  }
+
+  .season-card {
+    padding: 14px;
   }
   
 }

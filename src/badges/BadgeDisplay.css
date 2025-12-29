@@ -1,6 +1,7 @@
 .badge-display {
   display: flex;
-  align-items: center;
+  flex-direction: column !important;
+  align-items: center !important;
   gap: 12px;
   padding: 12px;
   border-radius: 12px;
@@ -8,7 +9,7 @@
   border: 1px solid var(--bg-dark);
   transition: all 0.3s ease;
   position: relative;
-  overflow: hidden;
+  overflow: visible !important;
 }
 
 .badge-display:hover {
@@ -173,8 +174,13 @@
 
 /* Badge info */
 .badge-info {
-  flex: 1;
-  min-width: 0;
+  flex: 1 1 auto !important;
+  min-width: 100px !important;
+  width: 100% !important;
+  opacity: 1 !important;
+  z-index: 10 !important;
+  position: relative !important;
+  text-align: center !important;
 }
 
 .badge-name {
@@ -182,11 +188,21 @@
   font-size: 16px;
   margin-bottom: 4px;
   line-height: 1.2;
-  color: var(--text-light);
+  color: #ffffff !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  background: rgba(255, 0, 0, 0.3) !important;
+  padding: 4px !important;
+}
+
+body:not(.dark-mode) .badge-name {
+  color: #333333 !important;
+  background: rgba(0, 255, 0, 0.3) !important;
 }
 
 .badge-display.small .badge-name {
-  font-size: 14px;
+  font-size: 14px !important;
   margin-bottom: 2px;
 }
 

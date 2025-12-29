@@ -37,7 +37,8 @@ const DEFAULT_DB = {
   legalConsents: [],
   challengeProgress: [],
   recommendationEvents: [],
-  characterSuggestions: []
+  characterSuggestions: [],
+  divisionSeasons: []
 };
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
@@ -72,7 +73,8 @@ const normalizeDb = (data = {}) => ({
   legalConsents: ensureArray(data.legalConsents),
   challengeProgress: ensureArray(data.challengeProgress),
   recommendationEvents: ensureArray(data.recommendationEvents),
-  characterSuggestions: ensureArray(data.characterSuggestions)
+  characterSuggestions: ensureArray(data.characterSuggestions),
+  divisionSeasons: ensureArray(data.divisionSeasons)
 });
 
 let writeChain = Promise.resolve();
