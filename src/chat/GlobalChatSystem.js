@@ -34,6 +34,59 @@ const GlobalChatSystem = () => {
   const userIdRef = useRef(null);
   const isMinimizedRef = useRef(true);
 
+  // Load existing conversations when Private tab is opened
+  useEffect(() => {
+    if (activeTab === 'private' && isChatOpen && token) {
+      loadExistingConversations();
+    }
+  }, [activeTab, isChatOpen, token]);
+
+  const loadExistingConversations = async () => {
+    try {
+      const response = await axios.get('/api/messages', {
+        headers: { 'x-auth-token': token }
+      });
+      
+      const currentUserId = localStorage.getItem('userId');
+      const messageData = response.data.messages || response.data;
+      const conversationMap = new Map();
+      
+      messageData.forEach(message => {
+        const otherUserId = message.senderId === currentUserId ? message.recipientId : message.senderId;
+        const otherUsername = message.senderId === currentUserId ? message.recipientUsername : message.senderUsername;
+        
+        if (!conversationMap.has(otherUserId)) {
+          conversationMap.set(otherUserId, {
+            userId: otherUserId,
+            username: otherUsername,
+            profilePicture: null,
+            lastMessage: message,
+            unreadCount: 0
+          });
+        }
+        
+        const conversation = conversationMap.get(otherUserId);
+        if (new Date(message.createdAt) > new Date(conversation.lastMessage.createdAt)) {
+          conversation.lastMessage = message;
+        }
+        
+        if (message.recipientId === currentUserId && !message.read) {
+          conversation.unreadCount++;
+        }
+      });
+      
+      const conversationsList = Array.from(conversationMap.values())
+        .sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
+      
+      setPrivateConversations(conversationsList);
+      if (conversationsList.length > 0) {
+        setPrivateView('conversations');
+      }
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
+
 
   const sanitizeProfilePicture = (value) => {
     if (typeof value !== 'string') return null;
@@ -359,11 +412,6 @@ const GlobalChatSystem = () => {
     setPrivateMessages([]);
   };
 
-  const backToPrivateSearch = () => {
-    setPrivateView('search');
-    setPrivateConversations([]);
-  };
-
   if (!user || !token) {
     return null;
   }
@@ -411,7 +459,7 @@ const GlobalChatSystem = () => {
             </svg>	
           </span>
         </span>
-        <span className="chat-toggle-led"></span>
+        {activeTab === 'global' && <span className="chat-toggle-led"></span>}
         {unreadCount > 0 && (
           <span className="chat-toggle-badge">{unreadCount}</span>
         )}
@@ -447,18 +495,20 @@ const GlobalChatSystem = () => {
           )}
         </div>
         <div className="chat-header-right">
-          <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-            {isConnected ? '🟢' : '🔴'}
-          </span>
+          {activeTab === 'global' && (
+            <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
+              {isConnected ? '🟢' : '🔴'}
+            </span>
+          )}
           <span 
             className="online-count"
-            style={{ visibility: activeTab === 'global' ? 'visible' : 'hidden' }}
+            style={{ display: activeTab === 'global' ? 'block' : 'none' }}
           >
             {activeUsers.length + 1} online
           </span>
           <button
             className={`toggle-users-btn ${showUsers ? 'active' : ''}`}
-            style={{ visibility: activeTab === 'global' ? 'visible' : 'hidden' }}
+            style={{ display: activeTab === 'global' ? 'block' : 'none' }}
             onClick={(event) => {
               event.stopPropagation();
               if (activeTab === 'global') {
@@ -594,62 +644,49 @@ const GlobalChatSystem = () => {
             </>
           ) : (
             <div className="private-messages-tab">
-              {privateView === 'search' && (
-                <div className="private-search-container">
-                  <h3>Start Private Chat</h3>
-                  <input
-                    type="text"
-                    placeholder="Enter username..."
-                    value={privateSearchQuery}
-                    onChange={(e) => setPrivateSearchQuery(e.target.value)}
-                    className="private-search-input"
-                  />
-                  {privateSearchQuery.trim() && privateUsers.length > 0 && (
-                    <div className="private-users-list">
-                      {privateUsers.map(user => (
-                        <div key={user.id} className="private-user-item">
-                          <img 
-                            {...getOptimizedImageProps(
-                              user.avatar || '/placeholder-avatar.png',
-                              { size: 36 }
-                            )}
-                            alt={user.username}
-                            className="private-user-avatar"
-                          />
-                          <span className="private-user-name">{user.username}</span>
-                          <button 
-                            className="start-chat-btn"
-                            onClick={() => startPrivateChat(user)}
-                          >
-                            Chat
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {privateSearchQuery.trim() && privateUsers.length === 0 && (
-                    <p className="no-users-found">No users found</p>
-                  )}
-                  {privateConversations.length > 0 && (
-                    <button 
-                      className="view-conversations-btn"
-                      onClick={() => setPrivateView('conversations')}
-                    >
-                      View Conversations ({privateConversations.length})
-                    </button>
-                  )}
-                </div>
-              )}
-
               {privateView === 'conversations' && (
-                <div className="private-conversations-container">
-                  <div className="private-conversations-header">
-                    <button className="back-btn" onClick={backToPrivateSearch}>
-                      ← Back
-                    </button>
-                    <h3>Conversations</h3>
+                <div className="private-combined-container">
+                  <div className="private-search-section">
+                    <h3>Start New Chat</h3>
+                    <input
+                      type="text"
+                      placeholder="Enter username..."
+                      value={privateSearchQuery}
+                      onChange={(e) => setPrivateSearchQuery(e.target.value)}
+                      className="private-search-input"
+                    />
+                    {privateSearchQuery.trim() && privateUsers.length > 0 && (
+                      <div className="private-users-list">
+                        {privateUsers.map(user => (
+                          <div key={user.id} className="private-user-item">
+                            <img 
+                              {...getOptimizedImageProps(
+                                user.avatar || '/placeholder-avatar.png',
+                                { size: 36 }
+                              )}
+                              alt={user.username}
+                              className="private-user-avatar"
+                            />
+                            <span className="private-user-name">{user.username}</span>
+                            <button 
+                              className="start-chat-btn"
+                              onClick={() => startPrivateChat(user)}
+                            >
+                              Chat
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {privateSearchQuery.trim() && privateUsers.length === 0 && (
+                      <p className="no-users-found">No users found</p>
+                    )}
                   </div>
-                  <div className="private-conversations-list">
+
+                  {privateConversations.length > 0 && (
+                    <div className="private-conversations-section">
+                      <h3>Your Conversations</h3>
+                      <div className="private-conversations-list">
                     {privateConversations.map(conv => (
                       <div 
                         key={conv.userId}
@@ -673,7 +710,10 @@ const GlobalChatSystem = () => {
                           className="private-conv-avatar"
                         />
                         <div className="private-conv-info">
-                          <span className="private-conv-name">{conv.username}</span>
+                          <div className="private-conv-name-row">
+                            <span className="private-conv-name">{conv.username}</span>
+                            <span className={`user-online-status ${activeUsers.some(u => u.username === conv.username) ? 'online' : 'offline'}`}></span>
+                          </div>
                           <p className="private-conv-preview">
                             {conv.lastMessage.content.substring(0, 30)}
                             {conv.lastMessage.content.length > 30 ? '...' : ''}
@@ -681,7 +721,9 @@ const GlobalChatSystem = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -695,12 +737,13 @@ const GlobalChatSystem = () => {
                       <img 
                         {...getOptimizedImageProps(
                           selectedPrivateConversation.profilePicture || '/placeholder-avatar.png',
-                          { size: 32 }
+                          { size: 32, lazy: false, fetchPriority: 'high', decoding: 'sync' }
                         )}
                         alt={selectedPrivateConversation.username}
                         className="private-chat-avatar"
                       />
                       <span>{selectedPrivateConversation.username}</span>
+                      <span className={`user-online-status ${activeUsers.some(u => u.username === selectedPrivateConversation.username) ? 'online' : 'offline'}`}></span>
                     </div>
                   </div>
                   <div className="private-messages-area">
