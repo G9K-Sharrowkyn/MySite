@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import io from 'socket.io-client';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './ConversationChat.css';
@@ -13,6 +14,7 @@ const ConversationChat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [otherUser, setOtherUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const socketRef = useRef(null);
 
   const token = localStorage.getItem('token');
   const currentUserId = localStorage.getItem('userId');
@@ -36,11 +38,68 @@ const ConversationChat = () => {
     }
   }, [userId, token]);
 
+  // Fetch messages and mark as read
   useEffect(() => {
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
-    return () => clearInterval(interval);
-  }, [fetchMessages]);
+    
+    // Mark messages as read when opening conversation
+    if (userId && token) {
+      axios.post(`/api/messages/mark-read/${userId}`, {}, {
+        headers: { 'x-auth-token': token }
+      }).catch(err => console.error('Error marking messages as read:', err));
+    }
+  }, [userId, token, fetchMessages]);
+
+  // Setup Socket.IO for real-time messages
+  useEffect(() => {
+    if (!token || !currentUserId) {
+      console.error('ConversationChat: Missing token or currentUserId', { token: !!token, currentUserId });
+      return;
+    }
+
+    const socketUrl = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000'
+      : window.location.origin;
+    
+    console.log('ConversationChat: Creating socket connection to:', socketUrl);
+    console.log('ConversationChat: Token:', token?.substring(0, 20) + '...');
+    console.log('ConversationChat: CurrentUserId:', currentUserId);
+    
+    const socket = io(socketUrl, {
+      auth: { token },
+      transports: ['websocket', 'polling']
+    });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('ConversationChat: Connected to socket with ID:', socket.id);
+      console.log('ConversationChat: Emitting join-conversation with userId:', currentUserId);
+      socket.emit('join-conversation', { userId: currentUserId });
+    });
+
+    socket.on('new-private-message', (message) => {
+      console.log('ConversationChat: Received new-private-message:', message);
+      // Only add message if it's part of this conversation
+      if ((message.senderId === userId && message.recipientId === currentUserId) ||
+          (message.senderId === currentUserId && message.recipientId === userId)) {
+        console.log('ConversationChat: Adding message to state');
+        setMessages(prev => [...prev, message]);
+      } else {
+        console.log('ConversationChat: Message not for this conversation');
+      }
+    });
+
+    socket.on('connect_error', (error) => {
+      console.error('ConversationChat: Socket connection error:', error);
+    });
+
+    return () => {
+      console.log('ConversationChat: Disconnecting socket');
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
+  }, [token, currentUserId, userId]);
 
   const sendMessage = async (e) => {
     e.preventDefault();

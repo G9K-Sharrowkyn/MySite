@@ -79,7 +79,7 @@ const MessagesPage = () => {
     if (!token || !currentUserId) return;
 
     const socketUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5001'
+      ? 'http://localhost:5000'
       : window.location.origin;
     
     const socket = io(socketUrl, {
@@ -93,6 +93,9 @@ const MessagesPage = () => {
         username: localStorage.getItem('username'),
         profilePicture: localStorage.getItem('profilePicture')
       });
+      
+      // Also join for private messages
+      socket.emit('join-conversation', { userId: currentUserId });
     });
 
     socket.on('active-users', (users) => {
@@ -100,10 +103,16 @@ const MessagesPage = () => {
       setActiveUsers(users || []);
     });
 
+    socket.on('new-private-message', (message) => {
+      console.log('New private message received:', message);
+      // Refresh conversations when new message arrives
+      fetchConversations();
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, [token, currentUserId]);
+  }, [token, currentUserId, fetchConversations]);
 
   // Debounce search
   useEffect(() => {
@@ -160,6 +169,9 @@ const MessagesPage = () => {
         </div>
 
         <div className="search-panel">
+          <div className="search-header">
+            <h3>✉️ {t('newMessage') || 'New Message'}</h3>
+          </div>
           <input
             type="text"
             placeholder={t('searchUsers')}

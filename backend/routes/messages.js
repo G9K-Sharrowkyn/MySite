@@ -293,6 +293,32 @@ router.get('/conversation/:id', async (req, res) => {
 // @access  Private
 router.post('/', auth, sendMessage);
 
+// @route   POST api/messages/mark-read/:userId
+// @desc    Mark all messages from a user as read
+// @access  Private
+router.post('/mark-read/:userId', auth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const otherUserId = req.params.userId;
+
+    await updateDb((db) => {
+      const messages = db.messages || [];
+      messages.forEach(message => {
+        if (message.senderId === otherUserId && message.recipientId === currentUserId && !message.read) {
+          message.read = true;
+          message.readAt = new Date().toISOString();
+        }
+      });
+      return db;
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET api/messages/:id
 // @desc    Get message by ID
 // @access  Private

@@ -25,7 +25,8 @@ const GlobalChatSystem = () => {
   const [selectedPrivateConversation, setSelectedPrivateConversation] = useState(null);
   const [privateMessages, setPrivateMessages] = useState([]);
   const [privateMessageInput, setPrivateMessageInput] = useState('');
-  const [privateView, setPrivateView] = useState('search'); // 'search', 'conversations', 'chat'
+  const [privateView, setPrivateView] = useState('conversations'); // 'search', 'conversations', 'chat'
+  const [showNewMessageNotification, setShowNewMessageNotification] = useState(false);
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -33,15 +34,28 @@ const GlobalChatSystem = () => {
   const socketRef = useRef(null);
   const userIdRef = useRef(null);
   const isMinimizedRef = useRef(true);
+  const selectedConversationRef = useRef(null);
+  const privateMessagesContainerRef = useRef(null);
 
-  // Load existing conversations when Private tab is opened
+  // Keep ref in sync with state
   useEffect(() => {
-    if (activeTab === 'private' && isChatOpen && token) {
-      loadExistingConversations();
-    }
-  }, [activeTab, isChatOpen, token]);
+    selectedConversationRef.current = selectedPrivateConversation;
+  }, [selectedPrivateConversation]);
 
-  const loadExistingConversations = async () => {
+  // Auto-scroll private messages when new message arrives
+  useEffect(() => {
+    if (privateMessages.length === 0) return;
+    
+    // If user is near bottom, auto-scroll
+    if (isNearBottom()) {
+      scrollPrivateToBottom(true);
+    } else {
+      // User is reading old messages, show notification
+      setShowNewMessageNotification(true);
+    }
+  }, [privateMessages]);
+
+  const loadExistingConversations = useCallback(async (changeView = true) => {
     try {
       const response = await axios.get('/api/messages', {
         headers: { 'x-auth-token': token }
@@ -79,13 +93,26 @@ const GlobalChatSystem = () => {
         .sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
       
       setPrivateConversations(conversationsList);
-      if (conversationsList.length > 0) {
+      
+      // Only change view if explicitly requested
+      if (changeView) {
         setPrivateView('conversations');
       }
     } catch (error) {
       console.error('Error loading conversations:', error);
+      // Even on error, show conversations view only if requested
+      if (changeView) {
+        setPrivateView('conversations');
+      }
     }
-  };
+  }, [token]);
+
+  // Load existing conversations when Private tab is opened
+  useEffect(() => {
+    if (activeTab === 'private' && isChatOpen && token) {
+      loadExistingConversations();
+    }
+  }, [activeTab, isChatOpen, token, loadExistingConversations]);
 
 
   const sanitizeProfilePicture = (value) => {
@@ -155,6 +182,10 @@ const GlobalChatSystem = () => {
         username,
         profilePicture: sanitizeProfilePicture(profilePicture)
       });
+      
+      // Also join for private messages
+      console.log('GlobalChatSystem: Emitting join-conversation with userId:', userId);
+      newSocket.emit('join-conversation', { userId });
     });
 
     newSocket.on('disconnect', (reason) => {
@@ -228,6 +259,27 @@ const GlobalChatSystem = () => {
       ));
     });
 
+    // Handle new private messages
+    newSocket.on('new-private-message', (message) => {
+      console.log('GlobalChatSystem: Received new-private-message:', message);
+      
+      const currentConversation = selectedConversationRef.current;
+      const currentUserId = userIdRef.current;
+      
+      // If currently in a private chat with this user, add message to view
+      if (currentConversation && 
+          (message.senderId === currentConversation.id || 
+           message.recipientId === currentConversation.id ||
+           message.senderId === currentConversation.userId || 
+           message.recipientId === currentConversation.userId)) {
+        console.log('GlobalChatSystem: Adding message to privateMessages');
+        setPrivateMessages(prev => [...prev, message]);
+      }
+      
+      // Refresh conversations list to show new message WITHOUT changing view
+      loadExistingConversations(false);
+    });
+
     setSocket(newSocket);
 
     return () => {
@@ -240,6 +292,26 @@ const GlobalChatSystem = () => {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const isNearBottom = () => {
+    const container = privateMessagesContainerRef.current;
+    if (!container) return true;
+    
+    const threshold = 150; // pixels from bottom
+    const position = container.scrollHeight - container.scrollTop - container.clientHeight;
+    return position < threshold;
+  };
+
+  const scrollPrivateToBottom = (smooth = true) => {
+    const container = privateMessagesContainerRef.current;
+    if (!container) return;
+    
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: smooth ? 'smooth' : 'auto'
+    });
+    setShowNewMessageNotification(false);
   };
 
   const handleSendMessage = (e) => {
@@ -381,6 +453,8 @@ const GlobalChatSystem = () => {
         headers: { 'x-auth-token': token }
       });
       setPrivateMessages(response.data.messages);
+      // Scroll to bottom after loading messages
+      setTimeout(() => scrollPrivateToBottom(false), 100);
     } catch (error) {
       console.error('Error loading messages:', error);
     }
@@ -400,7 +474,8 @@ const GlobalChatSystem = () => {
       });
 
       setPrivateMessageInput('');
-      loadPrivateMessages(selectedPrivateConversation.id);
+      // Scroll to bottom after sending
+      setTimeout(() => scrollPrivateToBottom(true), 100);
     } catch (error) {
       console.error('Error sending message:', error);
     }
@@ -746,7 +821,7 @@ const GlobalChatSystem = () => {
                       <span className={`user-online-status ${activeUsers.some(u => u.username === selectedPrivateConversation.username) ? 'online' : 'offline'}`}></span>
                     </div>
                   </div>
-                  <div className="private-messages-area">
+                  <div className="private-messages-area" ref={privateMessagesContainerRef}>
                     {privateMessages.map(message => {
                       const isOwn = message.senderId === user.id;
                       return (
@@ -764,6 +839,11 @@ const GlobalChatSystem = () => {
                       );
                     })}
                   </div>
+                  {showNewMessageNotification && (
+                    <div className="new-message-notification" onClick={() => scrollPrivateToBottom(true)}>
+                      <span>↓ New message</span>
+                    </div>
+                  )}
                   <form className="private-message-input-form" onSubmit={sendPrivateMessage}>
                     <input
                       type="text"

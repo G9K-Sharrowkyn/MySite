@@ -765,6 +765,93 @@
       },
       "createdAt": "2025-12-27T22:11:30.516Z",
       "updatedAt": "2025-12-27T22:11:30.516Z"
+    },
+    {
+      "id": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "username": "ultracode333",
+      "email": "ultracode333@gmail.com",
+      "password": "$2b$10$1TC.LWJ8TSzmz4JY85kAjeWzIMPnsx.MkM6GHgeThbhlblKz6j5eu",
+      "role": "user",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-12-29T22:29:41.737Z",
+        "lastActive": "2025-12-29T22:29:41.737Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 5,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "badgeLevels": {},
+        "posts": 1
+      },
+      "activity": {
+        "postsCreated": 1,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0,
+        "fightsCreated": 1
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-12-29T22:29:41.737Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-12-29T22:29:41.737Z",
+      "updatedAt": "2025-12-29T22:30:16.385Z"
     }
   ],
   "posts": [
@@ -1156,6 +1243,66 @@
         "characters": [
           "Yoda (Legends)(SW)",
           "Darth Plagueis (Legends)(SW)"
+        ],
+        "powerTiers": [],
+        "categories": []
+      }
+    },
+    {
+      "id": "4c590188-91df-48e4-b601-09a8fd11b038",
+      "title": "dwqdqwdqwdq",
+      "content": "wdqwdqwdqwdqwd",
+      "type": "fight",
+      "authorId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "createdAt": "2025-12-29T22:30:16.385Z",
+      "updatedAt": "2025-12-29T22:30:16.385Z",
+      "likes": [],
+      "comments": [],
+      "views": 0,
+      "photos": [],
+      "poll": {
+        "options": [
+          "Anti-Monitor (DC)(New52)",
+          "Revan (Reborn)(Legends)(SW)"
+        ],
+        "votes": {
+          "voters": []
+        }
+      },
+      "fight": {
+        "teamA": "Anti-Monitor (DC)(New52)",
+        "teamB": "Revan (Reborn)(Legends)(SW)",
+        "votes": {
+          "teamA": 0,
+          "teamB": 0,
+          "draw": 0,
+          "voters": []
+        },
+        "status": "active",
+        "isOfficial": false,
+        "lockTime": "2026-01-01T22:30:16.385Z",
+        "winner": null,
+        "winnerTeam": null
+      },
+      "reactions": [],
+      "isOfficial": false,
+      "moderatorCreated": false,
+      "category": null,
+      "featured": false,
+      "tags": [
+        "DC",
+        "Star Wars",
+        "Anti-Monitor (DC)(New52)",
+        "Revan (Reborn)(Legends)(SW)"
+      ],
+      "autoTags": {
+        "universes": [
+          "DC",
+          "Star Wars"
+        ],
+        "characters": [
+          "Anti-Monitor (DC)(New52)",
+          "Revan (Reborn)(Legends)(SW)"
         ],
         "powerTiers": [],
         "categories": []
@@ -2681,6 +2828,531 @@
       },
       "read": false,
       "createdAt": "2025-12-29T05:45:05.743Z"
+    },
+    {
+      "id": "086159cc-5241-4a99-b443-e8a7e74decd7",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "0c181d96-a5fc-4b48-9623-2dd3592781e7",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:30:46.185Z"
+    },
+    {
+      "id": "a827beb4-4652-4b17-a7a4-ac5fe8f2fce7",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "591680d6-039d-4d3e-a218-d4fe2900b8fd",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:32:36.837Z"
+    },
+    {
+      "id": "6a992262-3208-4ebd-99dc-3da8a54d6014",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "fe472cf4-e52b-47b0-941c-6f9c3696af1c",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:32:47.887Z"
+    },
+    {
+      "id": "d478353a-bf64-4ab2-968f-bad50d908e4d",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "4c4fe944-7455-4b10-82bd-46dccafaa5ad",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:32:59.181Z"
+    },
+    {
+      "id": "e394f5f2-96f0-4ec5-91a8-66383fad3211",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "5887742f-b463-4b9e-88d9-1eff24baa90f",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:37:45.199Z"
+    },
+    {
+      "id": "c0934e38-5f41-443c-b1a2-d959cd6295da",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "3cabe619-3a72-41b7-b78b-c939c10c53d1",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:37:55.760Z"
+    },
+    {
+      "id": "00b80921-b073-41da-ba23-1c139d0d71f4",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "f6672eda-cecc-47aa-8155-e13b538e5166",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:37:59.191Z"
+    },
+    {
+      "id": "176e8da4-1c03-4b94-9ccd-94de909b7408",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "cb214c76-b828-404c-8e5a-3f61fd4ddfe4",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:38:19.275Z"
+    },
+    {
+      "id": "cc4979a3-c807-498b-ac63-ec2f5d681169",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "e27f7030-56f6-429e-afb6-fbb486837994",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:38:22.477Z"
+    },
+    {
+      "id": "77bf503f-61a6-4c04-843a-624a482d4253",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "9f298a6d-e516-42f0-8d91-08b954723682",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:58:16.546Z"
+    },
+    {
+      "id": "54bf20e6-f842-436c-9bbc-191b0508bfc4",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "da17c132-5dc3-4471-9ca4-a74ea3e9e6d9",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:58:22.159Z"
+    },
+    {
+      "id": "d98edac5-e324-48b7-b85a-c05ffd14ad4f",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "69422c1c-e2ee-412b-b548-bf48561a5e10",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:58:43.100Z"
+    },
+    {
+      "id": "c6db6966-3cf7-4de5-a2d6-2a061f593b7b",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "48031e5a-2782-41de-829a-63d34af00f58",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T22:59:04.150Z"
+    },
+    {
+      "id": "29241650-7806-486a-9bca-8f2c4d46ba20",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "757debbb-00f8-46d9-bf42-ca380a79af3e",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:04:42.177Z"
+    },
+    {
+      "id": "b63148c1-f37e-454c-a4df-ab0784cefda7",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "cdff5c06-6cf3-48d9-a54c-53a60d69d03b",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:09:34.733Z"
+    },
+    {
+      "id": "6c8bfe6a-6f49-441a-895c-da053e794545",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "16b3dede-eeb3-4dbe-bf05-eb96e4a82d72",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:13:25.299Z"
+    },
+    {
+      "id": "ece74ee4-c02f-420a-a251-def6c666e1c7",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "14ed61aa-5ff8-438e-aca5-e54dc7eab0f6",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:13:47.424Z"
+    },
+    {
+      "id": "0ce7046b-c650-4421-8aba-6e5ed4561086",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "d0988632-c58d-4273-979b-37ac2a9ab513",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:13:49.288Z"
+    },
+    {
+      "id": "053bba80-0e9b-4390-97dc-c4b9b05f6fc5",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "1bd5b59a-22db-46e0-904d-c51f4281d863",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:15:18.949Z"
+    },
+    {
+      "id": "86ebd3bf-85f6-4df2-a70d-39772354b4c2",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "5c6f362e-8852-44f2-8758-9cd09dafcc54",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:17:34.463Z"
+    },
+    {
+      "id": "c4229634-36a3-45ca-9ed7-4c7620e45887",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "fc1c4752-d895-4f50-a0e0-47d071da9f38",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:17:42.408Z"
+    },
+    {
+      "id": "de5d499c-3439-4c1d-a0d7-c05730b1ee01",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "5b440fd3-3a48-402e-b4b9-8ae11f63397b",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:19:26.090Z"
+    },
+    {
+      "id": "bf61cb48-8274-4673-9cbe-df1195d61140",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "c66c7f9a-6132-4e14-999c-65132a8964d0",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:21:26.982Z"
+    },
+    {
+      "id": "f495acbf-aea9-436e-b212-f35dcc937013",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "0757c7cb-707d-4f98-907c-bbd1a1335051",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:21:30.733Z"
+    },
+    {
+      "id": "0d949957-147f-4a58-aec0-c29144b34bf3",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "1db6e8eb-1746-4393-b41c-aec008da32ad",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:23:29.839Z"
+    },
+    {
+      "id": "8fffd3d3-7941-407b-a20b-d2a4c9ae123e",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "c20ae2bb-6cbc-440a-a450-0d5df45929ac",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:23:33.139Z"
+    },
+    {
+      "id": "b1f7345a-bade-48eb-951b-a43e3a46658e",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "4bba518d-c930-4005-8c55-211ec813c1a7",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:23:35.329Z"
+    },
+    {
+      "id": "2e0ac892-0de0-428d-8f8d-0709fec70569",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "aebdf75b-667b-462b-98ad-e15c1b449dd7",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:23:37.827Z"
+    },
+    {
+      "id": "3c1791be-caab-4c47-abe6-a8e357902d20",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "0857c287-3c2c-4204-b8f8-572d8e529a48",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:23:52.611Z"
+    },
+    {
+      "id": "35784e08-d8d5-4b3f-8715-8484e07800b0",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from ultracode333",
+      "message": "You received a message from ultracode333",
+      "data": {
+        "messageId": "7c7ad1f5-76d0-410e-93c6-ceb30e9a8efc",
+        "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+        "senderUsername": "ultracode333"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:23:56.710Z"
+    },
+    {
+      "id": "bf8895ff-9a08-49ed-b6b6-9d7805432ae7",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "aa9fbaa6-07bb-475a-aa0e-c9d6cd81167c",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:31:21.259Z"
+    },
+    {
+      "id": "debff418-c724-4827-9512-f9327b05a4b7",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "9beb0135-b79e-41d5-ae24-8608c38fbbf2",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:31:23.572Z"
+    },
+    {
+      "id": "9bfa695d-373a-4d18-93a5-39b381c4eaab",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "bd29c9e5-3031-4fb9-94ab-ffdf4c7321e7",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:31:26.624Z"
+    },
+    {
+      "id": "1da56422-d717-40a2-8efb-7b255d2a75db",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "4c7e361d-46e6-474e-9c80-35e3b29fb129",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:31:31.657Z"
+    },
+    {
+      "id": "708da638-ffd4-4746-90c4-729f2737947d",
+      "userId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "d95ba746-a800-4719-8d6d-018cf244522f",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T23:31:34.822Z"
     }
   ],
   "messages": [
@@ -2707,6 +3379,434 @@
       "read": false,
       "deleted": false,
       "createdAt": "2025-12-29T05:45:05.743Z"
+    },
+    {
+      "id": "0c181d96-a5fc-4b48-9623-2dd3592781e7",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "dddd",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:30:46.185Z",
+      "readAt": "2025-12-29T22:57:56.766Z"
+    },
+    {
+      "id": "591680d6-039d-4d3e-a218-d4fe2900b8fd",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "dddddddddddddddd",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:32:36.837Z",
+      "readAt": "2025-12-29T22:57:56.766Z"
+    },
+    {
+      "id": "fe472cf4-e52b-47b0-941c-6f9c3696af1c",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "wdwdwd",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:32:47.887Z",
+      "readAt": "2025-12-29T22:57:56.766Z"
+    },
+    {
+      "id": "4c4fe944-7455-4b10-82bd-46dccafaa5ad",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "wwwwwwwwwwwww",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:32:59.181Z"
+    },
+    {
+      "id": "5887742f-b463-4b9e-88d9-1eff24baa90f",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "ddddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:37:45.199Z"
+    },
+    {
+      "id": "3cabe619-3a72-41b7-b78b-c939c10c53d1",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "wdwdw",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:37:55.760Z"
+    },
+    {
+      "id": "f6672eda-cecc-47aa-8155-e13b538e5166",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "qwdqwdqwdwq",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:37:59.191Z"
+    },
+    {
+      "id": "cb214c76-b828-404c-8e5a-3f61fd4ddfe4",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "dd",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:38:19.275Z",
+      "readAt": "2025-12-29T22:57:56.766Z"
+    },
+    {
+      "id": "e27f7030-56f6-429e-afb6-fbb486837994",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "qwdqwdqwd",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:38:22.477Z",
+      "readAt": "2025-12-29T22:57:56.766Z"
+    },
+    {
+      "id": "9f298a6d-e516-42f0-8d91-08b954723682",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "ddddddd",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:58:16.546Z",
+      "readAt": "2025-12-29T22:58:38.020Z"
+    },
+    {
+      "id": "da17c132-5dc3-4471-9ca4-a74ea3e9e6d9",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "ededed",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:58:22.159Z",
+      "readAt": "2025-12-29T22:58:38.020Z"
+    },
+    {
+      "id": "69422c1c-e2ee-412b-b548-bf48561a5e10",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "wwwwwwwwwww",
+      "read": true,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:58:43.100Z",
+      "readAt": "2025-12-29T22:58:58.621Z"
+    },
+    {
+      "id": "48031e5a-2782-41de-829a-63d34af00f58",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "",
+      "content": "wqdqwdqwdqw",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T22:59:04.150Z"
+    },
+    {
+      "id": "757debbb-00f8-46d9-bf42-ca380a79af3e",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "ddddddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:04:42.177Z"
+    },
+    {
+      "id": "cdff5c06-6cf3-48d9-a54c-53a60d69d03b",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "dqwdqwd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:09:34.733Z"
+    },
+    {
+      "id": "16b3dede-eeb3-4dbe-bf05-eb96e4a82d72",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dqwdqwdwq",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:13:25.299Z"
+    },
+    {
+      "id": "14ed61aa-5ff8-438e-aca5-e54dc7eab0f6",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dwdwdwdwdwd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:13:47.424Z"
+    },
+    {
+      "id": "d0988632-c58d-4273-979b-37ac2a9ab513",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "dwqdqwdqwd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:13:49.288Z"
+    },
+    {
+      "id": "1bd5b59a-22db-46e0-904d-c51f4281d863",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dddddddddddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:15:18.949Z"
+    },
+    {
+      "id": "5c6f362e-8852-44f2-8758-9cd09dafcc54",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "ddddddddddddddddddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:17:34.463Z"
+    },
+    {
+      "id": "fc1c4752-d895-4f50-a0e0-47d071da9f38",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dqdqdqdqd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:17:42.408Z"
+    },
+    {
+      "id": "5b440fd3-3a48-402e-b4b9-8ae11f63397b",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "wwwwwwwwwwwwwqwqw",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:19:26.090Z"
+    },
+    {
+      "id": "c66c7f9a-6132-4e14-999c-65132a8964d0",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:21:26.982Z"
+    },
+    {
+      "id": "0757c7cb-707d-4f98-907c-bbd1a1335051",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "ddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:21:30.733Z"
+    },
+    {
+      "id": "1db6e8eb-1746-4393-b41c-aec008da32ad",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "11111111111",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:23:29.839Z"
+    },
+    {
+      "id": "c20ae2bb-6cbc-440a-a450-0d5df45929ac",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dwdqwdwd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:23:33.139Z"
+    },
+    {
+      "id": "4bba518d-c930-4005-8c55-211ec813c1a7",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dqwdqwdwqd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:23:35.329Z"
+    },
+    {
+      "id": "aebdf75b-667b-462b-98ad-e15c1b449dd7",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "zcqcwqwqwf",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:23:37.827Z"
+    },
+    {
+      "id": "0857c287-3c2c-4204-b8f8-572d8e529a48",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "d21d12d21d",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:23:52.611Z"
+    },
+    {
+      "id": "7c7ad1f5-76d0-410e-93c6-ceb30e9a8efc",
+      "senderId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "senderUsername": "ultracode333",
+      "recipientId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "recipientUsername": "aaa111",
+      "subject": "Chat message",
+      "content": "dddddddddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:23:56.710Z"
+    },
+    {
+      "id": "aa9fbaa6-07bb-475a-aa0e-c9d6cd81167c",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dwqd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:31:21.259Z"
+    },
+    {
+      "id": "9beb0135-b79e-41d5-ae24-8608c38fbbf2",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "qwdqwd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:31:23.572Z"
+    },
+    {
+      "id": "bd29c9e5-3031-4fb9-94ab-ffdf4c7321e7",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "ddddddddd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:31:26.624Z"
+    },
+    {
+      "id": "4c7e361d-46e6-474e-9c80-35e3b29fb129",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "dwqdqwd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:31:31.657Z"
+    },
+    {
+      "id": "d95ba746-a800-4719-8d6d-018cf244522f",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "e3a2d75d-118a-44a7-9536-267c22fb6938",
+      "recipientUsername": "ultracode333",
+      "subject": "Chat message",
+      "content": "qwdqwd",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T23:31:34.822Z"
     }
   ],
   "chatMessages": [
@@ -2790,6 +3890,42 @@
       "text": "d21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21dd21d12d12d21d",
       "reactions": [],
       "createdAt": "2025-12-27T19:24:49.136Z"
+    },
+    {
+      "id": "7816bf90-874f-4b1c-9160-b144de8249b5",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "username": "aaa111",
+      "profilePicture": null,
+      "text": "dwqdwqdwqdqw",
+      "reactions": [],
+      "createdAt": "2025-12-29T22:59:24.701Z"
+    },
+    {
+      "id": "438939aa-13dd-4461-93cf-2a63eb8f13b3",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "username": "aaa111",
+      "profilePicture": null,
+      "text": "qwdwqdwddddddddddd",
+      "reactions": [],
+      "createdAt": "2025-12-29T22:59:29.202Z"
+    },
+    {
+      "id": "15998cf1-59ab-4e1a-80b0-66022ddb8dde",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "username": "aaa111",
+      "profilePicture": null,
+      "text": "dddddddddddddddddd",
+      "reactions": [],
+      "createdAt": "2025-12-29T23:11:06.731Z"
+    },
+    {
+      "id": "0973b15d-7b40-4908-a98b-fcd06754c363",
+      "userId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "username": "aaa111",
+      "profilePicture": null,
+      "text": "zzzzzzzzzzzzzzzzzzzzzzzzzzzz",
+      "reactions": [],
+      "createdAt": "2025-12-29T23:12:01.509Z"
     }
   ],
   "divisionFights": [],

@@ -95,6 +95,10 @@ const io = new Server(server, {
   }
 });
 
+// Socket.io maps for tracking users
+const activeUsers = new Map(); // Track active users in global chat
+const userSocketMap = new Map(); // Map userId to socketId for private messages
+
 io.engine.on('connection_error', (err) => {
   console.error('Engine.IO connection error:', err.code, err.message);
   if (err.context) {
@@ -121,7 +125,7 @@ const limiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login requests per windowMs
+  max: 50, // Increased for development - limit each IP to 50 requests per windowMs
   message: 'Too many login attempts, please try again later.',
   skipSuccessfulRequests: true,
 });
@@ -163,6 +167,7 @@ app.use(
 // Make io accessible to routes
 app.use((req, res, next) => {
   req.io = io; // Make Socket.io available to routes
+  req.userSocketMap = userSocketMap; // Make userSocketMap available to routes
   next();
 });
 
@@ -228,8 +233,6 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Socket.io chat functionality
-const activeUsers = new Map(); // Track active users in chat
-
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
@@ -278,6 +281,20 @@ io.on('connection', (socket) => {
     } catch (error) {
       console.error('Error loading chat history:', error);
     }
+  });
+
+  // User joins a private conversation
+  socket.on('join-conversation', (data) => {
+    console.log('Received join-conversation event:', data);
+    if (!data || !data.userId) {
+      console.error('Invalid data for join-conversation:', data);
+      return;
+    }
+    
+    // Map userId to socketId
+    userSocketMap.set(data.userId, socket.id);
+    console.log(`User ${data.userId} joined with socket ${socket.id}`);
+    console.log('Current userSocketMap:', Array.from(userSocketMap.entries()));
   });
 
   // Handle sending messages
@@ -362,6 +379,13 @@ io.on('connection', (socket) => {
     const user = activeUsers.get(socket.id);
     if (user) {
       activeUsers.delete(socket.id);
+      
+      // Remove from userSocketMap
+      userSocketMap.forEach((socketId, userId) => {
+        if (socketId === socket.id) {
+          userSocketMap.delete(userId);
+        }
+      });
       
       // Notify others that user left
       socket.broadcast.emit('user-left', {

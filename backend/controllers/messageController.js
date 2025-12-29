@@ -93,6 +93,21 @@ export const sendMessage = async (req, res) => {
       return db;
     });
 
+    // Emit Socket.IO event if available
+    if (req.io && req.userSocketMap) {
+      const recipientSocketId = req.userSocketMap.get(recipientId);
+      
+      if (recipientSocketId) {
+        req.io.to(recipientSocketId).emit('new-private-message', {
+          ...normalizeMessage(createdMessage),
+          recipientId: recipientId
+        });
+        console.log(`Emitted private message to user ${recipientId} at socket ${recipientSocketId}`);
+      } else {
+        console.log(`User ${recipientId} is not connected, message will be delivered later`);
+      }
+    }
+
     res.json({ msg: 'Message sent', message: normalizeMessage(createdMessage) });
   } catch (error) {
     if (error.code === 'RECIPIENT_NOT_FOUND' || error.code === 'SENDER_NOT_FOUND') {
