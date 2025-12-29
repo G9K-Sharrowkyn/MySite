@@ -55,6 +55,13 @@ const GlobalChatSystem = () => {
     }
   }, [privateMessages]);
 
+  // Scroll global chat to bottom when opened
+  useEffect(() => {
+    if (isChatOpen && !isMinimized && activeTab === 'global' && messages.length > 0) {
+      setTimeout(() => scrollToBottom(), 100);
+    }
+  }, [isChatOpen, isMinimized, activeTab]);
+
   const loadExistingConversations = useCallback(async (changeView = true) => {
     try {
       const response = await axios.get('/api/messages', {

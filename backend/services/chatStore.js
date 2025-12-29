@@ -43,14 +43,24 @@ export const addMessage = async ({ userId, username, profilePicture, text }) => 
   return normalizeMessage(created);
 };
 
-export const trimMessages = async (max = 1000) => {
+export const trimMessages = async () => {
   await updateDb((db) => {
     db.chatMessages = Array.isArray(db.chatMessages) ? db.chatMessages : [];
-    if (db.chatMessages.length > max) {
-      db.chatMessages = db.chatMessages
-        .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
-        .slice(db.chatMessages.length - max);
+    
+    // Remove messages older than 24 hours
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const initialLength = db.chatMessages.length;
+    
+    db.chatMessages = db.chatMessages.filter(msg => {
+      const messageDate = new Date(msg.createdAt || 0);
+      return messageDate > twentyFourHoursAgo;
+    });
+    
+    const removed = initialLength - db.chatMessages.length;
+    if (removed > 0) {
+      console.log(`Trimmed ${removed} messages older than 24 hours from global chat`);
     }
+    
     return db;
   });
 };

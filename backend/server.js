@@ -314,7 +314,8 @@ io.on('connection', (socket) => {
         text: messageData.text
       });
 
-      await chatStore.trimMessages(1000);
+      // Trim messages older than 24 hours
+      await chatStore.trimMessages();
 
       const formattedMessage = {
         id: newMessage.id,

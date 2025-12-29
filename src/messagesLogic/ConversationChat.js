@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import io from 'socket.io-client';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './ConversationChat.css';
@@ -14,10 +13,33 @@ const ConversationChat = () => {
   const [newMessage, setNewMessage] = useState('');
   const [otherUser, setOtherUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const socketRef = useRef(null);
+  const [showNewMessageNotification, setShowNewMessageNotification] = useState(false);
+  
+  const messagesContainerRef = useRef(null);
+  const prevMessagesLengthRef = useRef(0);
 
   const token = localStorage.getItem('token');
   const currentUserId = localStorage.getItem('userId');
+
+  const isNearBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+    
+    const threshold = 150;
+    const position = container.scrollHeight - container.scrollTop - container.clientHeight;
+    return position < threshold;
+  };
+
+  const scrollToBottom = (smooth = true) => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: smooth ? 'smooth' : 'auto'
+    });
+    setShowNewMessageNotification(false);
+  };
 
   const fetchMessages = useCallback(async () => {
     if (!userId) return;
@@ -27,16 +49,28 @@ const ConversationChat = () => {
         headers: { 'x-auth-token': token }
       });
       
-      setMessages(response.data.messages || []);
+      const newMessages = response.data.messages || [];
+      
+      // Set initial length on first load
+      if (messages.length === 0) {
+        prevMessagesLengthRef.current = newMessages.length;
+      }
+      
+      setMessages(newMessages);
       if (response.data.otherUser) {
         setOtherUser(response.data.otherUser);
       }
       setLoading(false);
+      
+      // Only scroll on initial load
+      if (messages.length === 0) {
+        setTimeout(() => scrollToBottom(false), 100);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       setLoading(false);
     }
-  }, [userId, token]);
+  }, [userId, token, messages.length]);
 
   // Fetch messages and mark as read
   useEffect(() => {
@@ -50,73 +84,62 @@ const ConversationChat = () => {
     }
   }, [userId, token, fetchMessages]);
 
-  // Setup Socket.IO for real-time messages
+  // Auto-scroll when messages change
   useEffect(() => {
-    if (!token || !currentUserId) {
-      console.error('ConversationChat: Missing token or currentUserId', { token: !!token, currentUserId });
-      return;
-    }
-
-    const socketUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5000'
-      : window.location.origin;
+    if (messages.length === 0) return;
     
-    console.log('ConversationChat: Creating socket connection to:', socketUrl);
-    console.log('ConversationChat: Token:', token?.substring(0, 20) + '...');
-    console.log('ConversationChat: CurrentUserId:', currentUserId);
+    // Check if there's actually a NEW message (not just refresh)
+    const hasNewMessage = messages.length > prevMessagesLengthRef.current;
+    prevMessagesLengthRef.current = messages.length;
     
-    const socket = io(socketUrl, {
-      auth: { token },
-      transports: ['websocket', 'polling']
-    });
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      console.log('ConversationChat: Connected to socket with ID:', socket.id);
-      console.log('ConversationChat: Emitting join-conversation with userId:', currentUserId);
-      socket.emit('join-conversation', { userId: currentUserId });
-    });
-
-    socket.on('new-private-message', (message) => {
-      console.log('ConversationChat: Received new-private-message:', message);
-      // Only add message if it's part of this conversation
-      if ((message.senderId === userId && message.recipientId === currentUserId) ||
-          (message.senderId === currentUserId && message.recipientId === userId)) {
-        console.log('ConversationChat: Adding message to state');
-        setMessages(prev => [...prev, message]);
+    // Only auto-scroll if there's a new message
+    if (hasNewMessage) {
+      // If user is near bottom, auto-scroll
+      if (isNearBottom()) {
+        setTimeout(() => scrollToBottom(true), 100);
       } else {
-        console.log('ConversationChat: Message not for this conversation');
+        // User is reading old messages, show notification
+        setShowNewMessageNotification(true);
       }
-    });
+    }
+  }, [messages]);
 
-    socket.on('connect_error', (error) => {
-      console.error('ConversationChat: Socket connection error:', error);
-    });
-
-    return () => {
-      console.log('ConversationChat: Disconnecting socket');
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
-    };
-  }, [token, currentUserId, userId]);
+  // Poll for new messages every 3 seconds
+  useEffect(() => {
+    if (!userId || !token) return;
+    
+    const interval = setInterval(() => {
+      fetchMessages();
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [userId, token, fetchMessages]);
 
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
+    const messageContent = newMessage;
+    setNewMessage(''); // Clear immediately for better UX
+
     try {
-      await axios.post('/api/messages', {
+      const response = await axios.post('/api/messages', {
         recipientId: userId,
-        content: newMessage
+        content: messageContent
       }, {
         headers: { 'x-auth-token': token }
       });
-
-      setNewMessage('');
-      fetchMessages();
+      
+      // Add message immediately to state
+      if (response.data.message) {
+        setMessages(prev => [...prev, response.data.message]);
+      }
+      
+      // Scroll to bottom after sending
+      setTimeout(() => scrollToBottom(true), 100);
     } catch (error) {
       console.error('Error sending message:', error);
+      setNewMessage(messageContent); // Restore message on error
     }
   };
 
@@ -164,7 +187,7 @@ const ConversationChat = () => {
           )}
         </div>
 
-        <div className="messages-area">
+        <div className="messages-area" ref={messagesContainerRef}>
           {loading ? (
             <div className="loading">{t('loading')}</div>
           ) : messages.length > 0 ? (
@@ -188,6 +211,12 @@ const ConversationChat = () => {
             </div>
           )}
         </div>
+
+        {showNewMessageNotification && (
+          <div className="new-message-notification" onClick={() => scrollToBottom(true)}>
+            <span>↓ {t('newMessage') || 'New message'}</span>
+          </div>
+        )}
 
         <form onSubmit={sendMessage} className="message-input-container">
           <div className="input-wrapper">

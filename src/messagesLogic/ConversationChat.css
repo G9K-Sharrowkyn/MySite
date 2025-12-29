@@ -112,10 +112,52 @@ body:not(.dark-mode) .chat-username {
   flex-direction: column;
   gap: 8px;
   background: #0a0e27;
+  position: relative;
 }
 
 body:not(.dark-mode) .messages-area {
   background: #ffffff;
+}
+
+.new-message-notification {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--accent, #007bff);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  font-weight: 600;
+  font-size: 14px;
+  z-index: 10;
+  animation: slideUp 0.3s ease-out;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.new-message-notification:hover {
+  background: var(--accent-hover, #0056b3);
+  transform: translateX(-50%) scale(1.05);
+}
+
+.new-message-notification span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    bottom: 0;
+  }
+  to {
+    opacity: 1;
+    bottom: 20px;
+  }
 }
 
 .message-bubble {
