@@ -6,6 +6,7 @@ import './ProfileBackgroundUpload.css';
 const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [error, setError] = useState('');
   const token = localStorage.getItem('token');
 
@@ -16,6 +17,7 @@ const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
       setError('File size must be less than 5MB');
+      setTimeout(() => setError(''), 3000);
       return;
     }
 
@@ -23,10 +25,12 @@ const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setError('Only JPEG, PNG, GIF, and WebP images are allowed');
+      setTimeout(() => setError(''), 3000);
       return;
     }
 
     setError('');
+    setSelectedFile(file);
     
     // Create preview
     const reader = new FileReader();
@@ -37,17 +41,15 @@ const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
   };
 
   const handleUpload = async () => {
-    const fileInput = document.getElementById('background-upload');
-    const file = fileInput?.files[0];
-    
-    if (!file) {
+    if (!selectedFile) {
       setError('Please select a file');
+      setTimeout(() => setError(''), 3000);
       return;
     }
 
     setUploading(true);
     const formData = new FormData();
-    formData.append('background', file);
+    formData.append('background', selectedFile);
 
     try {
       const response = await axios.post('/api/profile/background-upload', formData, {
@@ -62,7 +64,9 @@ const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
       }
       
       setPreviewUrl(null);
-      fileInput.value = '';
+      setSelectedFile(null);
+      const fileInput = document.getElementById('background-upload');
+      if (fileInput) fileInput.value = '';
       setError('');
     } catch (error) {
       console.error('Upload error:', error);
@@ -98,6 +102,7 @@ const ProfileBackgroundUpload = ({ currentBackground, onBackgroundUpdate }) => {
 
   const handleCancel = () => {
     setPreviewUrl(null);
+    setSelectedFile(null);
     setError('');
     const fileInput = document.getElementById('background-upload');
     if (fileInput) fileInput.value = '';

@@ -8,6 +8,22 @@
   margin: 0 auto;
 }
 
+/* Profile Background Banner */
+.profile-background-banner {
+  width: 100%;
+  height: 300px;
+  margin-bottom: 20px;
+  border-radius: 12px;
+  border: 3px solid var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  background-repeat: no-repeat;
+}
+
+body:not(.dark-mode) .profile-background-banner {
+  border: 3px solid #e74c3c;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* Profile Header with Background */
 .profile-header {
   display: flex;
@@ -20,23 +36,6 @@
   position: relative;
   overflow: hidden;
   min-height: 250px;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center;
-}
-
-.profile-header.champion-profile-background::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(45deg, 
-    rgba(255, 215, 0, 0.1) 0%, 
-    transparent 50%, 
-    rgba(255, 215, 0, 0.1) 100%);
-  pointer-events: none;
 }
 
 /* Champion Title Display */

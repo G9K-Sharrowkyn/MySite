@@ -279,12 +279,17 @@ const handleCommentSubmit = async (e) => {
 
   return (
     <div className="profile-page">
-      <div className={`profile-header ${isChampion ? 'champion-profile-background' : ''}`}
-           style={backgroundImage ? {
-             backgroundImage: `linear-gradient(${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'}, ${isDarkMode ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)'}), url(${backgroundImage})`,
-             backgroundSize: 'cover',
-             backgroundPosition: 'center'
-           } : {}}>
+      {backgroundImage && (
+        <div className="profile-background-banner"
+             style={{
+               backgroundImage: `url(${backgroundImage})`,
+               backgroundSize: 'cover',
+               backgroundPosition: 'center'
+             }}>
+        </div>
+      )}
+      
+      <div className={`profile-header ${isChampion ? 'champion-profile-background' : ''}`}>
         <img
           {...getOptimizedImageProps(
             replacePlaceholderUrl(profile.profilePicture) || placeholderImages.user,
