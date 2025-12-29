@@ -468,7 +468,7 @@ const GlobalChatSystem = () => {
 
       {(isChatOpen || isClosing) && (
       <div className={`global-chat-container ${isMinimized ? 'minimized' : ''} ${isClosing ? 'closing' : ''}`}>
-      <div className="chat-header" onClick={toggleMinimize}>
+      <div className="chat-header">
         <div className="chat-header-left">
           <div className="chat-tabs">
             <button 

@@ -1114,11 +1114,11 @@
 }
 
 .private-message.own {
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .private-message.other {
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 
 .private-message-bubble {
