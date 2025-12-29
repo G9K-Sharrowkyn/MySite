@@ -328,22 +328,45 @@ body.dark-mode .profile-page .stat-item {
 
 .stat-value.official {
   color: #FFD700;
-}value.official {
-  color: #FFD700 !important;
 }
 
 .stat-value.unofficial {
-  color: #00BFFF !important 6px;
-  cursor: pointer;
-  text-decoration: none;
-  font-weight: bold;
-  transition: all 0.3s ease;
-  display: inline-block;
+  color: #00BFFF !important;
 }
 
-.edit-profile-btn:hover, .send-message-btn:hover {
-  background-color: #2980b9;
+.edit-profile-btn,
+.send-message-btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+}
+
+.edit-profile-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: #fff;
+}
+
+.send-message-btn {
+  background: linear-gradient(135deg, #0084ff, #0073e6);
+  color: #fff;
+}
+
+.send-message-icon {
+  font-size: 1.1rem;
+}
+
+.edit-profile-btn:hover,
+.send-message-btn:hover {
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 132, 255, 0.4);
 }
 
 .edit-profile-form {

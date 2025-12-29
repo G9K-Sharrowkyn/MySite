@@ -2553,6 +2553,21 @@
       },
       "read": false,
       "createdAt": "2025-07-06T05:00:25.158Z"
+    },
+    {
+      "id": "60974e29-ae7d-40af-b15d-45818bccf4ac",
+      "userId": "b9acba58-a5ea-42ae-9bb4-56dc39b26dbd",
+      "type": "message",
+      "title": "New message",
+      "content": "You received a message from aaa111",
+      "message": "You received a message from aaa111",
+      "data": {
+        "messageId": "df45157f-3bab-4bdc-96b2-e94237db6560",
+        "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+        "senderUsername": "aaa111"
+      },
+      "read": false,
+      "createdAt": "2025-12-29T05:45:05.743Z"
     }
   ],
   "messages": [
@@ -2567,6 +2582,18 @@
       "createdAt": "2025-07-06T05:00:25.158Z",
       "read": false,
       "deleted": false
+    },
+    {
+      "id": "df45157f-3bab-4bdc-96b2-e94237db6560",
+      "senderId": "62f47a0c-fadf-4ca6-9cc1-307fb6bc42a4",
+      "senderUsername": "aaa111",
+      "recipientId": "b9acba58-a5ea-42ae-9bb4-56dc39b26dbd",
+      "recipientUsername": "ultracode",
+      "subject": "Chat message",
+      "content": "dwqdqw",
+      "read": false,
+      "deleted": false,
+      "createdAt": "2025-12-29T05:45:05.743Z"
     }
   ],
   "chatMessages": [

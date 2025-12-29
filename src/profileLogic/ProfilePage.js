@@ -355,9 +355,10 @@ const handleCommentSubmit = async (e) => {
             )}
             {!isOwner && resolvedUserId && (
               <Link 
-                to={`/messages?to=${resolvedUserId}&username=${profile.username}`} 
+                to={`/messages/${resolvedUserId}`}
                 className="send-message-btn"
               >
+                <span className="send-message-icon">💬</span>
                 {t('sendMessage') || 'Send Message'}
               </Link>
             )}

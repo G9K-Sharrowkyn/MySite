@@ -63,7 +63,7 @@ const MessagesPage = () => {
     }
     
     try {
-      const response = await axios.get(`/api/profile/search?query=${encodeURIComponent(query)}`, {
+      const response = await axios.get(`/api/users/search?q=${encodeURIComponent(query)}`, {
         headers: { 'x-auth-token': token }
       });
       setUsers(response.data);
