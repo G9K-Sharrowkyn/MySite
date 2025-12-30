@@ -654,7 +654,7 @@ router.get('/active-bets/:userId', async (req, res) => {
 });
 
 // Moderator endpoints
-router.get('/moderator/all', auth, roleMiddleware(['moderator']), async (_req, res) => {
+router.get('/moderator/all', auth, roleMiddleware(['moderator', 'admin']), async (_req, res) => {
   try {
     const db = await readDb();
     const bets = (db.bets || []).map((bet) => ({

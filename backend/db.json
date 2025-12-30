@@ -71,7 +71,7 @@
       "id": "MODERATOR-UNIQUE-ID-1234",
       "username": "moderator",
       "email": "moderator@site.local",
-      "password": "$2b$10$NqGZhS6ZpY6sSpPXeoXjSu83sPK.VXvmfFR0yFhWAl8e3JaU7m1E6",
+      "password": "$2b$10$g2CzTPAZhe0iK6SyWeTaIuyGGLCN.PF/0yvyp4CJrw6oQPtWQ05sW",
       "role": "moderator",
       "profile": {
         "avatar": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjE1MCIgdmlld0JveD0iMCAwIDE1MCAxNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjE1MCIgaGVpZ2h0PSIxNTAiIGZpbGw9IiM2NjYiLz48dGV4dCB4PSI3NSIgeT0iODAiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNSIgZmlsbD0iI2ZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+TW9kPC90ZXh0Pjwvc3ZnPg==",
@@ -105,14 +105,14 @@
       "id": "ADMIN-UNIQUE-ID-0001",
       "username": "admin",
       "email": "admin@site.local",
-      "password": "$2b$10$7U0CrapNGOsI8oT01HrPPeMn7ZMv6rVYEyZaXDDxJqLN6YMOgPnl.",
+      "password": "$2b$10$g2CzTPAZhe0iK6SyWeTaIuyGGLCN.PF/0yvyp4CJrw6oQPtWQ05sW",
       "role": "admin",
       "profile": {
         "bio": "Site administrator.",
         "profilePicture": "",
         "favoriteCharacters": [],
         "joinDate": "2025-12-26T00:00:00.000Z",
-        "lastActive": "2025-12-26T00:00:00.000Z"
+        "lastActive": "2025-12-29T23:59:08.971Z"
       },
       "stats": {
         "fightsWon": 0,
@@ -141,7 +141,15 @@
         "likesReceived": 0,
         "tournamentsWon": 0,
         "tournamentsParticipated": 0
-      }
+      },
+      "coins": {
+        "balance": 10,
+        "totalEarned": 10,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-12-29T23:59:08.977Z"
+      },
+      "virtualCoins": 10,
+      "updatedAt": "2025-12-29T23:59:08.971Z"
     },
     {
       "id": "280ec015-edc9-4be3-87ca-b6be62093bf5",
@@ -855,25 +863,6 @@
     }
   ],
   "posts": [
-    {
-      "id": "official-1",
-      "title": "Welcome to the Official Feed!",
-      "content": "This is the first official post.",
-      "type": "discussion",
-      "authorId": "c646a625-aa9c-491d-b355-e579fe6d9d28",
-      "createdAt": "2024-07-09T10:00:00.000Z",
-      "updatedAt": "2024-07-09T10:00:00.000Z",
-      "likes": [],
-      "comments": [],
-      "views": 10,
-      "photos": [],
-      "poll": null,
-      "fight": null,
-      "isOfficial": true,
-      "moderatorCreated": false,
-      "category": null,
-      "featured": true
-    },
     {
       "id": "9de9a21e-64e5-4011-a2be-b8a776bf2b8e",
       "title": "wdqwdqwdqwdqwd",
@@ -4103,6 +4092,16 @@
       "description": "Daily eurodolary bonus",
       "balance": 1010,
       "createdAt": "2025-12-29T01:20:14.171Z"
+    },
+    {
+      "id": "b28b4296-9bdc-4910-bb91-57ad9562580d",
+      "_id": "6cd09caf-f2d9-42fb-a5b5-680ed61a4b56",
+      "userId": "ADMIN-UNIQUE-ID-0001",
+      "amount": 10,
+      "type": "daily_bonus",
+      "description": "Daily eurodolary bonus",
+      "balance": 10,
+      "createdAt": "2025-12-29T23:59:08.977Z"
     }
   ],
   "storePurchases": [],

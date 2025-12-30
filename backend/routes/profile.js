@@ -44,6 +44,35 @@ const resolveUserId = (user) => user?.id || user?._id;
 // @access  Private
 router.get('/', auth, getMyProfile);
 
+// @route   GET api/profile/all
+// @desc    Get all users (admin/moderator only)
+// @access  Private (admin/moderator)
+router.get('/all', auth, async (req, res) => {
+  try {
+    // Check if user is admin or moderator
+    if (req.user.role !== 'admin' && req.user.role !== 'moderator') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+
+    const db = await readDb();
+    const users = (db.users || []).map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      profilePicture: user.profilePicture,
+      joinedDate: user.joinedDate,
+      stats: user.stats,
+      badges: user.badges
+    }));
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching all users:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+});
+
 // @route   GET api/profile/leaderboard
 // @desc    Get leaderboard (alias for stats leaderboard)
 // @access  Public
