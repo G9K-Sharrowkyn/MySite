@@ -8,6 +8,7 @@ import Register from './logLogic/Register';
 import Login from './logLogic/Login';
 import ModeratorPanel from './moderatorLogic/ModeratorPanel';
 import AdminPanel from './adminLogic/AdminPanel';
+import AdminDivisionsPage from './moderatorLogic/AdminDivisionsPage';
 import ProfilePage from './profileLogic/ProfilePage';
 import MessagesPage from './messagesLogic/MessagesPage';
 import ConversationChat from './messagesLogic/ConversationChat';
@@ -40,6 +41,7 @@ function AppContent() {
         <Route path="/login" element={<Login setIsLoggedIn={() => {}} />} />
         <Route path="/moderator" element={<ModeratorPanel />} />
         <Route path="/admin" element={<AdminPanel />} />
+        <Route path="/admin/divisions" element={<AdminDivisionsPage />} />
         <Route path="/profile/:userId" element={<ProfilePage />} />
         <Route path="/messages" element={<MessagesPage />} />
         <Route path="/messages/:userId" element={<ConversationChat />} />

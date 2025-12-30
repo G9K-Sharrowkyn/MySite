@@ -30,7 +30,6 @@ const CharacterSelector = ({ selectedCharacter, onSelect }) => {
     if (!query) {
       setFilteredCharacters([]);
       setShowSuggestions(false);
-      onSelect(null);
       return;
     }
     const filtered = characters.filter((character) => {
@@ -46,7 +45,7 @@ const CharacterSelector = ({ selectedCharacter, onSelect }) => {
       );
     });
     setFilteredCharacters(filtered);
-  }, [inputValue, characters, onSelect]);
+  }, [inputValue, characters]);
 
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
@@ -54,6 +53,7 @@ const CharacterSelector = ({ selectedCharacter, onSelect }) => {
       setShowSuggestions(true);
     } else {
       setShowSuggestions(false);
+      onSelect(null); // Clear selection when input is empty
     }
   };
 

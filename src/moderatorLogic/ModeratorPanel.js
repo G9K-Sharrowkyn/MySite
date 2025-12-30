@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from '../i18n/LanguageContext';
 import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import CharacterSelector from '../feedLogic/CharacterSelector';
 import Modal from '../Modal/Modal';
@@ -16,10 +17,19 @@ const ModeratorPanel = () => {
   const [divisions, setDivisions] = useState([]);
   const [divisionStats, setDivisionStats] = useState({});
   const [seasonConfigs, setSeasonConfigs] = useState([]);
+  const [selectedSeasonId, setSelectedSeasonId] = useState(null);
+  const [divisionOverview, setDivisionOverview] = useState({
+    stats: {},
+    champions: {},
+    titleFights: {},
+    activeFights: {},
+    championshipHistory: {}
+  });
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   
   // Fight creation state
   const [newFight, setNewFight] = useState({
@@ -33,6 +43,115 @@ const ModeratorPanel = () => {
 
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
+  const { t } = useLanguage();
+
+  // Default English division names for matching
+  const DEFAULT_ENGLISH_DIVISION_NAMES = {
+    regular: 'Regular People',
+    metahuman: 'Metahumans',
+    planetBusters: 'Planet Busters',
+    godTier: 'God Tier',
+    universalThreat: 'Universal Threat',
+    'star-wars': 'Star Wars',
+    'dragon-ball': 'Dragon Ball',
+    dc: 'DC',
+    marvel: 'Marvel'
+  };
+
+  // Fallback seasons with translations
+  const fallbackSeasons = useMemo(
+    () => [
+      {
+        id: 'regular',
+        name: t('regularPeople'),
+        description: '',
+        image: '/site/regularpeople.jpg',
+        accent: '#9aa0a6'
+      },
+      {
+        id: 'metahuman',
+        name: t('metahuman'),
+        description: '',
+        image: '/site/metahumans.jpg',
+        accent: '#1f8f5f'
+      },
+      {
+        id: 'planetBusters',
+        name: t('planetBusters'),
+        description: '',
+        image: '/site/planetbusters.jpg',
+        accent: '#e67e22'
+      },
+      {
+        id: 'godTier',
+        name: t('godTier'),
+        description: '',
+        image: '/site/gods.jpg',
+        accent: '#6f42c1'
+      },
+      {
+        id: 'universalThreat',
+        name: t('universalThreat'),
+        description: '',
+        image: '/site/universal.jpg',
+        accent: '#c0392b'
+      },
+      {
+        id: 'star-wars',
+        name: 'Star Wars',
+        description: '',
+        image: '/site/starwarskoldvisions.jpg',
+        accent: '#1c1f2b'
+      },
+      {
+        id: 'dragon-ball',
+        name: 'Dragon Ball',
+        description: '',
+        image: '/site/dragonball.jpg',
+        accent: '#ff7b00'
+      },
+      {
+        id: 'dc',
+        name: 'DC',
+        description: '',
+        image: '/site/dc.jpg',
+        accent: '#1b4f9c'
+      },
+      {
+        id: 'marvel',
+        name: 'Marvel',
+        description: '',
+        image: '/site/marvel.jpg',
+        accent: '#c0392b'
+      }
+    ],
+    [t]
+  );
+
+  // Merged seasons with translations
+  const mergedSeasons = useMemo(() => {
+    if (seasonConfigs.length === 0) {
+      return fallbackSeasons.map((season) => ({ ...season, status: 'locked' }));
+    }
+
+    const fallbackMap = new Map(fallbackSeasons.map((item) => [item.id, item]));
+    return seasonConfigs.map((season) => {
+      const fallback = fallbackMap.get(season.id) || {};
+      const defaultEnglishName = DEFAULT_ENGLISH_DIVISION_NAMES[season.id];
+      const isDefaultEnglishName =
+        season.name && defaultEnglishName && season.name.trim().toLowerCase() === defaultEnglishName.toLowerCase();
+      const displayName = isDefaultEnglishName ? fallback.name || season.name || season.id : season.name || fallback.name || season.id;
+      const description = season.description || fallback.description || '';
+      return {
+        ...fallback,
+        ...season,
+        name: displayName,
+        description,
+        bannerImage: season.bannerImage || fallback.image,
+        accentColor: season.accentColor || fallback.accent || '#6c757d'
+      };
+    });
+  }, [seasonConfigs, fallbackSeasons, DEFAULT_ENGLISH_DIVISION_NAMES]);
 
   const showNotification = useCallback((message, type) => {
     setNotification({ message, type });
@@ -65,13 +184,32 @@ const ModeratorPanel = () => {
     }
   }, [token]);
 
+  const fetchDivisionOverview = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get('/api/divisions/overview', {
+        headers: { 'x-auth-token': token }
+      });
+      setDivisionOverview(response.data || {
+        stats: {},
+        champions: {},
+        titleFights: {},
+        activeFights: {},
+        championshipHistory: {}
+      });
+    } catch (error) {
+      console.error('Error fetching division overview:', error);
+    }
+  }, [token]);
+
   const checkModeratorAccess = useCallback(async () => {
     try {
       const response = await axios.get('/api/profile/me', {
         headers: { 'x-auth-token': token }
       });
       
-      if (response.data.role !== 'moderator') {
+      // Allow both moderators and admins
+      if (response.data.role !== 'moderator' && response.data.role !== 'admin') {
         showNotification('Brak uprawnień moderatora', 'error');
         navigate('/');
       }
@@ -87,7 +225,9 @@ const ModeratorPanel = () => {
       const [fightsRes, postsRes, usersRes, charactersRes, betsRes, divisionsRes] = await Promise.all([
         axios.get('/api/posts/official'),
         axios.get('/api/posts'),
-        axios.get('/api/profile/all'),
+        axios.get('/api/profile/all', {
+          headers: { 'x-auth-token': token }
+        }),
         axios.get('/api/characters'),
         axios.get('/api/betting/moderator/all', {
           headers: { 'x-auth-token': token }
@@ -292,10 +432,6 @@ const ModeratorPanel = () => {
   const handleScheduleSeason = async (seasonId) => {
     const season = seasonConfigs.find((item) => item.id === seasonId);
     if (!season) return;
-    if (!season.startAt && !season.endAt) {
-      showNotification('Ustaw start i/lub koniec sezonu', 'error');
-      return;
-    }
     try {
       await axios.patch(
         `/api/divisions/seasons/${seasonId}`,
@@ -309,7 +445,7 @@ const ModeratorPanel = () => {
         },
         { headers: { 'x-auth-token': token } }
       );
-      showNotification('Harmonogram sezonu zapisany', 'success');
+      showNotification(season.startAt || season.endAt ? 'Harmonogram sezonu zapisany' : 'Harmonogram usunięty', 'success');
       fetchSeasons();
     } catch (error) {
       console.error('Error scheduling season:', error);
@@ -442,9 +578,8 @@ const ModeratorPanel = () => {
           className={`tab-btn ${activeTab === 'divisions' ? 'active' : ''}`}
           onClick={() => setActiveTab('divisions')}
         >
-          🏆 Dywizje
+          🏆 Dywizje & Sezony
         </button>
-        
         <button
           className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
           onClick={() => setActiveTab('posts')}
@@ -608,180 +743,303 @@ const ModeratorPanel = () => {
 
         {activeTab === 'divisions' && (
           <div className="divisions-section">
-            <div className="divisions-header">
-              <h3>🏆 Zarządzanie Dywizjami</h3>
-              <button
-                onClick={handleLockExpiredFights}
-                className="lock-fights-btn"
-              >
-                🔒 Zablokuj wygasłe walki
-              </button>
+            <div className="divisions-moderator-header">
+              <h3>🏆 System Dywizji - Panel Moderatora</h3>
+              <p>Pełne zarządzanie dywizjami, sezonami i walkami</p>
             </div>
 
-            <div className="seasons-section">
-              <div className="seasons-header">
-                <h4>Sezony i harmonogram</h4>
-                <div className="seasons-actions">
-                  <p>Moderator ustawia start/koniec. Sezon moze ruszyc automatycznie w przyszlosci.</p>
-                  <button className="season-btn run" onClick={handleRunScheduler}>
-                    ▶️ Uruchom scheduler
-                  </button>
-                </div>
-              </div>
-              <div className="seasons-grid">
-                {seasonConfigs.map((season) => (
-                  <div key={season.id} className="season-card">
-                    <div className="season-card-header">
-                      <h5>{season.name}</h5>
-                      <span className={`season-status status-${getSeasonStatus(season).toLowerCase()}`}>
-                        {getSeasonStatus(season)}
-                      </span>
-                    </div>
-                    <div className="season-fields">
-                      <label>
-                        Start
-                        <input
-                          type="datetime-local"
-                          value={season.startAt ? season.startAt.slice(0, 16) : ''}
-                          onChange={(e) => updateSeasonField(season.id, 'startAt', e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Koniec
-                        <input
-                          type="datetime-local"
-                          value={season.endAt ? season.endAt.slice(0, 16) : ''}
-                          onChange={(e) => updateSeasonField(season.id, 'endAt', e.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <div className="season-actions">
-                      <button
-                        onClick={() => handleScheduleSeason(season.id)}
-                        className="season-btn schedule"
-                      >
-                        Zapisz harmonogram
-                      </button>
-                      <button
-                        onClick={() => handleStartSeasonNow(season.id)}
-                        className="season-btn start"
-                      >
-                        Start teraz
-                      </button>
-                      <button
-                        onClick={() => handleEndSeasonNow(season.id)}
-                        className="season-btn end"
-                      >
-                        Koniec teraz
-                      </button>
+            {/* Full DivisionsPage Categories View - with Schedule Management Overlay */}
+            <div className="divisions-page-embed">
+              <div className="division-categories">
+                {mergedSeasons.map((season) => (
+                  <div key={season.id} className="division-banner-wrapper">
+                    <button
+                      type="button"
+                      className={`category-banner ${season.status !== 'active' ? 'locked' : ''}`}
+                      style={{
+                        '--banner-color': season.accentColor || season.accent || '#6c757d',
+                        '--banner-image': `url("${season.bannerImage || season.image || '/site/default.jpg'}")`,
+                        '--banner-pos-y': '0%'
+                      }}
+                      onClick={() => {
+                        if (season.status === 'active') {
+                          setSelectedSeasonId(season.id);
+                          fetchDivisionOverview();
+                        }
+                      }}
+                      disabled={season.status !== 'active'}
+                    >
+                      <div className="category-image" aria-hidden="true" />
+                      <div className="category-content">
+                        <div className="category-title">
+                          <span className="category-name">{season.name}</span>
+                        </div>
+                        <p className="category-description">{season.description}</p>
+                        <div className="category-meta">
+                          <span className="category-season">
+                            {season.status === 'active' ? '✅ Aktywny' : 
+                             season.status === 'scheduled' ? '📅 Zaplanowany' : 
+                             '🔒 Zablokowany'}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    {/* Schedule Management Overlay */}
+                    <div className="schedule-overlay" onClick={(e) => e.stopPropagation()}>
+                      {season.startAt && season.endAt ? (
+                        // Display scheduled dates with option to remove
+                        <>
+                          <div className="scheduled-dates">
+                            <div className="scheduled-date-item">
+                              <span className="date-icon">📅</span>
+                              <div className="date-info">
+                                <span className="date-label">Start</span>
+                                <span className="date-value">{new Date(season.startAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                              </div>
+                            </div>
+                            <div className="scheduled-date-item">
+                              <span className="date-icon">🏁</span>
+                              <div className="date-info">
+                                <span className="date-label">Koniec</span>
+                                <span className="date-value">{new Date(season.endAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="schedule-actions">
+                            <button
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await axios.patch(
+                                    `/api/divisions/seasons/${season.id}`,
+                                    {
+                                      startAt: null,
+                                      endAt: null,
+                                      name: season.name,
+                                      bannerImage: season.bannerImage,
+                                      accentColor: season.accentColor,
+                                      description: season.description
+                                    },
+                                    { headers: { 'x-auth-token': token } }
+                                  );
+                                  showNotification('Harmonogram usunięty', 'success');
+                                  fetchSeasons();
+                                } catch (error) {
+                                  console.error('Error removing schedule:', error);
+                                  showNotification('Błąd usuwania harmonogramu', 'error');
+                                }
+                              }}
+                              className="schedule-btn remove"
+                              title="Usuń harmonogram"
+                            >
+                              🗑️ Usuń
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleStartSeasonNow(season.id); }}
+                              className="schedule-btn start"
+                              title="Start teraz"
+                            >
+                              ▶️
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleEndSeasonNow(season.id); }}
+                              className="schedule-btn end"
+                              title="Koniec teraz"
+                            >
+                              ⏹️
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        // Display date inputs for scheduling
+                        <>
+                          <div className="schedule-fields">
+                            <label className="schedule-field">
+                              <span className="field-label">📅 Start</span>
+                              <input
+                                type="datetime-local"
+                                value={season.startAt ? season.startAt.slice(0, 16) : ''}
+                                onChange={(e) => updateSeasonField(season.id, 'startAt', e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </label>
+                            <label className="schedule-field">
+                              <span className="field-label">🏁 Koniec</span>
+                              <input
+                                type="datetime-local"
+                                value={season.endAt ? season.endAt.slice(0, 16) : ''}
+                                onChange={(e) => updateSeasonField(season.id, 'endAt', e.target.value)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </label>
+                          </div>
+                          <div className="schedule-actions">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleScheduleSeason(season.id); }}
+                              className="schedule-btn save"
+                              title="Zapisz harmonogram"
+                            >
+                              💾
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleStartSeasonNow(season.id); }}
+                              className="schedule-btn start"
+                              title="Start teraz"
+                            >
+                              ▶️
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleEndSeasonNow(season.id); }}
+                              className="schedule-btn end"
+                              title="Koniec teraz"
+                            >
+                              ⏹️
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="division-stats">
-              <div className="stat-card">
-                <div className="stat-icon">🏆</div>
-                <div className="stat-info">
-                  <h4>{divisionStats.totalDivisions || 0}</h4>
-                  <p>Aktywnych Dywizji</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">⚔️</div>
-                <div className="stat-info">
-                  <h4>{divisionStats.activeFights || 0}</h4>
-                  <p>Aktywnych Walk</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">👑</div>
-                <div className="stat-info">
-                  <h4>{divisionStats.titleFights || 0}</h4>
-                  <p>Walk o Tytuł</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">🥊</div>
-                <div className="stat-info">
-                  <h4>{divisionStats.contenderMatches || 0}</h4>
-                  <p>Walk Pretendentów</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="divisions-grid">
-              {divisions.map(division => (
-                <div key={division.id} className="division-card">
-                  <div className="division-header">
-                    <h4>{division.name}</h4>
-                    <span className="division-tier">Tier {division.tier}</span>
+            {/* Selected Division Detail View with Management */}
+            {selectedSeasonId && (
+              <div className="division-detail-view-mod">
+                <div className="division-detail-header-mod">
+                  <button
+                    type="button"
+                    className="detail-back-btn-mod"
+                    onClick={() => setSelectedSeasonId(null)}
+                  >
+                    ← Powrót do kategorii
+                  </button>
+                  <div className="division-detail-info-mod">
+                    <h2>{seasonConfigs.find(s => s.id === selectedSeasonId)?.name || 'Dywizja'}</h2>
+                    <p>{seasonConfigs.find(s => s.id === selectedSeasonId)?.description || 'Zarządzaj dywizją'}</p>
                   </div>
-                  
-                  <div className="division-champion">
-                    {division.currentChampion ? (
-                      <div className="champion-info">
-                        <span className="champion-label">👑 Mistrz:</span>
-                        <span className="champion-name">{division.currentChampion.name}</span>
-                        <span className="reign-duration">
-                          ({Math.floor((new Date() - new Date(division.currentChampion.since)) / (1000 * 60 * 60 * 24))} dni)
-                        </span>
+                </div>
+
+                {/* Champion Section */}
+                {divisionOverview.champions[selectedSeasonId] && (
+                  <div className="champion-display-mod">
+                    <div className="champion-badge-mod">
+                      <span className="champion-icon">👑</span>
+                      <span>Aktualny Mistrz</span>
+                    </div>
+                    <div className="champion-info-display">
+                      <div className="champion-avatar-mod">
+                        <img
+                          {...getOptimizedImageProps(
+                            divisionOverview.champions[selectedSeasonId].profilePicture || '/placeholder-character.png',
+                            { size: 80 }
+                          )}
+                          alt={divisionOverview.champions[selectedSeasonId].username}
+                          className="champion-image-mod"
+                        />
                       </div>
-                    ) : (
-                      <div className="no-champion">
-                        <span>🏆 Wakujący tytuł</span>
+                      <div className="champion-details-mod">
+                        <h4>{divisionOverview.champions[selectedSeasonId].username}</h4>
+                        <p className="champion-title-mod">{divisionOverview.champions[selectedSeasonId].title}</p>
+                        <div className="champion-stats-mod">
+                          <span>Wins: {divisionOverview.champions[selectedSeasonId].stats?.wins || 0}</span>
+                          <span>Rank: {divisionOverview.champions[selectedSeasonId].stats?.rank || 'Unknown'}</span>
+                          <span>Points: {divisionOverview.champions[selectedSeasonId].stats?.points || 0}</span>
+                        </div>
+                        {divisionOverview.champions[selectedSeasonId].team && (
+                          <div className="champion-team-mod">
+                            <span className="team-label">Team:</span>
+                            <div className="team-characters">
+                              <span>{divisionOverview.champions[selectedSeasonId].team.mainCharacter?.name}</span>
+                              <span className="vs-sep">vs</span>
+                              <span>{divisionOverview.champions[selectedSeasonId].team.secondaryCharacter?.name}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
+                )}
 
-                  <div className="division-stats-mini">
-                    <span>📊 Średnie głosy: {division.averageVotes || 0}</span>
-                    <span>🎯 Aktywne zespoły: {division.activeTeams || 0}</span>
-                  </div>
-
-                  <div className="division-actions">
-                    <button
-                      onClick={() => {
-                        const challengerId = prompt('ID pretendenta do walki o tytuł:');
-                        if (challengerId) handleCreateTitleFight(division.id, challengerId);
-                      }}
-                      className="title-fight-btn"
-                    >
-                      👑 Stwórz walkę o tytuł
-                    </button>
-                    <button
-                      onClick={() => {
-                        const fighter1 = prompt('ID pierwszego fightera:');
-                        const fighter2 = prompt('ID drugiego fightera:');
-                        if (fighter1 && fighter2) handleCreateContenderMatch(division.id, fighter1, fighter2);
-                      }}
-                      className="contender-match-btn"
-                    >
-                      🥊 Stwórz walkę pretendentów
-                    </button>
-                  </div>
-
-                  {division.recentFights && division.recentFights.length > 0 && (
-                    <div className="recent-fights">
-                      <h5>Ostatnie walki:</h5>
-                      {division.recentFights.slice(0, 3).map(fight => (
-                        <div key={fight.id} className="recent-fight">
-                          <span className="fight-teams">{fight.teamA} vs {fight.teamB}</span>
-                          <span className={`fight-status ${fight.status}`}>
-                            {fight.status === 'active' ? '🟢' : '🔴'}
-                          </span>
+                {/* Active Fights */}
+                {divisionOverview.activeFights[selectedSeasonId]?.length > 0 && (
+                  <div className="active-fights-display-mod">
+                    <h4>🔥 Aktywne Walki</h4>
+                    <div className="fights-list-mod">
+                      {divisionOverview.activeFights[selectedSeasonId].map((fight) => (
+                        <div key={fight._id || fight.id} className="fight-item-mod">
+                          <div className="fight-participants-mod">
+                            <span className="participant-name">{fight.character1?.name || 'Fighter 1'}</span>
+                            <span className="vs-text-mod">vs</span>
+                            <span className="participant-name">{fight.character2?.name || 'Fighter 2'}</span>
+                          </div>
+                          <div className="fight-meta-mod">
+                            <span className="fight-type-mod">
+                              {fight.fightType === 'title' ? '👑 Title Fight' :
+                               fight.fightType === 'contender' ? '🥊 Contender Match' :
+                               '⚔️ Official Fight'}
+                            </span>
+                            <span className="fight-votes-mod">🗳️ {fight.votes?.length || 0} votes</span>
+                            {fight.endTime && (
+                              <span className="fight-timer-mod">⏰ {new Date(fight.endTime).toLocaleDateString()}</span>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
+                  </div>
+                )}
 
-            {divisions.length === 0 && (
-              <div className="no-divisions">
-                <p>Brak dywizji do wyświetlenia.</p>
+                {/* Moderator Actions for Division */}
+                <div className="division-management-actions">
+                  <button
+                    onClick={() => {
+                      const challengerId = prompt('ID pretendenta do walki o tytuł:');
+                      if (challengerId) handleCreateTitleFight(selectedSeasonId, challengerId);
+                    }}
+                    className="manage-btn title-fight-btn-mod"
+                  >
+                    👑 Stwórz Walkę o Tytuł
+                  </button>
+                  <button
+                    onClick={() => {
+                      const fighter1Id = prompt('ID zawodnika 1:');
+                      const fighter2Id = prompt('ID zawodnika 2:');
+                      if (fighter1Id && fighter2Id) {
+                        handleCreateContenderMatch(selectedSeasonId, fighter1Id, fighter2Id);
+                      }
+                    }}
+                    className="manage-btn contender-match-btn-mod"
+                  >
+                    🥊 Stwórz Walkę Pretendentów
+                  </button>
+                </div>
+
+                {/* Division Stats */}
+                <div className="division-stats-display-mod">
+                  <div className="stat-box-mod">
+                    <span className="stat-icon-mod">👥</span>
+                    <span className="stat-label-mod">Aktywne Zespoły</span>
+                    <span className="stat-value-mod">{divisionOverview.stats[selectedSeasonId]?.activeTeams || 0}</span>
+                  </div>
+                  <div className="stat-box-mod">
+                    <span className="stat-icon-mod">⚔️</span>
+                    <span className="stat-label-mod">Oficjalne Walki</span>
+                    <span className="stat-value-mod">{divisionOverview.stats[selectedSeasonId]?.totalOfficialFights || 0}</span>
+                  </div>
+                  <div className="stat-box-mod">
+                    <span className="stat-icon-mod">🗳️</span>
+                    <span className="stat-label-mod">Średnie Głosy</span>
+                    <span className="stat-value-mod">{divisionOverview.stats[selectedSeasonId]?.averageVotes || 0}</span>
+                  </div>
+                  <div className="stat-box-mod">
+                    <span className="stat-icon-mod">🔥</span>
+                    <span className="stat-label-mod">Aktywne Walki</span>
+                    <span className="stat-value-mod">{divisionOverview.activeFights[selectedSeasonId]?.length || 0}</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -808,7 +1066,7 @@ const ModeratorPanel = () => {
                     </div>
                   </div>
                   <div className="post-content">
-                    <p>{post.content.substring(0, 150)}...</p>
+                    <p>{post.content ? post.content.substring(0, 150) : 'Brak treści'}...</p>
                   </div>
                   <div className="post-actions">
                     <button 
@@ -832,9 +1090,33 @@ const ModeratorPanel = () => {
 
         {activeTab === 'users' && (
           <div className="users-section">
-            <h3>👥 Zarządzanie Użytkownikami</h3>
+            <div className="users-header">
+              <h3>👥 Zarządzanie Użytkownikami</h3>
+              <div className="user-search-bar">
+                <input
+                  type="text"
+                  placeholder="🔍 Szukaj użytkownika..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="user-search-input"
+                />
+                {userSearchQuery && (
+                  <button
+                    onClick={() => setUserSearchQuery('')}
+                    className="clear-search-btn"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </div>
             <div className="users-grid">
-              {users.map(user => (
+              {users
+                .filter(user => 
+                  user.username.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                  user.id.toString().includes(userSearchQuery)
+                )
+                .map(user => (
                 <div key={user.id} className="user-card">
                   <img 
                     {...getOptimizedImageProps(placeholderImages.userSmall, { size: 60 })}
@@ -846,10 +1128,23 @@ const ModeratorPanel = () => {
                     <p>ID: {user.id}</p>
                   </div>
                   <div className="user-actions">
-                    <button className="view-btn">👁️ Zobacz profil</button>
+                    <button 
+                      onClick={() => navigate(`/profile/${user.id}`)}
+                      className="view-btn"
+                    >
+                      👁️ Zobacz profil
+                    </button>
                   </div>
                 </div>
               ))}
+              {users.filter(user => 
+                user.username.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                user.id.toString().includes(userSearchQuery)
+              ).length === 0 && (
+                <div className="no-users-found">
+                  <p>Nie znaleziono użytkowników spełniających kryteria wyszukiwania</p>
+                </div>
+              )}
             </div>
           </div>
         )}

@@ -5,6 +5,10 @@
   padding: 20px;
 }
 
+body.light-mode .moderator-panel {
+  background: linear-gradient(135deg, #e0e7ff 0%, #f3e8ff 100%);
+}
+
 .loading-screen {
   display: flex;
   flex-direction: column;
@@ -15,6 +19,10 @@
   text-align: center;
 }
 
+body.light-mode .loading-screen {
+  color: #1a202c;
+}
+
 .loading-screen .spinner {
   width: 50px;
   height: 50px;
@@ -23,6 +31,11 @@
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 20px;
+}
+
+body.light-mode .loading-screen .spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  border-top: 4px solid #667eea;
 }
 
 .loading-screen p {
@@ -37,11 +50,19 @@
   color: white;
 }
 
+body.light-mode .panel-header {
+  color: #1a202c;
+}
+
 .panel-header h1 {
   font-size: 3rem;
   margin: 0 0 10px 0;
   font-weight: 800;
   text-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .panel-header h1 {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .panel-header p {
@@ -111,9 +132,22 @@
   backdrop-filter: blur(10px);
 }
 
+body.light-mode .tab-btn {
+  background: white;
+  color: #4a5568;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: none;
+}
+
 .tab-btn:hover {
   background: rgba(255, 255, 255, 0.2);
   transform: translateY(-2px);
+}
+
+body.light-mode .tab-btn:hover {
+  background: #f7fafc;
+  color: #667eea;
 }
 
 .tab-btn.active {
@@ -121,6 +155,13 @@
   color: #667eea;
   border-color: white;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+body.light-mode .tab-btn.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 /* Panel Content */
@@ -131,19 +172,29 @@
 
 /* Create Fight Card */
 .create-fight-card {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(30, 30, 50, 0.7);
   border-radius: 20px;
   padding: 30px;
   margin-bottom: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+}
+
+body.light-mode .create-fight-card {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  backdrop-filter: none;
 }
 
 .create-fight-card h3 {
   margin: 0 0 25px 0;
-  color: #333;
+  color: white;
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+body.light-mode .create-fight-card h3 {
+  color: #1a202c;
 }
 
 .fight-form {
@@ -167,8 +218,12 @@
 
 .form-group label {
   font-weight: 600;
-  color: #333;
+  color: white;
   font-size: 0.95rem;
+}
+
+body.light-mode .form-group label {
+  color: #1a202c;
 }
 
 .form-group input,
@@ -182,6 +237,12 @@
   transition: all 0.3s ease;
   background: white;
   font-family: inherit;
+}
+
+body.light-mode .form-group input,
+body.light-mode .form-group select,
+body.light-mode .form-group textarea {
+  border: 2px solid #cbd5e0;
 }
 
 .form-group input:focus,
@@ -281,18 +342,27 @@
 
 /* Existing Fights */
 .existing-fights {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(30, 30, 50, 0.7);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+}
+
+body.light-mode .existing-fights {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .existing-fights h3 {
   margin: 0 0 25px 0;
-  color: #333;
+  color: white;
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+body.light-mode .existing-fights h3 {
+  color: #1a202c;
 }
 
 .fights-grid {
@@ -302,16 +372,25 @@
 }
 
 .fight-card {
-  background: #fafafa;
+  background: rgba(50, 50, 70, 0.6);
   border-radius: 15px;
   padding: 20px;
-  border: 2px solid #f0f0f0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+}
+
+body.light-mode .fight-card {
+  background: #fafafa;
+  border: 2px solid #f0f0f0;
 }
 
 .fight-card:hover {
   border-color: #667eea;
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+body.light-mode .fight-card:hover {
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
 }
 
@@ -321,9 +400,13 @@
 
 .fight-header h4 {
   margin: 0 0 10px 0;
-  color: #333;
+  color: white;
   font-size: 1.1rem;
   font-weight: 600;
+}
+
+body.light-mode .fight-header h4 {
+  color: #333;
 }
 
 .fight-badges {
@@ -342,12 +425,17 @@
 }
 
 .category-badge {
-  background: #e9ecef;
-  color: #666;
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.9);
   padding: 4px 12px;
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: 500;
+}
+
+body.light-mode .category-badge {
+  background: #e9ecef;
+  color: #666;
 }
 
 .fight-details {
@@ -364,6 +452,10 @@
 
 .fighter {
   font-weight: 600;
+  color: white;
+}
+
+body.light-mode .fighter {
   color: #333;
 }
 
@@ -377,8 +469,12 @@
   display: flex;
   justify-content: center;
   gap: 20px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
+}
+
+body.light-mode .fight-stats {
+  color: #666;
 }
 
 .fight-actions {
@@ -420,18 +516,27 @@
 
 /* Posts Section */
 .posts-section {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(30, 30, 50, 0.7);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+}
+
+body.light-mode .posts-section {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .posts-section h3 {
   margin: 0 0 25px 0;
-  color: #333;
+  color: white;
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+body.light-mode .posts-section h3 {
+  color: #1a202c;
 }
 
 .posts-list {
@@ -441,15 +546,24 @@
 }
 
 .post-card {
-  background: #fafafa;
+  background: rgba(50, 50, 70, 0.6);
   border-radius: 15px;
   padding: 20px;
-  border: 2px solid #f0f0f0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+}
+
+body.light-mode .post-card {
+  background: #fafafa;
+  border: 2px solid #f0f0f0;
 }
 
 .post-card:hover {
   border-color: #667eea;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+body.light-mode .post-card:hover {
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
 }
 
@@ -462,28 +576,44 @@
 
 .post-info h4 {
   margin: 0 0 5px 0;
-  color: #333;
+  color: white;
   font-size: 1.1rem;
   font-weight: 600;
 }
 
+body.light-mode .post-info h4 {
+  color: #333;
+}
+
 .post-meta {
   margin: 0;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.85rem;
+}
+
+body.light-mode .post-meta {
+  color: #666;
 }
 
 .post-stats {
   display: flex;
   gap: 15px;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.9rem;
+}
+
+body.light-mode .post-stats {
+  color: #666;
 }
 
 .post-content p {
   margin: 0;
-  color: #555;
+  color: rgba(255, 255, 255, 0.8);
   line-height: 1.5;
+}
+
+body.light-mode .post-content p {
+  color: #555;
 }
 
 .post-actions {
@@ -495,18 +625,127 @@
 
 /* Users Section */
 .users-section {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(30, 30, 50, 0.7);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
 }
 
+body.light-mode .users-section {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.users-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
 .users-section h3 {
-  margin: 0 0 25px 0;
-  color: #333;
+  margin: 0;
+  color: white;
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+body.light-mode .users-section h3 {
+  color: #1a202c;
+}
+
+.user-search-bar {
+  position: relative;
+  flex: 1;
+  max-width: 400px;
+  min-width: 250px;
+}
+
+.user-search-input {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.user-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.user-search-input:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+body.light-mode .user-search-input {
+  background: #f8f9fa;
+  border: 2px solid #e9ecef;
+  color: #333;
+}
+
+body.light-mode .user-search-input::placeholder {
+  color: #6c757d;
+}
+
+body.light-mode .user-search-input:focus {
+  background: white;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.clear-search-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+body.light-mode .clear-search-btn {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+body.light-mode .clear-search-btn:hover {
+  background: #dee2e6;
+  color: #333;
+}
+
+.no-users-found {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 1.1rem;
+}
+
+body.light-mode .no-users-found {
+  color: #6c757d;
 }
 
 .users-grid {
@@ -516,17 +755,26 @@
 }
 
 .user-card {
-  background: #fafafa;
+  background: rgba(50, 50, 70, 0.6);
   border-radius: 15px;
   padding: 20px;
-  border: 2px solid #f0f0f0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
   text-align: center;
+}
+
+body.light-mode .user-card {
+  background: #fafafa;
+  border: 2px solid #f0f0f0;
 }
 
 .user-card:hover {
   border-color: #667eea;
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+body.light-mode .user-card:hover {
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
 }
 
@@ -541,14 +789,22 @@
 
 .user-info h4 {
   margin: 0 0 5px 0;
-  color: #333;
+  color: white;
   font-weight: 600;
+}
+
+body.light-mode .user-info h4 {
+  color: #333;
 }
 
 .user-info p {
   margin: 0 0 15px 0;
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.85rem;
+}
+
+body.light-mode .user-info p {
+  color: #666;
 }
 
 .view-btn {
@@ -570,19 +826,28 @@
 
 /* Stats Section */
 .stats-section {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(30, 30, 50, 0.7);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+}
+
+body.light-mode .stats-section {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .stats-section h3 {
   margin: 0 0 25px 0;
-  color: #333;
+  color: white;
   font-size: 1.5rem;
   font-weight: 700;
   text-align: center;
+}
+
+body.light-mode .stats-section h3 {
+  color: #1a202c;
 }
 
 .stats-grid {
@@ -948,18 +1213,27 @@
 
 /* Betting Section */
 .betting-section {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(30, 30, 50, 0.7);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+}
+
+body.light-mode .betting-section {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .betting-section h3 {
   margin: 0 0 25px 0;
-  color: #333;
+  color: white;
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+body.light-mode .betting-section h3 {
+  color: #1a202c;
 }
 
 .betting-section h4 {
@@ -1029,16 +1303,25 @@
 }
 
 .bet-card {
-  background: #fafafa;
+  background: rgba(50, 50, 70, 0.6);
   border-radius: 15px;
   padding: 20px;
-  border: 2px solid #f0f0f0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+}
+
+body.light-mode .bet-card {
+  background: #fafafa;
+  border: 2px solid #f0f0f0;
 }
 
 .bet-card:hover {
   border-color: #667eea;
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+body.light-mode .bet-card:hover {
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
 }
 
@@ -1048,14 +1331,22 @@
   align-items: flex-start;
   margin-bottom: 15px;
   padding-bottom: 15px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .bet-header {
   border-bottom: 2px solid #f0f0f0;
 }
 
 .bet-info h5 {
   margin: 0 0 8px 0;
-  color: #333;
+  color: white;
   font-size: 1.1rem;
   font-weight: 600;
+}
+
+body.light-mode .bet-info h5 {
+  color: #333;
 }
 
 .bet-status {
@@ -1098,8 +1389,12 @@
 }
 
 .bet-amount {
-  color: #666;
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 500;
+}
+
+body.light-mode .bet-amount {
+  color: #666;
 }
 
 .potential-winnings {
@@ -1279,18 +1574,27 @@
 }
 /* Divisions Section */
 .divisions-section {
-  background: rgba(255, 255, 255, 0.98);
+  background: rgba(30, 30, 50, 0.7);
   border-radius: 20px;
   padding: 30px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(10px);
+}
+
+body.light-mode .divisions-section {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
 .divisions-section h3 {
   margin: 0 0 25px 0;
-  color: #333;
+  color: white;
   font-size: 1.5rem;
   font-weight: 700;
+}
+
+body.light-mode .divisions-section h3 {
+  color: #1a202c;
 }
 
 .divisions-header {
@@ -1318,150 +1622,6 @@
   box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
 }
 
-.seasons-section {
-  margin-bottom: 30px;
-  padding: 20px;
-  background: #f8f9fb;
-  border-radius: 16px;
-  border: 1px solid #e6e8f0;
-}
-
-.seasons-header h4 {
-  margin: 0 0 6px 0;
-  font-size: 1.2rem;
-  color: #2d3436;
-}
-
-.seasons-header p {
-  margin: 0 0 16px 0;
-  color: #6c757d;
-  font-size: 0.95rem;
-}
-
-.seasons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-.season-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 16px;
-  border: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.season-card-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.season-card-header h5 {
-  margin: 0;
-  font-size: 1rem;
-  color: #2d3436;
-}
-
-.season-status {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-}
-
-.season-status.status-aktywny {
-  background: rgba(40, 167, 69, 0.15);
-  color: #1e7e34;
-}
-
-.season-status.status-zaplanowany {
-  background: rgba(255, 193, 7, 0.2);
-  color: #b8860b;
-}
-
-.season-status.status-zakonczony,
-.season-status.status-zablokowany {
-  background: rgba(220, 53, 69, 0.15);
-  color: #b21f2d;
-}
-
-.season-status.status-nieustawiony {
-  background: rgba(108, 117, 125, 0.15);
-  color: #5a6268;
-}
-
-.season-fields {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.season-fields label {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 0.8rem;
-  color: #495057;
-  font-weight: 600;
-}
-
-.season-fields input {
-  border: 1px solid #dee2e6;
-  border-radius: 8px;
-  padding: 8px 10px;
-  font-size: 0.85rem;
-  background: #fff;
-  color: #343a40;
-}
-
-.season-actions {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
-}
-
-.season-btn {
-  border: none;
-  padding: 8px 10px;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.season-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
-}
-
-.season-btn.schedule {
-  background: linear-gradient(45deg, #6c757d, #495057);
-  color: #fff;
-}
-
-.season-btn.start {
-  background: linear-gradient(45deg, #28a745, #20c997);
-  color: #fff;
-}
-
-.season-btn.end {
-  background: linear-gradient(45deg, #dc3545, #c82333);
-  color: #fff;
-}
-
-.season-btn.lock {
-  background: linear-gradient(45deg, #3f51b5, #5c6bc0);
-  color: #fff;
-}
-
 .division-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -1475,17 +1635,199 @@
   gap: 20px;
 }
 
+/* New banner layout for divisions */
+.divisions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.division-banner {
+  background: rgba(30, 30, 50, 0.7);
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+body.light-mode .division-banner {
+  background: white;
+  border: 2px solid #e2e8f0;
+}
+
+.division-banner:hover {
+  border-color: #667eea;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+}
+
+body.light-mode .division-banner:hover {
+  box-shadow: 0 8px 30px rgba(102, 126, 234, 0.15);
+}
+
+.division-banner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.division-banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .division-banner-header {
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.division-banner-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.division-banner-title h4 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: white;
+}
+
+body.light-mode .division-banner-title h4 {
+  color: #1a202c;
+}
+
+.division-tier-badge {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.division-banner-stats {
+  display: flex;
+  gap: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+body.light-mode .division-banner-stats {
+  color: #64748b;
+}
+
+.division-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+}
+
+body.light-mode .division-banner-info {
+  background: #f8fafc;
+}
+
+.champion-banner-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.champion-banner-info .champion-label {
+  font-weight: 600;
+  color: #ffd700;
+  font-size: 1rem;
+}
+
+.champion-banner-info .champion-name {
+  font-weight: 700;
+  color: white;
+  font-size: 1.1rem;
+}
+
+body.light-mode .champion-banner-info .champion-name {
+  color: #1a202c;
+}
+
+.champion-banner-info .reign-duration {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+}
+
+body.light-mode .champion-banner-info .reign-duration {
+  color: #64748b;
+}
+
+.division-banner-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.division-banner-actions button {
+  flex: 1;
+  min-width: 200px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.division-banner-actions .title-fight-btn {
+  background: linear-gradient(45deg, #ffd700, #ffed4e);
+  color: #1a1a1a;
+}
+
+.division-banner-actions .title-fight-btn:hover {
+  background: linear-gradient(45deg, #ffed4e, #ffd700);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.division-banner-actions .contender-match-btn {
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+}
+
+.division-banner-actions .contender-match-btn:hover {
+  background: linear-gradient(45deg, #764ba2, #667eea);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
 .division-card {
-  background: #fafafa;
+  background: rgba(50, 50, 70, 0.6);
   border-radius: 15px;
   padding: 25px;
-  border: 2px solid #f0f0f0;
+  border: 2px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+}
+
+body.light-mode .division-card {
+  background: #fafafa;
+  border: 2px solid #f0f0f0;
 }
 
 .division-card:hover {
   border-color: #667eea;
   transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+body.light-mode .division-card:hover {
   box-shadow: 0 8px 25px rgba(102, 126, 234, 0.1);
 }
 
@@ -1495,14 +1837,22 @@
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 15px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .division-header {
   border-bottom: 2px solid #f0f0f0;
 }
 
 .division-header h4 {
   margin: 0;
-  color: #333;
+  color: white;
   font-size: 1.3rem;
   font-weight: 700;
+}
+
+body.light-mode .division-header h4 {
+  color: #333;
 }
 
 .division-tier {
@@ -1517,8 +1867,12 @@
 .division-champion {
   margin-bottom: 15px;
   padding: 15px;
-  background: #f8f9fa;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
+}
+
+body.light-mode .division-champion {
+  background: #f8f9fa;
 }
 
 .champion-info {
@@ -1535,20 +1889,32 @@
 
 .champion-name {
   font-weight: 700;
-  color: #333;
+  color: white;
   font-size: 1.1rem;
+}
+
+body.light-mode .champion-name {
+  color: #333;
 }
 
 .reign-duration {
   font-size: 0.85rem;
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
   font-style: italic;
+}
+
+body.light-mode .reign-duration {
+  color: #666;
 }
 
 .no-champion {
   text-align: center;
-  color: #666;
+  color: rgba(255, 255, 255, 0.6);
   font-style: italic;
+}
+
+body.light-mode .no-champion {
+  color: #666;
 }
 
 .division-stats-mini {
@@ -1556,6 +1922,10 @@
   justify-content: space-between;
   margin-bottom: 20px;
   font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.light-mode .division-stats-mini {
   color: #666;
 }
 
@@ -1711,4 +2081,2355 @@
     padding: 14px;
   }
   
+}
+
+/* ===========================
+   LIGHT MODE STYLES - Remaining components
+   =========================== */
+
+body.light-mode .section-title {
+  color: #1a202c;
+  border-bottom-color: #e2e8f0;
+}
+
+body.light-mode .fight-card,
+body.light-mode .post-card,
+body.light-mode .user-card,
+body.light-mode .character-card,
+body.light-mode .bet-card,
+body.light-mode .division-card,
+body.light-mode .season-card {
+  background: #f7fafc;
+  border-color: #e2e8f0;
+  color: #1a202c;
+}
+
+body.light-mode .fight-card:hover,
+body.light-mode .post-card:hover,
+body.light-mode .user-card:hover,
+body.light-mode .character-card:hover,
+body.light-mode .bet-card:hover,
+body.light-mode .division-card:hover,
+body.light-mode .season-card:hover {
+  background: white;
+  border-color: #667eea;
+}
+
+body.light-mode .card-actions button {
+  background: #667eea;
+  color: white;
+}
+
+body.light-mode .card-actions button:hover {
+  background: #5568d3;
+}
+
+body.light-mode .card-actions button.delete-btn {
+  background: #e53e3e;
+}
+
+body.light-mode .card-actions button.delete-btn:hover {
+  background: #c53030;
+}
+
+body.light-mode .submit-btn {
+  background: #667eea;
+  color: white;
+}
+
+body.light-mode .submit-btn:hover {
+  background: #5568d3;
+}
+
+body.light-mode .access-denied {
+  background: white;
+  color: #1a202c;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .delete-modal {
+  background: white;
+  color: #1a202c;
+}
+
+body.light-mode .modal-actions button {
+  background: #667eea;
+  color: white;
+}
+
+body.light-mode .modal-actions button:hover {
+  background: #5568d3;
+}
+
+body.light-mode .modal-actions .cancel-btn {
+  background: #718096;
+}
+
+body.light-mode .modal-actions .cancel-btn:hover {
+  background: #4a5568;
+}
+
+/* Seasons Tab Section */
+.seasons-tab-section {
+  padding: 20px;
+}
+
+.seasons-tab-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+body.dark-mode .seasons-tab-header h2 {
+  color: white;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+body.light-mode .seasons-tab-header h2 {
+  color: #1a202c;
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+body.dark-mode .seasons-tab-header p {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+body.light-mode .seasons-tab-header p {
+  color: #64748b;
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+}
+
+/* Seasons Categories List */
+.seasons-categories-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+.season-category-banner {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  padding: 32px 36px;
+  border-radius: 24px;
+  border: 2px solid color-mix(in srgb, var(--banner-color) 45%, transparent);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--banner-color) 30%, #0b0f1c) 0%, #121827 55%, #0b0f1c 100%);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+  text-align: left;
+  color: white;
+  cursor: pointer;
+  overflow: hidden;
+  display: block;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+body.light-mode .season-category-banner {
+  background: linear-gradient(120deg, color-mix(in srgb, var(--banner-color) 30%, #f4f6fb) 0%, #eef2f8 55%, #e6ecf5 100%);
+  border-color: color-mix(in srgb, var(--banner-color) 35%, #e3e8f0);
+  color: #0f172a;
+}
+
+.season-category-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 38%;
+  background-image: var(--banner-image);
+  background-size: cover;
+  background-position: center var(--banner-pos-y, 0%);
+  background-repeat: no-repeat;
+  border-left: 2px solid color-mix(in srgb, var(--banner-color) 60%, transparent);
+}
+
+.season-category-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.season-category-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(12, 16, 26, 0.32) 0%, rgba(12, 16, 26, 0.5) 55%, rgba(12, 16, 26, 0.72) 100%);
+  pointer-events: none;
+}
+
+body.light-mode .season-category-banner::after {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.45) 55%, rgba(255, 255, 255, 0.2) 100%);
+}
+
+.season-category-banner:not(.locked):hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  border-color: color-mix(in srgb, var(--banner-color) 70%, white);
+}
+
+.season-category-banner.locked {
+  cursor: not-allowed;
+  opacity: 0.7;
+  filter: grayscale(0.3);
+}
+
+.season-category-content {
+  position: relative;
+  z-index: 2;
+  max-width: 38%;
+  padding-right: 18px;
+}
+
+.season-category-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.season-category-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+body.light-mode .season-category-name {
+  color: #0f172a;
+}
+
+.season-category-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+body.light-mode .season-category-status {
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.season-category-description {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+body.light-mode .season-category-description {
+  color: #1f2937;
+}
+
+.season-category-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  flex-wrap: wrap;
+}
+
+.season-action-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.season-action-btn.title-fight {
+  background: linear-gradient(45deg, #ffd700, #ffa500);
+}
+
+.season-action-btn.title-fight:hover {
+  background: linear-gradient(45deg, #ffa500, #ff8c00);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+}
+
+.season-action-btn.contender-match {
+  background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.season-action-btn.contender-match:hover {
+  background: linear-gradient(45deg, #20c997, #17a589);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+/* Season Detail View */
+.season-detail-view {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.season-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.season-back-btn {
+  padding: 10px 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 999px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .season-back-btn {
+  background: rgba(0, 0, 0, 0.08);
+  color: #1a202c;
+}
+
+.season-back-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+body.light-mode .season-back-btn:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.season-detail-info h2 {
+  margin: 0 0 6px;
+  font-size: 2rem;
+  color: white;
+}
+
+body.light-mode .season-detail-info h2 {
+  color: #1a202c;
+}
+
+.season-detail-info p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.light-mode .season-detail-info p {
+  color: #64748b;
+}
+
+/* Season Champion Section */
+.season-champion-section {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+  border: 2px solid #FFD700;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.season-champion-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 16px;
+  background: linear-gradient(45deg, #FFD700, #FFA500);
+  border-radius: 20px;
+  color: #000;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.season-champion-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.season-champion-avatar {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.season-champion-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #FFD700;
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+}
+
+.season-champion-details h4 {
+  margin: 0 0 4px 0;
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+body.light-mode .season-champion-details h4 {
+  color: #1a202c;
+}
+
+.champion-title-text {
+  margin: 0 0 8px 0;
+  color: #FFD700;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.season-champion-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+body.light-mode .season-champion-stats {
+  color: #64748b;
+}
+
+.season-champion-stats span {
+  background: rgba(255, 215, 0, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+/* Season Active Fights */
+.season-active-fights {
+  background: rgba(30, 30, 50, 0.7);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+body.light-mode .season-active-fights {
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.season-active-fights h4 {
+  margin: 0 0 16px 0;
+  color: white;
+  font-size: 1.2rem;
+}
+
+body.light-mode .season-active-fights h4 {
+  color: #1a202c;
+}
+
+.season-fights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.season-fight-item {
+  background: rgba(50, 50, 70, 0.6);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .season-fight-item {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+}
+
+.season-fight-item:hover {
+  background: rgba(60, 60, 80, 0.7);
+  transform: translateY(-2px);
+}
+
+body.light-mode .season-fight-item:hover {
+  background: #f0f0f0;
+}
+
+.season-fight-participants {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: white;
+  font-weight: 600;
+}
+
+body.light-mode .season-fight-participants {
+  color: #1a202c;
+}
+
+.season-fight-participants .vs-text {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+}
+
+body.light-mode .season-fight-participants .vs-text {
+  color: #64748b;
+}
+
+.season-fight-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+}
+
+.fight-type-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  background: linear-gradient(45deg, #667eea, #764ba2);
+  color: white;
+}
+
+/* Season Detail Actions */
+.season-detail-actions {
+  display: flex;
+  gap: 16px;
+  margin: 24px 0;
+}
+
+.season-action-btn-large {
+  flex: 1;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.season-action-btn-large.title-fight {
+  background: linear-gradient(45deg, #ffd700, #ffa500);
+}
+
+.season-action-btn-large.title-fight:hover {
+  background: linear-gradient(45deg, #ffa500, #ff8c00);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(255, 215, 0, 0.5);
+}
+
+.season-action-btn-large.contender-match {
+  background: linear-gradient(45deg, #28a745, #20c997);
+}
+
+.season-action-btn-large.contender-match:hover {
+  background: linear-gradient(45deg, #20c997, #17a589);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(40, 167, 69, 0.5);
+}
+
+/* Season Stats Grid */
+.season-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.season-stat-item {
+  background: rgba(30, 30, 50, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+body.light-mode .season-stat-item {
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.season-stat-item .stat-icon {
+  font-size: 2rem;
+}
+
+.season-stat-item .stat-label {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+body.light-mode .season-stat-item .stat-label {
+  color: #64748b;
+}
+
+.season-stat-item .stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+}
+
+body.light-mode .season-stat-item .stat-value {
+  color: #1a202c;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .seasons-categories-list {
+    gap: 18px;
+  }
+
+  .season-category-banner {
+    min-height: 260px;
+    padding: 22px;
+  }
+
+  .season-category-image {
+    position: relative;
+    left: 0;
+    width: 100%;
+    height: 200px;
+    margin-top: 12px;
+    border-left: 0;
+  }
+
+  .season-category-content {
+    max-width: 100%;
+  }
+
+  .season-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .season-detail-actions {
+    flex-direction: column;
+  }
+
+  .season-stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* Enhanced Divisions Section Styles */
+.divisions-overview {
+  margin: 30px 0;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+}
+
+body.light-mode .divisions-overview {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.divisions-overview h4 {
+  color: white;
+  font-size: 1.8rem;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+body.light-mode .divisions-overview h4 {
+  color: #1a202c;
+}
+
+.divisions-grid-moderator {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
+.division-card-moderator {
+  background: linear-gradient(135deg, var(--division-color, #667eea) 0%, rgba(0, 0, 0, 0.3) 100%);
+  border-radius: 20px;
+  padding: 25px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+body.light-mode .division-card-moderator {
+  background: white;
+  border: 2px solid var(--division-color, #667eea);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.division-card-moderator:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.division-header-card {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.division-header-card .division-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.division-header-card h5 {
+  color: white;
+  font-size: 1.5rem;
+  margin: 10px 0;
+  font-weight: 700;
+}
+
+body.light-mode .division-header-card h5 {
+  color: #1a202c;
+}
+
+.division-header-card .division-description {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.95rem;
+  margin: 5px 0;
+}
+
+body.light-mode .division-header-card .division-description {
+  color: #64748b;
+}
+
+.champion-section-card {
+  background: rgba(255, 215, 0, 0.2);
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  border-radius: 15px;
+  padding: 15px;
+  margin: 15px 0;
+  text-align: center;
+}
+
+body.light-mode .champion-section-card {
+  background: rgba(255, 215, 0, 0.1);
+  border: 2px solid rgba(255, 215, 0, 0.8);
+}
+
+.champion-section-card .champion-crown {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.champion-info-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.champion-info-card .champion-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+body.light-mode .champion-info-card .champion-label {
+  color: #64748b;
+}
+
+.champion-info-card .champion-name {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+body.light-mode .champion-info-card .champion-name {
+  color: #1a202c;
+}
+
+.champion-info-card .reign-duration {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+}
+
+body.light-mode .champion-info-card .reign-duration {
+  color: #64748b;
+}
+
+.division-stats-card {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+}
+
+body.light-mode .division-stats-card {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.division-stats-card .stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.division-stats-card .stat-value {
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+body.light-mode .division-stats-card .stat-value {
+  color: #1a202c;
+}
+
+.division-stats-card label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+body.light-mode .division-stats-card label {
+  color: #64748b;
+}
+
+.division-moderator-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.mod-action-btn {
+  flex: 1;
+  min-width: 140px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  text-align: center;
+}
+
+.mod-action-btn.title-fight {
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  box-shadow: 0 4px 15px rgba(255, 215, 0, 0.3);
+}
+
+.mod-action-btn.title-fight:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.5);
+}
+
+.mod-action-btn.contender-match {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.mod-action-btn.contender-match:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.5);
+}
+
+.mod-action-btn.view-details {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+}
+
+.mod-action-btn.view-details:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.5);
+}
+
+.division-active-fights {
+  margin-top: 15px;
+  padding: 15px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  border-left: 4px solid #ff6b6b;
+}
+
+body.light-mode .division-active-fights {
+  background: rgba(0, 0, 0, 0.05);
+  border-left: 4px solid #ff6b6b;
+}
+
+.division-active-fights h6 {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+body.light-mode .division-active-fights h6 {
+  color: #1a202c;
+}
+
+.mini-fight-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+body.light-mode .mini-fight-info {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.mini-fight-info .fight-participants {
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+body.light-mode .mini-fight-info .fight-participants {
+  color: #1a202c;
+}
+
+.mini-fight-info .fight-votes {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+}
+
+body.light-mode .mini-fight-info .fight-votes {
+  color: #64748b;
+}
+
+/* Division Detail Modal */
+.division-detail-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.division-detail-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(5px);
+}
+
+.division-detail-content {
+  position: relative;
+  z-index: 1001;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 25px;
+  padding: 30px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+body.light-mode .division-detail-content {
+  background: white;
+}
+
+.division-detail-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+body.light-mode .division-detail-header {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.detail-back-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .detail-back-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  color: #1a202c;
+}
+
+.detail-back-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-3px);
+}
+
+.division-detail-info {
+  flex: 1;
+}
+
+.division-detail-info h2 {
+  color: white;
+  font-size: 2rem;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+}
+
+body.light-mode .division-detail-info h2 {
+  color: #1a202c;
+}
+
+.division-detail-info p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 1rem;
+}
+
+body.light-mode .division-detail-info p {
+  color: #64748b;
+}
+
+.detail-champion-section {
+  background: rgba(255, 215, 0, 0.15);
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+body.light-mode .detail-champion-section {
+  background: rgba(255, 215, 0, 0.1);
+  border: 2px solid rgba(255, 215, 0, 0.6);
+}
+
+.detail-champion-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.detail-champion-badge .champion-icon {
+  font-size: 2rem;
+}
+
+.detail-champion-badge span:last-child {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+body.light-mode .detail-champion-badge span:last-child {
+  color: #1a202c;
+}
+
+.detail-champion-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.detail-champion-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(255, 215, 0, 0.8);
+}
+
+.detail-champion-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-champion-details {
+  flex: 1;
+}
+
+.detail-champion-details h4 {
+  color: white;
+  font-size: 1.4rem;
+  margin: 0 0 5px 0;
+  font-weight: 700;
+}
+
+body.light-mode .detail-champion-details h4 {
+  color: #1a202c;
+}
+
+.champion-title-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  margin: 5px 0;
+}
+
+body.light-mode .champion-title-text {
+  color: #64748b;
+}
+
+.detail-champion-stats {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.detail-champion-stats span {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+body.light-mode .detail-champion-stats span {
+  color: #64748b;
+}
+
+.detail-active-fights {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 15px;
+  padding: 20px;
+  margin-bottom: 25px;
+}
+
+body.light-mode .detail-active-fights {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.detail-active-fights h4 {
+  color: white;
+  font-size: 1.3rem;
+  margin: 0 0 15px 0;
+  font-weight: 600;
+}
+
+body.light-mode .detail-active-fights h4 {
+  color: #1a202c;
+}
+
+.detail-fights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-fight-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .detail-fight-item {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.detail-fight-item:hover {
+  transform: translateX(5px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.light-mode .detail-fight-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.detail-fight-participants {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  font-weight: 600;
+}
+
+body.light-mode .detail-fight-participants {
+  color: #1a202c;
+}
+
+.detail-fight-participants .vs-text {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+body.light-mode .detail-fight-participants .vs-text {
+  color: #94a3b8;
+}
+
+.detail-fight-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fight-type-badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+body.light-mode .fight-type-badge {
+  background: rgba(0, 0, 0, 0.05);
+  color: #1a202c;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+}
+
+.detail-action-btn {
+  flex: 1;
+  min-width: 200px;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 15px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  text-align: center;
+}
+
+.detail-action-btn.title-fight {
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.detail-action-btn.title-fight:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 215, 0, 0.6);
+}
+
+.detail-action-btn.contender-match {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.detail-action-btn.contender-match:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+}
+
+.detail-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+}
+
+.detail-stat-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .detail-stat-item {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.detail-stat-item:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.light-mode .detail-stat-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.detail-stat-item .stat-icon {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.detail-stat-item .stat-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 5px 0;
+  display: block;
+}
+
+body.light-mode .detail-stat-item .stat-label {
+  color: #64748b;
+}
+
+.detail-stat-item .stat-value {
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+body.light-mode .detail-stat-item .stat-value {
+  color: #1a202c;
+}
+
+/* Responsive adjustments for new elements */
+@media (max-width: 768px) {
+  .divisions-grid-moderator {
+    grid-template-columns: 1fr;
+  }
+
+  .division-stats-card {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .division-moderator-actions {
+    flex-direction: column;
+  }
+
+  .mod-action-btn {
+    width: 100%;
+  }
+
+  .division-detail-content {
+    padding: 20px;
+  }
+
+  .detail-actions {
+    flex-direction: column;
+  }
+
+  .detail-action-btn {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .detail-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* DivisionsPage Embedded Styles - Exact Copy */
+.divisions-page-embed {
+  margin: 20px 0;
+}
+
+.division-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 100%;
+  margin: 0 auto 50px;
+}
+
+/* Division Banner Wrapper with Schedule Overlay */
+.division-banner-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.schedule-overlay {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: rgba(12, 16, 26, 0.92);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 12px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 280px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+body.light-mode .schedule-overlay {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.schedule-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+body.light-mode .field-label {
+  color: #475569;
+}
+
+.schedule-field input[type="datetime-local"] {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 6px 10px;
+  color: white;
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.schedule-field input[type="datetime-local"]:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.schedule-field input[type="datetime-local"]:focus {
+  outline: none;
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .schedule-field input[type="datetime-local"] {
+  background: white;
+  border: 1px solid #e2e8f0;
+  color: #1e293b;
+}
+
+body.light-mode .schedule-field input[type="datetime-local"]:hover {
+  border-color: #cbd5e1;
+}
+
+body.light-mode .schedule-field input[type="datetime-local"]:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .schedule-actions {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.schedule-btn {
+  flex: 1;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.schedule-btn.save {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.schedule-btn.save:hover {
+  background: linear-gradient(135deg, #5568d3, #653a8c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
+}
+
+.schedule-btn.start {
+  background: linear-gradient(135deg, #28a745, #20c997);
+  color: white;
+}
+
+.schedule-btn.start:hover {
+  background: linear-gradient(135deg, #218838, #1aa179);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(40, 167, 69, 0.3);
+}
+
+.schedule-btn.end {
+  background: linear-gradient(135deg, #dc3545, #e74c3c);
+  color: white;
+}
+
+.schedule-btn.end:hover {
+  background: linear-gradient(135deg, #c82333, #d62c1a);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(220, 53, 69, 0.3);
+}
+
+.schedule-btn.remove {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+  grid-column: 1 / -1;
+  font-size: 0.9rem;
+  padding: 10px;
+}
+
+.schedule-btn.remove:hover {
+  background: linear-gradient(135deg, #5a6268, #343a40);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(108, 117, 125, 0.3);
+}
+
+.schedule-btn:active {
+  transform: translateY(0);
+}
+
+/* Scheduled Dates Display */
+.scheduled-dates {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.scheduled-date-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .scheduled-date-item {
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.date-icon {
+  font-size: 1.2rem;
+}
+
+.date-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.date-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+body.light-mode .date-label {
+  color: #64748b;
+}
+
+.date-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+body.light-mode .date-value {
+  color: #1e293b;
+}
+
+
+
+.category-banner {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  padding: 32px 36px;
+  border-radius: 24px;
+  border: 2px solid color-mix(in srgb, var(--banner-color) 45%, transparent);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--banner-color) 30%, #0b0f1c) 0%, #121827 55%, #0b0f1c 100%);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  text-align: left;
+  color: white;
+  cursor: pointer;
+  overflow: hidden;
+  display: block;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.category-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 38%;
+  background-image: var(--banner-image);
+  background-size: cover;
+  background-position: center var(--banner-pos-y, 0%);
+  background-repeat: no-repeat;
+  border-left: 2px solid color-mix(in srgb, var(--banner-color) 60%, transparent);
+}
+
+.category-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 45%);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.category-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  right: 0;
+  width: 100%;
+  background: linear-gradient(90deg, rgba(12, 16, 26, 0.32) 0%, rgba(12, 16, 26, 0.5) 55%, rgba(12, 16, 26, 0.72) 100%);
+  pointer-events: none;
+}
+
+.category-banner:not(.locked):hover {
+  transform: translateY(-6px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+  border-color: color-mix(in srgb, var(--banner-color) 70%, white);
+}
+
+.category-banner.locked {
+  cursor: not-allowed;
+  opacity: 1;
+  filter: grayscale(0.12) brightness(0.96);
+}
+
+.category-banner.locked::after {
+  opacity: 0.3;
+}
+
+.category-banner:disabled {
+  cursor: not-allowed;
+}
+
+.category-content {
+  position: relative;
+  z-index: 2;
+  max-width: 38%;
+  padding-right: 18px;
+}
+
+.category-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.category-name {
+  font-size: 1.8rem;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  color: white;
+}
+
+.category-lock {
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: rgba(12, 16, 26, 0.6);
+}
+
+.category-description {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.category-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.category-season {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+/* Light mode tweaks for banner cards */
+body.light-mode .category-banner {
+  background: linear-gradient(120deg, color-mix(in srgb, var(--banner-color) 30%, #f4f6fb) 0%, #eef2f8 55%, #e6ecf5 100%);
+  border-color: color-mix(in srgb, var(--banner-color) 35%, #e3e8f0);
+  color: #0f172a;
+}
+
+body.light-mode .category-banner::after {
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.65) 0%, rgba(255, 255, 255, 0.45) 55%, rgba(255, 255, 255, 0.2) 100%);
+}
+
+body.light-mode .category-description {
+  color: #1f2937;
+}
+
+body.light-mode .category-season {
+  color: #334155;
+}
+
+body.light-mode .category-lock {
+  background: rgba(255, 255, 255, 0.85);
+  color: #111827;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+}
+
+body.light-mode .category-name {
+  color: #0f172a;
+}
+
+/* Division Detail View - Moderator */
+.division-detail-view-mod {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 30px;
+  margin: 30px 0;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+body.light-mode .division-detail-view-mod {
+  background: white;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.division-detail-header-mod {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+body.light-mode .division-detail-header-mod {
+  border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+}
+
+.detail-back-btn-mod {
+  background: rgba(255, 255, 255, 0.15);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .detail-back-btn-mod {
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid rgba(0, 0, 0, 0.15);
+  color: #1a202c;
+}
+
+.detail-back-btn-mod:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateX(-4px);
+}
+
+.division-detail-info-mod {
+  flex: 1;
+}
+
+.division-detail-info-mod h2 {
+  color: white;
+  font-size: 2.2rem;
+  margin: 0 0 8px 0;
+  font-weight: 800;
+}
+
+body.light-mode .division-detail-info-mod h2 {
+  color: #1a202c;
+}
+
+.division-detail-info-mod p {
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+body.light-mode .division-detail-info-mod p {
+  color: #64748b;
+}
+
+/* Champion Display */
+.champion-display-mod {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.2), rgba(255, 165, 0, 0.15));
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 25px;
+}
+
+body.light-mode .champion-display-mod {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 165, 0, 0.05));
+  border: 2px solid rgba(255, 215, 0, 0.7);
+}
+
+.champion-badge-mod {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.champion-badge-mod .champion-icon {
+  font-size: 2.5rem;
+}
+
+.champion-badge-mod span:last-child {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+body.light-mode .champion-badge-mod span:last-child {
+  color: #1a202c;
+}
+
+.champion-info-display {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.champion-avatar-mod {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid rgba(255, 215, 0, 0.9);
+  box-shadow: 0 8px 20px rgba(255, 215, 0, 0.4);
+}
+
+.champion-image-mod {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.champion-details-mod {
+  flex: 1;
+}
+
+.champion-details-mod h4 {
+  color: white;
+  font-size: 1.6rem;
+  margin: 0 0 8px 0;
+  font-weight: 800;
+}
+
+body.light-mode .champion-details-mod h4 {
+  color: #1a202c;
+}
+
+.champion-title-mod {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1rem;
+  margin: 5px 0;
+}
+
+body.light-mode .champion-title-mod {
+  color: #64748b;
+}
+
+.champion-stats-mod {
+  display: flex;
+  gap: 18px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.champion-stats-mod span {
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 8px;
+}
+
+body.light-mode .champion-stats-mod span {
+  color: #1a202c;
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.champion-team-mod {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+body.light-mode .champion-team-mod {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.champion-team-mod .team-label {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-right: 8px;
+}
+
+body.light-mode .champion-team-mod .team-label {
+  color: #64748b;
+}
+
+.champion-team-mod .team-characters {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.champion-team-mod .team-characters span {
+  color: white;
+  font-weight: 600;
+}
+
+body.light-mode .champion-team-mod .team-characters span {
+  color: #1a202c;
+}
+
+.champion-team-mod .vs-sep {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+}
+
+body.light-mode .champion-team-mod .vs-sep {
+  color: #94a3b8;
+}
+
+/* Active Fights Display */
+.active-fights-display-mod {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  padding: 25px;
+  margin-bottom: 25px;
+  border-left: 4px solid #ff6b6b;
+}
+
+body.light-mode .active-fights-display-mod {
+  background: rgba(0, 0, 0, 0.04);
+  border-left: 4px solid #ff6b6b;
+}
+
+.active-fights-display-mod h4 {
+  color: white;
+  font-size: 1.4rem;
+  margin: 0 0 18px 0;
+  font-weight: 700;
+}
+
+body.light-mode .active-fights-display-mod h4 {
+  color: #1a202c;
+}
+
+.fights-list-mod {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fight-item-mod {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .fight-item-mod {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.fight-item-mod:hover {
+  transform: translateX(6px);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+body.light-mode .fight-item-mod:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.fight-participants-mod {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.fight-participants-mod .participant-name {
+  color: white;
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+body.light-mode .fight-participants-mod .participant-name {
+  color: #1a202c;
+}
+
+.fight-participants-mod .vs-text-mod {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+body.light-mode .fight-participants-mod .vs-text-mod {
+  color: #94a3b8;
+}
+
+.fight-meta-mod {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.fight-type-mod {
+  padding: 5px 12px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: white;
+}
+
+body.light-mode .fight-type-mod {
+  background: rgba(0, 0, 0, 0.08);
+  color: #1a202c;
+}
+
+.fight-votes-mod,
+.fight-timer-mod {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+body.light-mode .fight-votes-mod,
+body.light-mode .fight-timer-mod {
+  color: #64748b;
+}
+
+/* Division Management Actions */
+.division-management-actions {
+  display: flex;
+  gap: 16px;
+  margin: 25px 0;
+  flex-wrap: wrap;
+}
+
+.manage-btn {
+  flex: 1;
+  min-width: 220px;
+  padding: 16px 24px;
+  border: none;
+  border-radius: 14px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+.title-fight-btn-mod {
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+}
+
+.title-fight-btn-mod:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(255, 215, 0, 0.5);
+}
+
+.contender-match-btn-mod {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a6f);
+}
+
+.contender-match-btn-mod:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(255, 107, 107, 0.5);
+}
+
+/* Division Stats Display */
+.division-stats-display-mod {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 25px;
+}
+
+.stat-box-mod {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 22px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .stat-box-mod {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.stat-box-mod:hover {
+  transform: translateY(-4px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.light-mode .stat-box-mod:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.stat-icon-mod {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.stat-label-mod {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+  margin: 8px 0;
+}
+
+body.light-mode .stat-label-mod {
+  color: #64748b;
+}
+
+.stat-value-mod {
+  color: white;
+  font-size: 2rem;
+  font-weight: 800;
+  display: block;
+}
+
+body.light-mode .stat-value-mod {
+  color: #1a202c;
+}
+
+.divisions-moderator-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.divisions-moderator-header h3 {
+  color: white;
+  font-size: 2.2rem;
+  margin-bottom: 10px;
+  font-weight: 800;
+}
+
+body.light-mode .divisions-moderator-header h3 {
+  color: #1a202c;
+}
+
+.divisions-moderator-header p {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 1.1rem;
+}
+
+body.light-mode .divisions-moderator-header p {
+  color: #64748b;
+}
+
+.moderator-actions-header {
+  margin-top: 15px;
+  display: flex;
+  justify-content: center;
+}
+
+/* Compact Divisions List */
+.divisions-compact-list {
+  margin: 30px 0;
+  padding: 25px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+}
+
+body.light-mode .divisions-compact-list {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.divisions-compact-list h4 {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  font-weight: 700;
+}
+
+body.light-mode .divisions-compact-list h4 {
+  color: #1a202c;
+}
+
+.compact-divisions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.compact-division-item {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  transition: all 0.3s ease;
+}
+
+body.light-mode .compact-division-item {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.compact-division-item:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+body.light-mode .compact-division-item:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.compact-division-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+}
+
+.division-icon-compact {
+  font-size: 2rem;
+}
+
+.division-name-compact h5 {
+  color: white;
+  font-size: 1.05rem;
+  margin: 0;
+  font-weight: 700;
+}
+
+body.light-mode .division-name-compact h5 {
+  color: #1a202c;
+}
+
+.division-name-compact .division-tier {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+body.light-mode .division-name-compact .division-tier {
+  color: #64748b;
+}
+
+.compact-division-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.compact-division-stats span {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+body.light-mode .compact-division-stats span {
+  color: #64748b;
+}
+
+.compact-division-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.compact-view-btn,
+.compact-action-btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+.compact-view-btn {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+.compact-view-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(79, 172, 254, 0.4);
+}
+
+.compact-action-btn {
+  background: linear-gradient(135deg, #ffd700, #ffaa00);
+  min-width: 40px;
+}
+
+.compact-action-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
 }
