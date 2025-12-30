@@ -30,6 +30,10 @@ const ModeratorPanel = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [postToDelete, setPostToDelete] = useState(null);
   const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [feedback, setFeedback] = useState([]);
+  const [feedbackFilter, setFeedbackFilter] = useState('all');
+  const [showDeleteFeedbackModal, setShowDeleteFeedbackModal] = useState(false);
+  const [feedbackToDelete, setFeedbackToDelete] = useState(null);
   
   // Fight creation state
   const [newFight, setNewFight] = useState({
@@ -222,7 +226,7 @@ const ModeratorPanel = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, divisionsRes] = await Promise.all([
+      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, divisionsRes, feedbackRes] = await Promise.all([
         axios.get('/api/posts/official'),
         axios.get('/api/posts'),
         axios.get('/api/profile/all', {
@@ -234,7 +238,10 @@ const ModeratorPanel = () => {
         }).catch(() => ({ data: [] })), // Fallback if betting not available
         axios.get('/api/divisions/stats', {
           headers: { 'x-auth-token': token }
-        }).catch(() => ({ data: {} })) // Fallback if divisions not available
+        }).catch(() => ({ data: {} })), // Fallback if divisions not available
+        axios.get('/api/feedback', {
+          headers: { 'x-auth-token': token }
+        }).catch(() => ({ data: [] })) // Fallback if feedback not available
       ]);
 
       setFights(fightsRes.data.fights || fightsRes.data);
@@ -243,6 +250,7 @@ const ModeratorPanel = () => {
       setCharacters(charactersRes.data);
       setBets(betsRes.data || []);
       setDivisionStats(divisionsRes.data || {});
+      setFeedback(feedbackRes.data || []);
       
       // Fetch divisions data
       await Promise.all([fetchDivisions(), fetchSeasons()]);
@@ -378,6 +386,58 @@ const ModeratorPanel = () => {
     }
   };
 
+  const handleUpdateFeedback = async (feedbackId, status, notes = '') => {
+    try {
+      await axios.put(`/api/feedback/${feedbackId}`, 
+        { status, adminNotes: notes },
+        { headers: { 'x-auth-token': token } }
+      );
+      
+      showNotification(t('moderatorPanel.feedbackUpdated'), 'success');
+      fetchData();
+    } catch (error) {
+      console.error('Error updating feedback:', error);
+      showNotification(t('moderatorPanel.errorUpdating'), 'error');
+    }
+  };
+
+  const handleDeleteFeedback = async (feedbackId) => {
+    setFeedbackToDelete(feedbackId);
+    setShowDeleteFeedbackModal(true);
+  };
+
+  const confirmDeleteFeedback = async () => {
+    if (!feedbackToDelete) return;
+
+    try {
+      await axios.delete(`/api/feedback/${feedbackToDelete}`, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      showNotification(t('moderatorPanel.feedbackDeleted'), 'success');
+      fetchData();
+      setShowDeleteFeedbackModal(false);
+      setFeedbackToDelete(null);
+    } catch (error) {
+      console.error('Error deleting feedback:', error);
+      showNotification(t('moderatorPanel.errorDeleting'), 'error');
+    }
+  };
+
+  const handleApproveCharacter = async (feedbackId) => {
+    try {
+      await axios.post(`/api/feedback/${feedbackId}/approve-character`, {}, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      showNotification(t('moderatorPanel.characterApproved'), 'success');
+      fetchData();
+    } catch (error) {
+      console.error('Error approving character:', error);
+      showNotification(t('moderatorPanel.errorApproving'), 'error');
+    }
+  };
+
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString('pl-PL');
   };
@@ -445,11 +505,11 @@ const ModeratorPanel = () => {
         },
         { headers: { 'x-auth-token': token } }
       );
-      showNotification(season.startAt || season.endAt ? 'Harmonogram sezonu zapisany' : 'Harmonogram usunięty', 'success');
+      showNotification(season.startAt || season.endAt ? t('moderatorPanel.scheduleSaved') : t('moderatorPanel.scheduleRemoved'), 'success');
       fetchSeasons();
     } catch (error) {
       console.error('Error scheduling season:', error);
-      showNotification('Błąd zapisu harmonogramu', 'error');
+      showNotification(t('moderatorPanel.errorSchedule'), 'error');
     }
   };
 
@@ -460,11 +520,11 @@ const ModeratorPanel = () => {
         {},
         { headers: { 'x-auth-token': token } }
       );
-      showNotification('Sezon uruchomiony', 'success');
+      showNotification(t('moderatorPanel.seasonStarted'), 'success');
       fetchSeasons();
     } catch (error) {
       console.error('Error activating season:', error);
-      showNotification('Błąd uruchamiania sezonu', 'error');
+      showNotification(t('moderatorPanel.errorActivating'), 'error');
     }
   };
 
@@ -475,11 +535,11 @@ const ModeratorPanel = () => {
         {},
         { headers: { 'x-auth-token': token } }
       );
-      showNotification('Sezon został zablokowany', 'success');
+      showNotification(t('moderatorPanel.seasonEnded'), 'success');
       fetchSeasons();
     } catch (error) {
       console.error('Error deactivating season:', error);
-      showNotification('Błąd blokowania sezonu', 'error');
+      showNotification(t('moderatorPanel.errorEnding'), 'error');
     }
   };
 
@@ -572,37 +632,37 @@ const ModeratorPanel = () => {
           className={`tab-btn ${activeTab === 'fights' ? 'active' : ''}`}
           onClick={() => setActiveTab('fights')}
         >
-          ⚔️ Walki Główne
+          ⚔️ {t('moderatorPanel.officialFights')}
         </button>
         <button
           className={`tab-btn ${activeTab === 'divisions' ? 'active' : ''}`}
           onClick={() => setActiveTab('divisions')}
         >
-          🏆 Dywizje & Sezony
+          🏆 {t('moderatorPanel.divisions')}
         </button>
         <button
           className={`tab-btn ${activeTab === 'posts' ? 'active' : ''}`}
           onClick={() => setActiveTab('posts')}
         >
-          📝 Zarządzaj Postami
+          📝 {t('moderatorPanel.managePosts')}
         </button>
         <button
           className={`tab-btn ${activeTab === 'users' ? 'active' : ''}`}
           onClick={() => setActiveTab('users')}
         >
-          👥 Użytkownicy
+          👥 {t('moderatorPanel.users')}
         </button>
         <button
           className={`tab-btn ${activeTab === 'betting' ? 'active' : ''}`}
           onClick={() => setActiveTab('betting')}
         >
-          💰 Zakłady
+          💰 {t('moderatorPanel.betting')}
         </button>
         <button
-          className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}
+          className={`tab-btn ${activeTab === 'feedback' ? 'active' : ''}`}
+          onClick={() => setActiveTab('feedback')}
         >
-          📊 Statystyki
+          📋 {t('moderatorPanel.feedback')}
         </button>
       </div>
 
@@ -610,45 +670,45 @@ const ModeratorPanel = () => {
         {activeTab === 'fights' && (
           <div className="fights-section">
             <div className="create-fight-card">
-              <h3>🌟 Stwórz Walkę Główną</h3>
+              <h3>🌟 {t('moderatorPanel.createFight')}</h3>
               <form onSubmit={handleFightSubmit} className="fight-form">
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Tytuł walki</label>
+                    <label>{t('moderatorPanel.fightTitle')}</label>
                     <input
                       type="text"
                       value={newFight.title}
                       onChange={(e) => setNewFight({...newFight, title: e.target.value})}
-                      placeholder="np. Epicki pojedynek: Batman vs Superman"
+                      placeholder={t('moderatorPanel.fightTitlePlaceholder')}
                       required
                     />
                   </div>
                   <div className="form-group">
-                    <label>Kategoria</label>
+                    <label>{t('moderatorPanel.category')}</label>
                     <select
                       value={newFight.category}
                       onChange={(e) => setNewFight({...newFight, category: e.target.value})}
                     >
-                      <option value="Main Event">Main Event</option>
-                      <option value="Co-Main Event">Co-Main Event</option>
-                      <option value="Featured Fight">Featured Fight</option>
-                      <option value="Special Event">Special Event</option>
+                      <option value="Main Event">{t('moderatorPanel.mainEvent')}</option>
+                      <option value="Co-Main Event">{t('moderatorPanel.coMainEvent')}</option>
+                      <option value="Featured Fight">{t('moderatorPanel.featuredFight')}</option>
+                      <option value="Special Event">{t('moderatorPanel.specialEvent')}</option>
                     </select>
                   </div>
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Postać 1</label>
+                    <label>{t('moderatorPanel.character1')}</label>
                     <CharacterSelector
                       characters={characters}
                       selectedCharacter={newFight.character1}
                       onSelect={(character) => setNewFight({...newFight, character1: character})}
                     />
                   </div>
-                  <div className="vs-divider">VS</div>
+                  <div className="vs-divider">{t('moderatorPanel.vs')}</div>
                   <div className="form-group">
-                    <label>Postać 2</label>
+                    <label>{t('moderatorPanel.character2')}</label>
                     <CharacterSelector
                       characters={characters}
                       selectedCharacter={newFight.character2}
@@ -658,11 +718,11 @@ const ModeratorPanel = () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Opis walki</label>
+                  <label>{t('moderatorPanel.fightDescription')}</label>
                   <textarea
                     value={newFight.description}
                     onChange={(e) => setNewFight({...newFight, description: e.target.value})}
-                    placeholder="Opisz tę epicką walkę..."
+                    placeholder={t('moderatorPanel.fightDescriptionPlaceholder')}
                     rows="4"
                     required
                   />
@@ -676,33 +736,33 @@ const ModeratorPanel = () => {
                       onChange={(e) => setNewFight({...newFight, featured: e.target.checked})}
                     />
                     <span className="checkmark"></span>
-                    Wyróżnij na stronie głównej
+                    {t('moderatorPanel.featureFight')}
                   </label>
                 </div>
 
                 <button type="submit" className="create-btn" disabled={loading}>
-                  {loading ? '⏳ Tworzenie...' : '🚀 Stwórz Walkę'}
+                  {loading ? `⏳ ${t('moderatorPanel.creating')}` : `🚀 ${t('moderatorPanel.createFightBtn')}`}
                 </button>
               </form>
             </div>
 
             <div className="existing-fights">
-              <h3>🎯 Istniejące Walki Oficjalne</h3>
+              <h3>🎯 {t('moderatorPanel.existingFights')}</h3>
               <div className="fights-grid">
                 {fights.map(fight => (
                   <div key={fight.id} className="fight-card">
                     <div className="fight-header">
                       <h4>{fight.title}</h4>
                       <div className="fight-badges">
-                        <span className="badge badge-official">🛡️ Oficjalna</span>
-                        {fight.featured && <span className="badge badge-featured">⭐ Wyróżnione</span>}
+                        <span className="badge badge-official">🛡️ {t('moderatorPanel.official')}</span>
+                        {fight.featured && <span className="badge badge-featured">⭐ {t('moderatorPanel.featuredBadge')}</span>}
                         {fight.category && <span className="badge badge-category">{fight.category}</span>}
                       </div>
                     </div>
                     <div className="fight-details">
                       <div className="fighters">
                         <span className="fighter">{fight.teamA}</span>
-                        <span className="vs">VS</span>
+                        <span className="vs">{t('moderatorPanel.vs')}</span>
                         <span className="fighter">{fight.teamB}</span>
                       </div>
                       <div className="fight-stats">
@@ -712,7 +772,7 @@ const ModeratorPanel = () => {
                       </div>
                       <div className="fight-meta">
                         <span className="fight-date">{formatDate(fight.createdAt)}</span>
-                        <span className="fight-status">{fight.fight?.status === 'active' ? '🟢 Aktywna' : '🔴 Zakończona'}</span>
+                        <span className="fight-status">{fight.fight?.status === 'active' ? `🟢 ${t('moderatorPanel.active')}` : `🔴 ${t('moderatorPanel.finished')}`}</span>
                       </div>
                     </div>
                     <div className="fight-actions">
@@ -720,20 +780,20 @@ const ModeratorPanel = () => {
                         onClick={() => handleFeaturePost(fight.id, fight.featured)}
                         className="feature-btn"
                       >
-                        {fight.featured ? '⭐ Usuń wyróżnienie' : '⭐ Wyróżnij'}
+                        {fight.featured ? `⭐ ${t('moderatorPanel.removeFeature')}` : `⭐ ${t('moderatorPanel.featurePost')}`}
                       </button>
                       <button 
                         onClick={() => handleDeletePost(fight.id)}
                         className="delete-btn"
                       >
-                        🗑️ Usuń
+                        🗑️ {t('moderatorPanel.deletePost')}
                       </button>
                     </div>
                   </div>
                 ))}
                 {fights.length === 0 && (
                   <div className="no-fights">
-                    <p>Brak oficjalnych walk. Stwórz pierwszą walkę!</p>
+                    <p>{t('moderatorPanel.noFights')}</p>
                   </div>
                 )}
               </div>
@@ -744,8 +804,8 @@ const ModeratorPanel = () => {
         {activeTab === 'divisions' && (
           <div className="divisions-section">
             <div className="divisions-moderator-header">
-              <h3>🏆 System Dywizji - Panel Moderatora</h3>
-              <p>Pełne zarządzanie dywizjami, sezonami i walkami</p>
+              <h3>🏆 {t('moderatorPanel.divisionsSystem')}</h3>
+              <p>{t('moderatorPanel.divisionsManagement')}</p>
             </div>
 
             {/* Full DivisionsPage Categories View - with Schedule Management Overlay */}
@@ -794,14 +854,14 @@ const ModeratorPanel = () => {
                             <div className="scheduled-date-item">
                               <span className="date-icon">📅</span>
                               <div className="date-info">
-                                <span className="date-label">Start</span>
+                                <span className="date-label">{t('moderatorPanel.start')}</span>
                                 <span className="date-value">{new Date(season.startAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
                               </div>
                             </div>
                             <div className="scheduled-date-item">
                               <span className="date-icon">🏁</span>
                               <div className="date-info">
-                                <span className="date-label">Koniec</span>
+                                <span className="date-label">{t('moderatorPanel.end')}</span>
                                 <span className="date-value">{new Date(season.endAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
                               </div>
                             </div>
@@ -823,17 +883,17 @@ const ModeratorPanel = () => {
                                     },
                                     { headers: { 'x-auth-token': token } }
                                   );
-                                  showNotification('Harmonogram usunięty', 'success');
+                                  showNotification(t('moderatorPanel.scheduleRemoved'), 'success');
                                   fetchSeasons();
                                 } catch (error) {
                                   console.error('Error removing schedule:', error);
-                                  showNotification('Błąd usuwania harmonogramu', 'error');
+                                  showNotification(t('moderatorPanel.errorSchedule'), 'error');
                                 }
                               }}
                               className="schedule-btn remove"
-                              title="Usuń harmonogram"
+                              title={t('moderatorPanel.removeSchedule')}
                             >
-                              🗑️ Usuń
+                              🗑️ {t('moderatorPanel.remove')}
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleStartSeasonNow(season.id); }}
@@ -1047,7 +1107,7 @@ const ModeratorPanel = () => {
 
         {activeTab === 'posts' && (
           <div className="posts-section">
-            <h3>📝 Wszystkie Posty</h3>
+            <h3>📝 {t('moderatorPanel.allPostsTitle')}</h3>
             <div className="posts-list">
               {posts.map(post => (
                 <div key={post.id} className="post-card">
@@ -1055,9 +1115,9 @@ const ModeratorPanel = () => {
                     <div className="post-info">
                       <h4>{post.title}</h4>
                       <p className="post-meta">
-                        Autor: {post.author?.username || 'Nieznany'} • 
+                        {t('moderatorPanel.author')}: {post.author?.username || 'Nieznany'} • 
                         {formatDate(post.createdAt)} • 
-                        Typ: {post.type}
+                        {t('moderatorPanel.type')}: {post.type}
                       </p>
                     </div>
                     <div className="post-stats">
@@ -1073,13 +1133,13 @@ const ModeratorPanel = () => {
                       onClick={() => handleFeaturePost(post.id, post.featured)}
                       className="feature-btn"
                     >
-                      {post.featured ? '⭐ Usuń wyróżnienie' : '⭐ Wyróżnij'}
+                      {post.featured ? `⭐ ${t('moderatorPanel.removeFeature')}` : `⭐ ${t('moderatorPanel.featurePost')}`}
                     </button>
                     <button 
                       onClick={() => handleDeletePost(post.id)}
                       className="delete-btn"
                     >
-                      🗑️ Usuń
+                      🗑️ {t('moderatorPanel.deletePost')}
                     </button>
                   </div>
                 </div>
@@ -1091,11 +1151,11 @@ const ModeratorPanel = () => {
         {activeTab === 'users' && (
           <div className="users-section">
             <div className="users-header">
-              <h3>👥 Zarządzanie Użytkownikami</h3>
+              <h3>👥 {t('moderatorPanel.userManagement')}</h3>
               <div className="user-search-bar">
                 <input
                   type="text"
-                  placeholder="🔍 Szukaj użytkownika..."
+                  placeholder={`🔍 ${t('moderatorPanel.searchUser')}`}
                   value={userSearchQuery}
                   onChange={(e) => setUserSearchQuery(e.target.value)}
                   className="user-search-input"
@@ -1132,7 +1192,7 @@ const ModeratorPanel = () => {
                       onClick={() => navigate(`/profile/${user.id}`)}
                       className="view-btn"
                     >
-                      👁️ Zobacz profil
+                      👁️ {t('moderatorPanel.viewProfile')}
                     </button>
                   </div>
                 </div>
@@ -1142,7 +1202,7 @@ const ModeratorPanel = () => {
                 user.id.toString().includes(userSearchQuery)
               ).length === 0 && (
                 <div className="no-users-found">
-                  <p>Nie znaleziono użytkowników spełniających kryteria wyszukiwania</p>
+                  <p>{t('moderatorPanel.noUsersFound')}</p>
                 </div>
               )}
             </div>
@@ -1151,87 +1211,87 @@ const ModeratorPanel = () => {
 
         {activeTab === 'betting' && (
           <div className="betting-section">
-            <h3>💰 Zarządzanie Zakładami</h3>
+            <h3>💰 {t('moderatorPanel.bettingManagement')}</h3>
             
             <div className="betting-stats">
               <div className="stat-card">
                 <div className="stat-icon">🎯</div>
                 <div className="stat-info">
                   <h4>{bets.length}</h4>
-                  <p>Wszystkich Zakładów</p>
+                  <p>{t('moderatorPanel.totalBets')}</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon">⏳</div>
                 <div className="stat-info">
                   <h4>{bets.filter(bet => bet.status === 'pending').length}</h4>
-                  <p>Oczekujących</p>
+                  <p>{t('moderatorPanel.pendingBets')}</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon">✅</div>
                 <div className="stat-info">
                   <h4>{bets.filter(bet => bet.status === 'won').length}</h4>
-                  <p>Wygranych</p>
+                  <p>{t('moderatorPanel.wonBets')}</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon">❌</div>
                 <div className="stat-info">
                   <h4>{bets.filter(bet => bet.status === 'lost').length}</h4>
-                  <p>Przegranych</p>
+                  <p>{t('moderatorPanel.lostBets')}</p>
                 </div>
               </div>
             </div>
 
             <div className="bets-list">
-              <h4>🎲 Wszystkie Zakłady</h4>
+              <h4>🎲 {t('moderatorPanel.allBets')}</h4>
               {bets.length > 0 ? (
                 <div className="bets-grid">
                   {bets.map(bet => (
                     <div key={bet._id} className="bet-card">
                       <div className="bet-header">
                         <div className="bet-info">
-                          <h5>{bet.type === 'single' ? '🎯 Pojedynczy' : '🎰 Parlay'}</h5>
+                          <h5>{bet.type === 'single' ? `🎯 ${t('moderatorPanel.singleBet')}` : `🎰 ${t('moderatorPanel.parlayBet')}`}</h5>
                           <span className={`bet-status status-${bet.status}`}>
-                            {bet.status === 'pending' && '⏳ Oczekujący'}
-                            {bet.status === 'won' && '✅ Wygrany'}
-                            {bet.status === 'lost' && '❌ Przegrany'}
-                            {bet.status === 'refunded' && '🔄 Zwrócony'}
+                            {bet.status === 'pending' && `⏳ ${t('moderatorPanel.betStatus.pending')}`}
+                            {bet.status === 'won' && `✅ ${t('moderatorPanel.betStatus.won')}`}
+                            {bet.status === 'lost' && `❌ ${t('moderatorPanel.betStatus.lost')}`}
+                            {bet.status === 'refunded' && `🔄 ${t('moderatorPanel.betStatus.refunded')}`}
                           </span>
                         </div>
                         <div className="bet-amounts">
-                          <div className="bet-amount">Stawka: {formatCurrency(bet.amount)}</div>
+                          <div className="bet-amount">{t('moderatorPanel.betDetails.stake')}: {formatCurrency(bet.amount)}</div>
                           <div className="potential-winnings">
-                            Potencjalna wygrana: {formatCurrency(bet.potentialWinnings)}
+                            {t('moderatorPanel.betDetails.potentialWinnings')}: {formatCurrency(bet.potentialWinnings)}
                           </div>
                         </div>
                       </div>
 
                       <div className="bet-details">
                         <div className="bet-user">
-                          <strong>Użytkownik:</strong> {bet.userId?.username || bet.userId}
+                          <strong>{t('moderatorPanel.betDetails.user')}:</strong> {bet.userId?.username || bet.userId}
                         </div>
                         <div className="bet-date">
-                          <strong>Data:</strong> {formatDate(bet.createdAt)}
+                          <strong>{t('moderatorPanel.betDetails.date')}:</strong> {formatDate(bet.createdAt)}
                         </div>
                         
                         {bet.type === 'single' ? (
                           <div className="single-bet-details">
                             <div className="fight-info">
-                              <strong>Walka:</strong> {bet.fightId?.title || 'Nieznana walka'}
+                              <strong>{t('moderatorPanel.betDetails.fight')}:</strong> {bet.fightId?.title || t('moderatorPanel.unknownFight')}
                             </div>
                             <div className="selected-team">
-                              <strong>Wybrana drużyna:</strong> {bet.selectedTeam}
+                              <strong>{t('moderatorPanel.betDetails.selectedTeam')}:</strong> {bet.selectedTeam}
                             </div>
                             <div className="odds">
-                              <strong>Kursy:</strong> {bet.odds}
+                              <strong>{t('moderatorPanel.betDetails.odds')}:</strong> {bet.odds}
                             </div>
                           </div>
                         ) : (
                           <div className="parlay-bet-details">
                             <div className="parlay-fights">
-                              <strong>Walki w parlay:</strong>
+                              <strong>{t('moderatorPanel.betDetails.parlayFights')}:</strong>
                               {bet.fights?.map((fight, index) => (
                                 <div key={index} className="parlay-fight">
                                   • {fight.fightTitle} - {fight.selectedTeam} ({fight.odds})
@@ -1239,14 +1299,14 @@ const ModeratorPanel = () => {
                               ))}
                             </div>
                             <div className="total-odds">
-                              <strong>Łączne kursy:</strong> {bet.totalOdds}
+                              <strong>{t('moderatorPanel.betDetails.totalOdds')}:</strong> {bet.totalOdds}
                             </div>
                           </div>
                         )}
 
                         {bet.insurance && (
                           <div className="insurance-info">
-                            <span className="insurance-badge">🛡️ Ubezpieczony</span>
+                            <span className="insurance-badge">🛡️ {t('moderatorPanel.betDetails.insured')}</span>
                           </div>
                         )}
                       </div>
@@ -1257,26 +1317,26 @@ const ModeratorPanel = () => {
                             onClick={() => handleSettleBet(bet._id, 'won')}
                             className="settle-btn win-btn"
                           >
-                            ✅ Oznacz jako wygrany
+                            ✅ {t('moderatorPanel.betActions.markWon')}
                           </button>
                           <button
                             onClick={() => handleSettleBet(bet._id, 'lost')}
                             className="settle-btn lose-btn"
                           >
-                            ❌ Oznacz jako przegrany
+                            ❌ {t('moderatorPanel.betActions.markLost')}
                           </button>
                           <button
                             onClick={() => handleRefundBet(bet._id)}
                             className="refund-btn"
                           >
-                            🔄 Zwróć zakład
+                            🔄 {t('moderatorPanel.betActions.refund')}
                           </button>
                         </div>
                       )}
 
                       {bet.status === 'won' && bet.actualWinnings && (
                         <div className="actual-winnings">
-                          <strong>Rzeczywista wygrana:</strong> {formatCurrency(bet.actualWinnings)}
+                          <strong>{t('moderatorPanel.betDetails.actualWinnings')}:</strong> {formatCurrency(bet.actualWinnings)}
                         </div>
                       )}
                     </div>
@@ -1284,45 +1344,140 @@ const ModeratorPanel = () => {
                 </div>
               ) : (
                 <div className="no-bets">
-                  <p>Brak zakładów do wyświetlenia.</p>
+                  <p>{t('moderatorPanel.noBets')}</p>
                 </div>
               )}
             </div>
           </div>
         )}
 
-        {activeTab === 'stats' && (
-          <div className="stats-section">
-            <h3>📊 Statystyki Platformy</h3>
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon">👥</div>
-                <div className="stat-info">
-                  <h4>{users.length}</h4>
-                  <p>Użytkowników</p>
-                </div>
+        {activeTab === 'feedback' && (
+          <div className="feedback-section">
+            <div className="feedback-header">
+              <h3>📋 {t('moderatorPanel.feedbackManagement')}</h3>
+              <div className="feedback-filters">
+                <button
+                  className={`filter-btn ${feedbackFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setFeedbackFilter('all')}
+                >
+                  {t('moderatorPanel.filterAll')}
+                </button>
+                <button
+                  className={`filter-btn ${feedbackFilter === 'pending' ? 'active' : ''}`}
+                  onClick={() => setFeedbackFilter('pending')}
+                >
+                  {t('moderatorPanel.filterPending')}
+                </button>
+                <button
+                  className={`filter-btn ${feedbackFilter === 'reviewed' ? 'active' : ''}`}
+                  onClick={() => setFeedbackFilter('reviewed')}
+                >
+                  {t('moderatorPanel.filterReviewed')}
+                </button>
+                <button
+                  className={`filter-btn ${feedbackFilter === 'resolved' ? 'active' : ''}`}
+                  onClick={() => setFeedbackFilter('resolved')}
+                >
+                  {t('moderatorPanel.filterResolved')}
+                </button>
+                <button
+                  className={`filter-btn ${feedbackFilter === 'dismissed' ? 'active' : ''}`}
+                  onClick={() => setFeedbackFilter('dismissed')}
+                >
+                  {t('moderatorPanel.filterDismissed')}
+                </button>
               </div>
-              <div className="stat-card">
-                <div className="stat-icon">📝</div>
-                <div className="stat-info">
-                  <h4>{posts.length}</h4>
-                  <p>Postów</p>
+            </div>
+            <div className="feedback-list">
+              {feedback
+                .filter(f => feedbackFilter === 'all' || f.status === feedbackFilter)
+                .map(item => (
+                  <div key={item.id} className={`feedback-card status-${item.status}`}>
+                    <div className="feedback-card-header">
+                      <div className="feedback-type-badge">
+                        {t(`moderatorPanel.feedbackType.${item.type}`)}
+                      </div>
+                      <div className="feedback-status-badge">
+                        {t(`moderatorPanel.feedbackStatus.${item.status}`)}
+                      </div>
+                    </div>
+                    <h4 className="feedback-title">{item.title}</h4>
+                    <p className="feedback-description">{item.description}</p>
+                    {item.reportedUser && (
+                      <div className="feedback-reported-user">
+                        <strong>{t('moderatorPanel.reportedUser')}:</strong> {item.reportedUser}
+                      </div>
+                    )}
+                    {item.type === 'character' && (
+                      <div className="character-suggestion-details">
+                        <h5>{t('moderatorPanel.characterDetails')}</h5>
+                        <p><strong>{t('moderatorPanel.characterName')}:</strong> {item.characterName}</p>
+                        <p><strong>{t('moderatorPanel.tags')}:</strong> {Array.isArray(item.characterTags) ? item.characterTags.join(', ') : item.characterTags}</p>
+                        {item.characterImage && (
+                          <div className="character-image-preview">
+                            <img src={item.characterImage} alt={item.characterName} onError={(e) => e.target.style.display = 'none'} />
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="feedback-meta">
+                      <span>
+                        <strong>{t('moderatorPanel.submittedBy')}:</strong> {item.submittedBy}
+                      </span>
+                      <span>
+                        <strong>{t('moderatorPanel.submittedAt')}:</strong> {new Date(item.createdAt).toLocaleString()}
+                      </span>
+                    </div>
+                    {item.adminNotes && (
+                      <div className="feedback-notes">
+                        <strong>{t('moderatorPanel.adminNotes')}:</strong> {item.adminNotes}
+                      </div>
+                    )}
+                    <div className="feedback-actions">
+                      {item.status === 'pending' && (
+                        <>
+                          {item.type === 'character' && (
+                            <button
+                              onClick={() => handleApproveCharacter(item.id)}
+                              className="feedback-btn approve-character-btn"
+                            >
+                              ✨ {t('moderatorPanel.approveCharacter')}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleUpdateFeedback(item.id, 'reviewed')}
+                            className="feedback-btn reviewed-btn"
+                          >
+                            👁️ {t('moderatorPanel.markAsReviewed')}
+                          </button>
+                          <button
+                            onClick={() => handleUpdateFeedback(item.id, 'resolved')}
+                            className="feedback-btn resolved-btn"
+                          >
+                            ✅ {t('moderatorPanel.markAsResolved')}
+                          </button>
+                          <button
+                            onClick={() => handleUpdateFeedback(item.id, 'dismissed')}
+                            className="feedback-btn dismissed-btn"
+                          >
+                            ❌ {t('moderatorPanel.markAsDismissed')}
+                          </button>
+                        </>
+                      )}
+                      <button
+                        onClick={() => handleDeleteFeedback(item.id)}
+                        className="feedback-btn delete-btn"
+                      >
+                        🗑️ {t('moderatorPanel.deleteFeedback')}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              {feedback.filter(f => feedbackFilter === 'all' || f.status === feedbackFilter).length === 0 && (
+                <div className="no-feedback">
+                  <p>{t('moderatorPanel.noFeedback')}</p>
                 </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">⚔️</div>
-                <div className="stat-info">
-                  <h4>{posts.filter(p => p.type === 'fight').length}</h4>
-                  <p>Walk</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon">🎮</div>
-                <div className="stat-info">
-                  <h4>{characters.length}</h4>
-                  <p>Postaci</p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         )}
@@ -1340,6 +1495,23 @@ const ModeratorPanel = () => {
         confirmButtonType="danger"
       >
         <p>Czy na pewno chcesz usunąć ten post? Ta akcja nie może być cofnięta.</p>
+      </Modal>
+
+      {/* Delete Feedback Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteFeedbackModal}
+        onClose={() => {
+          setShowDeleteFeedbackModal(false);
+          setFeedbackToDelete(null);
+        }}
+        title={t('moderatorPanel.confirmDeleteFeedback')}
+        type="warning"
+        confirmText={t('moderatorPanel.deleteFeedback')}
+        cancelText={t('moderatorPanel.cancel') || 'Anuluj'}
+        onConfirm={confirmDeleteFeedback}
+        confirmButtonType="danger"
+      >
+        <p>{t('moderatorPanel.confirmDeleteFeedbackMessage')}</p>
       </Modal>
     </div>
   );

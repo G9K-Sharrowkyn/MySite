@@ -149,7 +149,41 @@
         "lastBonusDate": "2025-12-29T23:59:08.977Z"
       },
       "virtualCoins": 10,
-      "updatedAt": "2025-12-29T23:59:08.971Z"
+      "updatedAt": "2025-12-29T23:59:08.971Z",
+      "notifications": [
+        {
+          "id": "17671199213900.2940329863893947",
+          "type": "feedback",
+          "text": "New bug report: dqwdwqd",
+          "feedbackId": "1767119921383",
+          "read": false,
+          "createdAt": "2025-12-30T18:38:41.390Z"
+        },
+        {
+          "id": "17671202583550.6507577340246947",
+          "type": "feedback",
+          "text": "New feature report: ddddddd",
+          "feedbackId": "1767120258347",
+          "read": false,
+          "createdAt": "2025-12-30T18:44:18.355Z"
+        },
+        {
+          "id": "17671202701170.6980192925897104",
+          "type": "feedback",
+          "text": "New user report: ccccccccc",
+          "feedbackId": "1767120270110",
+          "read": false,
+          "createdAt": "2025-12-30T18:44:30.117Z"
+        },
+        {
+          "id": "17671202776340.7293794968026931",
+          "type": "feedback",
+          "text": "New other report: cccccccc",
+          "feedbackId": "1767120277628",
+          "read": false,
+          "createdAt": "2025-12-30T18:44:37.634Z"
+        }
+      ]
     },
     {
       "id": "280ec015-edc9-4be3-87ca-b6be62093bf5",
@@ -1179,16 +1213,16 @@
       "photos": [],
       "poll": {
         "options": [
-          "Yoda (Legends)(SW)",
-          "Darth Plagueis (Legends)(SW)"
+          "Yoda (Legends)(Star Wars)",
+          "Darth Plagueis (Legends)(Star Wars)"
         ],
         "votes": {
           "voters": []
         }
       },
       "fight": {
-        "teamA": "Yoda (Legends)(SW)",
-        "teamB": "Darth Plagueis (Legends)(SW)",
+        "teamA": "Yoda (Legends)(Star Wars)",
+        "teamB": "Darth Plagueis (Legends)(Star Wars)",
         "votes": {
           "teamA": 1,
           "teamB": 0,
@@ -1222,16 +1256,16 @@
       "featured": false,
       "tags": [
         "Star Wars",
-        "Yoda (Legends)(SW)",
-        "Darth Plagueis (Legends)(SW)"
+        "Yoda (Legends)(Star Wars)",
+        "Darth Plagueis (Legends)(Star Wars)"
       ],
       "autoTags": {
         "universes": [
           "Star Wars"
         ],
         "characters": [
-          "Yoda (Legends)(SW)",
-          "Darth Plagueis (Legends)(SW)"
+          "Yoda (Legends)(Star Wars)",
+          "Darth Plagueis (Legends)(Star Wars)"
         ],
         "powerTiers": [],
         "categories": []
@@ -1252,7 +1286,7 @@
       "poll": {
         "options": [
           "Anti-Monitor (DC)(New52)",
-          "Revan (Reborn)(Legends)(SW)"
+          "Revan (Reborn)(Legends)(Star Wars)"
         ],
         "votes": {
           "voters": []
@@ -1260,7 +1294,7 @@
       },
       "fight": {
         "teamA": "Anti-Monitor (DC)(New52)",
-        "teamB": "Revan (Reborn)(Legends)(SW)",
+        "teamB": "Revan (Reborn)(Legends)(Star Wars)",
         "votes": {
           "teamA": 0,
           "teamB": 0,
@@ -1282,7 +1316,7 @@
         "DC",
         "Star Wars",
         "Anti-Monitor (DC)(New52)",
-        "Revan (Reborn)(Legends)(SW)"
+        "Revan (Reborn)(Legends)(Star Wars)"
       ],
       "autoTags": {
         "universes": [
@@ -1291,7 +1325,7 @@
         ],
         "characters": [
           "Anti-Monitor (DC)(New52)",
-          "Revan (Reborn)(Legends)(SW)"
+          "Revan (Reborn)(Legends)(Star Wars)"
         ],
         "powerTiers": [],
         "categories": []
@@ -1436,14 +1470,14 @@
   "characters": [
     {
       "id": "ajunta-pall-legends-sw",
-      "name": "Ajunta Pall (Legends)(SW)",
+      "name": "Ajunta Pall (Legends)(Star Wars)",
       "baseName": "Ajunta Pall",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Ajunta Pall (Legends)(SW).jpg"
+      "image": "/characters/Ajunta Pall (Legends)(Star Wars).jpg"
     },
     {
       "id": "android-super-17-dbgt",
@@ -1467,16 +1501,6 @@
       "image": "/characters/Anti-Monitor (DC)(New52).webp"
     },
     {
-      "id": "anti-monitor-new52",
-      "name": "Anti-Monitor (New52)",
-      "baseName": "Anti-Monitor",
-      "tags": [
-        "New52"
-      ],
-      "universe": "New52",
-      "image": "/characters/Anti-Monitor (New52).webp"
-    },
-    {
       "id": "apocalypse-marvel",
       "name": "Apocalypse (Marvel)",
       "baseName": "Apocalypse",
@@ -1488,24 +1512,14 @@
     },
     {
       "id": "arcann-legends-sw",
-      "name": "Arcann (Legends)(SW)",
+      "name": "Arcann (Legends)(Star Wars)",
       "baseName": "Arcann",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Arcann (Legends)(SW).webp"
-    },
-    {
-      "id": "azrael-dark-multiverse",
-      "name": "Azrael (Dark Multiverse)",
-      "baseName": "Azrael",
-      "tags": [
-        "Dark Multiverse"
-      ],
-      "universe": "Dark Multiverse",
-      "image": "/characters/Azrael (Dark Multiverse).jpg"
+      "image": "/characters/Arcann (Legends)(Star Wars).webp"
     },
     {
       "id": "azrael-dc-dark-multiverse",
@@ -1568,7 +1582,7 @@
       "tags": [
         "New52"
       ],
-      "universe": "New52",
+      "universe": "DC",
       "image": "/characters/Batman (New52).jpg"
     },
     {
@@ -1582,16 +1596,6 @@
       "image": "/characters/Black Adam (DC).jpg"
     },
     {
-      "id": "black-adam-new52",
-      "name": "Black Adam (New52)",
-      "baseName": "Black Adam",
-      "tags": [
-        "New52"
-      ],
-      "universe": "New52",
-      "image": "/characters/Black Adam (New52).jpg"
-    },
-    {
       "id": "black-winter-marvel",
       "name": "Black Winter (Marvel)",
       "baseName": "Black Winter",
@@ -1602,33 +1606,15 @@
       "image": "/characters/Black Winter (Marvel).jpg"
     },
     {
-      "id": "black-winter-prime",
-      "name": "Black Winter (Prime)",
-      "baseName": "Black Winter",
-      "tags": [
-        "Prime"
-      ],
-      "universe": "Prime",
-      "image": "/characters/Black Winter (Prime).jpg"
-    },
-    {
-      "id": "black-adam-faces-the-justice-society-of-america-cropped",
-      "name": "Black-Adam-faces-the-Justice-Society-of-America-Cropped",
-      "baseName": "Black-Adam-faces-the-Justice-Society-of-America-Cropped",
-      "tags": [],
-      "universe": "Other",
-      "image": "/characters/Black-Adam-faces-the-Justice-Society-of-America-Cropped.png"
-    },
-    {
       "id": "boba-fett-legends-sw",
-      "name": "Boba Fett (Legends)(SW)",
+      "name": "Boba Fett (Legends)(Star Wars)",
       "baseName": "Boba Fett",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Boba Fett (Legends)(SW).jpg"
+      "image": "/characters/Boba Fett (Legends)(Star Wars).jpg"
     },
     {
       "id": "brolly-lssj-dbs",
@@ -1643,9 +1629,10 @@
     },
     {
       "id": "broly-dbz",
-      "name": "Broly (DBZ)",
+      "name": "Broly (LSSJ)(DBZ)",
       "baseName": "Broly",
       "tags": [
+        "LSSJ",
         "DBZ"
       ],
       "universe": "Dragon Ball",
@@ -1653,10 +1640,10 @@
     },
     {
       "id": "broly-lss4-dbh",
-      "name": "Broly (LSS4)(DBH)",
+      "name": "Broly (LSSJ4)(DBH)",
       "baseName": "Broly",
       "tags": [
-        "LSS4",
+        "LSSJ4",
         "DBH"
       ],
       "universe": "Dragon Ball",
@@ -1685,25 +1672,25 @@
     },
     {
       "id": "cade-legends-sw",
-      "name": "Cade (Legends)(SW)",
+      "name": "Cade (Legends)(Star Wars)",
       "baseName": "Cade",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Cade (Legends)(SW).jpg"
+      "image": "/characters/Cade (Legends)(Star Wars).jpg"
     },
     {
       "id": "caedus-legends-sw",
-      "name": "Caedus (Legends)(SW)",
-      "baseName": "Caedus",
+      "name": "Darth Caedus (Legends)(Star Wars)",
+      "baseName": "Darth Caedus",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Caedus (Legends)(SW).webp"
+      "image": "/characters/Caedus (Legends)(Star Wars).webp"
     },
     {
       "id": "captain-america-marvel",
@@ -1717,14 +1704,14 @@
     },
     {
       "id": "cin-drallig-legends-sw",
-      "name": "Cin Drallig (Legends)(SW)",
+      "name": "Cin Drallig (Legends)(Star Wars)",
       "baseName": "Cin Drallig",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Cin Drallig (Legends)(SW).jpg"
+      "image": "/characters/Cin Drallig (Legends)(Star Wars).jpg"
     },
     {
       "id": "darkseid-dc-new52",
@@ -1738,100 +1725,91 @@
       "image": "/characters/Darkseid (DC)(New52).jpg"
     },
     {
-      "id": "darkseid-new52",
-      "name": "Darkseid (New52)",
-      "baseName": "Darkseid",
-      "tags": [
-        "New52"
-      ],
-      "universe": "New52",
-      "image": "/characters/Darkseid (New52).jpg"
-    },
-    {
       "id": "darth-bane-legends-sw",
-      "name": "Darth Bane (Legends)(SW)",
+      "name": "Darth Bane (Legends)(Star Wars)",
       "baseName": "Darth Bane",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Darth Bane (Legends)(SW).jpg"
+      "image": "/characters/Darth Bane (Legends)(Star Wars).jpg"
     },
     {
       "id": "darth-baras-legends-sw",
-      "name": "Darth Baras (Legends)(SW)",
+      "name": "Darth Baras (Legends)(Star Wars)",
       "baseName": "Darth Baras",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Darth Baras (Legends)(SW).webp"
+      "image": "/characters/Darth Baras (Legends)(Star Wars).webp"
     },
     {
       "id": "darth-jadus-legends-sw",
-      "name": "Darth Jadus (Legends)(SW)",
+      "name": "Darth Jadus (Legends)(Star Wars)",
       "baseName": "Darth Jadus",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Darth Jadus (Legends)(SW).jpg"
+      "image": "/characters/Darth Jadus (Legends)(Star Wars).jpg"
     },
     {
       "id": "darth-malak-legends-sw",
-      "name": "Darth Malak (Legends)(SW)",
+      "name": "Darth Malak (Legends)(Star Wars)",
       "baseName": "Darth Malak",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Darth Malak (Legends)(SW).jpg"
+      "image": "/characters/Darth Malak (Legends)(Star Wars).jpg"
     },
     {
       "id": "darth-marr-legends-sw",
-      "name": "Darth Marr (Legends)(SW)",
+      "name": "Darth Marr (Legends)(Star Wars)",
       "baseName": "Darth Marr",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Darth Marr (Legends)(SW).webp"
+      "image": "/characters/Darth Marr (Legends)(Star Wars).webp"
     },
     {
       "id": "darth-plagueis-legends-sw",
-      "name": "Darth Plagueis (Legends)(SW)",
+      "name": "Darth Plagueis (Legends)(Star Wars)",
       "baseName": "Darth Plagueis",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Darth Plagueis (Legends)(SW).webp"
+      "image": "/characters/Darth Plagueis (Legends)(Star Wars).webp"
     },
     {
       "id": "darth-tenebrous-legends-sw",
-      "name": "Darth Tenebrous (Legends)(SW)",
+      "name": "Darth Tenebrous (Legends)(Star Wars)",
       "baseName": "Darth Tenebrous",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Darth Tenebrous (Legends)(SW).webp"
+      "image": "/characters/Darth Tenebrous (Legends)(Star Wars).webp"
     },
     {
       "id": "deadpool-dkmu",
       "name": "Deadpool (DKMU)",
       "baseName": "Deadpool",
       "tags": [
-        "DKMU"
+        "DKMU",
+        "Marvel"
       ],
-      "universe": "DKMU",
+      "universe": "Marvel",
       "image": "/characters/Deadpool (DKMU).jpg"
     },
     {
@@ -1846,14 +1824,14 @@
     },
     {
       "id": "dooku-legends-sw",
-      "name": "Dooku (Legends)(SW)",
+      "name": "Dooku (Legends)(Star Wars)",
       "baseName": "Dooku",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Dooku (Legends)(SW).webp"
+      "image": "/characters/Dooku (Legends)(Star Wars).webp"
     },
     {
       "id": "doomsday-dc",
@@ -1877,42 +1855,41 @@
     },
     {
       "id": "exar-kun-legends-sw",
-      "name": "Exar Kun (Legends)(SW)",
+      "name": "Exar Kun (Legends)(Star Wars)",
       "baseName": "Exar Kun",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Exar Kun (Legends)(SW).jpg"
+      "image": "/characters/Exar Kun (Legends)(Star Wars).jpg"
     },
     {
       "id": "franklin-richards-adult",
       "name": "Franklin Richards (Adult)",
       "baseName": "Franklin Richards",
       "tags": [
-        "Adult"
+        "Marvel"
       ],
-      "universe": "Adult",
+      "universe": "Marvel",
       "image": "/characters/Franklin Richards (Adult).webp"
     },
     {
       "id": "freedon-nadd-legends-sw",
-      "name": "Freedon Nadd (Legends)(SW)",
+      "name": "Freedon Nadd (Legends)(Star Wars)",
       "baseName": "Freedon Nadd",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Freedon Nadd (Legends)(SW).jpg"
+      "image": "/characters/Freedon Nadd (Legends)(Star Wars).jpg"
     },
     {
       "id": "frezzer-4th-form-dbz",
       "name": "Frezzer (4th form)(DBZ)",
       "baseName": "Frezzer",
       "tags": [
-        "4th form",
         "DBZ"
       ],
       "universe": "Dragon Ball",
@@ -1930,14 +1907,14 @@
     },
     {
       "id": "galen-marek-legends-sw",
-      "name": "Galen Marek (Legends)(SW)",
+      "name": "Galen Marek (Legends)(Star Wars)",
       "baseName": "Galen Marek",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Galen Marek (Legends)(SW).jpg"
+      "image": "/characters/Galen Marek (Legends)(Star Wars).jpg"
     },
     {
       "id": "general-zodd-dc",
@@ -1951,14 +1928,14 @@
     },
     {
       "id": "gethzerion-legends-sw",
-      "name": "Gethzerion (Legends)(SW)",
+      "name": "Gethzerion (Legends)(Star Wars)",
       "baseName": "Gethzerion",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Gethzerion (Legends)(SW).webp"
+      "image": "/characters/Gethzerion (Legends)(Star Wars).webp"
     },
     {
       "id": "ghost-rider-marvel",
@@ -2070,16 +2047,6 @@
       "image": "/characters/Goku (SSJ4)(DBGT).jpg"
     },
     {
-      "id": "goku-ssj4",
-      "name": "Goku (SSJ4)",
-      "baseName": "Goku",
-      "tags": [
-        "SSJ4"
-      ],
-      "universe": "SSJ4",
-      "image": "/characters/Goku (SSJ4).jpg"
-    },
-    {
       "id": "goku-ultra-instinct-dbs",
       "name": "Goku (Ultra Instinct)(DBS)",
       "baseName": "Goku",
@@ -2091,25 +2058,15 @@
       "image": "/characters/Goku (Ultra Instinct)(DBS).jpg"
     },
     {
-      "id": "goku-ultra-instinct",
-      "name": "Goku (Ultra Instinct)",
-      "baseName": "Goku",
-      "tags": [
-        "Ultra Instinct"
-      ],
-      "universe": "Ultra Instinct",
-      "image": "/characters/Goku (Ultra Instinct).webp"
-    },
-    {
       "id": "hk-47-legends-sw",
-      "name": "HK-47 (Legends)(SW)",
+      "name": "HK-47 (Legends)(Star Wars)",
       "baseName": "HK-47",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/HK-47 (Legends)(SW).webp"
+      "image": "/characters/HK-47 (Legends)(Star Wars).webp"
     },
     {
       "id": "hulk-marvel",
@@ -2132,16 +2089,6 @@
       "image": "/characters/Hyperion (Marvel).jpg"
     },
     {
-      "id": "hyperion-prime",
-      "name": "Hyperion (Prime)",
-      "baseName": "Hyperion",
-      "tags": [
-        "Prime"
-      ],
-      "universe": "Prime",
-      "image": "/characters/Hyperion (Prime).jpg"
-    },
-    {
       "id": "iron-man-marvel",
       "name": "Iron Man (Marvel)",
       "baseName": "Iron Man",
@@ -2153,36 +2100,36 @@
     },
     {
       "id": "ivar-workan-legends-sw",
-      "name": "Ivar Workan (Legends)(SW)",
+      "name": "Ivar Workan (Legends)(Star Wars)",
       "baseName": "Ivar Workan",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Ivar Workan (Legends)(SW).webp"
+      "image": "/characters/Ivar Workan (Legends)(Star Wars).webp"
     },
     {
       "id": "jacen-solo-legends-sw",
-      "name": "Jacen Solo (Legends)(SW)",
+      "name": "Jacen Solo (Legends)(Star Wars)",
       "baseName": "Jacen Solo",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Jacen Solo (Legends)(SW).jpg"
+      "image": "/characters/Jacen Solo (Legends)(Star Wars).jpg"
     },
     {
       "id": "jaina-solo-legends-sw",
-      "name": "Jaina Solo (Legends)(SW)",
+      "name": "Jaina Solo (Legends)(Star Wars)",
       "baseName": "Jaina Solo",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Jaina Solo (Legends)(SW).jpg"
+      "image": "/characters/Jaina Solo (Legends)(Star Wars).jpg"
     },
     {
       "id": "janemba-dbz",
@@ -2196,23 +2143,24 @@
     },
     {
       "id": "jerec-legends-sw",
-      "name": "Jerec (Legends)(SW)",
+      "name": "Jerec (Legends)(Star Wars)",
       "baseName": "Jerec",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Jerec (Legends)(SW).webp"
+      "image": "/characters/Jerec (Legends)(Star Wars).webp"
     },
     {
       "id": "joker-new52",
       "name": "Joker (New52)",
       "baseName": "Joker",
       "tags": [
-        "New52"
+        "New52",
+        "DC"
       ],
-      "universe": "New52",
+      "universe": "DC",
       "image": "/characters/Joker (New52).webp"
     },
     {
@@ -2227,46 +2175,46 @@
     },
     {
       "id": "kar-vastor-legends-sw",
-      "name": "Kar Vastor (Legends)(SW)",
+      "name": "Kar Vastor (Legends)(Star Wars)",
       "baseName": "Kar Vastor",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Kar Vastor (Legends)(SW).webp"
+      "image": "/characters/Kar Vastor (Legends)(Star Wars).webp"
     },
     {
       "id": "karness-muur-legends-sw",
-      "name": "Karness Muur (Legends)(SW)",
+      "name": "Karness Muur (Legends)(Star Wars)",
       "baseName": "Karness Muur",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Karness Muur (Legends)(SW).webp"
+      "image": "/characters/Karness Muur (Legends)(Star Wars).webp"
     },
     {
       "id": "king-thanos-prime",
-      "name": "King Thanos (Prime)",
+      "name": "King Thanos",
       "baseName": "King Thanos",
       "tags": [
-        "Prime"
+        "Marvel"
       ],
-      "universe": "Prime",
+      "universe": "Marvel",
       "image": "/characters/King Thanos (Prime).jpg"
     },
     {
       "id": "knightfall-anakin-legends-sw",
-      "name": "Knightfall Anakin (Legends)(SW)",
+      "name": "Knightfall Anakin (Legends)(Star Wars)",
       "baseName": "Knightfall Anakin",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Knightfall Anakin (Legends)(SW).jpg"
+      "image": "/characters/Knightfall Anakin (Legends)(Star Wars).jpg"
     },
     {
       "id": "knull-marvel",
@@ -2280,125 +2228,126 @@
     },
     {
       "id": "leia-organa-solo-legends-sw",
-      "name": "Leia Organa Solo (Legends)(SW)",
+      "name": "Leia Organa Solo (Legends)(Star Wars)",
       "baseName": "Leia Organa Solo",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Leia Organa Solo (Legends)(SW).jpg"
+      "image": "/characters/Leia Organa Solo (Legends)(Star Wars).jpg"
     },
     {
       "id": "lord-raptus-legends-sw",
-      "name": "Lord Raptus (Legends)(SW)",
+      "name": "Lord Raptus (Legends)(Star Wars)",
       "baseName": "Lord Raptus",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Lord Raptus (Legends)(SW).webp"
+      "image": "/characters/Lord Raptus (Legends)(Star Wars).webp"
     },
     {
       "id": "lotekk-legends-sw",
-      "name": "Lotekk (Legends)(SW)",
+      "name": "Lotekk (Legends)(Star Wars)",
       "baseName": "Lotekk",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Lotekk (Legends)(SW).webp"
+      "image": "/characters/Lotekk (Legends)(Star Wars).webp"
     },
     {
       "id": "luke-dark-empire-legends-sw",
-      "name": "Luke (Dark Empire)(Legends)(SW)",
+      "name": "Luke (Dark Empire)(Legends)(Star Wars)",
       "baseName": "Luke",
       "tags": [
         "Dark Empire",
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Luke (Dark Empire)(Legends)(SW).webp"
+      "image": "/characters/Luke (Dark Empire)(Legends)(Star Wars).webp"
     },
     {
       "id": "luke-skywalker-grand-master-legends-sw",
-      "name": "Luke Skywalker (Grand Master)(Legends)(SW)",
+      "name": "Luke Skywalker (Grand Master)(Legends)(Star Wars)",
       "baseName": "Luke Skywalker",
       "tags": [
         "Grand Master",
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Luke Skywalker (Grand Master)(Legends)(SW).jpg"
+      "image": "/characters/Luke Skywalker (Grand Master)(Legends)(Star Wars).jpg"
     },
     {
       "id": "mace-windu-legends-sw",
-      "name": "Mace Windu (Legends)(SW)",
+      "name": "Mace Windu (Legends)(Star Wars)",
       "baseName": "Mace Windu",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Mace Windu (Legends)(SW).jpg"
+      "image": "/characters/Mace Windu (Legends)(Star Wars).jpg"
     },
     {
       "id": "majin-vegeta-dbz",
-      "name": "Majin Vegeta (DBZ)",
+      "name": "Majin Vegeta (SSJ2)(DBZ)",
       "baseName": "Majin Vegeta",
       "tags": [
-        "DBZ"
+        "DBZ",
+        "(SSJ2)"
       ],
       "universe": "Dragon Ball",
       "image": "/characters/Majin Vegeta (DBZ).jpg"
     },
     {
       "id": "malak-legends-sw",
-      "name": "Malak (Legends)(SW)",
+      "name": "Darth Malak (Legends)(Star Wars)",
       "baseName": "Malak",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Malak (Legends)(SW).webp"
+      "image": "/characters/Malak (Legends)(Star Wars).webp"
     },
     {
       "id": "malgus-legends-sw",
-      "name": "Malgus (Legends)(SW)",
+      "name": "Darth Malgus (Legends)(Star Wars)",
       "baseName": "Malgus",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Malgus (Legends)(SW).jpg"
+      "image": "/characters/Malgus (Legends)(Star Wars).jpg"
     },
     {
       "id": "mara-legends-sw",
-      "name": "Mara (Legends)(SW)",
-      "baseName": "Mara",
+      "name": "Mara Jade (Legends)(Star Wars)",
+      "baseName": "Mara Jade",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Mara (Legends)(SW).webp"
+      "image": "/characters/Mara (Legends)(Star Wars).webp"
     },
     {
       "id": "marka-ragnos-legends-sw",
-      "name": "Marka Ragnos (Legends)(SW)",
+      "name": "Marka Ragnos (Legends)(Star Wars)",
       "baseName": "Marka Ragnos",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Marka Ragnos (Legends)(SW).webp"
+      "image": "/characters/Marka Ragnos (Legends)(Star Wars).webp"
     },
     {
       "id": "masked-goku-black-ssjr3-dbh",
@@ -2426,9 +2375,9 @@
       "name": "Nate Grey (Uncanny X-Men)",
       "baseName": "Nate Grey",
       "tags": [
-        "Uncanny X-Men"
+        "Marvel"
       ],
-      "universe": "Uncanny X-Men",
+      "universe": "Marvel",
       "image": "/characters/Nate Grey (Uncanny X-Men).webp"
     },
     {
@@ -2463,38 +2412,38 @@
     },
     {
       "id": "revan-reborn-legends-sw",
-      "name": "Revan (Reborn)(Legends)(SW)",
+      "name": "Revan (Reborn)(Legends)(Star Wars)",
       "baseName": "Revan",
       "tags": [
         "Reborn",
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Revan (Reborn)(Legends)(SW).jpg"
+      "image": "/characters/Revan (Reborn)(Legends)(Star Wars).jpg"
     },
     {
       "id": "revan-redeemed-legends-sw",
-      "name": "Revan (Redeemed)(Legends)(SW)",
+      "name": "Revan (Redeemed)(Legends)(Star Wars)",
       "baseName": "Revan",
       "tags": [
         "Redeemed",
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Revan (Redeemed)(Legends)(SW).webp"
+      "image": "/characters/Revan (Redeemed)(Legends)(Star Wars).webp"
     },
     {
       "id": "saba-sebatyne-legends-sw",
-      "name": "Saba Sebatyne (Legends)(SW)",
+      "name": "Saba Sebatyne (Legends)(Star Wars)",
       "baseName": "Saba Sebatyne",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Saba Sebatyne (Legends)(SW).webp"
+      "image": "/characters/Saba Sebatyne (Legends)(Star Wars).webp"
     },
     {
       "id": "sabretooth-marvel",
@@ -2526,35 +2475,33 @@
     },
     {
       "id": "sentry-composite",
-      "name": "Sentry (Composite)",
+      "name": "Sentry",
       "baseName": "Sentry",
-      "tags": [
-        "Composite"
-      ],
-      "universe": "Composite",
+      "tags": [],
+      "universe": "Marvel",
       "image": "/characters/Sentry (Composite).jpg"
     },
     {
       "id": "shaak-ti-legends-sw",
-      "name": "Shaak Ti (Legends)(SW)",
+      "name": "Shaak Ti (Legends)(Star Wars)",
       "baseName": "Shaak Ti",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Shaak Ti (Legends)(SW).webp"
+      "image": "/characters/Shaak Ti (Legends)(Star Wars).webp"
     },
     {
       "id": "sidious-legends-sw",
-      "name": "Sidious (Legends)(SW)",
+      "name": "Sidious (Legends)(Star Wars)",
       "baseName": "Sidious",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Sidious (Legends)(SW).jpg"
+      "image": "/characters/Sidious (Legends)(Star Wars).jpg"
     },
     {
       "id": "silver-surfer-marvel",
@@ -2591,21 +2538,22 @@
       "name": "Superman (New52)",
       "baseName": "Superman",
       "tags": [
+        "DC",
         "New52"
       ],
-      "universe": "New52",
+      "universe": "DC",
       "image": "/characters/Superman (New52).webp"
     },
     {
       "id": "talzin-legends-sw",
-      "name": "Talzin (Legends)(SW)",
+      "name": "Talzin (Legends)(Star Wars)",
       "baseName": "Talzin",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Talzin (Legends)(SW).jpg"
+      "image": "/characters/Talzin (Legends)(Star Wars).jpg"
     },
     {
       "id": "teen-gohan-ssj2-dbz",
@@ -2620,25 +2568,25 @@
     },
     {
       "id": "thon-legends-sw",
-      "name": "Thon (Legends)(SW)",
+      "name": "Thon (Legends)(Star Wars)",
       "baseName": "Thon",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Thon (Legends)(SW).webp"
+      "image": "/characters/Thon (Legends)(Star Wars).webp"
     },
     {
       "id": "tulak-hord-legends-sw",
-      "name": "Tulak Hord (Legends)(SW)",
+      "name": "Tulak Hord (Legends)(Star Wars)",
       "baseName": "Tulak Hord",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Tulak Hord (Legends)(SW).jpg"
+      "image": "/characters/Tulak Hord (Legends)(Star Wars).jpg"
     },
     {
       "id": "turles-dbz",
@@ -2662,14 +2610,14 @@
     },
     {
       "id": "vader-legends-sw",
-      "name": "Vader (Legends)(SW)",
+      "name": "Vader (Legends)(Star Wars)",
       "baseName": "Vader",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Vader (Legends)(SW).jpg"
+      "image": "/characters/Vader (Legends)(Star Wars).jpg"
     },
     {
       "id": "vegeta-ssj4-dbgt",
@@ -2683,16 +2631,6 @@
       "image": "/characters/Vegeta (SSJ4)(DBGT).jpg"
     },
     {
-      "id": "vegeta-ssj4",
-      "name": "Vegeta (SSJ4)",
-      "baseName": "Vegeta",
-      "tags": [
-        "SSJ4"
-      ],
-      "universe": "SSJ4",
-      "image": "/characters/Vegeta (SSJ4).webp"
-    },
-    {
       "id": "vegeta-ultra-ego-dbs",
       "name": "Vegeta (Ultra Ego)(DBS)",
       "baseName": "Vegeta",
@@ -2702,16 +2640,6 @@
       ],
       "universe": "Dragon Ball",
       "image": "/characters/Vegeta (Ultra Ego)(DBS).jpg"
-    },
-    {
-      "id": "vegeta-ultra-ego",
-      "name": "Vegeta (Ultra Ego)",
-      "baseName": "Vegeta",
-      "tags": [
-        "Ultra Ego"
-      ],
-      "universe": "Ultra Ego",
-      "image": "/characters/Vegeta (Ultra Ego).jpg"
     },
     {
       "id": "vegito-dbz",
@@ -2767,25 +2695,25 @@
     },
     {
       "id": "yoda-legends-sw",
-      "name": "Yoda (Legends)(SW)",
+      "name": "Yoda (Legends)(Star Wars)",
       "baseName": "Yoda",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Yoda (Legends)(SW).webp"
+      "image": "/characters/Yoda (Legends)(Star Wars).webp"
     },
     {
       "id": "zannah-legends-sw",
-      "name": "Zannah (Legends)(SW)",
+      "name": "Darth Zannah (Legends)(Star Wars)",
       "baseName": "Zannah",
       "tags": [
         "Legends",
-        "SW"
+        "Star Wars"
       ],
       "universe": "Star Wars",
-      "image": "/characters/Zannah (Legends)(SW).webp"
+      "image": "/characters/Zannah (Legends)(Star Wars).webp"
     }
   ],
   "notifications": [],
@@ -4215,6 +4143,33 @@
       "accentColor": "#6c757d",
       "description": "",
       "updatedAt": "2025-12-29T01:19:54.542Z"
+    }
+  ],
+  "feedback": [
+    {
+      "id": "1767119921383",
+      "type": "bug",
+      "title": "dqwdwqd",
+      "description": "qwdqwdwqd",
+      "submittedBy": "Anonymous",
+      "submittedById": "ADMIN-UNIQUE-ID-0001",
+      "status": "reviewed",
+      "createdAt": "2025-12-30T18:38:41.383Z",
+      "resolvedAt": null,
+      "adminNotes": null
+    },
+    {
+      "id": "1767120270110",
+      "type": "user",
+      "title": "ccccccccccccc",
+      "description": "cccccccccccc",
+      "reportedUser": "ccccccccc",
+      "submittedBy": "Anonymous",
+      "submittedById": "ADMIN-UNIQUE-ID-0001",
+      "status": "resolved",
+      "createdAt": "2025-12-30T18:44:30.110Z",
+      "resolvedAt": "2025-12-30T18:49:04.654Z",
+      "adminNotes": null
     }
   ],
   "fighterProposals": [],

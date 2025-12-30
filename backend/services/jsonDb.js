@@ -38,7 +38,8 @@ const DEFAULT_DB = {
   challengeProgress: [],
   recommendationEvents: [],
   characterSuggestions: [],
-  divisionSeasons: []
+  divisionSeasons: [],
+  feedback: []
 };
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
@@ -74,7 +75,8 @@ const normalizeDb = (data = {}) => ({
   challengeProgress: ensureArray(data.challengeProgress),
   recommendationEvents: ensureArray(data.recommendationEvents),
   characterSuggestions: ensureArray(data.characterSuggestions),
-  divisionSeasons: ensureArray(data.divisionSeasons)
+  divisionSeasons: ensureArray(data.divisionSeasons),
+  feedback: ensureArray(data.feedback)
 });
 
 let writeChain = Promise.resolve();

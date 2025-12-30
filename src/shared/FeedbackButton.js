@@ -10,6 +10,9 @@ const FeedbackButton = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [reportedUser, setReportedUser] = useState('');
+  const [characterName, setCharacterName] = useState('');
+  const [characterTags, setCharacterTags] = useState('');
+  const [characterImage, setCharacterImage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -27,6 +30,11 @@ const FeedbackButton = () => {
       return;
     }
 
+    if (reportType === 'character' && (!characterName.trim() || !characterTags.trim())) {
+      setErrorMessage(t('provideCharacterDetails') || 'Please provide character name and tags');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage('');
 
@@ -36,7 +44,10 @@ const FeedbackButton = () => {
         type: reportType,
         title,
         description,
-        reportedUser: reportType === 'user' ? reportedUser : undefined
+        reportedUser: reportType === 'user' ? reportedUser : undefined,
+        characterName: reportType === 'character' ? characterName : undefined,
+        characterTags: reportType === 'character' ? characterTags.split(',').map(t => t.trim()) : undefined,
+        characterImage: reportType === 'character' ? characterImage : undefined
       }, {
         headers: token ? { 'x-auth-token': token } : {}
       });
@@ -45,6 +56,9 @@ const FeedbackButton = () => {
       setTitle('');
       setDescription('');
       setReportedUser('');
+      setCharacterName('');
+      setCharacterTags('');
+      setCharacterImage('');
       
       setTimeout(() => {
         setIsOpen(false);
@@ -79,14 +93,15 @@ const FeedbackButton = () => {
 
         <form onSubmit={handleSubmit} className="feedback-form">
           <div className="form-group">
-            <label>{t('reportType') || 'Report Type'}</label>
+            <label>{t('reportType') || 'Report Type'} *</label>
             <select 
               value={reportType} 
               onChange={(e) => setReportType(e.target.value)}
               className="feedback-select"
             >
-              <option value="bug">🐛 {t('reportBug') || 'Bug Report'}</option>
-              <option value="feature">✨ {t('featureRequest') || 'Feature Request'}</option>
+              <option value="bug">🐛 {t('bugReport') || 'Bug Report'}</option>
+              <option value="feature">💡 {t('featureRequest') || 'Feature Request'}</option>
+              <option value="character">🎭 {t('suggestCharacter') || 'Suggest Character'}</option>
               <option value="user">⚠️ {t('reportUser') || 'Report User'}</option>
               <option value="other">💬 {t('other') || 'Other'}</option>
             </select>
@@ -103,6 +118,41 @@ const FeedbackButton = () => {
                 className="feedback-input"
               />
             </div>
+          )}
+
+          {reportType === 'character' && (
+            <>
+              <div className="form-group">
+                <label>{t('characterName') || 'Character Name'} *</label>
+                <input
+                  type="text"
+                  value={characterName}
+                  onChange={(e) => setCharacterName(e.target.value)}
+                  placeholder={t('enterCharacterName') || 'Enter character name'}
+                  className="feedback-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>{t('characterTags') || 'Tags (comma separated)'} *</label>
+                <input
+                  type="text"
+                  value={characterTags}
+                  onChange={(e) => setCharacterTags(e.target.value)}
+                  placeholder={t('enterTags') || 'e.g. DC, Hero, Superman'}
+                  className="feedback-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>{t('characterImageUrl') || 'Image URL (optional)'}</label>
+                <input
+                  type="text"
+                  value={characterImage}
+                  onChange={(e) => setCharacterImage(e.target.value)}
+                  placeholder={t('enterImageUrl') || 'https://example.com/image.jpg'}
+                  className="feedback-input"
+                />
+              </div>
+            </>
           )}
 
           <div className="form-group">
