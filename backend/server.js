@@ -223,9 +223,34 @@ startDivisionScheduler();
 // Basic route or static frontend for production
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '..', 'build');
-  app.use(express.static(buildPath));
+  
+  // Serve static files with proper cache control
+  app.use(express.static(buildPath, {
+    maxAge: 0, // Don't cache HTML
+    etag: true,
+    lastModified: true,
+    setHeaders: (res, filePath) => {
+      // Cache JS/CSS files for 1 year (they have hashes in filenames)
+      if (filePath.endsWith('.js') || filePath.endsWith('.css')) {
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      } 
+      // Don't cache HTML files
+      else if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+      // Cache images for 1 week
+      else if (filePath.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/)) {
+        res.setHeader('Cache-Control', 'public, max-age=604800');
+      }
+    }
+  }));
 
   app.get('/*splat', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(buildPath, 'index.html'));
   });
 } else {
