@@ -20,8 +20,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "cross-env REACT_APP_BUILD_TIME=$(date +%s) react-scripts build",
-    "build:win": "set REACT_APP_BUILD_TIME=%date%-%time% && react-scripts build",
+    "build": "REACT_APP_BUILD_TIME=$(date +%s) react-scripts build || react-scripts build",
     "test": "react-scripts test",
     "test:e2e": "playwright test",
     "eject": "react-scripts eject",
