@@ -6,16 +6,43 @@ import axios from 'axios';
 const FeedbackButton = () => {
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const [reportType, setReportType] = useState('bug');
+  const [reportType, setReportType] = useState('character');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [reportedUser, setReportedUser] = useState('');
   const [characterName, setCharacterName] = useState('');
   const [characterTags, setCharacterTags] = useState('');
   const [characterImage, setCharacterImage] = useState('');
+  const [imageUploadType, setImageUploadType] = useState('url'); // 'url' or 'file'
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const handleImageFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        setErrorMessage(t('fileTooLarge') || 'File size must be less than 5MB');
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        setErrorMessage(t('invalidFileType') || 'Please upload an image file');
+        return;
+      }
+
+      setImageFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,11 +62,39 @@ const FeedbackButton = () => {
       return;
     }
 
+    if (reportType === 'character' && imageUploadType === 'file' && !imageFile) {
+      setErrorMessage(t('pleaseUploadImage') || 'Please upload an image file');
+      return;
+    }
+
+    if (reportType === 'character' && imageUploadType === 'url' && !characterImage.trim()) {
+      setErrorMessage(t('pleaseProvideImageUrl') || 'Please provide an image URL');
+      return;
+    }
+
     setIsSubmitting(true);
     setErrorMessage('');
 
     try {
       const token = localStorage.getItem('token');
+      
+      let imageDataToSend = '';
+      
+      if (reportType === 'character') {
+        if (imageUploadType === 'file' && imageFile) {
+          // Convert file to base64
+          const reader = new FileReader();
+          const base64Promise = new Promise((resolve, reject) => {
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(imageFile);
+          });
+          imageDataToSend = await base64Promise;
+        } else if (imageUploadType === 'url') {
+          imageDataToSend = characterImage;
+        }
+      }
+
       await axios.post('/api/feedback', {
         type: reportType,
         title,
@@ -47,7 +102,7 @@ const FeedbackButton = () => {
         reportedUser: reportType === 'user' ? reportedUser : undefined,
         characterName: reportType === 'character' ? characterName : undefined,
         characterTags: reportType === 'character' ? characterTags.split(',').map(t => t.trim()) : undefined,
-        characterImage: reportType === 'character' ? characterImage : undefined
+        characterImage: reportType === 'character' ? imageDataToSend : undefined
       }, {
         headers: token ? { 'x-auth-token': token } : {}
       });
@@ -59,11 +114,14 @@ const FeedbackButton = () => {
       setCharacterName('');
       setCharacterTags('');
       setCharacterImage('');
+      setImageFile(null);
+      setImagePreview('');
+      setImageUploadType('url');
       
       setTimeout(() => {
         setIsOpen(false);
         setSuccessMessage('');
-        setReportType('bug');
+        setReportType('character');
       }, 2000);
     } catch (err) {
       setErrorMessage(err.response?.data?.msg || t('feedbackError') || 'Failed to send report');
@@ -99,11 +157,11 @@ const FeedbackButton = () => {
               onChange={(e) => setReportType(e.target.value)}
               className="feedback-select"
             >
-              <option value="bug">🐛 {t('bugReport') || 'Bug Report'}</option>
-              <option value="feature">💡 {t('featureRequest') || 'Feature Request'}</option>
-              <option value="character">🎭 {t('suggestCharacter') || 'Suggest Character'}</option>
-              <option value="user">⚠️ {t('reportUser') || 'Report User'}</option>
-              <option value="other">💬 {t('other') || 'Other'}</option>
+              <option value="character">🎭 {t('suggestCharacter')}</option>
+              <option value="bug">🐛 {t('reportBug')}</option>
+              <option value="feature">💡 {t('featureRequest')}</option>
+              <option value="user">⚠️ {t('reportUser')}</option>
+              <option value="other">💬 {t('other')}</option>
             </select>
           </div>
 
@@ -143,14 +201,64 @@ const FeedbackButton = () => {
                 />
               </div>
               <div className="form-group">
-                <label>{t('characterImageUrl') || 'Image URL (optional)'}</label>
-                <input
-                  type="text"
-                  value={characterImage}
-                  onChange={(e) => setCharacterImage(e.target.value)}
-                  placeholder={t('enterImageUrl') || 'https://example.com/image.jpg'}
-                  className="feedback-input"
-                />
+                <label>{t('characterImage') || 'Character Image'} *</label>
+                <div className="image-upload-options">
+                  <div className="radio-group">
+                    <label>
+                      <input
+                        type="radio"
+                        value="url"
+                        checked={imageUploadType === 'url'}
+                        onChange={(e) => {
+                          setImageUploadType(e.target.value);
+                          setImageFile(null);
+                          setImagePreview('');
+                        }}
+                      />
+                      <span>{t('imageUrl') || '🔗 Image URL'}</span>
+                    </label>
+                    <label>
+                      <input
+                        type="radio"
+                        value="file"
+                        checked={imageUploadType === 'file'}
+                        onChange={(e) => {
+                          setImageUploadType(e.target.value);
+                          setCharacterImage('');
+                        }}
+                      />
+                      <span>{t('uploadFile') || '📤 Upload File'}</span>
+                    </label>
+                  </div>
+
+                  {imageUploadType === 'url' ? (
+                    <input
+                      type="text"
+                      value={characterImage}
+                      onChange={(e) => setCharacterImage(e.target.value)}
+                      placeholder={t('enterImageUrl') || 'https://example.com/image.jpg'}
+                      className="feedback-input"
+                    />
+                  ) : (
+                    <div className="file-upload-section">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileChange}
+                        className="feedback-file-input"
+                        id="character-image-file"
+                      />
+                      <label htmlFor="character-image-file" className="file-upload-label">
+                        {imageFile ? imageFile.name : (t('chooseFile') || 'Choose file (max 5MB)')}
+                      </label>
+                      {imagePreview && (
+                        <div className="image-preview-container">
+                          <img src={imagePreview} alt="Preview" className="image-preview" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}

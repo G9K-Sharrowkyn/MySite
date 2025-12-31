@@ -1415,7 +1415,30 @@ const ModeratorPanel = () => {
                         <p><strong>{t('moderatorPanel.tags')}:</strong> {Array.isArray(item.characterTags) ? item.characterTags.join(', ') : item.characterTags}</p>
                         {item.characterImage && (
                           <div className="character-image-preview">
-                            <img src={item.characterImage} alt={item.characterName} onError={(e) => e.target.style.display = 'none'} />
+                            <p><strong>{t('moderatorPanel.imageSource')}:</strong></p>
+                            <div className="image-source-display">
+                              {item.characterImage.startsWith('data:') ? (
+                                <span className="image-type-badge">📤 {t('moderatorPanel.uploadedFile')}</span>
+                              ) : (
+                                <span className="image-type-badge">🔗 {t('moderatorPanel.imageUrl')}</span>
+                              )}
+                              {!item.characterImage.startsWith('data:') && (
+                                <a href={item.characterImage} target="_blank" rel="noopener noreferrer" className="image-url-link">
+                                  {item.characterImage}
+                                </a>
+                              )}
+                            </div>
+                            <img 
+                              src={item.characterImage} 
+                              alt={item.characterName} 
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                const errorMsg = document.createElement('div');
+                                errorMsg.className = 'image-load-error';
+                                errorMsg.textContent = '⚠️ Failed to load image';
+                                e.target.parentElement.appendChild(errorMsg);
+                              }} 
+                            />
                           </div>
                         )}
                       </div>

@@ -137,6 +137,14 @@ export const translations = {
     characterName: 'Nazwa postaci',
     characterTags: 'Tagi (oddzielone przecinkami)',
     characterImageUrl: 'Adres URL obrazka (opcjonalnie)',
+    characterImage: 'Obrazek postaci',
+    imageUrl: '🔗 Link do obrazka',
+    uploadFile: '📤 Prześlij plik',
+    chooseFile: 'Wybierz plik (max 5MB)',
+    fileTooLarge: 'Plik jest za duży (max 5MB)',
+    invalidFileType: 'Proszę przesłać plik obrazka',
+    pleaseUploadImage: 'Proszę przesłać obrazek',
+    pleaseProvideImageUrl: 'Proszę podać link do obrazka',
     enterCharacterName: 'Wprowadź nazwę postaci',
     enterTags: 'np. DC, Bohater, Superman',
     enterImageUrl: 'https://przyklad.com/obrazek.jpg',
@@ -657,7 +665,10 @@ export const translations = {
       characterApproved: 'Postać została zatwierdzona i dodana do bazy danych',
       errorApproving: 'Błąd podczas zatwierdzania postaci',
       characterDetails: 'Szczegóły postaci',
-      tags: 'Tagi'
+      tags: 'Tagi',
+      imageSource: 'Źródło obrazka',
+      uploadedFile: 'Przesłany plik',
+      imageUrl: 'Link do obrazka'
     },
     
     // Tag System
@@ -830,6 +841,14 @@ export const translations = {
     characterName: 'Character Name',
     characterTags: 'Tags (comma separated)',
     characterImageUrl: 'Image URL (optional)',
+    characterImage: 'Character Image',
+    imageUrl: '🔗 Image URL',
+    uploadFile: '📤 Upload File',
+    chooseFile: 'Choose file (max 5MB)',
+    fileTooLarge: 'File is too large (max 5MB)',
+    invalidFileType: 'Please upload an image file',
+    pleaseUploadImage: 'Please upload an image',
+    pleaseProvideImageUrl: 'Please provide an image URL',
     enterCharacterName: 'Enter character name',
     enterTags: 'e.g. DC, Hero, Superman',
     enterImageUrl: 'https://example.com/image.jpg',
@@ -1346,7 +1365,10 @@ export const translations = {
       characterApproved: 'Character has been approved and added to database',
       errorApproving: 'Error approving character',
       characterDetails: 'Character Details',
-      tags: 'Tags'
+      tags: 'Tags',
+      imageSource: 'Image Source',
+      uploadedFile: 'Uploaded File',
+      imageUrl: 'Image URL'
     },
     
     // Tag System

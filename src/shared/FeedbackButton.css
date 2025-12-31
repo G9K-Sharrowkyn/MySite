@@ -215,6 +215,86 @@
   background: #4a4a5e;
 }
 
+/* Image upload styles */
+.image-upload-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #252538;
+  transition: background 0.2s;
+}
+
+.radio-group label:hover {
+  background: #2a2a42;
+}
+
+.radio-group input[type="radio"] {
+  cursor: pointer;
+}
+
+.radio-group span {
+  font-size: 0.95rem;
+  color: #e0e0e0;
+}
+
+.file-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feedback-file-input {
+  display: none;
+}
+
+.file-upload-label {
+  display: inline-block;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+}
+
+.file-upload-label:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.image-preview-container {
+  margin-top: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #252538;
+  padding: 10px;
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 200px;
+  display: block;
+  margin: 0 auto;
+  border-radius: 6px;
+}
+
 @media (max-width: 768px) {
   .feedback-button {
     width: 48px;
