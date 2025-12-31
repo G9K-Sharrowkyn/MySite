@@ -176,6 +176,7 @@ export const translations = {
     share: 'Udostępnij',
     translate: 'Przetłumacz',
     translated: 'Tłumaczenie:',
+    translationFailed: 'Nie udało się przetłumaczyć',
     
     // Post actions
     writeComment: 'Napisz komentarz...',
@@ -880,6 +881,7 @@ export const translations = {
     share: 'Share',
     translate: 'Translate',
     translated: 'Translated:',
+    translationFailed: 'Translation failed',
     
     // Post actions
     writeComment: 'Write a comment...',
@@ -1560,6 +1562,7 @@ export const translations = {
     share: 'Compartir',
     translate: 'Traducir',
     translated: 'Traducido:',
+    translationFailed: 'Error en la traducción',
     
     // Post actions
     writeComment: 'Escribe un comentario...',

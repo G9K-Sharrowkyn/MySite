@@ -1065,12 +1065,30 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
 }
 
 .private-conv-name {
   color: #fff;
   font-size: 0.95rem;
   font-weight: 500;
+}
+
+.private-conv-unread-badge {
+  background: #ff4444;
+  color: #fff;
+  border-radius: 10px;
+  padding: 2px 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  min-width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  animation: pulse 1s ease-in-out infinite;
 }
 
 .private-conv-preview {

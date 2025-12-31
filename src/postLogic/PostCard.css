@@ -745,33 +745,6 @@ body.dark-mode .post-card {
   background: #c0392b;
 }
 
-/* Translate button */
-.translate-btn {
-  background: linear-gradient(45deg, var(--info-color), #2980b9);
-  color: white;
-  padding: 0.25rem 0.75rem;
-  font-size: 0.8rem;
-  border-radius: 15px;
-  border: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  margin-top: 0.5rem;
-  font-weight: 500;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.translate-btn:hover {
-  background: linear-gradient(45deg, #2980b9, #3498db);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-}
-
-.translate-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
 /* Translated content styling */
 .post-text.translated,
 .comment-text.translated {

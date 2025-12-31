@@ -106,6 +106,32 @@ router.get('/conversation/:userId', auth, async (req, res) => {
   }
 });
 
+// @route   PUT api/messages/conversation/:userId/read-all
+// @desc    Mark all messages from a user as read
+// @access  Private
+router.put('/conversation/:userId/read-all', auth, async (req, res) => {
+  try {
+    const currentUserId = req.user.id;
+    const otherUserId = req.params.userId;
+
+    await updateDb(async (db) => {
+      // Mark all messages from otherUserId to currentUserId as read
+      (db.messages || []).forEach(message => {
+        if (message.senderId === otherUserId && message.recipientId === currentUserId && !message.read) {
+          message.read = true;
+          message.readAt = new Date().toISOString();
+        }
+      });
+      return db;
+    });
+
+    res.json({ msg: 'Messages marked as read' });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // @route   GET api/messages/conversations/:userId
 // @desc    List chat conversations (MessagingSystem)
 // @access  Public

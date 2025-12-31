@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Notification from '../notificationLogic/Notification';
@@ -20,7 +20,7 @@ const getErrorMessage = (error, fallback) => {
 };
 
 const Register = () => {
-  const { login } = useContext(AuthContext);
+  const { login, user } = useContext(AuthContext);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -32,6 +32,13 @@ const Register = () => {
   const navigate = useNavigate();
 
   const { username, email, password, password2 } = formData;
+
+  // Redirect to home if already logged in
+  useEffect(() => {
+    if (user) {
+      navigate('/');
+    }
+  }, [user, navigate]);
 
   const onChange = (event) => {
     const { name, value } = event.target;

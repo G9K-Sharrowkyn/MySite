@@ -44,6 +44,7 @@ import storeRoutes from './routes/store.js';
 import userRoutes from './routes/user.js';
 import pushRoutes from './routes/push.js';
 import feedbackRoutes from './routes/feedback.js';
+import translateRoutes from './routes/translate.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -198,6 +199,7 @@ app.use('/api/legal', legalRoutes);
 app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/challenges', challengesRoutes);
 app.use('/api/store', storeRoutes);
+app.use('/api/translate', translateRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/feedback', feedbackRoutes);

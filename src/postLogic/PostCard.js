@@ -778,39 +778,35 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     }, 1000);
   };
 
-  const needsCommentTranslation = (text) => {
-    if (!text) return false;
-    
-    // Check if content contains characters from different languages
-    const hasPolishChars = /[ąćęłńóśźż]/i.test(text);
-    const hasSpanishChars = /[áéíóúñü]/i.test(text);
-    
-    // For English UI: show translate if content has Polish or Spanish characters
-    if (currentLanguage === 'en' && (hasPolishChars || hasSpanishChars)) return true;
-    
-    // For Polish UI: show translate if content has Spanish characters or is clearly English
-    if (currentLanguage === 'pl') {
-      if (hasSpanishChars) return true;
-      // Check if content is clearly English (contains English words but no Polish chars)
-      if (/[a-z]/i.test(text) && !hasPolishChars) return true;
-    }
-    
-    // For Spanish UI: show translate if content has Polish characters or is clearly English
-    if (currentLanguage === 'es') {
-      if (hasPolishChars) return true;
-      // Check if content is clearly English (contains English words but no Spanish chars)
-      if (/[a-z]/i.test(text) && !hasSpanishChars) return true;
-    }
-    
-    return false;
-  };
 
-  const handleTranslateComment = (commentId, text) => {
+
+  const handleTranslateComment = async (commentId, text) => {
     setTranslatingComments(prev => ({ ...prev, [commentId]: true }));
-    setTimeout(() => {
-      setTranslatedComments(prev => ({ ...prev, [commentId]: `[${t('translated') || 'Translated'}] ${text}` }));
+    
+    try {
+      const response = await axios.post('/api/translate', { text });
+      
+      if (response.data && response.data.translatedText) {
+        setTranslatedComments(prev => ({ 
+          ...prev, 
+          [commentId]: response.data.translatedText 
+        }));
+      } else {
+        // Fallback if translation fails
+        setTranslatedComments(prev => ({ 
+          ...prev, 
+          [commentId]: `[${t('translationFailed') || 'Translation failed'}]` 
+        }));
+      }
+    } catch (error) {
+      console.error('Translation error:', error);
+      setTranslatedComments(prev => ({ 
+        ...prev, 
+        [commentId]: `[${t('translationFailed') || 'Translation failed'}]` 
+      }));
+    } finally {
       setTranslatingComments(prev => ({ ...prev, [commentId]: false }));
-    }, 1000);
+    }
   };
 
   const handleReactionSelect = async (reaction) => {
@@ -1117,20 +1113,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                       <span className="comment-time">{formatTimeAgo(root.createdAt)}</span>
                     </div>
                     <p className="comment-text">{root.text}</p>
-                    {needsCommentTranslation(root.text) && (
-                      <button
-                        className="translate-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTranslateComment(root.id, root.text);
-                        }}
-                        disabled={translatingComments[root.id]}
-                      >
-                        {translatingComments[root.id]
-                          ? t('loading')
-                          : t('translate') || 'Translate'}
-                      </button>
-                    )}
                     {translatedComments[root.id] && (
                       <p className="comment-text translated">
                         {translatedComments[root.id]}
@@ -1175,6 +1157,18 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                         )}
                         <span className="comment-action-text">{t('react') || 'React'}</span>
                       </button>
+                      <button
+                        className="comment-action comment-translate-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTranslateComment(root.id, root.text);
+                        }}
+                        disabled={translatingComments[root.id]}
+                      >
+                        {translatingComments[root.id]
+                          ? t('loading')
+                          : t('translate') || 'Translate'}
+                      </button>
                       {replyCount > 0 && (
                         <button
                           className="comment-action comment-toggle"
@@ -1217,20 +1211,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                             </span>
                           </div>
                           <p className="comment-text">{reply.text}</p>
-                          {needsCommentTranslation(reply.text) && (
-                            <button
-                              className="translate-btn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleTranslateComment(reply.id, reply.text);
-                              }}
-                              disabled={translatingComments[reply.id]}
-                            >
-                              {translatingComments[reply.id]
-                                ? t('loading')
-                                : t('translate') || 'Translate'}
-                            </button>
-                          )}
                           {translatedComments[reply.id] && (
                             <p className="comment-text translated">
                               {translatedComments[reply.id]}
@@ -1276,6 +1256,18 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                               <span className="comment-action-text">
                                 {t('react') || 'React'}
                               </span>
+                            </button>
+                            <button
+                              className="comment-action comment-translate-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleTranslateComment(reply.id, reply.text);
+                              }}
+                              disabled={translatingComments[reply.id]}
+                            >
+                              {translatingComments[reply.id]
+                                ? t('loading')
+                                : t('translate') || 'Translate'}
                             </button>
                           </div>
                         </div>

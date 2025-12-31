@@ -17,6 +17,7 @@ const GlobalChatSystem = () => {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadPrivateMessages, setUnreadPrivateMessages] = useState(0);
   const [showUsers, setShowUsers] = useState(false);
   const [activeTab, setActiveTab] = useState('global'); // 'global' or 'private'
   const [privateSearchQuery, setPrivateSearchQuery] = useState('');
@@ -61,6 +62,29 @@ const GlobalChatSystem = () => {
       setTimeout(() => scrollToBottom(), 100);
     }
   }, [isChatOpen, isMinimized, activeTab]);
+
+  // Fetch unread private messages count
+  useEffect(() => {
+    const fetchUnreadPrivateMessages = async () => {
+      if (!token) return;
+      
+      try {
+        const response = await axios.get('/api/messages/unread/count', {
+          headers: { 'x-auth-token': token }
+        });
+        setUnreadPrivateMessages(response.data.unreadCount);
+      } catch (error) {
+        console.error('Error fetching unread messages:', error);
+      }
+    };
+
+    if (token) {
+      fetchUnreadPrivateMessages();
+      // Poll every 3 seconds
+      const interval = setInterval(fetchUnreadPrivateMessages, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [token]);
 
   const loadExistingConversations = useCallback(async (changeView = true) => {
     try {
@@ -460,6 +484,18 @@ const GlobalChatSystem = () => {
         headers: { 'x-auth-token': token }
       });
       setPrivateMessages(response.data.messages);
+      
+      // Mark all messages from this user as read
+      try {
+        await axios.put(`/api/messages/conversation/${userId}/read-all`, {}, {
+          headers: { 'x-auth-token': token }
+        });
+        // Refresh conversations list to update unread counts
+        loadExistingConversations(false);
+      } catch (error) {
+        console.error('Error marking messages as read:', error);
+      }
+      
       // Scroll to bottom after loading messages
       setTimeout(() => scrollPrivateToBottom(false), 100);
     } catch (error) {
@@ -550,8 +586,8 @@ const GlobalChatSystem = () => {
           </span>
         </span>
         {activeTab === 'global' && <span className="chat-toggle-led"></span>}
-        {unreadCount > 0 && (
-          <span className="chat-toggle-badge">{unreadCount}</span>
+        {unreadPrivateMessages > 0 && (
+          <span className="chat-toggle-badge">{unreadPrivateMessages}</span>
         )}
       </label>
       </div>
@@ -803,6 +839,9 @@ const GlobalChatSystem = () => {
                           <div className="private-conv-name-row">
                             <span className="private-conv-name">{conv.username}</span>
                             <span className={`user-online-status ${activeUsers.some(u => u.username === conv.username) ? 'online' : 'offline'}`}></span>
+                            {conv.unreadCount > 0 && (
+                              <span className="private-conv-unread-badge">{conv.unreadCount}</span>
+                            )}
                           </div>
                           <p className="private-conv-preview">
                             {conv.lastMessage.content.substring(0, 30)}
