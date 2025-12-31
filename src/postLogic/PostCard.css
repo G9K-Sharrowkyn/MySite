@@ -1750,8 +1750,8 @@ body.dark-mode .post-card {
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  gap: clamp(16px, 4vw, 48px);
-  justify-content: space-evenly;
+  gap: clamp(12px, 2.2vw, 28px);
+  justify-content: center;
   align-items: flex-start;
 }
 
@@ -1773,9 +1773,10 @@ body.dark-mode .post-card {
 }
 
 .fight-vote-row-3col > .team-vote-col {
-  flex: 1 1 var(--team-zone-width);
-  max-width: var(--team-zone-width);
-  width: var(--team-zone-width);
+  flex: 1 1 0;
+  width: auto;
+  max-width: none;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1790,13 +1791,13 @@ body.dark-mode .post-card {
 }
 
 .team-vote-col {
-  flex: 0 0 auto;
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-end;
-  width: fit-content;
-  max-width: 100%;
+  width: auto;
+  max-width: none;
   min-width: 0;
 }
 
@@ -1837,6 +1838,7 @@ body.dark-mode .post-card {
     flex-direction: column;
     align-items: center;
     gap: 1.2rem;
+    justify-content: center;
     --team-zone-width: clamp(180px, 35vw, 280px);
   }
   .fight-vote-row-3col.has-voted {
@@ -1844,18 +1846,22 @@ body.dark-mode .post-card {
     justify-content: center;
   }
   .fight-vote-row-3col.has-voted > .team-vote-col {
-    width: var(--team-zone-width);
-    max-width: var(--team-zone-width);
-    flex: 0 1 auto;
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
+    min-width: 0;
   }
   .team-vote-col, .draw-vote-col {
     min-width: 0;
-    width: fit-content;
-    max-width: 100%;
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
   }
   .fight-vote-row-3col > .team-vote-col {
-    width: var(--team-zone-width);
-    max-width: var(--team-zone-width);
+    flex: 1 1 0;
+    width: auto;
+    max-width: none;
+    min-width: 0;
   }
   .vote-button,
   .draw-btn,
