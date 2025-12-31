@@ -18,6 +18,7 @@ export const translations = {
     // Home page
     welcomeTitle: 'Witaj w GeekFights!',
     welcomeSubtitle: 'Największa społeczność fanów anime, gier i komiksów. Głosuj na swoich ulubionych bohaterów i weź udział w epicznych walkach!',
+    betaWarning: 'Strona jest w wersji beta. Mogą występować błędy. Prosimy o zgłaszanie problemów za pomocą przycisku w lewym dolnym rogu.',
     joinFree: 'Dołącz za darmo',
     seeRanking: 'Zobacz ranking',
     officialFights: 'Oficjalne Walki',
@@ -723,6 +724,7 @@ export const translations = {
     // Home page
     welcomeTitle: 'Welcome to GeekFights!',
     welcomeSubtitle: 'The largest community of anime, gaming and comic fans. Vote for your favorite heroes and participate in epic battles!',
+    betaWarning: 'This site is in beta. Bugs may occur. Please report any issues using the feedback button in the bottom-left corner.',
     joinFree: 'Join for free',
     seeRanking: 'See ranking',
     officialFights: 'Official Fights',
@@ -1424,6 +1426,7 @@ export const translations = {
     // Home page
     welcomeTitle: '¡Bienvenido a GeekFights!',
     welcomeSubtitle: 'La comunidad más grande de fanáticos del anime, juegos y cómics. ¡Vota por tus héroes favoritos y participa en batallas épicas!',
+    betaWarning: 'Este sitio está en versión beta. Pueden ocurrir errores. Por favor, reporte cualquier problema usando el botón de comentarios en la esquina inferior izquierda.',
     joinFree: 'Únete gratis',
     seeRanking: 'Ver clasificación',
     officialFights: 'Peleas Oficiales',

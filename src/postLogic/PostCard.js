@@ -507,7 +507,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                           {...getOptimizedImageProps(
                             replacePlaceholderUrl(char?.image) || placeholderImages.character,
                             {
-                              size: 360,
+                              size: 280,
                               lazy: imageLazy,
                               fetchPriority: imagePriority,
                               decoding: imageDecoding
@@ -533,7 +533,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                       {...getOptimizedImageProps(
                         replacePlaceholderUrl(char?.image) || placeholderImages.character,
                         {
-                          size: 360,
+                          size: 280,
                           lazy: imageLazy,
                           fetchPriority: imagePriority,
                           decoding: imageDecoding

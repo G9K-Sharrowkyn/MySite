@@ -151,7 +151,8 @@ const Feed = () => {
     const range = new Set();
     if (!posts.length) return range;
     if (visibleIndexes.size === 0) {
-      const initialCount = Math.min(posts.length, 4);
+      // Only eager-load first 2 posts for better LCP
+      const initialCount = Math.min(posts.length, 2);
       for (let i = 0; i < initialCount; i += 1) {
         range.add(i);
       }
@@ -172,7 +173,8 @@ const Feed = () => {
     const range = new Set();
     if (!posts.length) return range;
     if (visibleIndexes.size === 0) {
-      const initialCount = Math.min(posts.length, 6);
+      // Only eager-load first 2 posts for better LCP
+      const initialCount = Math.min(posts.length, 2);
       for (let i = 0; i < initialCount; i += 1) {
         range.add(i);
       }
@@ -228,6 +230,12 @@ const handlePostUpdate = (updatedPost, isDeleted) => {
     <div className="feed-container">
       <div className="feed-header">
         <h1>🌟 {t('feed')}</h1>
+        <div className="beta-warning">
+          <span className="beta-icon">⚠️</span>
+          <span className="beta-text">
+            {t('betaWarning') || 'This is a beta version. Bugs may occur. Please report any issues using the feedback button in the bottom-left corner.'}
+          </span>
+        </div>
         <div className="feed-controls">
           <div className="sort-controls">
             <button
