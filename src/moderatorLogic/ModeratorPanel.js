@@ -34,6 +34,9 @@ const ModeratorPanel = () => {
   const [feedbackFilter, setFeedbackFilter] = useState('all');
   const [showDeleteFeedbackModal, setShowDeleteFeedbackModal] = useState(false);
   const [feedbackToDelete, setFeedbackToDelete] = useState(null);
+  const [tournaments, setTournaments] = useState([]);
+  const [showDeleteTournamentModal, setShowDeleteTournamentModal] = useState(false);
+  const [tournamentToDelete, setTournamentToDelete] = useState(null);
   
   // Fight creation state
   const [newFight, setNewFight] = useState({
@@ -226,7 +229,7 @@ const ModeratorPanel = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, divisionsRes, feedbackRes] = await Promise.all([
+      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, divisionsRes, feedbackRes, tournamentsRes] = await Promise.all([
         axios.get('/api/posts/official'),
         axios.get('/api/posts'),
         axios.get('/api/profile/all', {
@@ -241,7 +244,8 @@ const ModeratorPanel = () => {
         }).catch(() => ({ data: {} })), // Fallback if divisions not available
         axios.get('/api/feedback', {
           headers: { 'x-auth-token': token }
-        }).catch(() => ({ data: [] })) // Fallback if feedback not available
+        }).catch(() => ({ data: [] })), // Fallback if feedback not available
+        axios.get('/api/tournaments').catch(() => ({ data: [] })) // Fallback if tournaments not available
       ]);
 
       setFights(fightsRes.data.fights || fightsRes.data);
@@ -251,6 +255,7 @@ const ModeratorPanel = () => {
       setBets(betsRes.data || []);
       setDivisionStats(divisionsRes.data || {});
       setFeedback(feedbackRes.data || []);
+      setTournaments(tournamentsRes.data || []);
       
       // Fetch divisions data
       await Promise.all([fetchDivisions(), fetchSeasons()]);
@@ -594,11 +599,27 @@ const ModeratorPanel = () => {
         headers: { 'x-auth-token': token }
       });
       
-      showNotification(`Zablokowano ${response.data.lockedCount} walk`, 'success');
+      showNotification(response.data.message || 'Expired fights locked', 'success');
       fetchData();
     } catch (error) {
       console.error('Error locking expired fights:', error);
-      showNotification('Błąd podczas blokowania walk', 'error');
+      showNotification('Błąd podczas blokowania wygasłych walk', 'error');
+    }
+  };
+
+  const handleDeleteTournament = async (tournamentId) => {
+    try {
+      await axios.delete(`/api/tournaments/${tournamentId}`, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      showNotification('Tournament deleted successfully', 'success');
+      setShowDeleteTournamentModal(false);
+      setTournamentToDelete(null);
+      fetchData();
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+      showNotification(error.response?.data?.msg || 'Error deleting tournament', 'error');
     }
   };
 
@@ -663,6 +684,12 @@ const ModeratorPanel = () => {
           onClick={() => setActiveTab('feedback')}
         >
           📋 {t('moderatorPanel.feedback')}
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'tournaments' ? 'active' : ''}`}
+          onClick={() => setActiveTab('tournaments')}
+        >
+          🏆 Tournaments
         </button>
       </div>
 
@@ -1504,6 +1531,68 @@ const ModeratorPanel = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'tournaments' && (
+          <div className="tournaments-management">
+            <h2>🏆 Tournament Management</h2>
+            <p className="section-description">Manage all tournaments - delete recruiting or active tournaments</p>
+            
+            <div className="tournaments-grid">
+              {tournaments.length === 0 ? (
+                <div className="no-tournaments">
+                  <p>No tournaments found</p>
+                </div>
+              ) : (
+                tournaments.map(tournament => {
+                  const statusEmoji = tournament.status === 'recruiting' ? '📢' : 
+                                     tournament.status === 'active' ? '⚔️' : '🏆';
+                  const statusClass = `status-${tournament.status}`;
+                  
+                  return (
+                    <div key={tournament.id} className="tournament-card">
+                      <div className="tournament-header">
+                        <h3>{statusEmoji} {tournament.name}</h3>
+                        <span className={`tournament-status ${statusClass}`}>
+                          {tournament.status.toUpperCase()}
+                        </span>
+                      </div>
+                      
+                      <div className="tournament-info">
+                        <p><strong>Creator:</strong> {tournament.creatorName || 'Unknown'}</p>
+                        <p><strong>Participants:</strong> {tournament.participants?.length || 0} / {tournament.maxParticipants || 'N/A'}</p>
+                        <p><strong>Team Size:</strong> {tournament.settings?.teamSize || 1}</p>
+                        <p><strong>Created:</strong> {new Date(tournament.createdAt).toLocaleDateString()}</p>
+                        
+                        {tournament.settings?.allowedTiers && tournament.settings.allowedTiers.length > 0 && (
+                          <div className="tournament-tiers">
+                            <strong>Tiers:</strong>
+                            <div className="tiers-list">
+                              {tournament.settings.allowedTiers.map(tier => (
+                                <span key={tier} className="tier-badge-small">{tier}</span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="tournament-actions">
+                        <button
+                          onClick={() => {
+                            setTournamentToDelete(tournament);
+                            setShowDeleteTournamentModal(true);
+                          }}
+                          className="btn-delete-tournament"
+                        >
+                          🗑️ Delete Tournament
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Delete Post Confirmation Modal */}
@@ -1535,6 +1624,24 @@ const ModeratorPanel = () => {
         confirmButtonType="danger"
       >
         <p>{t('moderatorPanel.confirmDeleteFeedbackMessage')}</p>
+      </Modal>
+
+      {/* Delete Tournament Confirmation Modal */}
+      <Modal
+        isOpen={showDeleteTournamentModal}
+        onClose={() => {
+          setShowDeleteTournamentModal(false);
+          setTournamentToDelete(null);
+        }}
+        title="Confirm Tournament Deletion"
+        type="warning"
+        confirmText="Delete Tournament"
+        cancelText="Cancel"
+        onConfirm={() => handleDeleteTournament(tournamentToDelete?.id)}
+        confirmButtonType="danger"
+      >
+        <p>Are you sure you want to delete tournament <strong>"{tournamentToDelete?.name}"</strong>?</p>
+        <p>This action cannot be undone.</p>
       </Modal>
     </div>
   );

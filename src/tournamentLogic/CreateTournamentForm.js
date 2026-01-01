@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
+import Toast from './Toast';
 import './CreateTournamentForm.css';
 
 const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
-  const { t } = useLanguage();
+  const [toast, setToast] = useState(null);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -23,20 +23,16 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
   const token = localStorage.getItem('token');
 
   const tierOptions = [
-    { id: 'regularPeople', name: 'Street Level' },
-    { id: 'metahuman', name: 'Metahuman' },
-    { id: 'planetBusters', name: 'Planet Busters' },
-    { id: 'godTier', name: 'God Tier' },
-    { id: 'universalThreat', name: 'Universal Threat' }
+    { id: 'regularPeople', name: 'Street Level', type: 'power' },
+    { id: 'metahuman', name: 'Metahuman', type: 'power' },
+    { id: 'planetBusters', name: 'Planet Busters', type: 'power' },
+    { id: 'godTier', name: 'God Tier', type: 'power' },
+    { id: 'universalThreat', name: 'Universal Threat', type: 'power' },
+    { id: 'star-wars', name: 'Star Wars', type: 'franchise' },
+    { id: 'dragon-ball', name: 'Dragon Ball', type: 'franchise' },
+    { id: 'dc', name: 'DC Comics', type: 'franchise' },
+    { id: 'marvel', name: 'Marvel', type: 'franchise' }
   ];
-
-  useEffect(() => {
-    fetchCharacters();
-  }, []);
-
-  useEffect(() => {
-    filterAvailableCharacters();
-  }, [formData.allowedTiers, characters]);
 
   const fetchCharacters = async () => {
     try {
@@ -47,16 +43,39 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
     }
   };
 
-  const filterAvailableCharacters = () => {
+  const filterAvailableCharacters = useCallback(() => {
     if (formData.allowedTiers.length === 0) {
       setAvailableCharacters(characters);
     } else {
-      const filtered = characters.filter(char => 
-        formData.allowedTiers.includes(char.division)
-      );
+      const filtered = characters.filter(char => {
+        // Separate power levels and franchises
+        const powerLevels = ['regularPeople', 'metahuman', 'planetBusters', 'godTier', 'universalThreat'];
+        const franchises = ['star-wars', 'dragon-ball', 'dc', 'marvel'];
+        
+        const selectedPowerLevels = formData.allowedTiers.filter(tier => powerLevels.includes(tier));
+        const selectedFranchises = formData.allowedTiers.filter(tier => franchises.includes(tier));
+        
+        // Normalize universe name to match tier format
+        const normalizedUniverse = char.universe ? char.universe.toLowerCase().replace(/\s+/g, '-') : '';
+        
+        // Check matches
+        const matchesPowerLevel = selectedPowerLevels.length === 0 || selectedPowerLevels.includes(char.division);
+        const matchesFranchise = selectedFranchises.length === 0 || selectedFranchises.includes(normalizedUniverse);
+        
+        // Both must match (AND logic)
+        return matchesPowerLevel && matchesFranchise;
+      });
       setAvailableCharacters(filtered);
     }
-  };
+  }, [formData.allowedTiers, characters]);
+
+  useEffect(() => {
+    fetchCharacters();
+  }, []);
+
+  useEffect(() => {
+    filterAvailableCharacters();
+  }, [filterAvailableCharacters]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -89,7 +108,7 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
     e.preventDefault();
     
     if (!token) {
-      alert('You must be logged in to create a tournament');
+      setToast({ message: 'You must be logged in to create a tournament', type: 'error' });
       return;
     }
 
@@ -98,22 +117,33 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
         headers: { 'x-auth-token': token }
       });
       
-      alert('Tournament created successfully!');
-      if (onTournamentCreated) onTournamentCreated(response.data);
-      if (onClose) onClose();
+      setToast({ message: 'Tournament created successfully!', type: 'success' });
+      setTimeout(() => {
+        if (onTournamentCreated) onTournamentCreated(response.data);
+        if (onClose) onClose();
+      }, 1000);
     } catch (error) {
       console.error('Error creating tournament:', error);
-      alert(error.response?.data?.msg || 'Error creating tournament');
+      setToast({ message: error.response?.data?.msg || 'Error creating tournament', type: 'error' });
     }
   };
 
   return (
-    <div className="create-tournament-modal">
-      <div className="modal-content">
-        <button className="modal-close" onClick={onClose}>×</button>
+    <div className="create-tournament-form">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
+      <div className="form-header">
         <h2>🏆 Create Tournament</h2>
-        
-        <form onSubmit={handleSubmit}>
+        <button className="btn-close" onClick={onClose}>Cancel</button>
+      </div>
+      
+      <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Tournament Name</label>
             <input
@@ -182,19 +212,41 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
           </div>
 
           <div className="form-group">
-            <label>Allowed Tiers</label>
-            <div className="tier-selection">
-              {tierOptions.map(tier => (
-                <button
-                  key={tier.id}
-                  type="button"
-                  className={`tier-btn ${formData.allowedTiers.includes(tier.id) ? 'active' : ''}`}
-                  onClick={() => handleTierToggle(tier.id)}
-                >
-                  {tier.name}
-                </button>
-              ))}
+            <label>Allowed Tiers / Universes</label>
+            <div className="tier-selection-section">
+              <div className="tier-group">
+                <span className="tier-group-label">⚡ Power Levels</span>
+                <div className="tier-buttons">
+                  {tierOptions.filter(t => t.type === 'power').map(tier => (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      className={`tier-btn ${formData.allowedTiers.includes(tier.id) ? 'active' : ''}`}
+                      onClick={() => handleTierToggle(tier.id)}
+                    >
+                      {tier.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="tier-group">
+                <span className="tier-group-label">🌌 Universes / Franchises</span>
+                <div className="tier-buttons">
+                  {tierOptions.filter(t => t.type === 'franchise').map(tier => (
+                    <button
+                      key={tier.id}
+                      type="button"
+                      className={`tier-btn franchise-btn ${formData.allowedTiers.includes(tier.id) ? 'active' : ''}`}
+                      onClick={() => handleTierToggle(tier.id)}
+                    >
+                      {tier.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
+            <p className="hint">Leave empty to allow all characters</p>
           </div>
 
           <div className="form-group">
@@ -235,20 +287,17 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
                 checked={formData.showOnFeed}
                 onChange={handleChange}
               />
-              Show battles on main feed
+              <div className="toggle-switch"></div>
+              <span>Show battles on main feed</span>
             </label>
           </div>
 
           <div className="form-actions">
-            <button type="button" className="btn-cancel" onClick={onClose}>
-              Cancel
-            </button>
             <button type="submit" className="btn-primary">
               Create Tournament
             </button>
           </div>
         </form>
-      </div>
     </div>
   );
 };

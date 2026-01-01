@@ -787,9 +787,25 @@ export const getAvailableCharacters = async (req, res) => {
       if (takenCharacters.includes(char.id)) return false;
       
       // Check tier restriction
-      if (allowedTiers.includes('all')) return true;
+      // If no tiers selected OR 'all' is selected, allow all characters
+      if (allowedTiers.length === 0 || allowedTiers.includes('all')) return true;
       
-      return allowedTiers.includes(char.division);
+      // Separate power levels and franchises
+      const powerLevels = ['regularPeople', 'metahuman', 'planetBusters', 'godTier', 'universalThreat'];
+      const franchises = ['star-wars', 'dragon-ball', 'dc', 'marvel'];
+      
+      const selectedPowerLevels = allowedTiers.filter(tier => powerLevels.includes(tier));
+      const selectedFranchises = allowedTiers.filter(tier => franchises.includes(tier));
+      
+      // Normalize universe name to match tier format
+      const normalizedUniverse = char.universe ? char.universe.toLowerCase().replace(/\s+/g, '-') : '';
+      
+      // Check matches
+      const matchesPowerLevel = selectedPowerLevels.length === 0 || selectedPowerLevels.includes(char.division);
+      const matchesFranchise = selectedFranchises.length === 0 || selectedFranchises.includes(normalizedUniverse);
+      
+      // Both must match (AND logic)
+      return matchesPowerLevel && matchesFranchise;
     });
 
     res.json({
@@ -841,8 +857,13 @@ export const deleteTournament = async (req, res) => {
     }
 
     // Remove tournament
-    db.tournaments.splice(tournamentIndex, 1);
-    await updateDb(db);
+    await updateDb((db) => {
+      const index = (db.tournaments || []).findIndex((entry) => entry.id === id);
+      if (index !== -1) {
+        db.tournaments.splice(index, 1);
+      }
+      return db;
+    });
 
     res.json({ msg: 'Tournament deleted successfully' });
   } catch (err) {

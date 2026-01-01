@@ -132,6 +132,7 @@ const Header = () => {
           <Link to="/" className="nav-link">{t('home')}</Link>
           <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
           <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
+          <Link to="/tournaments" className="nav-link">{t('tournaments')}</Link>
           {isModerator && (
             <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
           )}

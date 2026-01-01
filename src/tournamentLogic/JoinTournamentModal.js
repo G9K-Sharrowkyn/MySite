@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import Toast from './Toast';
 import './JoinTournamentModal.css';
 
 const JoinTournamentModal = ({ tournamentId, onClose, onSuccess }) => {
@@ -7,13 +8,11 @@ const JoinTournamentModal = ({ tournamentId, onClose, onSuccess }) => {
   const [availableCharacters, setAvailableCharacters] = useState([]);
   const [selectedCharacters, setSelectedCharacters] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [teamSize, setTeamSize] = useState(1);
+  const [toast, setToast] = useState(null);
   const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    fetchTournamentAndCharacters();
-  }, [tournamentId]);
-
-  const fetchTournamentAndCharacters = async () => {
+  const fetchTournamentAndCharacters = useCallback(async () => {
     try {
       const [tournamentRes, charactersRes] = await Promise.all([
         axios.get(`/api/tournaments/${tournamentId}`),
@@ -23,30 +22,35 @@ const JoinTournamentModal = ({ tournamentId, onClose, onSuccess }) => {
       ]);
       
       setTournament(tournamentRes.data);
-      setAvailableCharacters(charactersRes.data.availableCharacters || []);
+      setAvailableCharacters(charactersRes.data.characters || []);
+      setTeamSize(charactersRes.data.teamSize || 1);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
-      alert('Error loading tournament data');
+      setToast({ message: 'Error loading tournament data', type: 'error' });
       setLoading(false);
     }
-  };
+  }, [tournamentId, token]);
+
+  useEffect(() => {
+    fetchTournamentAndCharacters();
+  }, [fetchTournamentAndCharacters]);
 
   const handleCharacterClick = (character) => {
     if (selectedCharacters.find(c => c.id === character.id)) {
       setSelectedCharacters(selectedCharacters.filter(c => c.id !== character.id));
     } else {
-      if (selectedCharacters.length < tournament.teamSize) {
+      if (selectedCharacters.length < teamSize) {
         setSelectedCharacters([...selectedCharacters, character]);
       } else {
-        alert(`You can only select ${tournament.teamSize} character(s)`);
+        setToast({ message: `You can only select ${teamSize} character(s)`, type: 'warning' });
       }
     }
   };
 
   const handleJoin = async () => {
-    if (selectedCharacters.length !== tournament.teamSize) {
-      alert(`Please select exactly ${tournament.teamSize} character(s)`);
+    if (selectedCharacters.length !== teamSize) {
+      setToast({ message: `Please select exactly ${teamSize} character(s)`, type: 'warning' });
       return;
     }
 
@@ -57,11 +61,13 @@ const JoinTournamentModal = ({ tournamentId, onClose, onSuccess }) => {
         headers: { 'x-auth-token': token }
       });
       
-      alert('Successfully joined tournament!');
-      onSuccess();
+      setToast({ message: 'Successfully joined tournament!', type: 'success' });
+      setTimeout(() => {
+        onSuccess();
+      }, 1000);
     } catch (error) {
       console.error('Error joining tournament:', error);
-      alert(error.response?.data?.msg || 'Error joining tournament');
+      setToast({ message: error.response?.data?.msg || 'Error joining tournament', type: 'error' });
     }
   };
 
@@ -77,15 +83,23 @@ const JoinTournamentModal = ({ tournamentId, onClose, onSuccess }) => {
 
   return (
     <div className="join-modal-overlay">
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
       <div className="join-modal">
         <button className="modal-close" onClick={onClose}>×</button>
         
         <h2>Join Tournament: {tournament?.title}</h2>
         
         <div className="team-size-info">
-          <p>Select {tournament?.teamSize} character(s) for your team</p>
+          <p>Select {teamSize} character(s) for your team</p>
           <p className="selected-count">
-            Selected: {selectedCharacters.length}/{tournament?.teamSize}
+            Selected: {selectedCharacters.length}/{teamSize}
           </p>
         </div>
 
@@ -128,7 +142,7 @@ const JoinTournamentModal = ({ tournamentId, onClose, onSuccess }) => {
           <button 
             className="btn-join" 
             onClick={handleJoin}
-            disabled={selectedCharacters.length !== tournament?.teamSize}
+            disabled={selectedCharacters.length !== teamSize}
           >
             Join Tournament
           </button>

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useLanguage } from '../i18n/LanguageContext';
 import CreateTournamentForm from './CreateTournamentForm';
 import JoinTournamentModal from './JoinTournamentModal';
 import TournamentBracket from './TournamentBracket';
+import Toast from './Toast';
 import './TournamentPage.css';
 
 const TournamentPage = () => {
@@ -14,8 +14,10 @@ const TournamentPage = () => {
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joiningTournamentId, setJoiningTournamentId] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [tournamentToDelete, setTournamentToDelete] = useState(null);
+  const [toast, setToast] = useState(null);
   
-  const { t } = useLanguage();
   const token = localStorage.getItem('token');
   const userId = localStorage.getItem('userId');
 
@@ -50,7 +52,7 @@ const TournamentPage = () => {
 
   const handleJoinClick = (tournamentId) => {
     if (!token) {
-      alert('Please log in to join tournaments');
+      setToast({ message: 'Please log in to join tournaments', type: 'warning' });
       return;
     }
     setJoiningTournamentId(tournamentId);
@@ -72,15 +74,46 @@ const TournamentPage = () => {
         headers: { 'x-auth-token': token }
       });
       
-      alert('Tournament started! Brackets generated.');
+      setToast({ message: 'Tournament started! Brackets generated.', type: 'success' });
       fetchTournaments();
       if (selectedTournament?.id === tournamentId) {
         fetchTournamentDetails(tournamentId);
       }
     } catch (error) {
       console.error('Error generating brackets:', error);
-      alert(error.response?.data?.msg || 'Error starting tournament');
+      setToast({ message: error.response?.data?.msg || 'Error starting tournament', type: 'error' });
     }
+  };
+
+  const handleDeleteClick = (tournamentId, tournamentTitle) => {
+    setTournamentToDelete({ id: tournamentId, title: tournamentTitle });
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!tournamentToDelete) return;
+
+    try {
+      await axios.delete(`/api/tournaments/${tournamentToDelete.id}`, {
+        headers: { 'x-auth-token': token }
+      });
+      
+      setShowDeleteModal(false);
+      setTournamentToDelete(null);
+      setToast({ message: 'Tournament deleted successfully', type: 'success' });
+      fetchTournaments();
+      if (selectedTournament?.id === tournamentToDelete.id) {
+        setSelectedTournament(null);
+      }
+    } catch (error) {
+      console.error('Error deleting tournament:', error);
+      setToast({ message: error.response?.data?.msg || 'Error deleting tournament', type: 'error' });
+    }
+  };
+
+  const cancelDelete = () => {
+    setShowDeleteModal(false);
+    setTournamentToDelete(null);
   };
 
   const getStatusEmoji = (status) => {
@@ -116,7 +149,7 @@ const TournamentPage = () => {
       <div className="tournaments-list">
         <div className="tournaments-header">
           <h1>🏆 Tournaments</h1>
-          {token && (
+          {token && !showCreateForm && (
             <button 
               className="create-tournament-btn"
               onClick={() => setShowCreateForm(true)}
@@ -125,6 +158,13 @@ const TournamentPage = () => {
             </button>
           )}
         </div>
+
+        {showCreateForm && (
+          <CreateTournamentForm 
+            onClose={() => setShowCreateForm(false)}
+            onTournamentCreated={handleTournamentCreated}
+          />
+        )}
 
         <div className="filter-tabs">
           <button 
@@ -157,8 +197,11 @@ const TournamentPage = () => {
           <div className="no-tournaments">
             <p>No tournaments found</p>
             {token && (
-              <button onClick={() => setShowCreateForm(true)}>
-                Create the first tournament!
+              <button 
+                className="create-tournament-btn"
+                onClick={() => setShowCreateForm(true)}
+              >
+                Create Tournament
               </button>
             )}
           </div>
@@ -231,10 +274,10 @@ const TournamentPage = () => {
                     
                     {tournament.status === 'recruiting' && isCreator && (
                       <button 
-                        className="btn-start"
-                        onClick={() => handleGenerateBrackets(tournament.id)}
+                        className="btn-delete"
+                        onClick={() => handleDeleteClick(tournament.id, tournament.title)}
                       >
-                        🚀 Start
+                        🗑️ Delete
                       </button>
                     )}
                     
@@ -353,10 +396,11 @@ const TournamentPage = () => {
 
   return (
     <div className="tournament-page">
-      {showCreateForm && (
-        <CreateTournamentForm 
-          onClose={() => setShowCreateForm(false)}
-          onTournamentCreated={handleTournamentCreated}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
 
@@ -366,6 +410,30 @@ const TournamentPage = () => {
           onClose={() => setShowJoinModal(false)}
           onSuccess={handleJoinSuccess}
         />
+      )}
+
+      {showDeleteModal && (
+        <div className="modal-overlay" onClick={cancelDelete}>
+          <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>🗑️ Delete Tournament</h2>
+              <button className="close-btn" onClick={cancelDelete}>×</button>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to delete this tournament?</p>
+              <p className="tournament-name-highlight">"{tournamentToDelete?.title}"</p>
+              <p className="warning-text">This action cannot be undone.</p>
+            </div>
+            <div className="modal-actions">
+              <button className="btn-cancel" onClick={cancelDelete}>
+                Cancel
+              </button>
+              <button className="btn-confirm-delete" onClick={confirmDelete}>
+                Delete Tournament
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {selectedTournament ? renderTournamentDetail() : renderTournamentList()}
