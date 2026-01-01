@@ -255,6 +255,8 @@ export const createTournament = async (req, res) => {
       prizePool: prizePool || 0,
       entryFee: entryFee || 0,
       createdBy: req.user.id,
+      creatorId: req.user.id,
+      creatorName: user.username || 'Unknown',
       status: 'recruiting', // Changed from 'upcoming'
       participants: [],
       fights: [],
@@ -591,42 +593,6 @@ export const updateTournament = async (req, res) => {
   }
 };
 
-export const deleteTournament = async (req, res) => {
-  const { id } = req.params;
-
-  try {
-    await updateDb((db) => {
-      const user = findUserById(db, req.user.id);
-      if (!user || user.role !== 'moderator') {
-        const error = new Error('Access denied');
-        error.code = 'ACCESS_DENIED';
-        throw error;
-      }
-
-      const index = (db.tournaments || []).findIndex((entry) => entry.id === id);
-      if (index === -1) {
-        const error = new Error('Tournament not found');
-        error.code = 'NOT_FOUND';
-        throw error;
-      }
-
-      db.tournaments.splice(index, 1);
-      return db;
-    });
-
-    res.json({ msg: 'Tournament deleted successfully' });
-  } catch (err) {
-    if (err.code === 'ACCESS_DENIED') {
-      return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
-    }
-    if (err.code === 'NOT_FOUND') {
-      return res.status(404).json({ msg: 'Tournament not found' });
-    }
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-};
-
 export const joinTournament = async (req, res) => {
   const { id } = req.params;
   const { characterIds } = req.body; // Now accepts array of character IDs for team
@@ -829,8 +795,56 @@ export const getAvailableCharacters = async (req, res) => {
     res.json({
       characters: availableCharacters,
       takenCount: takenCharacters.length,
-      availableCount: availableCharacters.length
+      availableCount: availableCharacters.length,
+      teamSize: tournament.settings?.teamSize || 1,
+      allowedTiers: allowedTiers
     });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// @route   DELETE /api/tournaments/:id
+// @desc    Delete a tournament (creator or moderator only)
+// @access  Private
+export const deleteTournament = async (req, res) => {
+  const { id } = req.params;
+  const userId = resolveUserId(req.user);
+
+  try {
+    const db = await readDb();
+    const user = findUserById(db, userId);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    const tournamentIndex = (db.tournaments || []).findIndex((entry) => entry.id === id);
+    
+    if (tournamentIndex === -1) {
+      return res.status(404).json({ msg: 'Tournament not found' });
+    }
+
+    const tournament = db.tournaments[tournamentIndex];
+    const isModerator = user.role === 'moderator' || user.role === 'admin';
+    const isCreator = tournament.creatorId === userId;
+
+    // Check permissions
+    if (!isModerator && !isCreator) {
+      return res.status(403).json({ msg: 'Not authorized to delete this tournament' });
+    }
+
+    // If not moderator, can only delete recruiting tournaments
+    if (!isModerator && tournament.status !== 'recruiting') {
+      return res.status(403).json({ msg: 'Can only delete tournaments that have not started' });
+    }
+
+    // Remove tournament
+    db.tournaments.splice(tournamentIndex, 1);
+    await updateDb(db);
+
+    res.json({ msg: 'Tournament deleted successfully' });
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
