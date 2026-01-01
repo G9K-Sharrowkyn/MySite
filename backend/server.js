@@ -139,12 +139,12 @@ app.use('/api/auth/register', authLimiter);
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
 
-// Request logging middleware
-if (process.env.NODE_ENV === 'production') {
-  app.use(morgan('combined')); // Apache-style combined logging for production
-} else {
-  app.use(morgan('dev')); // Concise colored output for development
-}
+// Request logging middleware - disabled for cleaner output
+// if (process.env.NODE_ENV === 'production') {
+//   app.use(morgan('combined'));
+// } else {
+//   app.use(morgan('dev'));
+// }
 
 // CORS
 app.use(cors({

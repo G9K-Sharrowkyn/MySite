@@ -18,6 +18,7 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     id: resolveUserId(user),
     username: user.username,
     ...(includeEmail ? { email: user.email } : {}),
+    ...(includeEmail ? { timezone: user.timezone || 'UTC' } : {}),
     role: user.role || 'user',
     description,
     profilePicture: profile.profilePicture || profile.avatar || '',

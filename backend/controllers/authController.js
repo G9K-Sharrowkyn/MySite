@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, updateDb } from '../services/jsonDb.js';
 import { applyDailyBonus } from '../utils/coinBonus.js';
+import { sendPasswordResetEmail } from '../services/emailService.js';
 
 const isJwtConfigured = () =>
   typeof process.env.JWT_SECRET === 'string' &&
@@ -267,5 +268,156 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ msg: 'Server error. ' + error.message });
+  }
+};
+
+// @route   PUT /api/auth/change-password
+// @desc    Change user password
+// @access  Private
+export const changePassword = async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  const userId = resolveUserId(req.user);
+
+  try {
+    const db = await readDb();
+    const user = db.users.find(u => resolveUserId(u) === userId);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Verify current password
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ msg: 'Current password is incorrect' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password
+    await updateDb((data) => {
+      const userIndex = data.users.findIndex(u => resolveUserId(u) === userId);
+      if (userIndex !== -1) {
+        data.users[userIndex].password = hashedPassword;
+      }
+      return data;
+    });
+
+    res.json({ msg: 'Password changed successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @route   PUT /api/auth/update-timezone
+// @desc    Update user timezone
+// @access  Private
+export const updateTimezone = async (req, res) => {
+  const { timezone } = req.body;
+  const userId = resolveUserId(req.user);
+
+  try {
+    const db = await readDb();
+    const user = db.users.find(u => resolveUserId(u) === userId);
+
+    if (!user) {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Update timezone
+    await updateDb((data) => {
+      const userIndex = data.users.findIndex(u => resolveUserId(u) === userId);
+      if (userIndex !== -1) {
+        data.users[userIndex].timezone = timezone;
+      }
+      return data;
+    });
+
+    res.json({ msg: 'Timezone updated successfully', timezone });
+  } catch (error) {
+    console.error('Update timezone error:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @route   POST /api/auth/forgot-password
+// @desc    Request password reset email
+// @access  Public
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const normalizedEmail = normalizeEmail(email);
+    const db = await readDb();
+    const user = db.users.find(u => normalizeEmail(u.email) === normalizedEmail);
+
+    // Always return success message (security best practice - don't reveal if email exists)
+    if (!user) {
+      return res.json({ msg: 'If that email is registered, a reset link has been sent.' });
+    }
+
+    // Generate reset token
+    const resetToken = uuidv4();
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+
+    // Save reset token to user
+    await updateDb((data) => {
+      const userIndex = data.users.findIndex(u => resolveUserId(u) === resolveUserId(user));
+      if (userIndex !== -1) {
+        data.users[userIndex].resetPasswordToken = resetToken;
+        data.users[userIndex].resetPasswordExpiry = resetTokenExpiry;
+      }
+      return data;
+    });
+
+    // Send email
+    await sendPasswordResetEmail(user.email, resetToken);
+
+    res.json({ msg: 'If that email is registered, a reset link has been sent.' });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ msg: 'Error sending reset email' });
+  }
+};
+
+// @route   POST /api/auth/reset-password
+// @desc    Reset password with token
+// @access  Public
+export const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  try {
+    const db = await readDb();
+    const user = db.users.find(u => 
+      u.resetPasswordToken === token && 
+      u.resetPasswordExpiry > Date.now()
+    );
+
+    if (!user) {
+      return res.status(400).json({ msg: 'Invalid or expired reset token' });
+    }
+
+    // Hash new password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    // Update password and clear reset token
+    await updateDb((data) => {
+      const userIndex = data.users.findIndex(u => resolveUserId(u) === resolveUserId(user));
+      if (userIndex !== -1) {
+        data.users[userIndex].password = hashedPassword;
+        data.users[userIndex].resetPasswordToken = null;
+        data.users[userIndex].resetPasswordExpiry = null;
+      }
+      return data;
+    });
+
+    res.json({ msg: 'Password reset successful' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ msg: 'Error resetting password' });
   }
 };
