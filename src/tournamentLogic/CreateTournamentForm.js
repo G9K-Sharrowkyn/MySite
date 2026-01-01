@@ -10,7 +10,8 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
     description: '',
     maxParticipants: 32,
     recruitmentDays: 2,
-    battleTime: '18:00',
+    battleTime: '',
+    battleDate: '',
     teamSize: 1,
     showOnFeed: false,
     allowedTiers: [],
@@ -71,6 +72,24 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
 
   useEffect(() => {
     fetchCharacters();
+    
+    // Set minimum datetime to current time + recruitment days
+    const minDate = new Date();
+    minDate.setDate(minDate.getDate() + (formData.recruitmentDays || 2));
+    
+    // Format for datetime-local input (YYYY-MM-DDTHH:MM)
+    const year = minDate.getFullYear();
+    const month = String(minDate.getMonth() + 1).padStart(2, '0');
+    const day = String(minDate.getDate()).padStart(2, '0');
+    const hours = String(minDate.getHours()).padStart(2, '0');
+    const minutes = String(minDate.getMinutes()).padStart(2, '0');
+    
+    const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+    
+    // Set default battle date if not set
+    if (!formData.battleDate) {
+      setFormData(prev => ({ ...prev, battleDate: minDateTime }));
+    }
   }, []);
 
   useEffect(() => {
@@ -112,8 +131,32 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
       return;
     }
 
+    if (!formData.battleDate) {
+      setToast({ message: 'Please select a battle date and time', type: 'error' });
+      return;
+    }
+
     try {
-      const response = await axios.post('/api/tournaments', formData, {
+      // Get user's timezone
+      const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      
+      // Parse the datetime-local input (which is in user's local time)
+      // and convert to ISO string (UTC)
+      const battleDateTime = new Date(formData.battleDate);
+      
+      // Extract time for display
+      const hours = String(battleDateTime.getHours()).padStart(2, '0');
+      const minutes = String(battleDateTime.getMinutes()).padStart(2, '0');
+      const battleTime = `${hours}:${minutes}`;
+      
+      const payload = {
+        ...formData,
+        battleDate: battleDateTime.toISOString(), // Send as UTC ISO string
+        battleTime: battleTime, // Keep for display
+        userTimezone: userTimezone
+      };
+      
+      const response = await axios.post('/api/tournaments', payload, {
         headers: { 'x-auth-token': token }
       });
       
@@ -201,13 +244,22 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
             </div>
 
             <div className="form-group">
-              <label>Battle Time</label>
+              <label>Battle Start Time (Your Local Time)</label>
               <input
-                type="time"
-                name="battleTime"
-                value={formData.battleTime}
+                type="datetime-local"
+                name="battleDate"
+                value={formData.battleDate}
                 onChange={handleChange}
+                required
+                min={(() => {
+                  const minDate = new Date();
+                  minDate.setDate(minDate.getDate() + (formData.recruitmentDays || 2));
+                  return minDate.toISOString().slice(0, 16);
+                })()}
               />
+              <small style={{ color: '#888', fontSize: '12px', marginTop: '4px', display: 'block' }}>
+                {formData.battleDate && `UTC: ${new Date(formData.battleDate).toUTCString()}`}
+              </small>
             </div>
           </div>
 

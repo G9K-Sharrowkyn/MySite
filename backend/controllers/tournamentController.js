@@ -219,6 +219,8 @@ export const createTournament = async (req, res) => {
     excludedCharacters,  // Array of character IDs to exclude
     recruitmentDays,     // 1, 2, 3, or 7 days
     battleTime,          // Time of day for battles: '18:00'
+    battleDate,          // ISO date string from user's timezone
+    userTimezone,        // User's timezone (e.g., 'America/New_York')
     teamSize,            // 1, 2, 3, or more
     showOnFeed           // Boolean: show battles on main feed
   } = req.body;
@@ -232,14 +234,15 @@ export const createTournament = async (req, res) => {
       return res.status(401).json({ msg: 'User not authenticated' });
     }
 
-    // Calculate recruitment end date
-    const now = new Date();
-    const recruitmentEnd = new Date(now);
-    recruitmentEnd.setDate(recruitmentEnd.getDate() + (recruitmentDays || 2));
+    // Calculate recruitment end date in UTC
+    // battleDate comes from frontend as ISO string in user's local time
+    // We parse it and store as UTC
+    const recruitmentEnd = new Date(battleDate);
     
-    // Set battle time
-    const [hours, minutes] = (battleTime || '18:00').split(':');
-    recruitmentEnd.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    // Validate that the date is in the future
+    if (recruitmentEnd <= new Date()) {
+      return res.status(400).json({ msg: 'Battle time must be in the future' });
+    }
 
     const newTournament = {
       id: uuidv4(),
@@ -265,7 +268,9 @@ export const createTournament = async (req, res) => {
         allowedTiers: allowedTiers || ['all'],
         excludedCharacters: excludedCharacters || [],
         recruitmentDays: recruitmentDays || 2,
-        battleTime: battleTime || '18:00',
+        battleTime: battleTime || '18:00', // Keep for display purposes
+        battleTimeUTC: recruitmentEnd.toISOString(), // Actual UTC time
+        userTimezone: userTimezone || 'UTC', // Creator's timezone for reference
         teamSize: teamSize || 1,
         showOnFeed: showOnFeed !== undefined ? showOnFeed : false,
         publicJoin: true,

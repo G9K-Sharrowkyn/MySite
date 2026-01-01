@@ -134,9 +134,23 @@ const TournamentPage = () => {
     
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
     const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
     
     if (days > 0) return `${days}d ${hours}h`;
-    return `${hours}h`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
+  };
+
+  const formatLocalDateTime = (isoString) => {
+    if (!isoString) return 'TBA';
+    const date = new Date(isoString);
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
   };
 
   const filteredTournaments = tournaments.filter(t => {
@@ -232,15 +246,23 @@ const TournamentPage = () => {
                       <span className="meta-value">{tournament.teamSize}</span>
                     </div>
                     {tournament.status === 'recruiting' && tournament.recruitmentEndDate && (
+                      <>
+                        <div className="meta-item">
+                          <span className="meta-label">Starts In:</span>
+                          <span className="meta-value">{getTimeRemaining(tournament.recruitmentEndDate)}</span>
+                        </div>
+                        <div className="meta-item">
+                          <span className="meta-label">Battle Time:</span>
+                          <span className="meta-value">{formatLocalDateTime(tournament.recruitmentEndDate)}</span>
+                        </div>
+                      </>
+                    )}
+                    {tournament.status !== 'recruiting' && tournament.recruitmentEndDate && (
                       <div className="meta-item">
-                        <span className="meta-label">Time Left:</span>
-                        <span className="meta-value">{getTimeRemaining(tournament.recruitmentEndDate)}</span>
+                        <span className="meta-label">Started:</span>
+                        <span className="meta-value">{formatLocalDateTime(tournament.recruitmentEndDate)}</span>
                       </div>
                     )}
-                    <div className="meta-item">
-                      <span className="meta-label">Battle Time:</span>
-                      <span className="meta-value">{tournament.battleTime}</span>
-                    </div>
                   </div>
 
                   {tournament.allowedTiers && tournament.allowedTiers.length > 0 && (
