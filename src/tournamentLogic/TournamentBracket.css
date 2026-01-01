@@ -1,0 +1,267 @@
+.tournament-bracket {
+  padding: 20px;
+  background: #0a0a0a;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.tournament-bracket h2 {
+  color: #ff6b00;
+  text-align: center;
+  margin-bottom: 30px;
+  font-size: 28px;
+}
+
+.bracket-container {
+  display: flex;
+  gap: 40px;
+  overflow-x: auto;
+  padding: 20px;
+}
+
+.bracket-round {
+  min-width: 300px;
+  flex-shrink: 0;
+}
+
+.round-header {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: linear-gradient(135deg, #ff6b00, #ff9900);
+  border-radius: 5px;
+}
+
+.round-header h3 {
+  color: #fff;
+  margin: 0 0 5px;
+  font-size: 20px;
+}
+
+.round-info {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+
+.round-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.match {
+  background: #1a1a1a;
+  border: 2px solid #444;
+  border-radius: 8px;
+  padding: 15px;
+  transition: all 0.3s;
+}
+
+.match.active {
+  border-color: #ff6b00;
+  box-shadow: 0 0 20px rgba(255, 107, 0, 0.3);
+}
+
+.match.completed {
+  border-color: #666;
+}
+
+.match-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #333;
+}
+
+.match-id {
+  color: #aaa;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.match-status {
+  padding: 3px 10px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.match-status.pending {
+  background: #555;
+  color: #fff;
+}
+
+.match-status.active {
+  background: #ff6b00;
+  color: #fff;
+}
+
+.match-status.completed {
+  background: #00aa00;
+  color: #fff;
+}
+
+.match-participants {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.participant {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background: #2a2a2a;
+  border: 2px solid transparent;
+  border-radius: 5px;
+  transition: all 0.3s;
+}
+
+.participant.winner {
+  border-color: #00ff00;
+  background: #1a3a1a;
+}
+
+.participant.voted {
+  border-color: #ff6b00;
+}
+
+.participant.tbd {
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.participant.bye {
+  opacity: 0.3;
+  background: #151515;
+}
+
+.participant-info {
+  flex: 1;
+}
+
+.participant-name {
+  color: #fff;
+  font-weight: bold;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.participant-characters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.char-badge {
+  padding: 2px 8px;
+  background: #444;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #fff;
+}
+
+.participant-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vote-count {
+  color: #ff6b00;
+  font-weight: bold;
+  font-size: 13px;
+}
+
+.vote-btn {
+  padding: 5px 15px;
+  background: #ff6b00;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 12px;
+}
+
+.vote-btn:hover:not(:disabled) {
+  background: #ff9900;
+  transform: scale(1.05);
+}
+
+.vote-btn:disabled {
+  background: #555;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.winner-badge {
+  font-size: 24px;
+}
+
+.vs-divider {
+  text-align: center;
+  color: #ff6b00;
+  font-weight: bold;
+  font-size: 16px;
+  padding: 5px 0;
+}
+
+.match-result {
+  margin-top: 10px;
+  padding: 8px;
+  background: rgba(0, 255, 0, 0.1);
+  border-left: 3px solid #00ff00;
+  color: #00ff00;
+  font-size: 12px;
+  text-align: center;
+}
+
+.tournament-winner {
+  margin-top: 40px;
+  padding: 30px;
+  background: linear-gradient(135deg, #ff6b00, #ff9900);
+  border-radius: 10px;
+  text-align: center;
+}
+
+.tournament-winner h2 {
+  color: #fff;
+  font-size: 32px;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.loading,
+.no-brackets {
+  text-align: center;
+  padding: 40px;
+  color: #aaa;
+  font-size: 16px;
+}
+
+@media (max-width: 768px) {
+  .bracket-container {
+    gap: 20px;
+    padding: 10px;
+  }
+
+  .bracket-round {
+    min-width: 250px;
+  }
+
+  .participant-characters {
+    display: none;
+  }
+
+  .vote-btn {
+    padding: 4px 10px;
+    font-size: 11px;
+  }
+}

@@ -1,29 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import CreateTournamentForm from './CreateTournamentForm';
+import JoinTournamentModal from './JoinTournamentModal';
+import TournamentBracket from './TournamentBracket';
 import './TournamentPage.css';
 
 const TournamentPage = () => {
   const [tournaments, setTournaments] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
-  const [brackets, setBrackets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [newTournament, setNewTournament] = useState({
-    title: '',
-    description: '',
-    startDate: '',
-    endDate: '',
-    maxParticipants: 32,
-    tournamentType: 'single_elimination',
-    divisionId: '',
-    prizePool: 0,
-    entryFee: 0,
-    rules: ''
-  });
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joiningTournamentId, setJoiningTournamentId] = useState(null);
+  const [filter, setFilter] = useState('all');
   
   const { t } = useLanguage();
   const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
 
   useEffect(() => {
     fetchTournaments();
@@ -42,364 +36,306 @@ const TournamentPage = () => {
 
   const fetchTournamentDetails = async (tournamentId) => {
     try {
-      const [tournamentResponse, bracketsResponse] = await Promise.all([
-        axios.get(`/api/tournaments/${tournamentId}`),
-        axios.get(`/api/tournaments/${tournamentId}/brackets`)
-      ]);
-      
-      setSelectedTournament(tournamentResponse.data);
-      setBrackets(bracketsResponse.data.brackets || []);
+      const response = await axios.get(`/api/tournaments/${tournamentId}`);
+      setSelectedTournament(response.data);
     } catch (error) {
       console.error('Error fetching tournament details:', error);
     }
   };
 
-  const handleCreateTournament = async (e) => {
-    e.preventDefault();
-    
-    try {
-      await axios.post('/api/tournaments', newTournament, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      setShowCreateForm(false);
-      setNewTournament({
-        title: '',
-        description: '',
-        startDate: '',
-        endDate: '',
-        maxParticipants: 32,
-        tournamentType: 'single_elimination',
-        divisionId: '',
-        prizePool: 0,
-        entryFee: 0,
-        rules: ''
-      });
-      
-      fetchTournaments();
-    } catch (error) {
-      console.error('Error creating tournament:', error);
-      alert(error.response?.data?.msg || 'Error creating tournament');
+  const handleTournamentCreated = () => {
+    setShowCreateForm(false);
+    fetchTournaments();
+  };
+
+  const handleJoinClick = (tournamentId) => {
+    if (!token) {
+      alert('Please log in to join tournaments');
+      return;
+    }
+    setJoiningTournamentId(tournamentId);
+    setShowJoinModal(true);
+  };
+
+  const handleJoinSuccess = () => {
+    setShowJoinModal(false);
+    setJoiningTournamentId(null);
+    fetchTournaments();
+    if (selectedTournament) {
+      fetchTournamentDetails(selectedTournament.id);
     }
   };
 
-  const handleJoinTournament = async (tournamentId) => {
+  const handleGenerateBrackets = async (tournamentId) => {
     try {
-      await axios.post(`/api/tournaments/${tournamentId}/join`, {
-        characterId: 'default' // This should be selected by user
-      }, {
+      await axios.post(`/api/tournaments/${tournamentId}/generate-brackets`, {}, {
         headers: { 'x-auth-token': token }
       });
       
-      fetchTournaments();
-      alert('Successfully joined tournament!');
-    } catch (error) {
-      console.error('Error joining tournament:', error);
-      alert(error.response?.data?.msg || 'Error joining tournament');
-    }
-  };
-
-  const handleStartTournament = async (tournamentId) => {
-    try {
-      await axios.post(`/api/tournaments/${tournamentId}/start`, {}, {
-        headers: { 'x-auth-token': token }
-      });
-      
+      alert('Tournament started! Brackets generated.');
       fetchTournaments();
       if (selectedTournament?.id === tournamentId) {
         fetchTournamentDetails(tournamentId);
       }
-      alert('Tournament started successfully!');
     } catch (error) {
-      console.error('Error starting tournament:', error);
+      console.error('Error generating brackets:', error);
       alert(error.response?.data?.msg || 'Error starting tournament');
     }
   };
 
-  const handleVote = async (tournamentId, matchId, winnerId) => {
-    try {
-      await axios.post(`/api/tournaments/${tournamentId}/matches/${matchId}/vote`, {
-        winnerId
-      }, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      fetchTournamentDetails(tournamentId);
-    } catch (error) {
-      console.error('Error voting:', error);
-      alert(error.response?.data?.msg || 'Error voting');
+  const getStatusEmoji = (status) => {
+    switch (status) {
+      case 'recruiting': return '📢';
+      case 'active': return '⚔️';
+      case 'completed': return '🏆';
+      default: return '📋';
     }
   };
 
-  const renderBracket = () => {
-    if (!brackets.length) return <p>No brackets available</p>;
-
-    return (
-      <div className="tournament-brackets">
-        {brackets.map((round, roundIndex) => (
-          <div key={roundIndex} className="bracket-round">
-            <h3>Round {round.round}</h3>
-            <div className="round-matches">
-              {round.matches.map((match, matchIndex) => (
-                <div key={matchIndex} className={`bracket-match ${match.status}`}>
-                  <div className="match-header">
-                    <span className="match-id">Match {match.id}</span>
-                    <span className="match-status">{match.status}</span>
-                  </div>
-                  
-                  <div className="match-players">
-                    <div className={`player ${match.winner === match.player1?.userId ? 'winner' : ''}`}>
-                      {match.player1?.type === 'bye' ? (
-                        <span className="bye-player">BYE</span>
-                      ) : match.player1?.type === 'tbd' ? (
-                        <span className="tbd-player">TBD</span>
-                      ) : (
-                        <>
-                          <span className="player-name">{match.player1?.username || 'Unknown'}</span>
-                          <span className="player-character">{match.player1?.characterName || ''}</span>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="match-vs">VS</div>
-                    
-                    <div className={`player ${match.winner === match.player2?.userId ? 'winner' : ''}`}>
-                      {match.player2?.type === 'bye' ? (
-                        <span className="bye-player">BYE</span>
-                      ) : match.player2?.type === 'tbd' ? (
-                        <span className="tbd-player">TBD</span>
-                      ) : (
-                        <>
-                          <span className="player-name">{match.player2?.username || 'Unknown'}</span>
-                          <span className="player-character">{match.player2?.characterName || ''}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {match.status === 'active' && (
-                    <div className="match-voting">
-                      <div className="vote-counts">
-                        <span>{match.votes?.player1 || 0} votes</span>
-                        <span>{match.votes?.player2 || 0} votes</span>
-                      </div>
-                      <div className="vote-buttons">
-                        <button 
-                          onClick={() => handleVote(selectedTournament.id, match.id, match.player1?.userId)}
-                          disabled={!match.player1?.userId}
-                        >
-                          Vote Player 1
-                        </button>
-                        <button 
-                          onClick={() => handleVote(selectedTournament.id, match.id, match.player2?.userId)}
-                          disabled={!match.player2?.userId}
-                        >
-                          Vote Player 2
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {match.winner && (
-                    <div className="match-winner">
-                      🏆 Winner: {match.winner === match.player1?.userId ? 
-                        match.player1?.username : match.player2?.username}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    );
+  const getTimeRemaining = (recruitmentEndDate) => {
+    const now = new Date();
+    const end = new Date(recruitmentEndDate);
+    const diff = end - now;
+    
+    if (diff <= 0) return 'Ended';
+    
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) return `${days}d ${hours}h`;
+    return `${hours}h`;
   };
+
+  const filteredTournaments = tournaments.filter(t => {
+    if (filter === 'all') return true;
+    return t.status === filter;
+  });
 
   const renderTournamentList = () => {
     return (
       <div className="tournaments-list">
         <div className="tournaments-header">
-          <h1>🏆 {t('tournaments') || 'Tournaments'}</h1>
+          <h1>🏆 Tournaments</h1>
           {token && (
             <button 
               className="create-tournament-btn"
               onClick={() => setShowCreateForm(true)}
             >
-              ➕ {t('createTournament') || 'Create Tournament'}
+              ➕ Create Tournament
             </button>
           )}
         </div>
 
-        {showCreateForm && (
-          <div className="create-tournament-form">
-            <h2>{t('createNewTournament') || 'Create New Tournament'}</h2>
-            <form onSubmit={handleCreateTournament}>
-              <div className="form-group">
-                <label>{t('title') || 'Title'}:</label>
-                <input
-                  type="text"
-                  value={newTournament.title}
-                  onChange={(e) => setNewTournament({...newTournament, title: e.target.value})}
-                  required
-                />
-              </div>
+        <div className="filter-tabs">
+          <button 
+            className={filter === 'all' ? 'active' : ''}
+            onClick={() => setFilter('all')}
+          >
+            All
+          </button>
+          <button 
+            className={filter === 'recruiting' ? 'active' : ''}
+            onClick={() => setFilter('recruiting')}
+          >
+            📢 Recruiting
+          </button>
+          <button 
+            className={filter === 'active' ? 'active' : ''}
+            onClick={() => setFilter('active')}
+          >
+            ⚔️ Active
+          </button>
+          <button 
+            className={filter === 'completed' ? 'active' : ''}
+            onClick={() => setFilter('completed')}
+          >
+            🏆 Completed
+          </button>
+        </div>
+
+        {filteredTournaments.length === 0 ? (
+          <div className="no-tournaments">
+            <p>No tournaments found</p>
+            {token && (
+              <button onClick={() => setShowCreateForm(true)}>
+                Create the first tournament!
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="tournaments-grid">
+            {filteredTournaments.map(tournament => {
+              const isCreator = tournament.createdBy === userId;
+              const isParticipant = tournament.participants?.some(p => p.userId === userId);
               
-              <div className="form-group">
-                <label>{t('description') || 'Description'}:</label>
-                <textarea
-                  value={newTournament.description}
-                  onChange={(e) => setNewTournament({...newTournament, description: e.target.value})}
-                  required
-                />
-              </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('startDate') || 'Start Date'}:</label>
-                  <input
-                    type="datetime-local"
-                    value={newTournament.startDate}
-                    onChange={(e) => setNewTournament({...newTournament, startDate: e.target.value})}
-                    required
-                  />
+              return (
+                <div key={tournament.id} className={`tournament-card ${tournament.status}`}>
+                  <div className="tournament-card-header">
+                    <h3>{tournament.title}</h3>
+                    <span className={`status-badge ${tournament.status}`}>
+                      {getStatusEmoji(tournament.status)} {tournament.status}
+                    </span>
+                  </div>
+                  
+                  <p className="tournament-description">{tournament.description}</p>
+                  
+                  <div className="tournament-meta">
+                    <div className="meta-item">
+                      <span className="meta-label">Participants:</span>
+                      <span className="meta-value">{tournament.participants?.length || 0}/{tournament.maxParticipants}</span>
+                    </div>
+                    <div className="meta-item">
+                      <span className="meta-label">Team Size:</span>
+                      <span className="meta-value">{tournament.teamSize}</span>
+                    </div>
+                    {tournament.status === 'recruiting' && tournament.recruitmentEndDate && (
+                      <div className="meta-item">
+                        <span className="meta-label">Time Left:</span>
+                        <span className="meta-value">{getTimeRemaining(tournament.recruitmentEndDate)}</span>
+                      </div>
+                    )}
+                    <div className="meta-item">
+                      <span className="meta-label">Battle Time:</span>
+                      <span className="meta-value">{tournament.battleTime}</span>
+                    </div>
+                  </div>
+
+                  {tournament.allowedTiers && tournament.allowedTiers.length > 0 && (
+                    <div className="tournament-tiers">
+                      <span className="tiers-label">Allowed Tiers:</span>
+                      <div className="tiers-list">
+                        {tournament.allowedTiers.map(tier => (
+                          <span key={tier} className="tier-badge">{tier}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="tournament-actions">
+                    <button 
+                      className="btn-view"
+                      onClick={() => fetchTournamentDetails(tournament.id)}
+                    >
+                      👁️ View
+                    </button>
+                    
+                    {tournament.status === 'recruiting' && !isParticipant && (
+                      <button 
+                        className="btn-join"
+                        onClick={() => handleJoinClick(tournament.id)}
+                        disabled={!token}
+                      >
+                        ⚔️ Join
+                      </button>
+                    )}
+                    
+                    {tournament.status === 'recruiting' && isCreator && (
+                      <button 
+                        className="btn-start"
+                        onClick={() => handleGenerateBrackets(tournament.id)}
+                      >
+                        🚀 Start
+                      </button>
+                    )}
+                    
+                    {isParticipant && (
+                      <span className="participant-badge">✓ Joined</span>
+                    )}
+                  </div>
                 </div>
-                
-                <div className="form-group">
-                  <label>{t('endDate') || 'End Date'}:</label>
-                  <input
-                    type="datetime-local"
-                    value={newTournament.endDate}
-                    onChange={(e) => setNewTournament({...newTournament, endDate: e.target.value})}
-                    required
-                  />
-                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderTournamentDetail = () => {
+    if (!selectedTournament) return null;
+
+    return (
+      <div className="tournament-detail">
+        <div className="tournament-detail-header">
+          <button 
+            className="back-btn"
+            onClick={() => setSelectedTournament(null)}
+          >
+            ← Back
+          </button>
+          <h1>🏆 {selectedTournament.title}</h1>
+          <span className={`status-badge ${selectedTournament.status}`}>
+            {getStatusEmoji(selectedTournament.status)} {selectedTournament.status}
+          </span>
+        </div>
+
+        <div className="tournament-info-section">
+          <p className="tournament-full-description">{selectedTournament.description}</p>
+          
+          <div className="tournament-details-grid">
+            <div className="detail-card">
+              <span className="detail-label">Participants</span>
+              <span className="detail-value">{selectedTournament.participants?.length || 0}/{selectedTournament.maxParticipants}</span>
+            </div>
+            <div className="detail-card">
+              <span className="detail-label">Team Size</span>
+              <span className="detail-value">{selectedTournament.teamSize}</span>
+            </div>
+            <div className="detail-card">
+              <span className="detail-label">Battle Time</span>
+              <span className="detail-value">{selectedTournament.battleTime}</span>
+            </div>
+            {selectedTournament.status === 'recruiting' && selectedTournament.recruitmentEndDate && (
+              <div className="detail-card">
+                <span className="detail-label">Recruitment Ends</span>
+                <span className="detail-value">{getTimeRemaining(selectedTournament.recruitmentEndDate)}</span>
               </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('maxParticipants') || 'Max Participants'}:</label>
-                  <select
-                    value={newTournament.maxParticipants}
-                    onChange={(e) => setNewTournament({...newTournament, maxParticipants: parseInt(e.target.value)})}
-                  >
-                    <option value={8}>8</option>
-                    <option value={16}>16</option>
-                    <option value={32}>32</option>
-                    <option value={64}>64</option>
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label>{t('tournamentType') || 'Tournament Type'}:</label>
-                  <select
-                    value={newTournament.tournamentType}
-                    onChange={(e) => setNewTournament({...newTournament, tournamentType: e.target.value})}
-                  >
-                    <option value="single_elimination">{t('singleElimination') || 'Single Elimination'}</option>
-                    <option value="double_elimination">{t('doubleElimination') || 'Double Elimination'}</option>
-                    <option value="round_robin">{t('roundRobin') || 'Round Robin'}</option>
-                  </select>
-                </div>
+            )}
+          </div>
+
+          {selectedTournament.allowedTiers && selectedTournament.allowedTiers.length > 0 && (
+            <div className="allowed-tiers-section">
+              <h3>Allowed Tiers</h3>
+              <div className="tiers-list">
+                {selectedTournament.allowedTiers.map(tier => (
+                  <span key={tier} className="tier-badge large">{tier}</span>
+                ))}
               </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('prizePool') || 'Prize Pool'}:</label>
-                  <input
-                    type="number"
-                    value={newTournament.prizePool}
-                    onChange={(e) => setNewTournament({...newTournament, prizePool: parseInt(e.target.value)})}
-                    min="0"
-                  />
+            </div>
+          )}
+
+          {selectedTournament.excludedCharacters && selectedTournament.excludedCharacters.length > 0 && (
+            <div className="excluded-characters-section">
+              <h3>Excluded Characters ({selectedTournament.excludedCharacters.length})</h3>
+              <p className="excluded-note">These characters cannot be selected in this tournament</p>
+            </div>
+          )}
+        </div>
+
+        {selectedTournament.status === 'recruiting' && (
+          <div className="participants-section">
+            <h3>Participants ({selectedTournament.participants?.length || 0})</h3>
+            <div className="participants-grid">
+              {selectedTournament.participants?.map(participant => (
+                <div key={participant.userId} className="participant-card">
+                  <div className="participant-name">{participant.username}</div>
+                  <div className="participant-characters">
+                    {participant.characters?.map(char => (
+                      <span key={char.id} className="character-badge">{char.name}</span>
+                    ))}
+                  </div>
                 </div>
-                
-                <div className="form-group">
-                  <label>{t('entryFee') || 'Entry Fee'}:</label>
-                  <input
-                    type="number"
-                    value={newTournament.entryFee}
-                    onChange={(e) => setNewTournament({...newTournament, entryFee: parseInt(e.target.value)})}
-                    min="0"
-                  />
-                </div>
-              </div>
-              
-              <div className="form-group">
-                <label>{t('rules') || 'Rules'}:</label>
-                <textarea
-                  value={newTournament.rules}
-                  onChange={(e) => setNewTournament({...newTournament, rules: e.target.value})}
-                />
-              </div>
-              
-              <div className="form-actions">
-                <button type="submit" className="submit-btn">
-                  {t('createTournament') || 'Create Tournament'}
-                </button>
-                <button 
-                  type="button" 
-                  className="cancel-btn"
-                  onClick={() => setShowCreateForm(false)}
-                >
-                  {t('cancel') || 'Cancel'}
-                </button>
-              </div>
-            </form>
+              ))}
+            </div>
           </div>
         )}
 
-        <div className="tournaments-grid">
-          {tournaments.map(tournament => (
-            <div key={tournament.id} className="tournament-card">
-              <div className="tournament-header">
-                <h3>{tournament.title}</h3>
-                <span className={`tournament-status ${tournament.status}`}>
-                  {tournament.status}
-                </span>
-              </div>
-              
-              <p className="tournament-description">{tournament.description}</p>
-              
-              <div className="tournament-stats">
-                <span>👥 {tournament.participantCount || 0}/{tournament.maxParticipants}</span>
-                <span>🏆 {tournament.prizePool || 0} points</span>
-                <span>💰 {tournament.entryFee || 0} entry</span>
-              </div>
-              
-              <div className="tournament-dates">
-                <span>📅 {new Date(tournament.startDate).toLocaleDateString()}</span>
-                <span>⏰ {new Date(tournament.endDate).toLocaleDateString()}</span>
-              </div>
-              
-              <div className="tournament-actions">
-                <button 
-                  className="view-btn"
-                  onClick={() => fetchTournamentDetails(tournament.id)}
-                >
-                  👁️ {t('view') || 'View'}
-                </button>
-                
-                {tournament.status === 'upcoming' && tournament.canJoin && (
-                  <button 
-                    className="join-btn"
-                    onClick={() => handleJoinTournament(tournament.id)}
-                  >
-                    ⚔️ {t('join') || 'Join'}
-                  </button>
-                )}
-                
-                {tournament.status === 'upcoming' && token && (
-                  <button 
-                    className="start-btn"
-                    onClick={() => handleStartTournament(tournament.id)}
-                  >
-                    🚀 {t('start') || 'Start'}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+        {(selectedTournament.status === 'active' || selectedTournament.status === 'completed') && (
+          <TournamentBracket 
+            tournamentId={selectedTournament.id} 
+            status={selectedTournament.status}
+          />
+        )}
       </div>
     );
   };
@@ -409,7 +345,7 @@ const TournamentPage = () => {
       <div className="tournament-page">
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>{t('loading') || 'Loading...'}</p>
+          <p>Loading tournaments...</p>
         </div>
       </div>
     );
@@ -417,46 +353,22 @@ const TournamentPage = () => {
 
   return (
     <div className="tournament-page">
-      {selectedTournament ? (
-        <div className="tournament-detail">
-          <div className="tournament-detail-header">
-            <button 
-              className="back-btn"
-              onClick={() => setSelectedTournament(null)}
-            >
-              ← {t('back') || 'Back'}
-            </button>
-            <h1>🏆 {selectedTournament.title}</h1>
-          </div>
-          
-          <div className="tournament-info">
-            <p>{selectedTournament.description}</p>
-            <div className="tournament-meta">
-              <span>Status: {selectedTournament.status}</span>
-              <span>Participants: {selectedTournament.participantCount || 0}</span>
-              <span>Prize Pool: {selectedTournament.prizePool || 0}</span>
-            </div>
-          </div>
-          
-          {selectedTournament.status === 'active' && renderBracket()}
-          
-          {selectedTournament.status === 'upcoming' && (
-            <div className="tournament-participants">
-              <h3>Participants</h3>
-              <div className="participants-list">
-                {selectedTournament.participants?.map(participant => (
-                  <div key={participant.userId} className="participant">
-                    <span>{participant.username}</span>
-                    <span>{participant.characterName}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
-        renderTournamentList()
+      {showCreateForm && (
+        <CreateTournamentForm 
+          onClose={() => setShowCreateForm(false)}
+          onTournamentCreated={handleTournamentCreated}
+        />
       )}
+
+      {showJoinModal && (
+        <JoinTournamentModal 
+          tournamentId={joiningTournamentId}
+          onClose={() => setShowJoinModal(false)}
+          onSuccess={handleJoinSuccess}
+        />
+      )}
+
+      {selectedTournament ? renderTournamentDetail() : renderTournamentList()}
     </div>
   );
 };

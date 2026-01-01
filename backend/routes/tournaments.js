@@ -10,7 +10,8 @@ import {
   startTournament,
   voteInTournament,
   getTournamentBrackets,
-  advanceMatch
+  advanceMatch,
+  getAvailableCharacters
 } from '../controllers/tournamentController.js';
 import auth from '../middleware/auth.js';
 
@@ -35,6 +36,11 @@ router.get('/:id', getTournamentById);
 // @desc    Get tournament brackets
 // @access  Public
 router.get('/:id/brackets', getTournamentBrackets);
+
+// @route   GET api/tournaments/:id/available-characters
+// @desc    Get available characters for tournament
+// @access  Public
+router.get('/:id/available-characters', getAvailableCharacters);
 
 // @route   POST api/tournaments/:id/join
 // @desc    Join tournament

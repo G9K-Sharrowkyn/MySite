@@ -632,4 +632,34 @@ router.delete('/revoke/:userId/:badgeId', moderatorAuth, async (req, res) => {
   }
 });
 
+// @route   GET /api/badges/tournament/:userId
+// @desc    Get tournament winner badges for a user
+// @access  Public
+router.get('/tournament/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = await readDb();
+    
+    const userBadges = (db.userBadges || []).filter(
+      badge => badge.userId === userId && badge.type === 'tournament_winner' && badge.displayOnProfile
+    );
+    
+    // Sort by date won (newest first)
+    const sortedBadges = userBadges.sort((a, b) => 
+      new Date(b.wonAt) - new Date(a.wonAt)
+    );
+    
+    res.json({
+      success: true,
+      badges: sortedBadges
+    });
+  } catch (error) {
+    console.error('Error fetching tournament badges:', error);
+    res.status(500).json({
+      success: false,
+      msg: 'Server error while fetching tournament badges'
+    });
+  }
+});
+
 export default router;

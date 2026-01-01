@@ -1,0 +1,236 @@
+.join-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  overflow-y: auto;
+}
+
+.join-modal {
+  background: #1a1a1a;
+  border: 2px solid #ff6b00;
+  border-radius: 10px;
+  padding: 30px;
+  max-width: 900px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #ff6b00;
+  font-size: 30px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.modal-close:hover {
+  color: #ff9900;
+}
+
+.join-modal h2 {
+  color: #ff6b00;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.team-size-info {
+  text-align: center;
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #0a0a0a;
+  border-radius: 5px;
+}
+
+.team-size-info p {
+  margin: 5px 0;
+  color: #fff;
+}
+
+.selected-count {
+  font-weight: bold;
+  color: #ff6b00;
+  font-size: 18px;
+}
+
+.selected-characters-preview {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  min-height: 60px;
+  padding: 10px;
+  background: #0a0a0a;
+  border-radius: 5px;
+}
+
+.selected-char-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #ff6b00;
+  border-radius: 5px;
+  color: #fff;
+}
+
+.selected-char-badge img {
+  width: 40px;
+  height: 40px;
+  border-radius: 3px;
+  object-fit: cover;
+}
+
+.selected-char-badge button {
+  background: rgba(0, 0, 0, 0.3);
+  border: none;
+  color: #fff;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 5px;
+  border-radius: 3px;
+}
+
+.available-characters h3 {
+  color: #fff;
+  margin-bottom: 15px;
+}
+
+.characters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.character-card {
+  position: relative;
+  background: #2a2a2a;
+  border: 2px solid #444;
+  border-radius: 8px;
+  padding: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.character-card:hover {
+  border-color: #ff6b00;
+  transform: scale(1.05);
+}
+
+.character-card.selected {
+  border-color: #00ff00;
+  background: #1a3a1a;
+}
+
+.character-card img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.char-name {
+  margin: 8px 0 4px;
+  font-size: 13px;
+  color: #fff;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.char-tier {
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+.selected-indicator {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #00ff00;
+  color: #000;
+  font-size: 20px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 15px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  padding: 10px 25px;
+  background: #444;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-cancel:hover {
+  background: #555;
+}
+
+.btn-join {
+  padding: 10px 25px;
+  background: #ff6b00;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-join:hover:not(:disabled) {
+  background: #ff9900;
+}
+
+.btn-join:disabled {
+  background: #666;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.loading {
+  text-align: center;
+  color: #fff;
+  padding: 40px;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .characters-grid {
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  }
+  
+  .character-card img {
+    height: 80px;
+  }
+}

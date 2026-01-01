@@ -45,6 +45,7 @@ import userRoutes from './routes/user.js';
 import pushRoutes from './routes/push.js';
 import feedbackRoutes from './routes/feedback.js';
 import translateRoutes from './routes/translate.js';
+import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

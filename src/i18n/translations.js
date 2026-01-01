@@ -16,7 +16,7 @@ export const translations = {
     logout: 'Wyloguj',
     
     // Home page
-    welcomeTitle: 'Witaj w GeekFights!',
+    welcomeTitle: 'Witaj w FightHub!',
     welcomeSubtitle: 'Największa społeczność fanów anime, gier i komiksów. Głosuj na swoich ulubionych bohaterów i weź udział w epicznych walkach!',
     betaWarning: 'Strona jest w wersji beta. Mogą występować błędy. Prosimy o zgłaszanie problemów za pomocą przycisku w lewym dolnym rogu.',
     joinFree: 'Dołącz za darmo',
@@ -219,7 +219,7 @@ export const translations = {
     daysAgo: 'd temu',
     
     // Features
-    featuresTitle: 'Co możesz robić na GeekFights?',
+    featuresTitle: 'Co możesz robić na FightHub?',
     createFightsFeature: 'Twórz Walki',
     createFightsDesc: 'Stwórz własne walki między ulubionymi postaciami i zobacz, kto wygra w głosowaniu społeczności.',
     voteFeature: 'Głosuj',
@@ -235,7 +235,7 @@ export const translations = {
     
     // Call to Action
     readyForAdventure: 'Gotowy na przygodę?',
-    joinThousands: 'Dołącz do tysięcy fanów i rozpocznij swoją przygodę z GeekFights już dziś!',
+    joinThousands: 'Dołącz do tysięcy fanów i rozpocznij swoją przygodę z FightHub już dziś!',
     registerFree: 'Zarejestruj się za darmo',
     seeCharacters: 'Zobacz postacie',
     
@@ -702,7 +702,53 @@ export const translations = {
       characters: 'Postacie',
       powerTiers: 'Poziomy mocy',
       genres: 'Gatunki'
-    }
+    },
+    
+    // Tournaments
+    createTournament: 'Stwórz Turniej',
+    tournamentTitle: 'Tytuł turnieju',
+    tournamentDescription: 'Opis turnieju',
+    maxParticipants: 'Max. uczestników',
+    teamSize: 'Wielkość drużyny',
+    recruitmentTime: 'Czas rekrutacji',
+    battleTime: 'Godzina walk',
+    allowedTiers: 'Dozwolone tiery',
+    excludeCharacters: 'Wyklucz postacie',
+    showOnFeed: 'Pokazuj walki na feedzie',
+    joinTournament: 'Dołącz do turnieju',
+    selectCharacters: 'Wybierz postacie',
+    availableCharacters: 'Dostępne postacie',
+    tournamentStarted: 'Turniej rozpoczęty',
+    tournamentCompleted: 'Turniej zakończony',
+    recruiting: 'Rekrutacja',
+    active: 'Aktywny',
+    completed: 'Zakończony',
+    timeLeft: 'Pozostało czasu',
+    participants: 'Uczestnicy',
+    viewBrackets: 'Zobacz drabinkę',
+    tournamentBracket: 'Drabinka turnieju',
+    tournamentChampion: 'Mistrz turnieju',
+    round: 'Runda',
+    finals: 'Finał',
+    semiFinals: 'Półfinały',
+    quarterFinals: 'Ćwierćfinały',
+    roundOf16: 'Runda 1/16',
+    roundOf32: 'Runda 1/32',
+    vote: 'Głosuj',
+    voted: 'Zagłosowano',
+    votes: 'głosów',
+    winner: 'Zwycięzca',
+    tbd: 'TBD',
+    bye: 'BYE',
+    startTournament: 'Rozpocznij turniej',
+    tournamentRules: 'Zasady turnieju',
+    excludedCharacters: 'Wykluczone postacie',
+    characterLocked: 'Postać zablokowana',
+    selectTeam: 'Wybierz drużynę',
+    tournamentCreated: 'Turniej utworzony!',
+    joinedTournament: 'Dołączyłeś do turnieju!',
+    allTournaments: 'Wszystkie turnieje',
+    myTournaments: 'Moje turnieje'
   },
   
   en: {
@@ -722,7 +768,7 @@ export const translations = {
     logout: 'Logout',
     
     // Home page
-    welcomeTitle: 'Welcome to GeekFights!',
+    welcomeTitle: 'Welcome to FightHub!',
     welcomeSubtitle: 'The largest community of anime, gaming and comic fans. Vote for your favorite heroes and participate in epic battles!',
     betaWarning: 'This site is in beta. Bugs may occur. Please report any issues using the feedback button in the bottom-left corner.',
     joinFree: 'Join for free',
@@ -925,7 +971,7 @@ export const translations = {
     daysAgo: 'd ago',
     
     // Features
-    featuresTitle: 'What can you do on GeekFights?',
+    featuresTitle: 'What can you do on FightHub?',
     createFightsFeature: 'Create Fights',
     createFightsDesc: 'Create your own battles between favorite characters and see who wins in community voting.',
     voteFeature: 'Vote',
@@ -941,7 +987,7 @@ export const translations = {
     
     // Call to Action
     readyForAdventure: 'Ready for adventure?',
-    joinThousands: 'Join thousands of fans and start your GeekFights adventure today!',
+    joinThousands: 'Join thousands of fans and start your FightHub adventure today!',
     registerFree: 'Register for free',
     seeCharacters: 'See characters',
     
@@ -1404,7 +1450,53 @@ export const translations = {
       characters: 'Characters',
       powerTiers: 'Power tiers',
       genres: 'Genres'
-    }
+    },
+    
+    // Tournaments
+    createTournament: 'Create Tournament',
+    tournamentTitle: 'Tournament Title',
+    tournamentDescription: 'Tournament Description',
+    maxParticipants: 'Max Participants',
+    teamSize: 'Team Size',
+    recruitmentTime: 'Recruitment Time',
+    battleTime: 'Battle Time',
+    allowedTiers: 'Allowed Tiers',
+    excludeCharacters: 'Exclude Characters',
+    showOnFeed: 'Show battles on feed',
+    joinTournament: 'Join Tournament',
+    selectCharacters: 'Select Characters',
+    availableCharacters: 'Available Characters',
+    tournamentStarted: 'Tournament Started',
+    tournamentCompleted: 'Tournament Completed',
+    recruiting: 'Recruiting',
+    active: 'Active',
+    completed: 'Completed',
+    timeLeft: 'Time Left',
+    participants: 'Participants',
+    viewBrackets: 'View Brackets',
+    tournamentBracket: 'Tournament Bracket',
+    tournamentChampion: 'Tournament Champion',
+    round: 'Round',
+    finals: 'Finals',
+    semiFinals: 'Semi-Finals',
+    quarterFinals: 'Quarter-Finals',
+    roundOf16: 'Round of 16',
+    roundOf32: 'Round of 32',
+    vote: 'Vote',
+    voted: 'Voted',
+    votes: 'votes',
+    winner: 'Winner',
+    tbd: 'TBD',
+    bye: 'BYE',
+    startTournament: 'Start Tournament',
+    tournamentRules: 'Tournament Rules',
+    excludedCharacters: 'Excluded Characters',
+    characterLocked: 'Character Locked',
+    selectTeam: 'Select Team',
+    tournamentCreated: 'Tournament Created!',
+    joinedTournament: 'Joined Tournament!',
+    allTournaments: 'All Tournaments',
+    myTournaments: 'My Tournaments'
   },
   
   es: {
@@ -1424,7 +1516,7 @@ export const translations = {
     logout: 'Cerrar sesión',
     
     // Home page
-    welcomeTitle: '¡Bienvenido a GeekFights!',
+    welcomeTitle: '¡Bienvenido a FightHub!',
     welcomeSubtitle: 'La comunidad más grande de fanáticos del anime, juegos y cómics. ¡Vota por tus héroes favoritos y participa en batallas épicas!',
     betaWarning: 'Este sitio está en versión beta. Pueden ocurrir errores. Por favor, reporte cualquier problema usando el botón de comentarios en la esquina inferior izquierda.',
     joinFree: 'Únete gratis',
@@ -1607,7 +1699,7 @@ export const translations = {
     daysAgo: 'd hace',
     
     // Features
-    featuresTitle: '¿Qué puedes hacer en GeekFights?',
+    featuresTitle: '¿Qué puedes hacer en FightHub?',
     createFightsFeature: 'Crear Peleas',
     createFightsDesc: 'Crea tus propias batallas entre personajes favoritos y ve quién gana en la votación de la comunidad.',
     voteFeature: 'Votar',
@@ -1623,7 +1715,7 @@ export const translations = {
     
     // Call to Action
     readyForAdventure: '¿Listo para la aventura?',
-    joinThousands: '¡Únete a miles de fanáticos y comienza tu aventura GeekFights hoy!',
+    joinThousands: '¡Únete a miles de fanáticos y comienza tu aventura FightHub hoy!',
     registerFree: 'Regístrate gratis',
     seeCharacters: 'Ver personajes',
     
@@ -1949,6 +2041,52 @@ export const translations = {
       characters: 'Personajes',
       powerTiers: 'Niveles de poder',
       genres: 'Géneros'
-    }
+    },
+    
+    // Tournaments
+    createTournament: 'Crear Torneo',
+    tournamentTitle: 'Título del Torneo',
+    tournamentDescription: 'Descripción del Torneo',
+    maxParticipants: 'Máx. Participantes',
+    teamSize: 'Tamaño del Equipo',
+    recruitmentTime: 'Tiempo de Reclutamiento',
+    battleTime: 'Hora de Batalla',
+    allowedTiers: 'Tiers Permitidos',
+    excludeCharacters: 'Excluir Personajes',
+    showOnFeed: 'Mostrar batallas en el feed',
+    joinTournament: 'Unirse al Torneo',
+    selectCharacters: 'Seleccionar Personajes',
+    availableCharacters: 'Personajes Disponibles',
+    tournamentStarted: 'Torneo Iniciado',
+    tournamentCompleted: 'Torneo Completado',
+    recruiting: 'Reclutando',
+    active: 'Activo',
+    completed: 'Completado',
+    timeLeft: 'Tiempo Restante',
+    participants: 'Participantes',
+    viewBrackets: 'Ver Llaves',
+    tournamentBracket: 'Llave del Torneo',
+    tournamentChampion: 'Campeón del Torneo',
+    round: 'Ronda',
+    finals: 'Final',
+    semiFinals: 'Semifinales',
+    quarterFinals: 'Cuartos de Final',
+    roundOf16: 'Ronda de 16',
+    roundOf32: 'Ronda de 32',
+    vote: 'Votar',
+    voted: 'Votado',
+    votes: 'votos',
+    winner: 'Ganador',
+    tbd: 'Por Determinar',
+    bye: 'Pase Libre',
+    startTournament: 'Iniciar Torneo',
+    tournamentRules: 'Reglas del Torneo',
+    excludedCharacters: 'Personajes Excluidos',
+    characterLocked: 'Personaje Bloqueado',
+    selectTeam: 'Seleccionar Equipo',
+    tournamentCreated: '¡Torneo Creado!',
+    joinedTournament: '¡Te Uniste al Torneo!',
+    allTournaments: 'Todos los Torneos',
+    myTournaments: 'Mis Torneos'
   }
 };

@@ -27,17 +27,22 @@ const buildParticipant = (db, participant) => {
 // Helper function to generate tournament brackets
 function generateBrackets(participants, tournamentType = 'single_elimination') {
   const numParticipants = participants.length;
+  
+  // Find next power of 2
   const rounds = Math.ceil(Math.log2(numParticipants));
   const totalSlots = Math.pow(2, rounds);
-
+  
+  // Seed participants by points/ranking
   const seededParticipants = [...participants].sort(
     (a, b) => (b.points || 0) - (a.points || 0)
   );
 
-  while (seededParticipants.length < totalSlots) {
-    seededParticipants.push({ type: 'bye', userId: null, characterId: null });
-  }
-
+  // Calculate how many byes needed
+  const numByes = totalSlots - numParticipants;
+  
+  // Top seeds get byes (auto-advance to next round)
+  const participantsWithByes = [...seededParticipants];
+  
   const brackets = [];
 
   if (tournamentType === 'single_elimination') {
@@ -51,29 +56,64 @@ function generateBrackets(participants, tournamentType = 'single_elimination') {
         let player2;
 
         if (round === 0) {
-          const player1Index = match;
-          const player2Index = totalSlots - 1 - match;
-          player1 = seededParticipants[player1Index];
-          player2 = seededParticipants[player2Index];
+          // First round: assign participants
+          const player1Index = match * 2;
+          const player2Index = match * 2 + 1;
+          
+          player1 = player1Index < participantsWithByes.length 
+            ? participantsWithByes[player1Index]
+            : { type: 'bye', userId: null };
+            
+          player2 = player2Index < participantsWithByes.length
+            ? participantsWithByes[player2Index]
+            : { type: 'bye', userId: null };
+          
+          // If one player is bye, other auto-advances
+          let matchStatus = 'pending';
+          let winner = null;
+          
+          if (player1.type === 'bye' && player2.type !== 'bye') {
+            matchStatus = 'completed';
+            winner = player2.userId;
+          } else if (player2.type === 'bye' && player1.type !== 'bye') {
+            matchStatus = 'completed';
+            winner = player1.userId;
+          } else if (player1.type === 'bye' && player2.type === 'bye') {
+            matchStatus = 'completed';
+            winner = null;
+          }
+          
+          roundMatches.push({
+            id: matchId,
+            player1,
+            player2,
+            winner,
+            status: matchStatus,
+            scheduledTime: null,
+            votes: { player1: 0, player2: 0 },
+            voters: []
+          });
         } else {
+          // Subsequent rounds: TBD from previous matches
           player1 = { type: 'tbd', matchId: `${round - 1}-${match * 2}` };
           player2 = { type: 'tbd', matchId: `${round - 1}-${match * 2 + 1}` };
+          
+          roundMatches.push({
+            id: matchId,
+            player1,
+            player2,
+            winner: null,
+            status: 'pending',
+            scheduledTime: null,
+            votes: { player1: 0, player2: 0 },
+            voters: []
+          });
         }
-
-        roundMatches.push({
-          id: matchId,
-          player1,
-          player2,
-          winner: null,
-          status: 'pending',
-          scheduledTime: null,
-          votes: { player1: 0, player2: 0 },
-          voters: []
-        });
       }
 
       brackets.push({
         round: round + 1,
+        roundName: round === rounds - 1 ? 'Final' : `Round ${round + 1}`,
         matches: roundMatches
       });
     }
@@ -173,22 +213,40 @@ export const createTournament = async (req, res) => {
     tournamentType,
     divisionId,
     prizePool,
-    entryFee
+    entryFee,
+    // New fields
+    allowedTiers,        // Array of tier names: ['streetLevel', 'godTier', etc.]
+    excludedCharacters,  // Array of character IDs to exclude
+    recruitmentDays,     // 1, 2, 3, or 7 days
+    battleTime,          // Time of day for battles: '18:00'
+    teamSize,            // 1, 2, 3, or more
+    showOnFeed           // Boolean: show battles on main feed
   } = req.body;
 
   try {
     const db = await readDb();
     const user = findUserById(db, req.user.id);
-    if (!user || user.role !== 'moderator') {
-      return res.status(403).json({ msg: 'Access denied. Moderator role required.' });
+    
+    // Any logged in user can create tournament now, not just moderators
+    if (!user) {
+      return res.status(401).json({ msg: 'User not authenticated' });
     }
+
+    // Calculate recruitment end date
+    const now = new Date();
+    const recruitmentEnd = new Date(now);
+    recruitmentEnd.setDate(recruitmentEnd.getDate() + (recruitmentDays || 2));
+    
+    // Set battle time
+    const [hours, minutes] = (battleTime || '18:00').split(':');
+    recruitmentEnd.setHours(parseInt(hours), parseInt(minutes), 0, 0);
 
     const newTournament = {
       id: uuidv4(),
       name: title,
       title,
       description,
-      startDate,
+      startDate: recruitmentEnd.toISOString(),
       endDate,
       maxParticipants: maxParticipants || 32,
       rules: rules || '',
@@ -197,20 +255,29 @@ export const createTournament = async (req, res) => {
       prizePool: prizePool || 0,
       entryFee: entryFee || 0,
       createdBy: req.user.id,
-      status: 'upcoming',
+      status: 'recruiting', // Changed from 'upcoming'
       participants: [],
       fights: [],
+      // New settings
       settings: {
+        allowedTiers: allowedTiers || ['all'],
+        excludedCharacters: excludedCharacters || [],
+        recruitmentDays: recruitmentDays || 2,
+        battleTime: battleTime || '18:00',
+        teamSize: teamSize || 1,
+        showOnFeed: showOnFeed !== undefined ? showOnFeed : false,
         publicJoin: true,
         votingDuration: 24,
         requireApproval: false
       },
       brackets: [],
+      currentRound: 0,
       stats: {
         totalMatches: 0,
         completedMatches: 0,
         totalVotes: 0
       },
+      recruitmentEndDate: recruitmentEnd.toISOString(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -562,7 +629,7 @@ export const deleteTournament = async (req, res) => {
 
 export const joinTournament = async (req, res) => {
   const { id } = req.params;
-  const { characterId } = req.body;
+  const { characterIds } = req.body; // Now accepts array of character IDs for team
 
   try {
     let updatedTournament;
@@ -575,8 +642,8 @@ export const joinTournament = async (req, res) => {
         throw error;
       }
 
-      if (tournament.status !== 'upcoming') {
-        const error = new Error('Tournament cannot be joined');
+      if (tournament.status !== 'recruiting') {
+        const error = new Error('Tournament is not accepting participants');
         error.code = 'INVALID_STATUS';
         throw error;
       }
@@ -600,14 +667,43 @@ export const joinTournament = async (req, res) => {
         throw error;
       }
 
+      const teamSize = tournament.settings?.teamSize || 1;
+      if (!characterIds || characterIds.length !== teamSize) {
+        const error = new Error(`You must select exactly ${teamSize} character(s)`);
+        error.code = 'INVALID_TEAM_SIZE';
+        throw error;
+      }
+
+      // Check if any selected characters are excluded
+      const excludedChars = tournament.settings?.excludedCharacters || [];
+      const hasExcluded = characterIds.some(id => excludedChars.includes(id));
+      if (hasExcluded) {
+        const error = new Error('One or more selected characters are not allowed');
+        error.code = 'EXCLUDED_CHARACTER';
+        throw error;
+      }
+
+      // Check if characters are already taken by other participants
+      const takenCharacters = tournament.participants.flatMap(p => p.characterIds || []);
+      const alreadyTaken = characterIds.some(id => takenCharacters.includes(id));
+      if (alreadyTaken) {
+        const error = new Error('One or more characters are already taken');
+        error.code = 'CHARACTER_TAKEN';
+        throw error;
+      }
+
       const user = findUserById(db, req.user.id);
-      const character = characterId ? findCharacterById(db, characterId) : null;
+      const characters = characterIds.map(id => {
+        const char = findCharacterById(db, id);
+        return { id, name: char?.name || 'Unknown' };
+      });
 
       tournament.participants.push({
         userId: req.user.id,
         username: user?.username || 'Unknown',
-        characterId: characterId || null,
-        characterName: character?.name || ''
+        characterIds: characterIds,
+        characters: characters,
+        joinedAt: new Date().toISOString()
       });
 
       if (user) {
@@ -693,6 +789,49 @@ export const leaveTournament = async (req, res) => {
     if (err.code === 'INVALID_STATUS' || err.code === 'NOT_PARTICIPANT') {
       return res.status(400).json({ msg: err.message });
     }
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+// Get available characters for tournament
+export const getAvailableCharacters = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const db = await readDb();
+    const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+    
+    if (!tournament) {
+      return res.status(404).json({ msg: 'Tournament not found' });
+    }
+
+    const allowedTiers = tournament.settings?.allowedTiers || ['all'];
+    const excludedCharacters = tournament.settings?.excludedCharacters || [];
+    
+    // Get all taken characters from participants
+    const takenCharacters = tournament.participants?.flatMap(p => p.characterIds || []) || [];
+    
+    // Filter characters
+    let availableCharacters = (db.characters || []).filter(char => {
+      // Check if excluded
+      if (excludedCharacters.includes(char.id)) return false;
+      
+      // Check if already taken
+      if (takenCharacters.includes(char.id)) return false;
+      
+      // Check tier restriction
+      if (allowedTiers.includes('all')) return true;
+      
+      return allowedTiers.includes(char.division);
+    });
+
+    res.json({
+      characters: availableCharacters,
+      takenCount: takenCharacters.length,
+      availableCount: availableCharacters.length
+    });
+  } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
   }

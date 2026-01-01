@@ -1,41 +1,73 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
+import TournamentBadge from '../badges/TournamentBadge';
 import './UserBadges.css';
 
 const UserBadges = ({ userId, isOwner = false }) => {
   const { t } = useLanguage();
   const [leveledBadges, setLeveledBadges] = useState([]);
+  const [tournamentBadges, setTournamentBadges] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchLeveledBadges = async () => {
+  useEffect(() Badges = async () => {
       if (!userId) return;
       try {
         setLoading(true);
-        const response = await axios.get(`/api/badges/leveled/${userId}`);
-        setLeveledBadges(response.data.badges || []);
+        
+        // Fetch leveled badges
+        const leveledResponse = await axios.get(`/api/badges/leveled/${userId}`);
+        setLeveledBadges(leveledResponse.data.badges || []);
+        
+        // Fetch tournament badges
+        try {
+          const tournamentResponse = await axios.get(`/api/badges/tournament/${userId}`);
+          setTournamentBadges(tournamentResponse.data.badges || []);
+        } catch (err) {
+          if (err.response?.status !== 404) {
+            console.error('Error fetching tournament badges:', err);
+          }
+          setTournamentBadges([]);
+        }
+        
       } catch (error) {
         if (error.response?.status === 404) {
           setLeveledBadges([]);
+          setTournamentBadges([]);
         } else {
-          console.error('Error fetching leveled badges:', error);
+          console.error('Error fetching badges:', error);
         }
       } finally {
         setLoading(false);
       }
     };
 
+    fetch
     fetchLeveledBadges();
   }, [userId]);
 
   const translateBadgeName = (name) => {
     if (!name) return '';
     const translated = t(`badgeNames.${name}`);
-    return translated.startsWith('badgeNames.') ? name : translated;
-  };
-
-  if (loading) {
+    ret/* Tournament Winner Badges */}
+      {tournamentBadges.length > 0 && (
+        <div className="tournament-badges-section">
+          <h4 className="badges-section-title">🏆 Tournament Victories</h4>
+          <div className="tournament-badges-list">
+            {tournamentBadges.map((badge) => (
+              <TournamentBadge key={badge.id} badge={badge} />
+            ))}
+          </div>
+        </div>
+      )}
+      
+      {/* Leveled Badges */}
+      {leveledBadges.length === 0 && tournamentBadges.length === 0 ? (
+        <p>Brak odznak do wyświetlenia.</p>
+      ) : leveledBadges.length > 0 && (
+        <div className="leveled-badges-section">
+          <h4 className="badges-section-title">🎯 Progress Badges</h4>
+    if (loading) {
     return (
       <div className="user-badges-simple">
         <h3>{t('achievements') || 'Achievements'}</h3>
@@ -50,6 +82,7 @@ const UserBadges = ({ userId, isOwner = false }) => {
       
       {leveledBadges.length === 0 ? (
         <p>Brak odznak do wyświetlenia.</p>
+        </div>
       ) : (
         <div className="badges-simple-grid">
           {leveledBadges.map((leveledData) => {

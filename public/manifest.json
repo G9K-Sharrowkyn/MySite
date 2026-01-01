@@ -1,7 +1,7 @@
 {
-  "short_name": "BattleVote",
-  "name": "BattleVote - Character Battle Voting Platform",
-  "description": "Vote on epic character battles, join divisions, and compete for championships",
+  "short_name": "FightHub",
+  "name": "FightHub - Epic Character Battles",
+  "description": "Vote for your favorite characters in epic battles. Join divisions and compete for championships.",
   "icons": [
     {
       "src": "favicon.ico",
