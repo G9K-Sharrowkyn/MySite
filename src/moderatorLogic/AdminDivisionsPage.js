@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
-import Modal from '../Modal/Modal';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './AdminDivisionsPage.css';
 
@@ -210,7 +209,6 @@ const AdminDivisionsPage = () => {
   const divisionActiveFights = selectedSeasonId ? overview.activeFights[selectedSeasonId] || [] : [];
 
   const handleCategorySelect = (season) => {
-    const divisionFromList = divisions.find((entry) => entry.id === season.id);
     setSelectedSeasonId(season.id);
   };
 

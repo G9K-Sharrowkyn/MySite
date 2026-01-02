@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import Notification from '../notificationLogic/Notification';
 import { AuthContext } from '../auth/AuthContext';
 import '../Auth.css';
@@ -124,6 +124,11 @@ const Login = () => {
             autoComplete="current-password"
             disabled={isSubmitting}
           />
+        </div>
+        <div className="forgot-password-link" style={{ textAlign: 'right', marginBottom: '15px' }}>
+          <Link to="/forgot-password" style={{ color: '#ff6b00', fontSize: '14px', textDecoration: 'none' }}>
+            Forgot password?
+          </Link>
         </div>
         <input
           type="submit"

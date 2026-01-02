@@ -61,7 +61,7 @@ const GlobalChatSystem = () => {
     if (isChatOpen && !isMinimized && activeTab === 'global' && messages.length > 0) {
       setTimeout(() => scrollToBottom(), 100);
     }
-  }, [isChatOpen, isMinimized, activeTab]);
+  }, [activeTab, isChatOpen, isMinimized, messages.length]);
 
   // Fetch unread private messages count
   useEffect(() => {
@@ -143,7 +143,7 @@ const GlobalChatSystem = () => {
     if (activeTab === 'private' && isChatOpen && token) {
       loadExistingConversations();
     }
-  }, [activeTab, isChatOpen, token, loadExistingConversations]);
+  }, [activeTab, isChatOpen, loadExistingConversations, token]);
 
 
   const sanitizeProfilePicture = (value) => {
@@ -204,7 +204,6 @@ const GlobalChatSystem = () => {
     socketRef.current = newSocket;
 
     newSocket.on('connect', () => {
-      console.log('Connected to chat server');
       setIsConnected(true);
 
       // Join chat with user info
@@ -215,7 +214,6 @@ const GlobalChatSystem = () => {
       });
       
       // Also join for private messages
-      console.log('GlobalChatSystem: Emitting join-conversation with userId:', userId);
       newSocket.emit('join-conversation', { userId });
     });
 
@@ -295,7 +293,6 @@ const GlobalChatSystem = () => {
       console.log('GlobalChatSystem: Received new-private-message:', message);
       
       const currentConversation = selectedConversationRef.current;
-      const currentUserId = userIdRef.current;
       
       // If currently in a private chat with this user, add message to view
       if (currentConversation && 
@@ -319,7 +316,7 @@ const GlobalChatSystem = () => {
         socketRef.current = null;
       }
     };
-  }, [userId, token, username, profilePicture]);
+  }, [userId, token, username, profilePicture, loadExistingConversations]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -371,14 +368,6 @@ const GlobalChatSystem = () => {
     typingTimeoutRef.current = setTimeout(() => {
       socket.emit('typing', false);
     }, 1000);
-  };
-
-  const toggleMinimize = () => {
-    setIsMinimized(!isMinimized);
-    if (isMinimized) {
-      setUnreadCount(0);
-      scrollToBottom();
-    }
   };
 
   const toggleChat = () => {

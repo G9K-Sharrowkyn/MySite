@@ -7,6 +7,18 @@ import CharacterSelector from '../feedLogic/CharacterSelector';
 import Modal from '../Modal/Modal';
 import './ModeratorPanel.css';
 
+const DEFAULT_ENGLISH_DIVISION_NAMES = {
+  regular: 'Regular People',
+  metahuman: 'Metahumans',
+  planetBusters: 'Planet Busters',
+  godTier: 'God Tier',
+  universalThreat: 'Universal Threat',
+  'star-wars': 'Star Wars',
+  'dragon-ball': 'Dragon Ball',
+  dc: 'DC',
+  marvel: 'Marvel'
+};
+
 const ModeratorPanel = () => {
   const [activeTab, setActiveTab] = useState('fights');
   const [fights, setFights] = useState([]);
@@ -14,8 +26,6 @@ const ModeratorPanel = () => {
   const [users, setUsers] = useState([]);
   const [characters, setCharacters] = useState([]);
   const [bets, setBets] = useState([]);
-  const [divisions, setDivisions] = useState([]);
-  const [divisionStats, setDivisionStats] = useState({});
   const [seasonConfigs, setSeasonConfigs] = useState([]);
   const [selectedSeasonId, setSelectedSeasonId] = useState(null);
   const [divisionOverview, setDivisionOverview] = useState({
@@ -51,19 +61,6 @@ const ModeratorPanel = () => {
   const navigate = useNavigate();
   const token = localStorage.getItem('token');
   const { t } = useLanguage();
-
-  // Default English division names for matching
-  const DEFAULT_ENGLISH_DIVISION_NAMES = {
-    regular: 'Regular People',
-    metahuman: 'Metahumans',
-    planetBusters: 'Planet Busters',
-    godTier: 'God Tier',
-    universalThreat: 'Universal Threat',
-    'star-wars': 'Star Wars',
-    'dragon-ball': 'Dragon Ball',
-    dc: 'DC',
-    marvel: 'Marvel'
-  };
 
   // Fallback seasons with translations
   const fallbackSeasons = useMemo(
@@ -158,25 +155,12 @@ const ModeratorPanel = () => {
         accentColor: season.accentColor || fallback.accent || '#6c757d'
       };
     });
-  }, [seasonConfigs, fallbackSeasons, DEFAULT_ENGLISH_DIVISION_NAMES]);
+  }, [seasonConfigs, fallbackSeasons]);
 
   const showNotification = useCallback((message, type) => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 5000);
   }, []);
-
-  const fetchDivisions = useCallback(async () => {
-    if (!token) return;
-
-    try {
-      const response = await axios.get('/api/divisions', {
-        headers: { 'x-auth-token': token }
-      });
-      setDivisions(response.data || []);
-    } catch (error) {
-      console.error('Error fetching divisions:', error);
-    }
-  }, [token]);
 
   const fetchSeasons = useCallback(async () => {
     if (!token) return;
@@ -229,7 +213,7 @@ const ModeratorPanel = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, divisionsRes, feedbackRes, tournamentsRes] = await Promise.all([
+      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, feedbackRes, tournamentsRes] = await Promise.all([
         axios.get('/api/posts/official'),
         axios.get('/api/posts'),
         axios.get('/api/profile/all', {
@@ -239,9 +223,6 @@ const ModeratorPanel = () => {
         axios.get('/api/betting/moderator/all', {
           headers: { 'x-auth-token': token }
         }).catch(() => ({ data: [] })), // Fallback if betting not available
-        axios.get('/api/divisions/stats', {
-          headers: { 'x-auth-token': token }
-        }).catch(() => ({ data: {} })), // Fallback if divisions not available
         axios.get('/api/feedback', {
           headers: { 'x-auth-token': token }
         }).catch(() => ({ data: [] })), // Fallback if feedback not available
@@ -253,19 +234,18 @@ const ModeratorPanel = () => {
       setUsers(usersRes.data);
       setCharacters(charactersRes.data);
       setBets(betsRes.data || []);
-      setDivisionStats(divisionsRes.data || {});
       setFeedback(feedbackRes.data || []);
       setTournaments(tournamentsRes.data || []);
       
       // Fetch divisions data
-      await Promise.all([fetchDivisions(), fetchSeasons()]);
+      await Promise.all([fetchSeasons()]);
     } catch (error) {
       console.error('Error fetching data:', error);
       showNotification('Błąd podczas ładowania danych', 'error');
     } finally {
       setLoading(false);
     }
-  }, [fetchDivisions, fetchSeasons, showNotification, token]);
+  }, [fetchSeasons, showNotification, token]);
 
   useEffect(() => {
     if (!token) {
@@ -450,41 +430,6 @@ const ModeratorPanel = () => {
   const formatCurrency = (amount) => {
     return `${amount} 🪙`;
   };
-  const getLocalDateTime = () => {
-    const now = new Date();
-    const offsetMs = now.getTimezoneOffset() * 60000;
-    return new Date(now.getTime() - offsetMs).toISOString().slice(0, 16);
-  };
-
-  const getSeasonStatus = (season) => {
-    if (season.status) {
-      return season.status === 'active'
-        ? 'Aktywny'
-        : season.status === 'scheduled'
-          ? 'Zaplanowany'
-          : season.status === 'ended'
-            ? 'Zakończony'
-            : 'Zablokowany';
-    }
-
-    if (season.isLocked) {
-      return 'Zablokowany';
-    }
-    if (!season.startAt && !season.endAt) {
-      return 'Nieustawiony';
-    }
-    const now = new Date();
-    const start = season.startAt ? new Date(season.startAt) : null;
-    const end = season.endAt ? new Date(season.endAt) : null;
-
-    if (start && now < start) {
-      return 'Zaplanowany';
-    }
-    if (end && now > end) {
-      return 'Zakończony';
-    }
-    return 'Aktywny';
-  };
 
   const updateSeasonField = (seasonId, field, value) => {
     setSeasonConfigs((prev) =>
@@ -548,20 +493,6 @@ const ModeratorPanel = () => {
     }
   };
 
-  const handleRunScheduler = async () => {
-    try {
-      await axios.post('/api/divisions/seasons/run-scheduler', {}, {
-        headers: { 'x-auth-token': token }
-      });
-      showNotification('Scheduler uruchomiony', 'success');
-      fetchSeasons();
-    } catch (error) {
-      console.error('Error running scheduler:', error);
-      showNotification('Błąd uruchamiania scheduler', 'error');
-    }
-  };
-
-
   // Division Management Functions
   const handleCreateTitleFight = async (divisionId, challengerId) => {
     try {
@@ -590,20 +521,6 @@ const ModeratorPanel = () => {
     } catch (error) {
       console.error('Error creating contender match:', error);
       showNotification('Błąd podczas tworzenia walki pretendentów', 'error');
-    }
-  };
-
-  const handleLockExpiredFights = async () => {
-    try {
-      const response = await axios.post('/api/divisions/lock-expired-fights', {}, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      showNotification(response.data.message || 'Expired fights locked', 'success');
-      fetchData();
-    } catch (error) {
-      console.error('Error locking expired fights:', error);
-      showNotification('Błąd podczas blokowania wygasłych walk', 'error');
     }
   };
 

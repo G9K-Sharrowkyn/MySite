@@ -248,6 +248,14 @@ const Header = () => {
                         <span className="dropdown-badge">{unreadMessages}</span>
                       )}
                     </Link>
+                    <Link 
+                      to="/settings" 
+                      className="dropdown-item"
+                      onClick={() => setShowUserMenu(false)}
+                    >
+                      <span className="dropdown-icon">⚙️</span>
+                      Settings
+                    </Link>
                     <div className="dropdown-divider"></div>
                     <button 
                       className="dropdown-item logout-item"

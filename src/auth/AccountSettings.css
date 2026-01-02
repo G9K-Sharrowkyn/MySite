@@ -1,0 +1,186 @@
+.account-settings {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 18px;
+  color: #888;
+}
+
+.settings-container {
+  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+  border-radius: 16px;
+  padding: 30px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.settings-header {
+  margin-bottom: 40px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #ff6b00;
+}
+
+.settings-header h1 {
+  margin: 0 0 10px 0;
+  font-size: 32px;
+  color: #ff6b00;
+}
+
+.username-display {
+  margin: 0;
+  color: #aaa;
+  font-size: 14px;
+}
+
+.username-display strong {
+  color: #fff;
+}
+
+.settings-section {
+  margin-bottom: 40px;
+  padding: 25px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.settings-section h2 {
+  margin: 0 0 15px 0;
+  font-size: 24px;
+  color: #ff6b00;
+}
+
+.section-description {
+  color: #aaa;
+  font-size: 14px;
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.section-description strong {
+  color: #ff6b00;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #ddd;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 12px 16px;
+  background: #1a1a1a;
+  border: 2px solid #333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 15px;
+  transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #ff6b00;
+  background: #222;
+}
+
+.form-group input::placeholder {
+  color: #666;
+}
+
+.btn-submit {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff6b00, #ff9900);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.btn-submit:hover {
+  background: linear-gradient(135deg, #ff7700, #ffaa00);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 107, 0, 0.4);
+}
+
+.btn-submit:active {
+  transform: translateY(0);
+}
+
+.danger-zone {
+  border-color: #ff3333;
+  background: rgba(50, 0, 0, 0.3);
+}
+
+.danger-zone h2 {
+  color: #ff3333;
+}
+
+.btn-danger {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #ff3333, #cc0000);
+  color: white;
+  border: 2px solid #ff4444;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #ff4444, #dd0000);
+  border-color: #ff5555;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(255, 51, 51, 0.4);
+}
+
+.btn-danger:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .account-settings {
+    padding: 20px 10px;
+  }
+
+  .settings-container {
+    padding: 20px;
+  }
+
+  .settings-header h1 {
+    font-size: 24px;
+  }
+
+  .settings-section {
+    padding: 20px;
+  }
+
+  .settings-section h2 {
+    font-size: 20px;
+  }
+}

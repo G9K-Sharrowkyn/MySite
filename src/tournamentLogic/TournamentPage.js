@@ -68,23 +68,6 @@ const TournamentPage = () => {
     }
   };
 
-  const handleGenerateBrackets = async (tournamentId) => {
-    try {
-      await axios.post(`/api/tournaments/${tournamentId}/generate-brackets`, {}, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      setToast({ message: 'Tournament started! Brackets generated.', type: 'success' });
-      fetchTournaments();
-      if (selectedTournament?.id === tournamentId) {
-        fetchTournamentDetails(tournamentId);
-      }
-    } catch (error) {
-      console.error('Error generating brackets:', error);
-      setToast({ message: error.response?.data?.msg || 'Error starting tournament', type: 'error' });
-    }
-  };
-
   const handleDeleteClick = (tournamentId, tournamentTitle) => {
     setTournamentToDelete({ id: tournamentId, title: tournamentTitle });
     setShowDeleteModal(true);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './TournamentBracket.css';
 
@@ -8,11 +8,7 @@ const TournamentBracket = ({ tournamentId, status }) => {
   const [userVotes, setUserVotes] = useState({});
   const token = localStorage.getItem('token');
 
-  useEffect(() => {
-    fetchBrackets();
-  }, [tournamentId]);
-
-  const fetchBrackets = async () => {
+  const fetchBrackets = useCallback(async () => {
     try {
       const response = await axios.get(`/api/tournaments/${tournamentId}/brackets`);
       setBrackets(response.data.brackets || []);
@@ -21,7 +17,11 @@ const TournamentBracket = ({ tournamentId, status }) => {
       console.error('Error fetching brackets:', error);
       setLoading(false);
     }
-  };
+  }, [tournamentId]);
+
+  useEffect(() => {
+    fetchBrackets();
+  }, [fetchBrackets]);
 
   const handleVote = async (matchId, participantId) => {
     if (!token) {

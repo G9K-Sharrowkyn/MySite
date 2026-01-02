@@ -35,14 +35,14 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
     { id: 'marvel', name: 'Marvel', type: 'franchise' }
   ];
 
-  const fetchCharacters = async () => {
+  const fetchCharacters = useCallback(async () => {
     try {
       const response = await axios.get('/api/characters');
       setCharacters(response.data);
     } catch (error) {
       console.error('Error fetching characters:', error);
     }
-  };
+  }, []);
 
   const filterAvailableCharacters = useCallback(() => {
     if (formData.allowedTiers.length === 0) {
@@ -72,25 +72,26 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
 
   useEffect(() => {
     fetchCharacters();
-    
+  }, [fetchCharacters]);
+
+  useEffect(() => {
+    if (formData.battleDate) return;
+
     // Set minimum datetime to current time + recruitment days
     const minDate = new Date();
     minDate.setDate(minDate.getDate() + (formData.recruitmentDays || 2));
-    
+
     // Format for datetime-local input (YYYY-MM-DDTHH:MM)
     const year = minDate.getFullYear();
     const month = String(minDate.getMonth() + 1).padStart(2, '0');
     const day = String(minDate.getDate()).padStart(2, '0');
     const hours = String(minDate.getHours()).padStart(2, '0');
     const minutes = String(minDate.getMinutes()).padStart(2, '0');
-    
+
     const minDateTime = `${year}-${month}-${day}T${hours}:${minutes}`;
-    
-    // Set default battle date if not set
-    if (!formData.battleDate) {
-      setFormData(prev => ({ ...prev, battleDate: minDateTime }));
-    }
-  }, []);
+
+    setFormData(prev => ({ ...prev, battleDate: minDateTime }));
+  }, [formData.battleDate, formData.recruitmentDays]);
 
   useEffect(() => {
     filterAvailableCharacters();

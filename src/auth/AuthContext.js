@@ -89,13 +89,12 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    // Only fetch user if we have a token but no user data
     if (!user) {
       fetchUser(token);
     } else {
       setLoading(false);
     }
-  }, [token]); // Removed user and fetchUser from dependencies to prevent infinite loops
+  }, [fetchUser, token, user]);
 
   const value = {
     user,

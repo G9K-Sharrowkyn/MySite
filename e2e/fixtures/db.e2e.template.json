@@ -83,6 +83,174 @@
       },
       "createdAt": "2025-01-01T00:00:00.000Z",
       "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "e2e-mod-1",
+      "username": "moderator",
+      "email": "moderator@site.local",
+      "password": "$2b$10$rhloSnuZ4Fk43vTTKwHlWepPaLh1vnPnex3IHBIw.OIO.6HtMyGVi",
+      "role": "moderator",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-01-01T00:00:00.000Z",
+        "lastActive": "2025-01-01T00:00:00.000Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 0,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        }
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-01-01T00:00:00.000Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "e2e-admin-1",
+      "username": "admin",
+      "email": "admin@site.local",
+      "password": "$2b$10$rhloSnuZ4Fk43vTTKwHlWepPaLh1vnPnex3IHBIw.OIO.6HtMyGVi",
+      "role": "admin",
+      "profile": {
+        "bio": "",
+        "profilePicture": "",
+        "favoriteCharacters": [],
+        "joinDate": "2025-01-01T00:00:00.000Z",
+        "lastActive": "2025-01-01T00:00:00.000Z",
+        "avatar": "",
+        "description": "",
+        "backgroundImage": ""
+      },
+      "stats": {
+        "fightsWon": 0,
+        "fightsLost": 0,
+        "fightsDrawn": 0,
+        "fightsNoContest": 0,
+        "totalFights": 0,
+        "winRate": 0,
+        "rank": "Mortal",
+        "points": 0,
+        "level": 1,
+        "experience": 0,
+        "officialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        },
+        "unofficialStats": {
+          "fightsWon": 0,
+          "fightsLost": 0,
+          "fightsDrawn": 0,
+          "winRate": 0
+        }
+      },
+      "activity": {
+        "postsCreated": 0,
+        "commentsPosted": 0,
+        "reactionsGiven": 0,
+        "likesReceived": 0,
+        "tournamentsWon": 0,
+        "tournamentsParticipated": 0
+      },
+      "coins": {
+        "balance": 1000,
+        "totalEarned": 1000,
+        "totalSpent": 0,
+        "lastBonusDate": "2025-01-01T00:00:00.000Z"
+      },
+      "achievements": [],
+      "divisions": {},
+      "customBackgrounds": [],
+      "backgroundSlots": 1,
+      "notificationSettings": {
+        "fightResults": true,
+        "divisionFights": true,
+        "reactions": true,
+        "comments": true,
+        "mentions": true,
+        "pushEnabled": false
+      },
+      "tagPreferences": [],
+      "privacy": {
+        "cookieConsent": {
+          "given": false,
+          "analytics": false,
+          "marketing": false,
+          "functional": true
+        },
+        "settings": {
+          "dataProcessing": true,
+          "marketing": false,
+          "profiling": false
+        },
+        "accountDeleted": false
+      },
+      "createdAt": "2025-01-01T00:00:00.000Z",
+      "updatedAt": "2025-01-01T00:00:00.000Z"
     }
   ]
 }

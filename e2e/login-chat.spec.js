@@ -28,11 +28,16 @@ test('user can log in and open the global chat', async ({ page }) => {
   await expect(page).toHaveURL(/\/feed/, { timeout: 20000 });
   await expect(page.locator('.feed-container')).toBeVisible();
 
-  const chatHeader = page.locator('.global-chat-container .chat-header');
-  await expect(chatHeader).toBeVisible();
-  await expect(page.locator('.connection-status.connected')).toBeVisible({ timeout: 15000 });
+  await page.waitForFunction(() => {
+    const toggle = document.querySelector('.chat-toggle-input');
+    if (!toggle) return false;
+    toggle.click();
+    return true;
+  });
 
-  await chatHeader.click();
+  const chatHeader = page.locator('.global-chat-container .chat-header');
+  await expect(chatHeader).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('.connection-status.connected')).toBeVisible({ timeout: 15000 });
 
   const chatInput = page.locator('.chat-input');
   await expect(chatInput).toBeVisible();

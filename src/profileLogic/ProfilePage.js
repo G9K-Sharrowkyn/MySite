@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
@@ -12,7 +12,7 @@ import './ProfilePage.css';
 
 const ProfilePage = () => {
   const { userId } = useParams();
-  const { t, lang } = useLanguage();
+  const { t } = useLanguage();
 
   // Initialize profile state from localStorage if available
   const storedProfile = localStorage.getItem('cachedProfile');
@@ -39,19 +39,12 @@ const ProfilePage = () => {
   const [posts, setPosts] = useState([]);
   const [contentFilter, setContentFilter] = useState('all');
   const [fightFilter, setFightFilter] = useState('division');
-  const [isDarkMode, setIsDarkMode] = useState(() =>
-    typeof document !== 'undefined' && document.body.classList.contains('dark-mode')
-  );
+  const isEditingRef = useRef(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (typeof document === 'undefined') return;
-    const updateTheme = () => setIsDarkMode(document.body.classList.contains('dark-mode'));
-    updateTheme();
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] });
-    return () => observer.disconnect();
-  }, []);
+    isEditingRef.current = isEditing;
+  }, [isEditing]);
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
@@ -113,9 +106,11 @@ const ProfilePage = () => {
       }
         const normalizedDescription = normalizeDescription(res.data.description);
         setProfile({ ...res.data, description: normalizedDescription });
-        setDescription(normalizedDescription);
-        setProfilePicture(res.data.profilePicture || '');
-        setBackgroundImage(res.data.profile?.backgroundImage || '');
+        if (!isEditingRef.current) {
+          setDescription(normalizedDescription);
+          setProfilePicture(res.data.profilePicture || '');
+          setBackgroundImage(res.data.profile?.backgroundImage || '');
+        }
         const resolvedId = res.data?.id || res.data?._id || id;
         if (resolvedId) {
           fetchComments(resolvedId);

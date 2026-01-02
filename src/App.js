@@ -20,6 +20,9 @@ import FightDetailPage from './fightLogic/FightDetailPage';
 import NotificationsPage from './notificationLogic/NotificationsPage';
 import DivisionsPage from './divisionsLogic/DivisionsPage';
 import PostPage from './postLogic/PostPage';
+import AccountSettings from './auth/AccountSettings';
+import ForgotPassword from './auth/ForgotPassword';
+import ResetPassword from './auth/ResetPassword';
 import GlobalChatSystem from './chat/GlobalChatSystem';
 import FeedbackButton from './shared/FeedbackButton';
 import './App.css';
@@ -90,6 +93,9 @@ function AppContent() {
         <Route path="/" element={isLoggedIn ? <Navigate to="/feed" replace /> : <Home />} />
         <Route path="/register" element={<Register setIsLoggedIn={() => {}} />} />
         <Route path="/login" element={<Login setIsLoggedIn={() => {}} />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/settings" element={<AccountSettings />} />
         <Route path="/moderator" element={<ModeratorPanel />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/admin/divisions" element={<AdminDivisionsPage />} />
