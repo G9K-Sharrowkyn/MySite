@@ -11,12 +11,16 @@ const PlayGame = ({ user }) => {
   const [opponent, setOpponent] = useState(null);
   const [gameStarted, setGameStarted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const userId = user?.id;
+  const username = user?.username;
 
   useEffect(() => {
-    socket.emit('joinRoom', { roomId, user: { id: user.id, username: user.username } });
+    if (!userId || !username) return;
+
+    socket.emit('joinRoom', { roomId, user: { id: userId, username } });
     
     socket.on('playersUpdate', (list) => {
-      const opp = list.find(u => u.id !== user.id);
+      const opp = list.find(u => u.id !== userId);
       if (opp) setOpponent(opp);
       setLoading(false);
     });
@@ -32,7 +36,7 @@ const PlayGame = ({ user }) => {
       socket.off('playersUpdate');
       socket.off('gameStart');
     };
-  }, [roomId]);
+  }, [roomId, userId, username]);
 
   const startGame = () => {
     socket.emit('startGame', { roomId });

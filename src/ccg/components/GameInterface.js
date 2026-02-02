@@ -5,6 +5,16 @@ import GameMechanics, { Phases } from '../mechanics/GameMechanics';
 import Card from './Card';
 import '../assets/css/CardGame.css';
 
+const drawCards = (deckArr, count) => {
+  const newHand = [];
+  let newDeck = [...deckArr];
+  for (let i = 0; i < count && newDeck.length; i++) {
+    const idx = Math.floor(Math.random() * newDeck.length);
+    newHand.push(newDeck.splice(idx, 1)[0]);
+  }
+  return { hand: newHand, deck: newDeck };
+};
+
 const GameInterface = ({ user, roomId, initialDeck }) => {
   const [deck, setDeck] = useState(initialDeck);
   const [hand, setHand] = useState([]);
@@ -15,8 +25,8 @@ const GameInterface = ({ user, roomId, initialDeck }) => {
   const [selectedCard, setSelectedCard] = useState(null);
   const [gameMechanics] = useState(new GameMechanics());
   const [currentPhase, setCurrentPhase] = useState(gameMechanics.getCurrentPhase());
-  const [playerHP, setPlayerHP] = useState(20);
-  const [opponentHP, setOpponentHP] = useState(20);
+  const [playerHP] = useState(20);
+  const [opponentHP] = useState(20);
   const [commandPoints, setCommandPoints] = useState(0);
   const [hasPlayedCommandCard, setHasPlayedCommandCard] = useState(false);
   const [hasDrawnCard, setHasDrawnCard] = useState(false);
@@ -26,14 +36,15 @@ const GameInterface = ({ user, roomId, initialDeck }) => {
   const [dropZoneActive, setDropZoneActive] = useState('');
 
   useEffect(() => {
-    const initialHand = drawCards(deck, 7);
+    const startingDeck = Array.isArray(initialDeck) ? initialDeck : [];
+    const initialHand = drawCards(startingDeck, 7);
     setHand(initialHand.hand);
     setDeck(initialHand.deck);
     
     // Add some sample opponent cards for demo purposes
-    if (deck.length > 0) {
-      const sampleOpponentUnits = deck.slice(0, 2);
-      const sampleOpponentCommands = deck.slice(2, 4);
+    if (startingDeck.length > 0) {
+      const sampleOpponentUnits = startingDeck.slice(0, 2);
+      const sampleOpponentCommands = startingDeck.slice(2, 4);
       setOpponentUnits(sampleOpponentUnits);
       setOpponentCommands(sampleOpponentCommands);
     }
@@ -42,7 +53,7 @@ const GameInterface = ({ user, roomId, initialDeck }) => {
       // obsługa ruchu przeciwnika
     });
     return () => { socket.off('opponentMove'); };
-  }, []);
+  }, [initialDeck]);
 
   useEffect(() => {
     if (currentPhase === Phases.COMMAND) {
@@ -54,16 +65,6 @@ const GameInterface = ({ user, roomId, initialDeck }) => {
       }, 0));
     }
   }, [currentPhase, playerCommands]);
-
-  const drawCards = (deckArr, count) => {
-    const newHand = [];
-    let newDeck = [...deckArr];
-    for (let i = 0; i < count && newDeck.length; i++) {
-      const idx = Math.floor(Math.random() * newDeck.length);
-      newHand.push(newDeck.splice(idx, 1)[0]);
-    }
-    return { hand: newHand, deck: newDeck };
-  };
 
   const drawCard = () => {
     if (currentPhase !== Phases.COMMAND || hasDrawnCard || deck.length === 0) return;

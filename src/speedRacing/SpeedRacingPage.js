@@ -85,7 +85,6 @@ const SpeedRacingPage = () => {
   const [distance, setDistance] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [speed, setSpeed] = useState(TRACKS[0].baseSpeed);
-  const [gearMeter, setGearMeter] = useState(12);
   const [shiftReady, setShiftReady] = useState(false);
   const [status, setStatus] = useState(t('speedRacingReady'));
   const [playerLane, setPlayerLane] = useState(1);
