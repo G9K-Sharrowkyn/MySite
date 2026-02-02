@@ -85,6 +85,7 @@ const SpeedRacingPage = () => {
   const [distance, setDistance] = useState(0);
   const [elapsed, setElapsed] = useState(0);
   const [speed, setSpeed] = useState(TRACKS[0].baseSpeed);
+  const [gearMeter, setGearMeter] = useState(12);
   const [shiftReady, setShiftReady] = useState(false);
   const [status, setStatus] = useState(t('speedRacingReady'));
   const [playerLane, setPlayerLane] = useState(1);
@@ -406,6 +407,40 @@ const SpeedRacingPage = () => {
 
   return (
     <div className="speed-racing-page">
+      <div className="meters">
+        <div className="meter">
+          <div className="meter-label">{t('speedRacingSpeed') || 'Speed'}</div>
+          <div className={`meter-bar ${shiftReady ? 'ready' : ''}`}>
+            <div
+              className="meter-fill speed"
+              style={{ width: `${Math.min(100, (speed / track.maxSpeed) * 100)}%` }}
+            />
+          </div>
+          <div className="meter-value">{speed.toFixed(1)}</div>
+        </div>
+        <div className="meter">
+          <div className="meter-label">{t('speedRacingGear') || 'Gear'}</div>
+          <div className={`meter-bar ${shiftReady ? 'ready' : ''}`}>
+            <div
+              className="meter-fill gear"
+              style={{ width: `${Math.min(100, gearMeter)}%` }}
+            />
+          </div>
+          <div className="meter-value">{Math.round(gearMeter)}%</div>
+        </div>
+        <div className="meter">
+          <div className="meter-label">{t('speedRacingDistance') || 'Distance'}</div>
+          <div className="meter-bar">
+            <div
+              className="meter-fill distance"
+              style={{ width: `${Math.min(100, (distance / track.length) * 100)}%` }}
+            />
+          </div>
+          <div className="meter-value">
+            {Math.min(distance, track.length).toFixed(0)} / {track.length}m
+          </div>
+        </div>
+      </div>
       <div className="speed-racing-stage">
         <div
           className={`speed-track theme-${track.theme} ${screenShake ? 'shake' : ''}`}
