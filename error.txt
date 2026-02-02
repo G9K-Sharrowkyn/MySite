@@ -1,16 +1,72 @@
-PS F:\Teksty\Programming\Site1\my-site> git push
-Enumerating objects: 1318, done.
-Counting objects: 100% (1318/1318), done.
-Delta compression using up to 16 threads
-Compressing objects: 100% (1187/1187), done.
-Writing objects: 100% (1234/1234), 301.44 MiB | 17.50 MiB/s, done.
-Total 1234 (delta 121), reused 383 (delta 23), pack-reused 0 (from 0)
-remote: Resolving deltas: 100% (121/121), completed with 69 local objects.     
-remote: error: Trace: 6017905a66859d5253229b1af68467f68e0fb89544349fd8433f3dd1b30287fb
-remote: error: See https://gh.io/lfs for more information.
-remote: error: File build.zip is 119.54 MB; this exceeds GitHub's file size limit of 100.00 MB
-remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.
-To https://github.com/G9K-Sharrowkyn/MySite.git
- ! [remote rejected] main -> main (pre-receive hook declined)
-error: failed to push some refs to 'https://github.com/G9K-Sharrowkyn/MySite.git'
-PS F:\Teksty\Programming\Site1\my-site> 
+Actions general:
+Actions permissions
+
+
+Allow all actions and reusable workflows
+Any action or reusable workflow can be used, regardless of who authored it or where it is defined.
+
+Disable actions
+The Actions tab is hidden and no workflows can run.
+
+Allow G9K-Sharrowkyn actions and reusable workflows
+Any action or reusable workflow defined in a repository within G9K-Sharrowkyn can be used.
+
+Allow G9K-Sharrowkyn, and select non-G9K-Sharrowkyn, actions and reusable workflows
+Any action or reusable workflow that matches the specified criteria, plus those defined in a repository within G9K-Sharrowkyn, can be used. Learn more about allowing specific actions and reusable workflows to run.
+
+Require actions to be pinned to a full-length commit SHA
+Artifact and log retention
+Choose the repository settings for artifacts and logs.
+
+Artifact and log retention
+90
+days
+There is a maximum limit of 90 days. Learn more about the artifact and log retention policy.
+
+Cache
+Choose the repository settings for cache.
+
+Cache retention
+7
+days
+Retention can be set up to 90 days.
+
+Cache size eviction limit
+10
+GB
+Use this limit to control when cache evictions occur. Exceeding this limit will trigger evictions of the least recently used cache. Note this limit should not be used for controlling costs. Total cache size can be set up to 10000 GB. Learn more.
+
+Approval for running fork pull request workflows from contributors
+Choose which subset of users will require approval before running workflows on their pull requests. Both the pull request author and the actor of the pull request event triggering the workflow will be checked to determine if approval is required. If approval is required, a user with write access to the repository must approve the pull request workflow to be run.
+
+
+
+Require approval for first-time contributors who are new to GitHub
+Only users who are both new on GitHub and who have never had a commit or pull request merged into this repository will require approval to run workflows.
+
+Require approval for first-time contributors
+Only users who have never had a commit or pull request merged into this repository will require approval to run workflows.
+
+Require approval for all external contributors
+All users that are not a member or owner of this repository will require approval to run workflows.
+Workflow permissions
+Choose the default permissions granted to the GITHUB_TOKEN when running workflows in this repository. You can specify more granular permissions in the workflow using YAML. Learn more about managing permissions.
+
+
+
+Read and write permissions
+Workflows have read and write permissions in the repository for all scopes.
+
+Read repository contents and packages permissions
+Workflows have read permissions in the repository for the contents and packages scopes only.
+Choose whether GitHub Actions can create pull requests or submit approving pull request reviews.
+
+Allow GitHub Actions to create and approve pull requests
+
+
+Runners:
+Runners
+Host your own runners and customize the environment used to run jobs in your GitHub Actions workflows. Learn more about self-hosted runners.
+
+There are no runners configured
+Learn more about using runners to run actions on your own servers.
