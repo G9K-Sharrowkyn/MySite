@@ -1,6 +1,6 @@
-import express from 'express';
+﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 
 const router = express.Router();
 
@@ -32,7 +32,7 @@ router.post('/discussions', async (req, res) => {
     }
 
     let created;
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, userId);
       const now = new Date().toISOString();
       created = {
@@ -108,3 +108,4 @@ router.get('/polls', async (_req, res) => {
 });
 
 export default router;
+

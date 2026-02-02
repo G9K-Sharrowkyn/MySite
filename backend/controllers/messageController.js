@@ -1,16 +1,25 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import {
+  messagesRepo,
+  readDb,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
-const findUserById = (db, userId) =>
-  db.users.find((entry) => resolveUserId(entry) === userId);
+const findUserById = (users, userId) =>
+  (users || []).find((entry) => resolveUserId(entry) === userId);
 
-const normalizeMessage = (message, db) => {
+const normalizeMessage = (message, users = []) => {
   const sender =
-    message.senderUsername || !db ? null : findUserById(db, message.senderId);
+    message.senderUsername || users.length === 0
+      ? null
+      : findUserById(users, message.senderId);
   const recipient =
-    message.recipientUsername || !db ? null : findUserById(db, message.recipientId);
+    message.recipientUsername || users.length === 0
+      ? null
+      : findUserById(users, message.recipientId);
 
   return {
     id: message.id || message._id,
@@ -41,15 +50,21 @@ export const sendMessage = async (req, res) => {
     const now = new Date().toISOString();
     let createdMessage;
 
-    await updateDb((db) => {
-      const sender = findUserById(db, req.user.id);
+    await withDb(async (db) => {
+      const sender = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (!sender) {
         const error = new Error('Sender not found');
         error.code = 'SENDER_NOT_FOUND';
         throw error;
       }
 
-      const recipient = findUserById(db, recipientId);
+      const recipient = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === recipientId,
+        { db }
+      );
       if (!recipient) {
         const error = new Error('Recipient not found');
         error.code = 'RECIPIENT_NOT_FOUND';
@@ -69,8 +84,7 @@ export const sendMessage = async (req, res) => {
         createdAt: now
       };
 
-      db.messages = Array.isArray(db.messages) ? db.messages : [];
-      db.messages.push(message);
+      await messagesRepo.insert(message, { db });
       createdMessage = message;
 
       // Don't create bell notifications for messages - only chat icon counter
@@ -114,7 +128,8 @@ export const getMessages = async (req, res) => {
     const limitNumber = Number(limit) || 20;
 
     const db = await readDb();
-    const messages = Array.isArray(db.messages) ? db.messages : [];
+    const messages = await messagesRepo.getAll({ db });
+    const users = await usersRepo.getAll({ db });
 
     const filtered = messages.filter((message) => {
       if (message.deleted) return false;
@@ -143,7 +158,7 @@ export const getMessages = async (req, res) => {
     ).length;
 
     res.json({
-      messages: paged.map((message) => normalizeMessage(message, db)),
+      messages: paged.map((message) => normalizeMessage(message, users)),
       pagination: {
         currentPage: pageNumber,
         totalPages: Math.ceil(filtered.length / limitNumber) || 1,
@@ -165,9 +180,11 @@ export const getMessages = async (req, res) => {
 export const getMessage = async (req, res) => {
   try {
     const db = await readDb();
-    const message = db.messages.find(
-      (entry) => entry.id === req.params.id || entry._id === req.params.id
+    const message = await messagesRepo.findOne(
+      (entry) => entry.id === req.params.id || entry._id === req.params.id,
+      { db }
     );
+    const users = await usersRepo.getAll({ db });
 
     if (!message) {
       return res.status(404).json({ msg: 'Message not found' });
@@ -180,20 +197,21 @@ export const getMessage = async (req, res) => {
     let updatedMessage = message;
     if (message.recipientId === req.user.id && !message.read) {
       const now = new Date().toISOString();
-      await updateDb((data) => {
-        const target = data.messages.find(
-          (entry) => entry.id === message.id || entry._id === message._id
+      await withDb(async (updateDb) => {
+        const target = await messagesRepo.findOne(
+          (entry) => entry.id === message.id || entry._id === message._id,
+          { db: updateDb }
         );
         if (target) {
           target.read = true;
           target.readAt = now;
           updatedMessage = target;
         }
-        return data;
+        return updateDb;
       });
     }
 
-    res.json(normalizeMessage(updatedMessage, db));
+    res.json(normalizeMessage(updatedMessage, users));
   } catch (error) {
     console.error('Error fetching message:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -207,8 +225,8 @@ export const deleteMessage = async (req, res) => {
   try {
     let found;
 
-    await updateDb((db) => {
-      const message = db.messages.find(
+    await messagesRepo.updateAll((messages) => {
+      const message = messages.find(
         (entry) => entry.id === req.params.id || entry._id === req.params.id
       );
       if (!message) {
@@ -229,7 +247,7 @@ export const deleteMessage = async (req, res) => {
       message.deleted = true;
       message.deletedAt = new Date().toISOString();
       found = message;
-      return db;
+      return messages;
     });
 
     res.json({ msg: 'Message deleted', message: normalizeMessage(found) });
@@ -250,8 +268,8 @@ export const deleteMessage = async (req, res) => {
 // @access  Private
 export const markAsRead = async (req, res) => {
   try {
-    await updateDb((db) => {
-      const message = db.messages.find(
+    await messagesRepo.updateAll((messages) => {
+      const message = messages.find(
         (entry) => entry.id === req.params.id || entry._id === req.params.id
       );
       if (!message) {
@@ -268,7 +286,7 @@ export const markAsRead = async (req, res) => {
 
       message.read = true;
       message.readAt = new Date().toISOString();
-      return db;
+      return messages;
     });
 
     res.json({ msg: 'Message marked as read' });
@@ -295,7 +313,8 @@ export const getConversation = async (req, res) => {
     const otherUserId = req.params.userId;
 
     const db = await readDb();
-    const messages = Array.isArray(db.messages) ? db.messages : [];
+    const messages = await messagesRepo.getAll({ db });
+    const users = await usersRepo.getAll({ db });
 
     const filtered = messages.filter(
       (message) =>
@@ -314,25 +333,30 @@ export const getConversation = async (req, res) => {
       pageNumber * limitNumber
     );
 
-    await updateDb((data) => {
-      data.messages = Array.isArray(data.messages) ? data.messages : [];
-      data.messages.forEach((message) => {
-        if (
-          message.senderId === otherUserId &&
-          message.recipientId === req.user.id &&
-          !message.read
-        ) {
-          message.read = true;
-          message.readAt = new Date().toISOString();
-        }
-      });
-      return data;
+    await withDb(async (updateDb) => {
+      await messagesRepo.updateAll((allMessages) => {
+        allMessages.forEach((message) => {
+          if (
+            message.senderId === otherUserId &&
+            message.recipientId === req.user.id &&
+            !message.read
+          ) {
+            message.read = true;
+            message.readAt = new Date().toISOString();
+          }
+        });
+        return allMessages;
+      }, { db: updateDb });
+      return updateDb;
     });
 
-    const otherUser = findUserById(db, otherUserId);
+    const otherUser = await usersRepo.findOne(
+      (entry) => resolveUserId(entry) === otherUserId,
+      { db }
+    );
 
     res.json({
-      messages: paged.map((message) => normalizeMessage(message, db)),
+      messages: paged.map((message) => normalizeMessage(message, users)),
       otherUser: otherUser
         ? {
             id: resolveUserId(otherUser),
@@ -360,8 +384,7 @@ export const getConversation = async (req, res) => {
 // @access  Private
 export const getUnreadCount = async (req, res) => {
   try {
-    const db = await readDb();
-    const messages = Array.isArray(db.messages) ? db.messages : [];
+    const messages = await messagesRepo.getAll();
     const unreadCount = messages.filter(
       (message) =>
         message.recipientId === req.user.id && !message.read && !message.deleted

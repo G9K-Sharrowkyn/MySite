@@ -1,8 +1,8 @@
-import express from 'express';
+﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import auth from '../middleware/auth.js';
 import moderatorAuth from '../middleware/moderatorAuth.js';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 import { getRankInfo } from '../utils/rankSystem.js';
 
 const router = express.Router();
@@ -260,7 +260,7 @@ const runSeasonScheduler = async (now = new Date()) => {
   let cleanedTeams = 0;
   const nowIso = now.toISOString();
 
-  await updateDb((db) => {
+  await withDb((db) => {
     ensureSeasons(db);
 
     db.divisionSeasons.forEach((season) => {
@@ -585,7 +585,7 @@ router.post('/seasons', [auth, moderatorAuth], async (req, res) => {
 
     let createdSeason;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       ensureSeasons(db);
       const exists = db.divisionSeasons.find((season) => season.id === id);
       if (exists) {
@@ -635,7 +635,7 @@ router.patch('/seasons/:seasonId', [auth, moderatorAuth], async (req, res) => {
 
     let updatedSeason;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       ensureSeasons(db);
       const season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
       if (!season) {
@@ -671,7 +671,7 @@ router.patch('/seasons/:seasonId', [auth, moderatorAuth], async (req, res) => {
 router.post('/seasons/:seasonId/activate', [auth, moderatorAuth], async (req, res) => {
   try {
     let season;
-    await updateDb((db) => {
+    await withDb((db) => {
       ensureSeasons(db);
       season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
       if (!season) {
@@ -701,7 +701,7 @@ router.post('/seasons/:seasonId/deactivate', [auth, moderatorAuth], async (req, 
   try {
     let season;
     let removedTeams = 0;
-    await updateDb((db) => {
+    await withDb((db) => {
       ensureSeasons(db);
       season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
       if (!season) {
@@ -882,7 +882,7 @@ router.post('/vote', auth, async (req, res) => {
 
     let updatedFight;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
       const fight = db.divisionFights.find(
         (entry) => (entry.id || entry._id) === fightId
@@ -1025,7 +1025,7 @@ router.post('/join', auth, async (req, res) => {
       getCharacterId(team.secondaryCharacter)
     ].filter(Boolean);
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -1113,7 +1113,7 @@ router.post('/leave', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Division ID is required' });
     }
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -1344,7 +1344,7 @@ router.post('/:divisionId/title-fight', [auth, moderatorAuth], async (req, res) 
 
     let createdFight;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const season = getSeasonById(db, req.params.divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
@@ -1426,7 +1426,7 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
 
     let createdFight;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const season = getSeasonById(db, req.params.divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
@@ -1489,7 +1489,7 @@ router.post('/register-team', async (req, res) => {
       return res.status(400).json({ msg: 'Invalid team data' });
     }
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const season = getSeasonById(db, divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
@@ -1543,7 +1543,7 @@ router.post('/create-fight', async (req, res) => {
     const fightType = isTitle ? 'title' : 'official';
     let createdFight;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const season = getSeasonById(db, divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
@@ -1607,7 +1607,7 @@ router.post('/create-official-fight', async (req, res) => {
     const fightType = isTitle ? 'title' : isContender ? 'contender' : 'official';
     let createdFight;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const season = getSeasonById(db, divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
@@ -1660,7 +1660,7 @@ router.post('/lock-expired-fights', async (_req, res) => {
     const now = new Date();
     let lockedCount = 0;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
       db.divisionFights.forEach((fight) => {
         if (fight.status === 'active' && fight.endTime && new Date(fight.endTime) < now) {
@@ -1683,3 +1683,4 @@ router.post('/lock-expired-fights', async (_req, res) => {
 
 export default router;
 export { runSeasonScheduler as runDivisionSeasonScheduler };
+

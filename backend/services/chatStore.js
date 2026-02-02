@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from './jsonDb.js';
+import { chatMessagesRepo } from '../repositories/index.js';
 
 const normalizeMessage = (message) => ({
   id: message.id,
@@ -12,8 +12,7 @@ const normalizeMessage = (message) => ({
 });
 
 export const getRecentMessages = async (limit = 50) => {
-  const db = await readDb();
-  const messages = db.chatMessages || [];
+  const messages = await chatMessagesRepo.getAll();
   const sorted = [...messages].sort(
     (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
   );
@@ -24,7 +23,7 @@ export const addMessage = async ({ userId, username, profilePicture, text }) => 
   const now = new Date().toISOString();
   let created;
 
-  await updateDb((db) => {
+  await chatMessagesRepo.updateAll((messages) => {
     const message = {
       id: uuidv4(),
       userId,
@@ -34,49 +33,39 @@ export const addMessage = async ({ userId, username, profilePicture, text }) => 
       reactions: [],
       createdAt: now
     };
-    db.chatMessages = Array.isArray(db.chatMessages) ? db.chatMessages : [];
-    db.chatMessages.push(message);
+    messages.push(message);
     created = message;
-    return db;
+    return messages;
   });
 
   return normalizeMessage(created);
 };
 
 export const trimMessages = async () => {
-  await updateDb((db) => {
-    db.chatMessages = Array.isArray(db.chatMessages) ? db.chatMessages : [];
-    
+  await chatMessagesRepo.updateAll((messages) => {
     // Remove messages older than 24 hours
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    const initialLength = db.chatMessages.length;
-    
-    db.chatMessages = db.chatMessages.filter(msg => {
+    const initialLength = messages.length;
+
+    const filtered = messages.filter((msg) => {
       const messageDate = new Date(msg.createdAt || 0);
       return messageDate > twentyFourHoursAgo;
     });
-    
-    const removed = initialLength - db.chatMessages.length;
+
+    const removed = initialLength - filtered.length;
     if (removed > 0) {
       console.log(`Trimmed ${removed} messages older than 24 hours from global chat`);
     }
-    
-    return db;
+
+    return filtered;
   });
 };
 
 export const addReaction = async ({ messageId, userId, username, emoji }) => {
-  let updated;
-
-  await updateDb((db) => {
-    db.chatMessages = Array.isArray(db.chatMessages) ? db.chatMessages : [];
-    const message = db.chatMessages.find((entry) => entry.id === messageId);
+  const updated = await chatMessagesRepo.updateById(messageId, (message) => {
     if (!message) {
-      const error = new Error('Message not found');
-      error.code = 'MESSAGE_NOT_FOUND';
-      throw error;
+      return message;
     }
-
     message.reactions = Array.isArray(message.reactions) ? message.reactions : [];
     const existing = message.reactions.find(
       (reaction) => reaction.userId === userId && reaction.emoji === emoji
@@ -86,9 +75,14 @@ export const addReaction = async ({ messageId, userId, username, emoji }) => {
       message.reactions.push({ userId, username, emoji });
     }
 
-    updated = normalizeMessage(message);
-    return db;
+    return message;
   });
 
-  return updated;
+  if (!updated) {
+    const error = new Error('Message not found');
+    error.code = 'MESSAGE_NOT_FOUND';
+    throw error;
+  }
+
+  return normalizeMessage(updated);
 };

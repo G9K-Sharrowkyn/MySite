@@ -1,0 +1,380 @@
+.stars-background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background: var(--bg-dark);
+  overflow: hidden;
+}
+
+#stars, #stars2, #stars3, .neon-stars, .pulsing-stars {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+}
+
+#stars {
+  width: 1px;
+  height: 1px;
+  animation: animStar 50s linear infinite;
+}
+
+#stars2 {
+  width: 2px;
+  height: 2px;
+  animation: animStar 100s linear infinite;
+}
+
+#stars3 {
+  width: 3px;
+  height: 3px;
+  animation: animStar 150s linear infinite;
+}
+
+/* Subtle sci-fi stars */
+.neon-stars {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+}
+
+.pulsing-stars {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+}
+
+/* Nebula haze */
+.nebula {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(40px);
+  opacity: 0.2;
+  animation: nebulaFloat 20s ease-in-out infinite;
+}
+
+.nebula-1 {
+  width: 300px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.03) 50%, transparent 100%);
+  top: 20%;
+  left: 10%;
+  animation-duration: 25s;
+}
+
+.nebula-2 {
+  width: 400px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.03) 50%, transparent 100%);
+  top: 60%;
+  right: 15%;
+  animation-duration: 30s;
+  animation-direction: reverse;
+}
+
+.nebula-3 {
+  width: 350px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.05) 0%, rgba(0, 0, 0, 0.02) 50%, transparent 100%);
+  bottom: 30%;
+  left: 50%;
+  animation-duration: 35s;
+}
+
+/* Ambient cosmic glow */
+.cosmic-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.15;
+  animation: cosmicPulse 8s ease-in-out infinite;
+}
+
+.cosmic-glow-1 {
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(231, 76, 60, 0.08) 0%, transparent 70%);
+  top: 30%;
+  right: 20%;
+  animation-delay: 0s;
+}
+
+.cosmic-glow-2 {
+  width: 150px;
+  height: 150px;
+  background: radial-gradient(circle, rgba(0, 0, 0, 0.08) 0%, transparent 70%);
+  bottom: 40%;
+  left: 20%;
+  animation-delay: 3s;
+}
+
+.cosmic-glow-3 {
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, rgba(231, 76, 60, 0.06) 0%, transparent 70%);
+  top: 70%;
+  left: 60%;
+  animation-delay: 6s;
+}
+
+/* Dust particles */
+.energy-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(138, 167, 198, 0.4);
+  animation: particleFloat 15s linear infinite;
+}
+
+.particle-1 {
+  top: 20%;
+  left: 10%;
+  animation-delay: 0s;
+  background: var(--accent);
+  box-shadow: 0 0 4px rgba(231, 76, 60, 0.3);
+}
+
+.particle-2 {
+  top: 50%;
+  left: 30%;
+  animation-delay: 3s;
+  background: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+.particle-3 {
+  top: 70%;
+  right: 20%;
+  animation-delay: 6s;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+.particle-4 {
+  bottom: 30%;
+  left: 70%;
+  animation-delay: 9s;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+.particle-5 {
+  top: 40%;
+  right: 40%;
+  animation-delay: 12s;
+  background: rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Global scan effect */
+.global-scan-effect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.15), transparent);
+  animation: globalScan 8s linear infinite;
+  opacity: 0.2;
+}
+
+/* Animations */
+@keyframes animStar {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(-100vh);
+  }
+}
+
+@keyframes twinkle {
+  0%, 100% {
+    opacity: 0.3;
+    filter: brightness(1);
+  }
+  50% {
+    opacity: 1;
+    filter: brightness(1.4);
+  }
+}
+
+@keyframes starPulse {
+  0%, 100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes nebulaFloat {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px) scale(1);
+  }
+  25% {
+    transform: translateY(-20px) translateX(10px) scale(1.05);
+  }
+  50% {
+    transform: translateY(-10px) translateX(-15px) scale(0.95);
+  }
+  75% {
+    transform: translateY(15px) translateX(5px) scale(1.02);
+  }
+}
+
+@keyframes cosmicPulse {
+  0%, 100% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes particleFloat {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) translateX(50px);
+    opacity: 0;
+  }
+}
+
+@keyframes globalScan {
+  0% {
+    top: 0%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.2;
+  }
+  90% {
+    opacity: 0.2;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+/* Title style */
+#title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: var(--text-light);
+  text-align: center;
+  font-family: 'Rajdhani', 'Space Grotesk', sans-serif;
+  font-weight: 900;
+  z-index: 10;
+}
+
+.game-title {
+  display: block;
+  text-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  animation: titlePulse 4s ease-in-out infinite;
+}
+
+.title-line-1 {
+  font-size: 4rem;
+  letter-spacing: 8px;
+  display: block;
+  background: linear-gradient(45deg, var(--text-light), rgba(27, 31, 36, 0.6));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: titleShimmer 3s ease-in-out infinite;
+}
+
+.title-line-2 {
+  font-size: 1.5rem;
+  letter-spacing: 4px;
+  display: block;
+  margin-top: 10px;
+  color: rgba(27, 31, 36, 0.6);
+  text-shadow: none;
+  animation: subtitleFlicker 2s ease-in-out infinite;
+}
+
+@keyframes titlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes titleShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes subtitleFlicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .title-line-1 {
+    font-size: 2.5rem;
+    letter-spacing: 4px;
+  }
+
+  .title-line-2 {
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+
+  .nebula {
+    width: 200px;
+    height: 150px;
+  }
+
+  .cosmic-glow {
+    width: 100px;
+    height: 100px;
+  }
+}

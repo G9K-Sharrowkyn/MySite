@@ -1,4 +1,4 @@
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, usersRepo } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getRankInfo } from '../utils/rankSystem.js';
 
@@ -61,7 +61,10 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
 export const getMyProfile = async (req, res) => {
   try {
     const db = await readDb();
-    const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+    const user = await usersRepo.findOne(
+      (entry) => resolveUserId(entry) === req.user.id,
+      { db }
+    );
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -82,8 +85,14 @@ export const getProfile = async (req, res) => {
     const db = await readDb();
     const lookup = String(req.params.userId || '').toLowerCase();
     const user =
-      db.users.find((entry) => resolveUserId(entry) === req.params.userId) ||
-      db.users.find((entry) => (entry.username || '').toLowerCase() === lookup);
+      (await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.params.userId,
+        { db }
+      )) ||
+      (await usersRepo.findOne(
+        (entry) => (entry.username || '').toLowerCase() === lookup,
+        { db }
+      ));
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -101,8 +110,8 @@ export const getProfile = async (req, res) => {
 // @access  Public
 export const getAllProfiles = async (_req, res) => {
   try {
-    const db = await readDb();
-    const profiles = db.users.map((user) => ({
+    const users = await usersRepo.getAll();
+    const profiles = users.map((user) => ({
       id: resolveUserId(user),
       username: user.username
     }));
@@ -122,12 +131,9 @@ export const updateProfile = async (req, res) => {
 
     let updatedUser;
 
-    await updateDb((db) => {
-      const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+    updatedUser = await usersRepo.updateById(req.user.id, (user) => {
       if (!user) {
-        const error = new Error('User not found');
-        error.code = 'USER_NOT_FOUND';
-        throw error;
+        return user;
       }
 
       user.profile = user.profile || {};
@@ -152,9 +158,14 @@ export const updateProfile = async (req, res) => {
 
       user.profile.lastActive = new Date().toISOString();
       user.updatedAt = new Date().toISOString();
-      updatedUser = user;
-      return db;
+      return user;
     });
+
+    if (!updatedUser) {
+      const error = new Error('User not found');
+      error.code = 'USER_NOT_FOUND';
+      throw error;
+    }
 
     res.json({ msg: 'Profile updated', user: buildProfileResponse(updatedUser, true) });
   } catch (error) {
@@ -176,9 +187,8 @@ export const searchProfiles = async (req, res) => {
       return res.status(400).json({ msg: 'Query is required' });
     }
 
-    const db = await readDb();
     const q = query.toLowerCase();
-    const users = db.users.filter((user) =>
+    const users = await usersRepo.filter((user) =>
       (user.username || '').toLowerCase().includes(q)
     );
 
@@ -200,8 +210,7 @@ export const searchProfiles = async (req, res) => {
 // @access  Public
 export const getLeaderboard = async (_req, res) => {
   try {
-    const db = await readDb();
-    const users = db.users.map((user) => {
+    const users = (await usersRepo.getAll()).map((user) => {
       const stats = user.stats || {};
       const rankInfo = getRankInfo(stats.points || 0);
       return {

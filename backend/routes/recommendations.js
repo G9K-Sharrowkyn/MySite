@@ -1,6 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { updateDb } from '../services/jsonDb.js';
+import { recommendationEventsRepo } from '../repositories/index.js';
 
 const router = express.Router();
 
@@ -12,19 +12,13 @@ router.post('/track', async (req, res) => {
       return res.status(400).json({ message: 'Missing tracking data' });
     }
 
-    await updateDb((db) => {
-      db.recommendationEvents = Array.isArray(db.recommendationEvents)
-        ? db.recommendationEvents
-        : [];
-      db.recommendationEvents.push({
-        id: uuidv4(),
-        userId,
-        characterId,
-        category: category || 'unknown',
-        timestamp: timestamp || new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      });
-      return db;
+    await recommendationEventsRepo.insert({
+      id: uuidv4(),
+      userId,
+      characterId,
+      category: category || 'unknown',
+      timestamp: timestamp || new Date().toISOString(),
+      createdAt: new Date().toISOString()
     });
 
     res.json({ message: 'Tracked' });

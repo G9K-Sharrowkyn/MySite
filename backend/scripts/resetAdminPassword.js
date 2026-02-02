@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { usersRepo } from '../repositories/index.js';
 
 const resetAdminPasswords = async () => {
   try {
@@ -7,22 +7,26 @@ const resetAdminPasswords = async () => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
     
-    await updateDb((db) => {
+    await usersRepo.updateAll((users) => {
       // Reset admin password
-      const admin = db.users.find(u => u.username === 'admin' || u.email === 'admin@site.local');
+      const admin = users.find(
+        (u) => u.username === 'admin' || u.email === 'admin@site.local'
+      );
       if (admin) {
         admin.password = hashedPassword;
         console.log('✅ Admin password reset!');
       }
-      
+
       // Reset moderator password
-      const moderator = db.users.find(u => u.username === 'moderator' || u.email === 'moderator@site.local');
+      const moderator = users.find(
+        (u) => u.username === 'moderator' || u.email === 'moderator@site.local'
+      );
       if (moderator) {
         moderator.password = hashedPassword;
         console.log('✅ Moderator password reset!');
       }
-      
-      return db;
+
+      return users;
     });
     
     console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

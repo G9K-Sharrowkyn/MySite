@@ -1,5 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import {
+  commentsRepo,
+  fightsRepo,
+  postsRepo,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
 import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
@@ -42,7 +48,10 @@ const notifyAdminsForProfanity = async (db, payload) => {
   } = payload || {};
   if (!matches || matches.length === 0) return;
 
-  const admins = (db.users || []).filter((user) => resolveRole(user) === 'admin');
+  const admins = await usersRepo.filter(
+    (user) => resolveRole(user) === 'admin',
+    { db }
+  );
   if (!admins.length) return;
 
   const authorId = resolveUserId(author);
@@ -119,17 +128,21 @@ export const addPostComment = async (req, res) => {
   try {
     let createdComment;
 
-    await updateDb(async (db) => {
-      const postExists = db.posts.some(
-        (post) => (post.id || post._id) === postId
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => (entry.id || entry._id) === postId,
+        { db }
       );
-      if (!postExists) {
+      if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
 
-      const author = db.users.find((user) => resolveUserId(user) === req.user.id);
+      const author = await usersRepo.findOne(
+        (user) => resolveUserId(user) === req.user.id,
+        { db }
+      );
       if (!author) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -137,7 +150,10 @@ export const addPostComment = async (req, res) => {
       }
 
       const parentComment = parentId
-        ? db.comments.find((entry) => resolveCommentId(entry) === parentId)
+        ? await commentsRepo.findOne(
+            (entry) => resolveCommentId(entry) === parentId,
+            { db }
+          )
         : null;
 
       if (parentId) {
@@ -172,7 +188,7 @@ export const addPostComment = async (req, res) => {
         reactions: []
       };
 
-      db.comments.push(createdComment);
+      await commentsRepo.insert(createdComment, { db });
 
       const matches = findProfanityMatches(commentText);
       if (matches.length) {
@@ -211,8 +227,9 @@ export const addPostComment = async (req, res) => {
       author.updatedAt = now;
 
       if (parentComment) {
-        const parentAuthor = db.users.find(
-          (user) => resolveUserId(user) === parentComment.authorId
+        const parentAuthor = await usersRepo.findOne(
+          (user) => resolveUserId(user) === parentComment.authorId,
+          { db }
         );
         if (shouldNotifyReply(parentAuthor, req.user.id)) {
           await createNotification(
@@ -259,8 +276,7 @@ export const getPostComments = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
 
   try {
-    const db = await readDb();
-    const filtered = db.comments.filter((comment) => {
+    const filtered = await commentsRepo.filter((comment) => {
       const isPostComment = comment?.type === 'post' || !comment?.type;
       return isPostComment && comment.postId === postId;
     });
@@ -289,8 +305,8 @@ export const updateComment = async (req, res) => {
   try {
     let updatedComment;
 
-    await updateDb(async (db) => {
-      const comment = db.comments.find(
+    await commentsRepo.updateAll((comments) => {
+      const comment = comments.find(
         (entry) => resolveCommentId(entry) === req.params.id
       );
       if (!comment) {
@@ -309,7 +325,7 @@ export const updateComment = async (req, res) => {
       comment.updatedAt = new Date().toISOString();
       comment.edited = true;
       updatedComment = comment;
-      return db;
+      return comments;
     });
 
     res.json({ msg: 'Comment updated', comment: normalizeComment(updatedComment) });
@@ -330,9 +346,10 @@ export const updateComment = async (req, res) => {
 // @access  Private
 export const deleteComment = async (req, res) => {
   try {
-    await updateDb((db) => {
-      const comment = db.comments.find(
-        (entry) => resolveCommentId(entry) === req.params.id
+    await withDb(async (db) => {
+      const comment = await commentsRepo.findOne(
+        (entry) => resolveCommentId(entry) === req.params.id,
+        { db }
       );
       if (!comment) {
         const error = new Error('Comment not found');
@@ -340,7 +357,10 @@ export const deleteComment = async (req, res) => {
         throw error;
       }
 
-      const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -357,6 +377,7 @@ export const deleteComment = async (req, res) => {
         throw error;
       }
 
+      const comments = await commentsRepo.getAll({ db });
       const idsToDelete = new Set();
       const queue = [resolveCommentId(comment)];
 
@@ -364,15 +385,17 @@ export const deleteComment = async (req, res) => {
         const currentId = queue.pop();
         if (!currentId || idsToDelete.has(currentId)) continue;
         idsToDelete.add(currentId);
-        db.comments.forEach((entry) => {
+        comments.forEach((entry) => {
           if (entry.parentId === currentId) {
             queue.push(resolveCommentId(entry));
           }
         });
       }
 
-      db.comments = db.comments.filter(
-        (entry) => !idsToDelete.has(resolveCommentId(entry))
+      await commentsRepo.updateAll(
+        (entries) =>
+          entries.filter((entry) => !idsToDelete.has(resolveCommentId(entry))),
+        { db }
       );
       return db;
     });
@@ -401,8 +424,8 @@ export const toggleCommentLike = async (req, res) => {
     let likes = 0;
     let liked = false;
 
-    await updateDb((db) => {
-      const comment = db.comments.find(
+    await commentsRepo.updateAll((comments) => {
+      const comment = comments.find(
         (entry) => resolveCommentId(entry) === req.params.id
       );
       if (!comment) {
@@ -427,7 +450,7 @@ export const toggleCommentLike = async (req, res) => {
 
       likes = comment.likes;
       comment.updatedAt = new Date().toISOString();
-      return db;
+      return comments;
     });
 
     res.json({
@@ -458,15 +481,21 @@ export const addUserComment = async (req, res) => {
   try {
     let createdComment;
 
-    await updateDb(async (db) => {
-      const targetUser = db.users.find((user) => resolveUserId(user) === userId);
+    await withDb(async (db) => {
+      const targetUser = await usersRepo.findOne(
+        (user) => resolveUserId(user) === userId,
+        { db }
+      );
       if (!targetUser) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      const author = db.users.find((user) => resolveUserId(user) === req.user.id);
+      const author = await usersRepo.findOne(
+        (user) => resolveUserId(user) === req.user.id,
+        { db }
+      );
       if (!author) {
         const error = new Error('Author not found');
         error.code = 'AUTHOR_NOT_FOUND';
@@ -474,7 +503,10 @@ export const addUserComment = async (req, res) => {
       }
 
       const parentComment = parentId
-        ? db.comments.find((entry) => resolveCommentId(entry) === parentId)
+        ? await commentsRepo.findOne(
+            (entry) => resolveCommentId(entry) === parentId,
+            { db }
+          )
         : null;
       if (parentId) {
         if (
@@ -510,7 +542,7 @@ export const addUserComment = async (req, res) => {
         reactions: []
       };
 
-      db.comments.push(createdComment);
+      await commentsRepo.insert(createdComment, { db });
       const matches = findProfanityMatches(createdComment.text);
       if (matches.length) {
         await notifyAdminsForProfanity(db, {
@@ -568,10 +600,9 @@ export const getUserComments = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const db = await readDb();
-    const comments = db.comments
-      .filter((comment) => comment.type === 'user_profile' && comment.targetId === userId)
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const comments = (await commentsRepo.filter(
+      (comment) => comment.type === 'user_profile' && comment.targetId === userId
+    )).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     res.json(comments.map(normalizeComment));
   } catch (error) {
     console.error('Error fetching user comments:', error.message);
@@ -593,19 +624,24 @@ export const addFightComment = async (req, res) => {
   try {
     let createdComment;
 
-    await updateDb(async (db) => {
-      const fightExists =
-        db.fights?.some((fight) => fight.id === fightId) ||
-        db.posts.some(
-          (post) => (post.id || post._id) === fightId && post.type === 'fight'
-        );
-      if (!fightExists) {
+    await withDb(async (db) => {
+      const fight = await fightsRepo.findById(fightId, { db });
+      const fightPost = !fight
+        ? await postsRepo.findOne(
+            (post) => (post.id || post._id) === fightId && post.type === 'fight',
+            { db }
+          )
+        : null;
+      if (!fight && !fightPost) {
         const error = new Error('Fight not found');
         error.code = 'FIGHT_NOT_FOUND';
         throw error;
       }
 
-      const author = db.users.find((user) => resolveUserId(user) === req.user.id);
+      const author = await usersRepo.findOne(
+        (user) => resolveUserId(user) === req.user.id,
+        { db }
+      );
       if (!author) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -613,7 +649,10 @@ export const addFightComment = async (req, res) => {
       }
 
       const parentComment = parentId
-        ? db.comments.find((entry) => resolveCommentId(entry) === parentId)
+        ? await commentsRepo.findOne(
+            (entry) => resolveCommentId(entry) === parentId,
+            { db }
+          )
         : null;
 
       if (parentId) {
@@ -651,7 +690,7 @@ export const addFightComment = async (req, res) => {
         reactions: []
       };
 
-      db.comments.push(createdComment);
+      await commentsRepo.insert(createdComment, { db });
       const matches = findProfanityMatches(createdComment.text);
       if (matches.length) {
         await notifyAdminsForProfanity(db, {
@@ -713,8 +752,7 @@ export const getFightComments = async (req, res) => {
   const { page = 1, limit = 50 } = req.query;
 
   try {
-    const db = await readDb();
-    const filtered = db.comments.filter(
+    const filtered = await commentsRepo.filter(
       (comment) => comment.type === 'fight' && comment.fightId === fightId
     );
     const sorted = filtered.sort(
@@ -744,9 +782,10 @@ export const addCommentReaction = async (req, res) => {
     let reactionsSummary = [];
     let updatedComment;
 
-    await updateDb((db) => {
-      const comment = db.comments.find(
-        (entry) => resolveCommentId(entry) === req.params.id
+    await withDb(async (db) => {
+      const comment = await commentsRepo.findOne(
+        (entry) => resolveCommentId(entry) === req.params.id,
+        { db }
       );
       if (!comment) {
         const error = new Error('Comment not found');
@@ -780,7 +819,10 @@ export const addCommentReaction = async (req, res) => {
       updatedComment = comment;
 
       if (isNewReaction) {
-        const reactingUser = db.users.find((user) => resolveUserId(user) === req.user.id);
+        const reactingUser = await usersRepo.findOne(
+          (user) => resolveUserId(user) === req.user.id,
+          { db }
+        );
         if (reactingUser) {
           reactingUser.activity = reactingUser.activity || {
             postsCreated: 0,

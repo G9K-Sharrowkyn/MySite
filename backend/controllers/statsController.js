@@ -1,4 +1,4 @@
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 import { getRankInfo, syncRankFromPoints } from '../utils/rankSystem.js';
 
 // Achievement definitions
@@ -495,9 +495,14 @@ export const awardAchievement = async (req, res) => {
   
   try {
     let awardedAchievements = [];
-    await updateDb((data) => {
-      awardedAchievements = checkAndAwardAchievements(data, userId, achievementType, currentCount);
-      return data;
+    await withDb(async (db) => {
+      awardedAchievements = checkAndAwardAchievements(
+        db,
+        userId,
+        achievementType,
+        currentCount
+      );
+      return db;
     });
     
     res.json({ 
@@ -515,9 +520,9 @@ export const awardStreakAchievement = async (req, res) => {
   
   try {
     let awardedAchievements = [];
-    await updateDb((data) => {
-      awardedAchievements = checkStreakAchievements(data, userId, currentStreak);
-      return data;
+    await withDb(async (db) => {
+      awardedAchievements = checkStreakAchievements(db, userId, currentStreak);
+      return db;
     });
     
     res.json({ 

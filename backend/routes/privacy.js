@@ -1,7 +1,7 @@
-import express from 'express';
+﻿import express from 'express';
 import bcrypt from 'bcryptjs';
 import auth from '../middleware/auth.js';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 
 const router = express.Router();
 
@@ -205,7 +205,7 @@ router.post('/cookie-consent', auth, async (req, res) => {
   try {
     const { analytics, marketing, functional } = req.body;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -286,7 +286,7 @@ router.delete('/delete-account', auth, async (req, res) => {
 
     let deletionDate = new Date().toISOString();
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -362,7 +362,7 @@ router.put('/settings', auth, async (req, res) => {
   try {
     const { dataProcessing, marketing, profiling } = req.body;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -392,3 +392,4 @@ router.put('/settings', auth, async (req, res) => {
 });
 
 export default router;
+

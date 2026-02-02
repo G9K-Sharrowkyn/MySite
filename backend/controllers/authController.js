@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { usersRepo, withDb } from '../repositories/index.js';
 import { applyDailyBonus } from '../utils/coinBonus.js';
 import { sendPasswordResetEmail } from '../services/emailService.js';
 
@@ -152,8 +152,8 @@ export const register = async (req, res) => {
       passwordHash: hashedPassword
     });
 
-    await updateDb((db) => {
-      const emailTaken = db.users.some(
+    await usersRepo.updateAll((users) => {
+      const emailTaken = users.some(
         (user) => normalizeEmail(user.email || '') === normalizedEmail
       );
       if (emailTaken) {
@@ -162,7 +162,7 @@ export const register = async (req, res) => {
         throw error;
       }
 
-      const usernameTaken = db.users.some(
+      const usernameTaken = users.some(
         (user) => (user.username || '').toLowerCase() === trimmedUsername.toLowerCase()
       );
       if (usernameTaken) {
@@ -171,8 +171,8 @@ export const register = async (req, res) => {
         throw error;
       }
 
-      db.users.push(newUser);
-      return db;
+      users.push(newUser);
+      return users;
     });
 
     const payload = buildAuthPayload(newUser);
@@ -216,9 +216,8 @@ export const login = async (req, res) => {
   }
 
   try {
-    const db = await readDb();
     const normalizedEmail = normalizeEmail(email);
-    const user = db.users.find(
+    const user = await usersRepo.findOne(
       (entry) => normalizeEmail(entry.email || '') === normalizedEmail
     );
 
@@ -233,18 +232,19 @@ export const login = async (req, res) => {
 
     const now = new Date().toISOString();
     let responseUser = user;
-    await updateDb((data) => {
-      const storedUser = data.users.find(
-        (entry) => resolveUserId(entry) === resolveUserId(user)
+    await withDb(async (db) => {
+      const storedUser = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === resolveUserId(user),
+        { db }
       );
       if (storedUser) {
-        applyDailyBonus(data, storedUser);
+        applyDailyBonus(db, storedUser);
         storedUser.profile = storedUser.profile || {};
         storedUser.profile.lastActive = now;
         storedUser.updatedAt = now;
         responseUser = storedUser;
       }
-      return data;
+      return db;
     });
 
     const payload = buildAuthPayload(user);
@@ -279,8 +279,9 @@ export const changePassword = async (req, res) => {
   const userId = resolveUserId(req.user);
 
   try {
-    const db = await readDb();
-    const user = db.users.find(u => resolveUserId(u) === userId);
+    const user = await usersRepo.findOne(
+      (u) => resolveUserId(u) === userId
+    );
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -297,12 +298,9 @@ export const changePassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     // Update password
-    await updateDb((data) => {
-      const userIndex = data.users.findIndex(u => resolveUserId(u) === userId);
-      if (userIndex !== -1) {
-        data.users[userIndex].password = hashedPassword;
-      }
-      return data;
+    await usersRepo.updateById(userId, (storedUser) => {
+      storedUser.password = hashedPassword;
+      return storedUser;
     });
 
     res.json({ msg: 'Password changed successfully' });
@@ -320,20 +318,18 @@ export const updateTimezone = async (req, res) => {
   const userId = resolveUserId(req.user);
 
   try {
-    const db = await readDb();
-    const user = db.users.find(u => resolveUserId(u) === userId);
+    const user = await usersRepo.findOne(
+      (u) => resolveUserId(u) === userId
+    );
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
 
     // Update timezone
-    await updateDb((data) => {
-      const userIndex = data.users.findIndex(u => resolveUserId(u) === userId);
-      if (userIndex !== -1) {
-        data.users[userIndex].timezone = timezone;
-      }
-      return data;
+    await usersRepo.updateById(userId, (storedUser) => {
+      storedUser.timezone = timezone;
+      return storedUser;
     });
 
     res.json({ msg: 'Timezone updated successfully', timezone });
@@ -351,8 +347,9 @@ export const forgotPassword = async (req, res) => {
 
   try {
     const normalizedEmail = normalizeEmail(email);
-    const db = await readDb();
-    const user = db.users.find(u => normalizeEmail(u.email) === normalizedEmail);
+    const user = await usersRepo.findOne(
+      (u) => normalizeEmail(u.email) === normalizedEmail
+    );
 
     // Always return success message (security best practice - don't reveal if email exists)
     if (!user) {
@@ -364,13 +361,10 @@ export const forgotPassword = async (req, res) => {
     const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
 
     // Save reset token to user
-    await updateDb((data) => {
-      const userIndex = data.users.findIndex(u => resolveUserId(u) === resolveUserId(user));
-      if (userIndex !== -1) {
-        data.users[userIndex].resetPasswordToken = resetToken;
-        data.users[userIndex].resetPasswordExpiry = resetTokenExpiry;
-      }
-      return data;
+    await usersRepo.updateById(resolveUserId(user), (storedUser) => {
+      storedUser.resetPasswordToken = resetToken;
+      storedUser.resetPasswordExpiry = resetTokenExpiry;
+      return storedUser;
     });
 
     // Send email
@@ -390,10 +384,8 @@ export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
   try {
-    const db = await readDb();
-    const user = db.users.find(u => 
-      u.resetPasswordToken === token && 
-      u.resetPasswordExpiry > Date.now()
+    const user = await usersRepo.findOne(
+      (u) => u.resetPasswordToken === token && u.resetPasswordExpiry > Date.now()
     );
 
     if (!user) {
@@ -405,14 +397,11 @@ export const resetPassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     // Update password and clear reset token
-    await updateDb((data) => {
-      const userIndex = data.users.findIndex(u => resolveUserId(u) === resolveUserId(user));
-      if (userIndex !== -1) {
-        data.users[userIndex].password = hashedPassword;
-        data.users[userIndex].resetPasswordToken = null;
-        data.users[userIndex].resetPasswordExpiry = null;
-      }
-      return data;
+    await usersRepo.updateById(resolveUserId(user), (storedUser) => {
+      storedUser.password = hashedPassword;
+      storedUser.resetPasswordToken = null;
+      storedUser.resetPasswordExpiry = null;
+      return storedUser;
     });
 
     res.json({ msg: 'Password reset successful' });

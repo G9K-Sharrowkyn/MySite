@@ -1,4 +1,4 @@
-import { readDb } from '../services/jsonDb.js';
+import { usersRepo } from '../repositories/index.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -8,8 +8,9 @@ const moderatorAuth = async (req, res, next) => {
       return res.status(401).json({ msg: 'No token, authorization denied' });
     }
 
-    const db = await readDb();
-    const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+    const user = await usersRepo.findOne(
+      (entry) => resolveUserId(entry) === req.user.id
+    );
     if (!user) {
       return res.status(401).json({ msg: 'User not found' });
     }

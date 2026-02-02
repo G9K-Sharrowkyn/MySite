@@ -1,0 +1,227 @@
+/* CCG styles aligned with main app theme */
+:root {
+  --ccg-panel: var(--bg-secondary);
+  --ccg-panel-muted: var(--bg-tertiary);
+  --ccg-border: var(--border-color);
+  --ccg-shadow: var(--shadow);
+  --ccg-muted: var(--text-muted);
+  --ccg-accent: var(--accent-color);
+  --ccg-accent-soft: rgba(0, 123, 255, 0.12);
+}
+
+@keyframes interfaceSweep {
+  0% { transform: translateX(-100%); opacity: 0; }
+  30% { opacity: 0.2; }
+  100% { transform: translateX(100%); opacity: 0; }
+}
+
+@keyframes scanLine {
+  0% { top: 0%; opacity: 0.06; }
+  100% { top: 100%; opacity: 0; }
+}
+
+.scifi-panel {
+  background: var(--ccg-panel);
+  border: 1px solid var(--ccg-border);
+  border-radius: 8px;
+  box-shadow: 0 10px 20px var(--ccg-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.scifi-panel::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--ccg-accent-soft), transparent);
+  animation: interfaceSweep 8s infinite;
+}
+
+.scifi-button {
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
+  border: 1px solid var(--ccg-border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-main);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.scifi-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.05), transparent);
+  transition: left 0.4s;
+}
+
+.scifi-button:hover {
+  color: var(--accent-color);
+  border-color: var(--accent-color);
+  box-shadow: 0 8px 18px rgba(0, 123, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.scifi-button:hover::before {
+  left: 120%;
+}
+
+.scifi-button:active {
+  transform: translateY(0);
+}
+
+.scifi-button.green,
+.scifi-button.orange,
+.scifi-button.pink,
+.scifi-button.purple {
+  border-color: var(--ccg-border);
+}
+
+.holographic-card {
+  background: var(--ccg-panel);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.holographic-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 22px rgba(0, 0, 0, 0.12);
+}
+
+.modular-frame {
+  position: relative;
+  padding: 20px;
+  background: var(--ccg-panel-muted);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+}
+
+.tech-corners {
+  position: relative;
+}
+
+.tech-corners::before,
+.tech-corners::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.tech-corners::before {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+
+.tech-corners::after {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
+
+.scan-lines {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-lines::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0, 0, 0, 0.12), transparent);
+  animation: scanLine 8s infinite;
+  z-index: 10;
+}
+
+.space-nav {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--accent-color);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.space-nav-item {
+  color: var(--text-primary);
+  text-transform: none;
+  font-family: var(--font-main);
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  padding: 10px 15px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.space-nav-item:hover {
+  color: var(--accent-color);
+  background: rgba(0, 123, 255, 0.12);
+}
+
+.access-terminal,
+.terminal-input,
+.data-stream,
+.energy-border,
+.pulse-glow,
+.flicker-effect {
+  animation: none;
+  box-shadow: none;
+}
+
+.cosmic-game-board {
+  background: var(--bg-secondary);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.08);
+  position: relative;
+  overflow: hidden;
+}
+
+.game-zone {
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.game-zone.active {
+  background: rgba(46, 204, 113, 0.08);
+  border-color: rgba(46, 204, 113, 0.35);
+}
+
+.game-zone.invalid {
+  background: rgba(231, 76, 60, 0.08);
+  border-color: rgba(231, 76, 60, 0.4);
+}
+
+@media (max-width: 768px) {
+  .scifi-button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+
+  .modular-frame {
+    padding: 15px;
+  }
+}

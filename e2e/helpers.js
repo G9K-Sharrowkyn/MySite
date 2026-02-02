@@ -1,7 +1,7 @@
-const fs = require('fs/promises');
+﻿const fs = require('fs/promises');
 const path = require('path');
 
-const BACKEND_BASE_URL = 'http://localhost:5001';
+const BACKEND_BASE_URL = 'http://localhost:5000';
 
 const waitForBackend = async (page, timeoutMs = 15000) => {
   await page.waitForLoadState('domcontentloaded');
@@ -85,3 +85,4 @@ module.exports = {
   logoutViaUi,
   getResetTokenForEmail
 };
+

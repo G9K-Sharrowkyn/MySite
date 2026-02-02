@@ -1,8 +1,8 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 const waitForBackend = async (page) => {
   await expect.poll(async () => {
-    const response = await page.request.get('http://localhost:5001/');
+    const response = await page.request.get('http://localhost:5000/');
     return response.ok();
   }, { timeout: 15000 }).toBeTruthy();
 };
@@ -14,7 +14,7 @@ test('user can log in and open the global chat', async ({ page }) => {
   const password = 'TestPass123!';
 
   await waitForBackend(page);
-  const registration = await page.request.post('http://localhost:5001/api/auth/register', {
+  const registration = await page.request.post('http://localhost:5000/api/auth/register', {
     data: { username, email, password }
   });
   expect(registration.ok()).toBeTruthy();
@@ -43,3 +43,4 @@ test('user can log in and open the global chat', async ({ page }) => {
   await expect(chatInput).toBeVisible();
   await expect(chatInput).toBeEnabled();
 });
+

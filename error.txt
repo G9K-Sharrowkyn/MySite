@@ -1,71 +1,16 @@
-AuthContext.js:34 Error fetching user: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-LeaderboardPage.js:42 
- GET http://localhost:3000/api/stats/user/b9acba58-a5ea-42ae-9bb4-56dc39b26dbd/achievements 404 (Not Found)
-LeaderboardPage.js:45 Error fetching user achievements: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-LeaderboardPage.js:42 
- GET http://localhost:3000/api/stats/user/b9acba58-a5ea-42ae-9bb4-56dc39b26dbd/achievements 404 (Not Found)
-LeaderboardPage.js:45 Error fetching user achievements: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-Login.js:46 
- POST http://localhost:3000/api/auth/login 400 (Bad Request)
-Login.js:56 
-{msg: 'Nieprawidłowe dane uwierzytelniające'}
-Login.js:46 
- POST http://localhost:3000/api/auth/login 400 (Bad Request)
-Login.js:56 
-{msg: 'Nieprawidłowe dane uwierzytelniające'}
-Register.js:51 Register response: 
-{token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7I…wMjR9.6Sk63aZetFFH9X8hia6sRKQenyWhbvmmsWsRpI9XatM', userId: 'deda9815-9f26-4dbb-bbb8-e5e520b50996'}
-AuthContext.js:21 
- GET http://localhost:3000/api/profile/me 404 (Not Found)
-AuthContext.js:34 Error fetching user: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-AuthContext.js:21 
- GET http://localhost:3000/api/profile/me 404 (Not Found)
-AuthContext.js:34 Error fetching user: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-Login.js:47 Login response: 
-{token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7I…wMzR9.RM4IHrlww9Y_Sb7XTL8-iXpiIj-6h4vv7uH3nHXuEN0', userId: 'deda9815-9f26-4dbb-bbb8-e5e520b50996'}
-AuthContext.js:21 
- GET http://localhost:3000/api/profile/me 404 (Not Found)
-AuthContext.js:34 Error fetching user: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-AuthContext.js:21 
- GET http://localhost:3000/api/profile/me 404 (Not Found)
-AuthContext.js:34 Error fetching user: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-Home.js:29 
- GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
-Home.js:68 Error fetching home data: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-Home.js:29 
- GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)
-Home.js:29 
- GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
-Home.js:29 
- GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)
-Home.js:68 Error fetching home data: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-DivisionsPage.js:132 
- GET http://localhost:3000/api/profile/me 404 (Not Found)
-DivisionsPage.js:137 Error fetching current user: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-DivisionsPage.js:132 
- GET http://localhost:3000/api/profile/me 404 (Not Found)
-DivisionsPage.js:137 Error fetching current user: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-Home.js:29 
- GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)
-Home.js:29 
- GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
-Home.js:68 Error fetching home data: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-
-Home.js:29 
- GET http://localhost:3000/api/posts/official?limit=6 404 (Not Found)
-Home.js:68 Error fetching home data: 
-AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
-Home.js:29 
- GET http://localhost:3000/api/profile/leaderboard 404 (Not Found)
+PS F:\Teksty\Programming\Site1\my-site> git push
+Enumerating objects: 1318, done.
+Counting objects: 100% (1318/1318), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (1187/1187), done.
+Writing objects: 100% (1234/1234), 301.44 MiB | 17.50 MiB/s, done.
+Total 1234 (delta 121), reused 383 (delta 23), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (121/121), completed with 69 local objects.     
+remote: error: Trace: 6017905a66859d5253229b1af68467f68e0fb89544349fd8433f3dd1b30287fb
+remote: error: See https://gh.io/lfs for more information.
+remote: error: File build.zip is 119.54 MB; this exceeds GitHub's file size limit of 100.00 MB
+remote: error: GH001: Large files detected. You may want to try Git Large File Storage - https://git-lfs.github.com.
+To https://github.com/G9K-Sharrowkyn/MySite.git
+ ! [remote rejected] main -> main (pre-receive hook declined)
+error: failed to push some refs to 'https://github.com/G9K-Sharrowkyn/MySite.git'
+PS F:\Teksty\Programming\Site1\my-site> 

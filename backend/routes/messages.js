@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import jwt from 'jsonwebtoken';
 import {
   getMessages,
@@ -10,7 +10,7 @@ import {
   getUnreadCount
 } from '../controllers/messageController.js';
 import auth from '../middleware/auth.js';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
@@ -114,7 +114,7 @@ router.put('/conversation/:userId/read-all', auth, async (req, res) => {
     const currentUserId = req.user.id;
     const otherUserId = req.params.userId;
 
-    await updateDb(async (db) => {
+    await withDb(async (db) => {
       // Mark all messages from otherUserId to currentUserId as read
       (db.messages || []).forEach(message => {
         if (message.senderId === otherUserId && message.recipientId === currentUserId && !message.read) {
@@ -163,7 +163,7 @@ router.post('/conversations', async (req, res) => {
     }
 
     let created;
-    await updateDb((db) => {
+    await withDb((db) => {
       db.conversations = Array.isArray(db.conversations) ? db.conversations : [];
       const existing = db.conversations.find((conversation) => {
         const ids = conversation.participants || [];
@@ -207,7 +207,7 @@ router.post('/send', async (req, res) => {
     }
 
     let created;
-    await updateDb((db) => {
+    await withDb((db) => {
       const conversation = (db.conversations || []).find(
         (entry) => entry.id === conversationId
       );
@@ -254,7 +254,7 @@ router.post('/read/:conversationId', async (req, res) => {
       return res.status(400).json({ message: 'User ID required' });
     }
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const conversation = (db.conversations || []).find(
         (entry) => entry.id === req.params.conversationId
       );
@@ -327,7 +327,7 @@ router.post('/mark-read/:userId', auth, async (req, res) => {
     const currentUserId = req.user.id;
     const otherUserId = req.params.userId;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const messages = db.messages || [];
       messages.forEach(message => {
         if (message.senderId === otherUserId && message.recipientId === currentUserId && !message.read) {
@@ -361,3 +361,4 @@ router.put('/:id/read', auth, markAsRead);
 router.delete('/:id', auth, deleteMessage);
 
 export default router;
+

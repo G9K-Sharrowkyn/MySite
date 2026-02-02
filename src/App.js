@@ -25,7 +25,24 @@ import ForgotPassword from './auth/ForgotPassword';
 import ResetPassword from './auth/ResetPassword';
 import GlobalChatSystem from './chat/GlobalChatSystem';
 import FeedbackButton from './shared/FeedbackButton';
+import CcgApp from './ccg/App';
+import SpeedRacingPage from './speedRacing/SpeedRacingPage';
 import './App.css';
+
+const ModeratorRoute = ({ children }) => {
+  const { user, loading } = useContext(AuthContext);
+  const isModerator = user?.role === 'moderator' || user?.role === 'admin';
+
+  if (loading) {
+    return <div className="loading">Loading...</div>;
+  }
+
+  if (!isModerator) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+};
 
 function AppContent() {
   const { user, loading } = useContext(AuthContext);
@@ -110,6 +127,22 @@ function AppContent() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/tournaments" element={<TournamentPage />} />
         <Route path="/post/:postId" element={<PostPage />} />
+        <Route
+          path="/ccg/*"
+          element={(
+            <ModeratorRoute>
+              <CcgApp />
+            </ModeratorRoute>
+          )}
+        />
+        <Route
+          path="/speed-racing"
+          element={(
+            <ModeratorRoute>
+              <SpeedRacingPage />
+            </ModeratorRoute>
+          )}
+        />
       </Routes>
       {/* Global Chat System - only show when logged in */}
       {isLoggedIn && <GlobalChatSystem />}

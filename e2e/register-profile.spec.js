@@ -1,8 +1,8 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 
 const waitForBackend = async (page) => {
   await expect.poll(async () => {
-    const response = await page.request.get('http://localhost:5001/');
+    const response = await page.request.get('http://localhost:5000/');
     return response.ok();
   }, { timeout: 15000 }).toBeTruthy();
 };
@@ -27,3 +27,4 @@ test('user can register and reach their profile', async ({ page }) => {
   await expect(page.locator('.profile-page')).toBeVisible();
   await expect(page.locator('.username-display')).toContainText(username);
 });
+

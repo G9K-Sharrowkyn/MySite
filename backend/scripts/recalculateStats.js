@@ -1,4 +1,11 @@
-import { readDb, updateDb } from '../services/jsonDb.js';
+import {
+  commentsRepo,
+  fightsRepo,
+  postsRepo,
+  usersRepo,
+  votesRepo,
+  withDb
+} from '../repositories/index.js';
 
 /**
  * One-time script to recalculate all user stats
@@ -7,12 +14,12 @@ import { readDb, updateDb } from '../services/jsonDb.js';
 async function recalculateStats() {
   console.log('Starting stats recalculation...');
   
-  await updateDb((db) => {
-    const users = db.users || [];
-    const fights = db.fights || [];
-    const posts = db.posts || [];
-    const comments = db.comments || [];
-    const votes = db.votes || [];
+  await withDb(async (db) => {
+    const users = await usersRepo.getAll({ db });
+    const fights = await fightsRepo.getAll({ db });
+    const posts = await postsRepo.getAll({ db });
+    const comments = await commentsRepo.getAll({ db });
+    const votes = await votesRepo.getAll({ db });
     
     console.log(`Processing ${users.length} users...`);
     

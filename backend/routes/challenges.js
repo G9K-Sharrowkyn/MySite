@@ -1,13 +1,12 @@
 import express from 'express';
-import { readDb } from '../services/jsonDb.js';
+import { challengeProgressRepo } from '../repositories/index.js';
 
 const router = express.Router();
 
 // GET /api/challenges/progress/:userId
 router.get('/progress/:userId', async (req, res) => {
   try {
-    const db = await readDb();
-    const entry = (db.challengeProgress || []).find(
+    const entry = await challengeProgressRepo.findOne(
       (item) => item.userId === req.params.userId
     );
 

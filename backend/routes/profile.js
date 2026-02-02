@@ -1,4 +1,4 @@
-import express from 'express';
+﻿import express from 'express';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
@@ -6,7 +6,7 @@ import { fileURLToPath } from 'url';
 import { getMyProfile, getProfile, updateProfile } from '../controllers/profileController.js';
 import { getLeaderboard, getUserStats, getUserAchievements } from '../controllers/statsController.js';
 import auth from '../middleware/auth.js';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 
 const router = express.Router();
@@ -103,7 +103,7 @@ router.post('/avatar', auth, avatarUpload.single('avatar'), async (req, res) => 
     }
 
     const avatarPath = `/uploads/avatars/${req.file.filename}`;
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
       );
@@ -140,7 +140,7 @@ router.post('/background-upload', auth, upload.single('background'), async (req,
     }
 
     const backgroundPath = `/uploads/backgrounds/${req.file.filename}`;
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
       );
@@ -171,7 +171,7 @@ router.post('/background-upload', auth, upload.single('background'), async (req,
 // @access  Private
 router.delete('/background', auth, async (req, res) => {
   try {
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
       );
@@ -229,3 +229,4 @@ router.get('/:userId/achievements', (req, res) => {
 });
 
 export default router;
+

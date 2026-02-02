@@ -1,13 +1,15 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import {
+  charactersRepo,
+  characterSuggestionsRepo
+} from '../repositories/index.js';
 
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
 export const getCharacters = async (_req, res) => {
   try {
-    const db = await readDb();
-    const characters = db.characters || [];
+    const characters = await charactersRepo.getAll();
     res.json(characters);
   } catch (error) {
     console.error('Error fetching characters:', error);
@@ -28,32 +30,28 @@ export const addCharacter = async (req, res) => {
 
     let created;
 
-    await updateDb((db) => {
-      const newCharacter = {
-        id: uuidv4(),
-        name,
-        universe: universe || 'Other',
-        image,
-        images: {
-          primary: image,
-          gallery: [],
-          thumbnail: image
-        },
-        powerTier: powerTier || 'Metahuman',
-        category: category || 'Other',
-        addedBy: req.user?.id || null,
-        status: 'active',
-        moderation: {
-          approved: true,
-          approvedBy: req.user?.id || null,
-          approvedAt: new Date().toISOString()
-        }
-      };
+    const newCharacter = {
+      id: uuidv4(),
+      name,
+      universe: universe || 'Other',
+      image,
+      images: {
+        primary: image,
+        gallery: [],
+        thumbnail: image
+      },
+      powerTier: powerTier || 'Metahuman',
+      category: category || 'Other',
+      addedBy: req.user?.id || null,
+      status: 'active',
+      moderation: {
+        approved: true,
+        approvedBy: req.user?.id || null,
+        approvedAt: new Date().toISOString()
+      }
+    };
 
-      db.characters.push(newCharacter);
-      created = newCharacter;
-      return db;
-    });
+    created = await charactersRepo.insert(newCharacter);
 
     res.status(201).json(created);
   } catch (error) {
@@ -71,13 +69,9 @@ export const updateCharacter = async (req, res) => {
     const { available, status } = req.body;
     let updated;
 
-    await updateDb((db) => {
-      const character = db.characters.find((entry) => entry.id === id);
-
+    updated = await charactersRepo.updateById(id, (character) => {
       if (!character) {
-        const error = new Error('Character not found');
-        error.code = 'CHARACTER_NOT_FOUND';
-        throw error;
+        return character;
       }
 
       if (available !== undefined) {
@@ -88,9 +82,14 @@ export const updateCharacter = async (req, res) => {
         character.status = status;
       }
 
-      updated = character;
-      return db;
+      return character;
     });
+
+    if (!updated) {
+      const error = new Error('Character not found');
+      error.code = 'CHARACTER_NOT_FOUND';
+      throw error;
+    }
 
     res.json(updated);
   } catch (error) {
@@ -109,20 +108,14 @@ export const suggestCharacter = async (req, res) => {
   try {
     const { name, photo, universe, powerTier } = req.body;
 
-    await updateDb((db) => {
-      db.characterSuggestions = Array.isArray(db.characterSuggestions)
-        ? db.characterSuggestions
-        : [];
-      db.characterSuggestions.push({
-        id: uuidv4(),
-        name,
-        photo,
-        universe,
-        powerTier,
-        suggestedBy: req.user?.id || null,
-        createdAt: new Date().toISOString()
-      });
-      return db;
+    await characterSuggestionsRepo.insert({
+      id: uuidv4(),
+      name,
+      photo,
+      universe,
+      powerTier,
+      suggestedBy: req.user?.id || null,
+      createdAt: new Date().toISOString()
     });
 
     res.status(200).json({ msg: 'Character suggestion saved' });

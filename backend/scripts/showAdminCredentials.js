@@ -1,10 +1,15 @@
-import { readDb } from '../services/jsonDb.js';
+import { usersRepo } from '../repositories/index.js';
 
 const showAdminCredentials = async () => {
   try {
-    const db = await readDb();
-    
-    const admins = db.users.filter(u => u.role === 'admin' || u.role === 'moderator' || u.username === 'admin' || u.username === 'moderator');
+    const users = await usersRepo.getAll();
+    const admins = users.filter(
+      (u) =>
+        u.role === 'admin' ||
+        u.role === 'moderator' ||
+        u.username === 'admin' ||
+        u.username === 'moderator'
+    );
     
     if (admins.length === 0) {
       console.log('❌ No admin/moderator users found!');

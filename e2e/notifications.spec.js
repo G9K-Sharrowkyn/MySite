@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 const { waitForBackend, registerUserViaApi, loginViaApi, loginViaUi } = require('./helpers');
 
 test('user sees a notification for a reply to their comment', async ({ page, request }) => {
@@ -28,7 +28,7 @@ test('user sees a notification for a reply to their comment', async ({ page, req
   const authorToken = authorLogin.data.token;
   const replierToken = replierLogin.data.token;
 
-  const createPost = await request.post('http://localhost:5001/api/posts', {
+  const createPost = await request.post('http://localhost:5000/api/posts', {
     data: {
       title: `Notify post ${timestamp}`,
       content: 'Post used to trigger notifications',
@@ -44,7 +44,7 @@ test('user sees a notification for a reply to their comment', async ({ page, req
   const postData = await createPost.json();
 
   const parentComment = await request.post(
-    `http://localhost:5001/api/comments/post/${postData.id || postData._id}`,
+    `http://localhost:5000/api/comments/post/${postData.id || postData._id}`,
     {
       data: { text: 'Parent comment for notification.' },
       headers: { 'x-auth-token': authorToken }
@@ -54,7 +54,7 @@ test('user sees a notification for a reply to their comment', async ({ page, req
   const parentData = await parentComment.json();
 
   const reply = await request.post(
-    `http://localhost:5001/api/comments/post/${postData.id || postData._id}`,
+    `http://localhost:5000/api/comments/post/${postData.id || postData._id}`,
     {
       data: { text: 'Reply comment', parentId: parentData.id },
       headers: { 'x-auth-token': replierToken }
@@ -69,3 +69,4 @@ test('user sees a notification for a reply to their comment', async ({ page, req
   const notificationItem = page.locator('.notification-item').first();
   await expect(notificationItem).toContainText('New reply');
 });
+

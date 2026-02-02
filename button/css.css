@@ -32,13 +32,7 @@ body {
 .switch__input {
 	-webkit-tap-highlight-color: #0000;
 }
-.switch {
-	display: block;
-	margin: auto;
-	position: relative;
-	width: 5em;
-	height: 3em;
-}
+
 .switch__base-outer,
 .switch__base-inner {
 	display: block;

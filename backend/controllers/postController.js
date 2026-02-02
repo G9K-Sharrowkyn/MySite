@@ -1,5 +1,12 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import {
+  commentsRepo,
+  messagesRepo,
+  postsRepo,
+  readDb,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
 import { autoTagPost } from '../utils/tagging.js';
 import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
@@ -104,7 +111,10 @@ const buildCommentCountByPostId = (comments = []) => {
 const notifyAdminsForProfanity = async (db, payload) => {
   const { author, postId, text, matches } = payload || {};
   if (!matches || matches.length === 0) return;
-  const admins = (db.users || []).filter((user) => resolveRole(user) === 'admin');
+  const admins = await usersRepo.filter(
+    (user) => resolveRole(user) === 'admin',
+    { db }
+  );
   if (!admins.length) return;
 
   const authorId = resolveUserId(author);
@@ -289,8 +299,11 @@ export const createPost = async (req, res) => {
     let author;
     const resolvedCategory = postType === 'fight' ? null : (category || 'discussion');
 
-    await updateDb(async (db) => {
-      author = db.users.find((user) => resolveUserId(user) === req.user.id);
+    await withDb(async (db) => {
+      author = await usersRepo.findOne(
+        (user) => resolveUserId(user) === req.user.id,
+        { db }
+      );
       if (!author) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -373,7 +386,7 @@ export const createPost = async (req, res) => {
       postData.tags = autoTagPayload.tags;
       postData.autoTags = autoTagPayload.autoTags;
 
-      db.posts.push(postData);
+      await postsRepo.insert(postData, { db });
 
       const matches = findProfanityMatches(`${title} ${content}`);
       if (matches.length) {
@@ -443,15 +456,21 @@ export const updatePost = async (req, res) => {
   try {
     let updatedPost;
 
-    await updateDb((db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
 
-      const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -494,15 +513,21 @@ export const deletePost = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await updateDb((db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
 
-      const user = db.users.find((entry) => resolveUserId(entry) === req.user.id);
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -519,8 +544,14 @@ export const deletePost = async (req, res) => {
         throw error;
       }
 
-      db.posts = db.posts.filter((entry) => entry.id !== id);
-      db.comments = db.comments.filter((comment) => comment.postId !== id);
+      await postsRepo.updateAll(
+        (entries) => entries.filter((entry) => entry.id !== id && entry._id !== id),
+        { db }
+      );
+      await commentsRepo.updateAll(
+        (comments) => comments.filter((comment) => comment.postId !== id),
+        { db }
+      );
       return db;
     });
 
@@ -547,8 +578,11 @@ export const toggleLike = async (req, res) => {
     let likesCount = 0;
     let isLiked = false;
 
-    await updateDb((db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -566,8 +600,9 @@ export const toggleLike = async (req, res) => {
         post.likes.push({ userId: req.user.id, likedAt: new Date().toISOString() });
         isLiked = true;
 
-        const author = db.users.find(
-          (entry) => resolveUserId(entry) === post.authorId
+        const author = await usersRepo.findOne(
+          (entry) => resolveUserId(entry) === post.authorId,
+          { db }
         );
         if (author) {
           author.activity = author.activity || {
@@ -608,8 +643,11 @@ export const voteInPoll = async (req, res) => {
     let optionVotes = 0;
     let totalVotes = 0;
 
-    await updateDb((db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -706,8 +744,11 @@ export const voteInFight = async (req, res) => {
   try {
     let updatedVotes;
 
-    await updateDb((db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -801,8 +842,11 @@ export const addReaction = async (req, res) => {
   try {
     let reactionsArray = [];
 
-    await updateDb((db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -834,7 +878,10 @@ export const addReaction = async (req, res) => {
       post.updatedAt = new Date().toISOString();
 
       if (isNewReaction) {
-        const reactingUser = db.users.find((user) => resolveUserId(user) === req.user.id);
+        const reactingUser = await usersRepo.findOne(
+          (user) => resolveUserId(user) === req.user.id,
+          { db }
+        );
         if (reactingUser) {
           reactingUser.activity = reactingUser.activity || {
             postsCreated: 0,
@@ -879,8 +926,11 @@ export const removeReaction = async (req, res) => {
     let reactionsArray = [];
     let removed = false;
 
-    await updateDb((db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -959,15 +1009,21 @@ export const createUserChallenge = async (req, res) => {
     let challenger;
     let opponent;
 
-    await updateDb(async (db) => {
-      challenger = db.users.find((user) => resolveUserId(user) === req.user.id);
+    await withDb(async (db) => {
+      challenger = await usersRepo.findOne(
+        (user) => resolveUserId(user) === req.user.id,
+        { db }
+      );
       if (!challenger) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      opponent = db.users.find((user) => resolveUserId(user) === opponentId);
+      opponent = await usersRepo.findOne(
+        (user) => resolveUserId(user) === opponentId,
+        { db }
+      );
       if (!opponent) {
         const error = new Error('Opponent not found');
         error.code = 'OPPONENT_NOT_FOUND';
@@ -1044,7 +1100,7 @@ export const createUserChallenge = async (req, res) => {
       postData.tags = autoTagPayload.tags;
       postData.autoTags = autoTagPayload.autoTags;
 
-      db.posts.push(postData);
+      await postsRepo.insert(postData, { db });
 
       // Create notification for opponent
       await createNotification(
@@ -1062,8 +1118,7 @@ export const createUserChallenge = async (req, res) => {
       );
 
       // Send private message with link
-      db.messages = Array.isArray(db.messages) ? db.messages : [];
-      db.messages.push({
+      await messagesRepo.insert({
         id: uuidv4(),
         senderId: resolveUserId(challenger),
         senderUsername: challenger.username,
@@ -1078,7 +1133,7 @@ export const createUserChallenge = async (req, res) => {
         read: false,
         deleted: false,
         createdAt: now.toISOString()
-      });
+      }, { db });
 
       // Update challenger activity
         if (!challenger.activity) {
@@ -1148,8 +1203,11 @@ export const respondToChallenge = async (req, res) => {
     let updatedPost;
     let challenger;
 
-    await updateDb(async (db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1191,8 +1249,9 @@ export const respondToChallenge = async (req, res) => {
         post.updatedAt = now;
 
         // Notify challenger
-        challenger = db.users.find(
-          (user) => resolveUserId(user) === post.fight.challengerId
+        challenger = await usersRepo.findOne(
+          (user) => resolveUserId(user) === post.fight.challengerId,
+          { db }
         );
         if (challenger) {
           await createNotification(
@@ -1220,8 +1279,9 @@ export const respondToChallenge = async (req, res) => {
       post.updatedAt = now;
 
       // Notify challenger that opponent responded
-      challenger = db.users.find(
-        (user) => resolveUserId(user) === post.fight.challengerId
+      challenger = await usersRepo.findOne(
+        (user) => resolveUserId(user) === post.fight.challengerId,
+        { db }
       );
       if (challenger) {
         await createNotification(
@@ -1238,12 +1298,12 @@ export const respondToChallenge = async (req, res) => {
         );
 
         // Send private message
-        const opponent = db.users.find(
-          (user) => resolveUserId(user) === req.user.id
+        const opponent = await usersRepo.findOne(
+          (user) => resolveUserId(user) === req.user.id,
+          { db }
         );
         if (opponent) {
-          db.messages = Array.isArray(db.messages) ? db.messages : [];
-          db.messages.push({
+          await messagesRepo.insert({
             id: uuidv4(),
             senderId: resolveUserId(opponent),
             senderUsername: opponent.username,
@@ -1257,7 +1317,7 @@ export const respondToChallenge = async (req, res) => {
             read: false,
             deleted: false,
             createdAt: now
-          });
+          }, { db });
         }
       }
 
@@ -1300,8 +1360,11 @@ export const approveChallenge = async (req, res) => {
   try {
     let updatedPost;
 
-    await updateDb(async (db) => {
-      const post = findPostById(db.posts, id);
+    await withDb(async (db) => {
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1334,8 +1397,9 @@ export const approveChallenge = async (req, res) => {
         post.updatedAt = now.toISOString();
 
         // Notify opponent
-        const opponent = db.users.find(
-          (user) => resolveUserId(user) === post.fight.opponentId
+        const opponent = await usersRepo.findOne(
+          (user) => resolveUserId(user) === post.fight.opponentId,
+          { db }
         );
         if (opponent) {
           await createNotification(
@@ -1378,8 +1442,9 @@ export const approveChallenge = async (req, res) => {
       };
 
       // Notify opponent that fight is live
-      const opponent = db.users.find(
-        (user) => resolveUserId(user) === post.fight.opponentId
+      const opponent = await usersRepo.findOne(
+        (user) => resolveUserId(user) === post.fight.opponentId,
+        { db }
       );
       if (opponent) {
         await createNotification(

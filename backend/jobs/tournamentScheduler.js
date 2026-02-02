@@ -1,33 +1,25 @@
 import cron from 'node-cron';
-import { updateDb } from '../services/jsonDb.js';
 import { v4 as uuidv4 } from 'uuid';
+import {
+  withDb,
+  notificationsRepo,
+  tournamentsRepo,
+  userBadgesRepo,
+  usersRepo
+} from '../repositories/index.js';
 
-// Helper funkcje do pracy z DB
-const getAll = async (collection) => {
-  const data = await updateDb(db => db);
-  return data[collection] || [];
-};
+const getAllTournaments = async () => tournamentsRepo.getAll();
 
-const update = async (collection, id, item) => {
-  await updateDb(db => {
-    const items = db[collection] || [];
-    const index = items.findIndex(i => i.id === id);
-    if (index !== -1) {
-      items[index] = item;
-    }
-    return db;
-  });
-};
+const updateTournament = async (id, tournament) =>
+  tournamentsRepo.updateById(id, () => tournament);
 
 // Funkcja wysyłająca powiadomienia do uczestników
 async function notifyParticipants(tournament, type, message) {
   try {
     const participants = tournament.participants || [];
-    
-    await updateDb(db => {
-      const notifications = db.notifications || [];
-      
-      participants.forEach(participant => {
+
+    await notificationsRepo.updateAll((notifications) => {
+      participants.forEach((participant) => {
         notifications.push({
           id: uuidv4(),
           userId: participant.userId,
@@ -42,9 +34,8 @@ async function notifyParticipants(tournament, type, message) {
           createdAt: new Date().toISOString()
         });
       });
-      
-      db.notifications = notifications;
-      return db;
+
+      return notifications;
     });
     
     console.log(`Notifications sent to ${participants.length} participants for tournament ${tournament.id}`);
@@ -56,31 +47,29 @@ async function notifyParticipants(tournament, type, message) {
 // Funkcja dodająca badge zwycięzcy
 async function addWinnerBadge(userId, tournament) {
   try {
-    await updateDb(db => {
-      const userBadges = db.userBadges || [];
-      const users = db.users || [];
-      
+    await withDb((db) => {
       const badge = {
         id: uuidv4(),
         userId: userId,
         type: 'tournament_winner',
         tournamentId: tournament.id,
         tournamentTitle: tournament.title,
-        teamMembers: tournament.participants.find(p => p.userId === userId)?.characters || [],
+        teamMembers: tournament.participants.find((p) => p.userId === userId)?.characters || [],
         wonAt: new Date().toISOString(),
         displayOnProfile: true
       };
-      
-      userBadges.push(badge);
-      
-      // Zaktualizuj statystyki użytkownika
-      const user = users.find(u => (u.id || u._id) === userId);
-      if (user) {
-        user.tournamentsWon = (user.tournamentsWon || 0) + 1;
-      }
-      
-      db.userBadges = userBadges;
-      db.users = users;
+
+      userBadgesRepo.insert(badge, { db });
+
+      usersRepo.updateById(
+        userId,
+        (user) => {
+          user.tournamentsWon = (user.tournamentsWon || 0) + 1;
+          return user;
+        },
+        { db }
+      );
+
       return db;
     });
     
@@ -174,7 +163,7 @@ async function generateBracketsForTournament(tournament) {
     tournament.currentRound = 1;
     tournament.status = 'active';
 
-    await update('tournaments', tournament.id, tournament);
+    await updateTournament(tournament.id, tournament);
     
     // Wyślij powiadomienia do uczestników
     await notifyParticipants(
@@ -231,7 +220,7 @@ async function advanceRound(tournament) {
         );
       }
       
-      await update('tournaments', tournament.id, tournament);
+      await updateTournament(tournament.id, tournament);
       console.log(`Tournament ${tournament.id} completed! Winner: ${finalMatch.winner}`);
       return true;
     }
@@ -267,7 +256,7 @@ async function advanceRound(tournament) {
     }
 
     tournament.currentRound = nextRound;
-    await update('tournaments', tournament.id, tournament);
+    await updateTournament(tournament.id, tournament);
     
     console.log(`Tournament ${tournament.id} advanced to round ${nextRound}`);
     return true;
@@ -282,7 +271,7 @@ cron.schedule('0 * * * *', async () => {
   console.log('Running tournament scheduler...');
   
   try {
-    const tournaments = await getAll('tournaments');
+    const tournaments = await getAllTournaments();
     
     for (const tournament of tournaments) {
       const now = new Date();
@@ -322,7 +311,7 @@ cron.schedule('*/10 * * * *', async () => {
   console.log('Checking active matches for vote completion...');
   
   try {
-    const tournaments = await getAll('tournaments');
+    const tournaments = await getAllTournaments();
     
     for (const tournament of tournaments) {
       if (tournament.status !== 'active') continue;
@@ -352,7 +341,7 @@ cron.schedule('*/10 * * * *', async () => {
       }
       
       if (updated) {
-        await update('tournaments', tournament.id, tournament);
+        await updateTournament(tournament.id, tournament);
       }
     }
   } catch (error) {

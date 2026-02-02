@@ -1,19 +1,27 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import {
+  charactersRepo,
+  readDb,
+  tournamentsRepo,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
-const findUserById = (db, userId) =>
-  (db.users || []).find((entry) => resolveUserId(entry) === userId);
+const findUserById = (users, userId) =>
+  (users || []).find((entry) => resolveUserId(entry) === userId);
 
-const findCharacterById = (db, characterId) =>
-  (db.characters || []).find((entry) => entry.id === characterId);
+const findCharacterById = (characters, characterId) =>
+  (characters || []).find((entry) => entry.id === characterId);
 
-const buildParticipant = (db, participant) => {
+const buildParticipant = (context, participant) => {
   if (!participant) return null;
-  const user = findUserById(db, participant.userId);
+  const users = context?.users || [];
+  const characters = context?.characters || [];
+  const user = findUserById(users, participant.userId);
   const character = participant.characterId
-    ? findCharacterById(db, participant.characterId)
+    ? findCharacterById(characters, participant.characterId)
     : null;
 
   return {
@@ -152,11 +160,11 @@ function advanceTournament(tournament, matchId, winnerId) {
   return tournament;
 }
 
-const buildTournamentResponse = (db, tournament) => {
+const buildTournamentResponse = (context, tournament) => {
   const participants = (tournament.participants || []).map((p) =>
-    buildParticipant(db, p)
+    buildParticipant(context, p)
   );
-  const createdBy = findUserById(db, tournament.createdBy);
+  const createdBy = findUserById(context?.users || [], tournament.createdBy);
 
   return {
     ...tournament,
@@ -174,11 +182,17 @@ const buildTournamentResponse = (db, tournament) => {
 export const getAllTournaments = async (_req, res) => {
   try {
     const db = await readDb();
-    const tournaments = (db.tournaments || []).slice().sort(
+    const tournaments = await tournamentsRepo.getAll({ db });
+    const [users, characters] = await Promise.all([
+      usersRepo.getAll({ db }),
+      charactersRepo.getAll({ db })
+    ]);
+    const context = { users, characters };
+    const sorted = tournaments.slice().sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
 
-    res.json(tournaments.map((tournament) => buildTournamentResponse(db, tournament)));
+    res.json(sorted.map((tournament) => buildTournamentResponse(context, tournament)));
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -190,12 +204,19 @@ export const getTournamentById = async (req, res) => {
 
   try {
     const db = await readDb();
-    const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+    const tournament = await tournamentsRepo.findOne(
+      (entry) => entry.id === id,
+      { db }
+    );
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
 
-    res.json(buildTournamentResponse(db, tournament));
+    const [users, characters] = await Promise.all([
+      usersRepo.getAll({ db }),
+      charactersRepo.getAll({ db })
+    ]);
+    res.json(buildTournamentResponse({ users, characters }, tournament));
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -226,14 +247,6 @@ export const createTournament = async (req, res) => {
   } = req.body;
 
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.user.id);
-    
-    // Any logged in user can create tournament now, not just moderators
-    if (!user) {
-      return res.status(401).json({ msg: 'User not authenticated' });
-    }
-
     // Calculate recruitment end date in UTC
     // battleDate comes from frontend as ISO string in user's local time
     // We parse it and store as UTC
@@ -244,59 +257,76 @@ export const createTournament = async (req, res) => {
       return res.status(400).json({ msg: 'Battle time must be in the future' });
     }
 
-    const newTournament = {
-      id: uuidv4(),
-      name: title,
-      title,
-      description,
-      startDate: recruitmentEnd.toISOString(),
-      endDate,
-      maxParticipants: maxParticipants || 32,
-      rules: rules || '',
-      tournamentType: tournamentType || 'single_elimination',
-      divisionId: divisionId || null,
-      prizePool: prizePool || 0,
-      entryFee: entryFee || 0,
-      createdBy: req.user.id,
-      creatorId: req.user.id,
-      creatorName: user.username || 'Unknown',
-      status: 'recruiting', // Changed from 'upcoming'
-      participants: [],
-      fights: [],
-      // New settings
-      settings: {
-        allowedTiers: allowedTiers || ['all'],
-        excludedCharacters: excludedCharacters || [],
-        recruitmentDays: recruitmentDays || 2,
-        battleTime: battleTime || '18:00', // Keep for display purposes
-        battleTimeUTC: recruitmentEnd.toISOString(), // Actual UTC time
-        userTimezone: userTimezone || 'UTC', // Creator's timezone for reference
-        teamSize: teamSize || 1,
-        showOnFeed: showOnFeed !== undefined ? showOnFeed : false,
-        publicJoin: true,
-        votingDuration: 24,
-        requireApproval: false
-      },
-      brackets: [],
-      currentRound: 0,
-      stats: {
-        totalMatches: 0,
-        completedMatches: 0,
-        totalVotes: 0
-      },
-      recruitmentEndDate: recruitmentEnd.toISOString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    let createdTournament;
 
-    await updateDb((data) => {
-      data.tournaments = Array.isArray(data.tournaments) ? data.tournaments : [];
-      data.tournaments.push(newTournament);
-      return data;
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
+
+      // Any logged in user can create tournament now, not just moderators
+      if (!user) {
+        const error = new Error('User not authenticated');
+        error.code = 'USER_NOT_AUTHENTICATED';
+        throw error;
+      }
+
+      const newTournament = {
+        id: uuidv4(),
+        name: title,
+        title,
+        description,
+        startDate: recruitmentEnd.toISOString(),
+        endDate,
+        maxParticipants: maxParticipants || 32,
+        rules: rules || '',
+        tournamentType: tournamentType || 'single_elimination',
+        divisionId: divisionId || null,
+        prizePool: prizePool || 0,
+        entryFee: entryFee || 0,
+        createdBy: req.user.id,
+        creatorId: req.user.id,
+        creatorName: user.username || 'Unknown',
+        status: 'recruiting', // Changed from 'upcoming'
+        participants: [],
+        fights: [],
+        // New settings
+        settings: {
+          allowedTiers: allowedTiers || ['all'],
+          excludedCharacters: excludedCharacters || [],
+          recruitmentDays: recruitmentDays || 2,
+          battleTime: battleTime || '18:00', // Keep for display purposes
+          battleTimeUTC: recruitmentEnd.toISOString(), // Actual UTC time
+          userTimezone: userTimezone || 'UTC', // Creator's timezone for reference
+          teamSize: teamSize || 1,
+          showOnFeed: showOnFeed !== undefined ? showOnFeed : false,
+          publicJoin: true,
+          votingDuration: 24,
+          requireApproval: false
+        },
+        brackets: [],
+        currentRound: 0,
+        stats: {
+          totalMatches: 0,
+          completedMatches: 0,
+          totalVotes: 0
+        },
+        recruitmentEndDate: recruitmentEnd.toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      await tournamentsRepo.insert(newTournament, { db });
+      createdTournament = newTournament;
+      return db;
     });
 
-    res.json(newTournament);
+    res.json(createdTournament);
   } catch (err) {
+    if (err.code === 'USER_NOT_AUTHENTICATED') {
+      return res.status(401).json({ msg: 'User not authenticated' });
+    }
     console.error(err.message);
     res.status(500).send('Server Error');
   }
@@ -308,15 +338,21 @@ export const startTournament = async (req, res) => {
   try {
     let updatedTournament;
 
-    await updateDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (!user || user.role !== 'moderator') {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+      const tournament = await tournamentsRepo.findOne(
+        (entry) => entry.id === id,
+        { db }
+      );
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -335,8 +371,13 @@ export const startTournament = async (req, res) => {
         throw error;
       }
 
+      const users = await usersRepo.getAll({ db });
+      const userById = new Map(
+        users.map((entry) => [resolveUserId(entry), entry])
+      );
+
       const participantsWithPoints = (tournament.participants || []).map((p) => {
-        const participantUser = findUserById(db, p.userId);
+        const participantUser = userById.get(p.userId);
         return {
           userId: p.userId,
           username: p.username || participantUser?.username,
@@ -392,15 +433,21 @@ export const advanceMatch = async (req, res) => {
   try {
     let updatedTournament;
 
-    await updateDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (!user || user.role !== 'moderator') {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+      const tournament = await tournamentsRepo.findOne(
+        (entry) => entry.id === id,
+        { db }
+      );
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -449,8 +496,11 @@ export const voteInTournament = async (req, res) => {
   try {
     let matchResult;
 
-    await updateDb((db) => {
-      const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+    await withDb(async (db) => {
+      const tournament = await tournamentsRepo.findOne(
+        (entry) => entry.id === id,
+        { db }
+      );
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -532,7 +582,10 @@ export const getTournamentBrackets = async (req, res) => {
 
   try {
     const db = await readDb();
-    const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+    const tournament = await tournamentsRepo.findOne(
+      (entry) => entry.id === id,
+      { db }
+    );
 
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
@@ -560,15 +613,21 @@ export const updateTournament = async (req, res) => {
   try {
     let updated;
 
-    await updateDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (!user || user.role !== 'moderator') {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+      const tournament = await tournamentsRepo.findOne(
+        (entry) => entry.id === id,
+        { db }
+      );
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -605,8 +664,11 @@ export const joinTournament = async (req, res) => {
   try {
     let updatedTournament;
 
-    await updateDb((db) => {
-      const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+    await withDb(async (db) => {
+      const tournament = await tournamentsRepo.findOne(
+        (entry) => entry.id === id,
+        { db }
+      );
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -663,10 +725,14 @@ export const joinTournament = async (req, res) => {
         throw error;
       }
 
-      const user = findUserById(db, req.user.id);
-      const characters = characterIds.map(id => {
-        const char = findCharacterById(db, id);
-        return { id, name: char?.name || 'Unknown' };
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
+      const allCharacters = await charactersRepo.getAll({ db });
+      const characters = characterIds.map((entryId) => {
+        const char = findCharacterById(allCharacters, entryId);
+        return { id: entryId, name: char?.name || 'Unknown' };
       });
 
       tournament.participants.push({
@@ -712,8 +778,11 @@ export const leaveTournament = async (req, res) => {
   try {
     let updatedTournament;
 
-    await updateDb((db) => {
-      const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+    await withDb(async (db) => {
+      const tournament = await tournamentsRepo.findOne(
+        (entry) => entry.id === id,
+        { db }
+      );
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -739,7 +808,10 @@ export const leaveTournament = async (req, res) => {
       }
 
       tournament.participants.splice(participantIndex, 1);
-      const user = findUserById(db, req.user.id);
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
       if (user?.activity?.tournamentsParticipated) {
         user.activity.tournamentsParticipated = Math.max(
           0,
@@ -771,7 +843,10 @@ export const getAvailableCharacters = async (req, res) => {
 
   try {
     const db = await readDb();
-    const tournament = (db.tournaments || []).find((entry) => entry.id === id);
+    const tournament = await tournamentsRepo.findOne(
+      (entry) => entry.id === id,
+      { db }
+    );
     
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
@@ -784,7 +859,8 @@ export const getAvailableCharacters = async (req, res) => {
     const takenCharacters = tournament.participants?.flatMap(p => p.characterIds || []) || [];
     
     // Filter characters
-    let availableCharacters = (db.characters || []).filter(char => {
+    const allCharacters = await charactersRepo.getAll({ db });
+    let availableCharacters = allCharacters.filter(char => {
       // Check if excluded
       if (excludedCharacters.includes(char.id)) return false;
       
@@ -834,44 +910,63 @@ export const deleteTournament = async (req, res) => {
   const userId = resolveUserId(req.user);
 
   try {
-    const db = await readDb();
-    const user = findUserById(db, userId);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === userId,
+        { db }
+      );
 
-    if (!user) {
-      return res.status(404).json({ msg: 'User not found' });
-    }
-
-    const tournamentIndex = (db.tournaments || []).findIndex((entry) => entry.id === id);
-    
-    if (tournamentIndex === -1) {
-      return res.status(404).json({ msg: 'Tournament not found' });
-    }
-
-    const tournament = db.tournaments[tournamentIndex];
-    const isModerator = user.role === 'moderator' || user.role === 'admin';
-    const isCreator = tournament.creatorId === userId;
-
-    // Check permissions
-    if (!isModerator && !isCreator) {
-      return res.status(403).json({ msg: 'Not authorized to delete this tournament' });
-    }
-
-    // If not moderator, can only delete recruiting tournaments
-    if (!isModerator && tournament.status !== 'recruiting') {
-      return res.status(403).json({ msg: 'Can only delete tournaments that have not started' });
-    }
-
-    // Remove tournament
-    await updateDb((db) => {
-      const index = (db.tournaments || []).findIndex((entry) => entry.id === id);
-      if (index !== -1) {
-        db.tournaments.splice(index, 1);
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
       }
+
+      const tournament = await tournamentsRepo.findOne(
+        (entry) => entry.id === id,
+        { db }
+      );
+      if (!tournament) {
+        const error = new Error('Tournament not found');
+        error.code = 'NOT_FOUND';
+        throw error;
+      }
+
+      const isModerator = user.role === 'moderator' || user.role === 'admin';
+      const isCreator = tournament.creatorId === userId;
+
+      // Check permissions
+      if (!isModerator && !isCreator) {
+        const error = new Error('Not authorized to delete this tournament');
+        error.code = 'ACCESS_DENIED';
+        throw error;
+      }
+
+      // If not moderator, can only delete recruiting tournaments
+      if (!isModerator && tournament.status !== 'recruiting') {
+        const error = new Error('Can only delete tournaments that have not started');
+        error.code = 'INVALID_STATUS';
+        throw error;
+      }
+
+      await tournamentsRepo.removeById(id, { db });
       return db;
     });
 
     res.json({ msg: 'Tournament deleted successfully' });
   } catch (err) {
+    if (err.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: 'User not found' });
+    }
+    if (err.code === 'NOT_FOUND') {
+      return res.status(404).json({ msg: 'Tournament not found' });
+    }
+    if (err.code === 'ACCESS_DENIED') {
+      return res.status(403).json({ msg: 'Not authorized to delete this tournament' });
+    }
+    if (err.code === 'INVALID_STATUS') {
+      return res.status(403).json({ msg: 'Can only delete tournaments that have not started' });
+    }
     console.error(err.message);
     res.status(500).send('Server Error');
   }

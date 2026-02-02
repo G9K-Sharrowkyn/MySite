@@ -124,156 +124,175 @@ const Header = () => {
       <div className="header-container">
         {/* Logo */}
         <div className="header-logo">
-          <h1>GeekFights</h1>
+          <h1>VersusVerseVault</h1>
         </div>
 
-        {/* Navigation */}
-        <nav className="header-nav">
-          <Link to="/" className="nav-link">{t('home')}</Link>
-          <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
-          <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
-          <Link to="/tournaments" className="nav-link">{t('tournaments')}</Link>
-          {isModerator && (
-            <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
-          )}
-          {isAdmin && (
-            <Link to="/admin" className="nav-link admin-link">{t('adminPanel') || 'Admin'}</Link>
-          )}
-        </nav>
+        <div className="header-body">
+          <nav className="header-nav-block">
+            <div className="nav-row nav-row-top">
+              <Link to="/" className="nav-link">{t('home')}</Link>
+              <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
+              <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
+            </div>
+            <div className="nav-row nav-row-bottom">
+              <Link to="/tournaments" className="nav-link">{t('tournaments')}</Link>
+              {isModerator ? (
+                <Link to="/speed-racing" className="nav-link">{t('speedRacing')}</Link>
+              ) : (
+                <span className="nav-link nav-link-disabled" aria-disabled="true" title="Dostęp tylko dla moderatorów">
+                  {t('speedRacing')}
+                  <span className="nav-link-soon">(Soon!)</span>
+                </span>
+              )}
+              {isModerator ? (
+                <Link to="/ccg" className="nav-link">CCG</Link>
+              ) : (
+                <span className="nav-link nav-link-disabled" aria-disabled="true" title="Dostęp tylko dla moderatorów">
+                  CCG
+                  <span className="nav-link-soon">(Soon!)</span>
+                </span>
+              )}
+              {isModerator && (
+                <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
+              )}
+              {isAdmin && (
+                <Link to="/admin" className="nav-link admin-link">{t('adminPanel') || 'Admin'}</Link>
+              )}
+            </div>
+          </nav>
 
-        {/* Language Switcher */}
-        <LanguageSwitcher />
-
-        {/* User Section */}
-        <div className="header-user">
-          {isLoggedIn ? (
-            <div className="user-section">
-              {/* Messages */}
-              <Link to="/messages" className="icon-button">
-                <span className="icon">💬</span>
-                {unreadMessages > 0 && (
-                  <span className="badge">{unreadMessages}</span>
-                )}
-              </Link>
-
-              {/* Notifications */}
-              <div className="notifications-container">
-                <button 
-                  className="icon-button"
-                  onClick={toggleNotifications}
-                >
-                  <span className="icon">🔔</span>
-                  {unreadNotifications > 0 && (
-                    <span className="badge">{unreadNotifications}</span>
-                  )}
-                </button>
-
-                {showNotifications && (
-                  <div className="notifications-dropdown">
-                    <div className="notifications-header">
-                      <h3>{t('notifications')}</h3>
-                      {unreadNotifications > 0 && (
-                        <button 
-                          className="mark-all-read"
-                          onClick={markAllNotificationsAsRead}
-                        >
-                          {t('markAllAsRead')}
-                        </button>
+          <div className="header-tools-block">
+            <div className="tools-row tools-row-top">
+              <LanguageSwitcher />
+              {isLoggedIn ? (
+                <div className="user-menu-container">
+                  <button 
+                    className="user-button"
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                  >
+                    <img 
+                      {...getOptimizedImageProps(
+                        replacePlaceholderUrl(user?.profilePicture) || placeholderImages.userSmall,
+                        { size: 40 }
                       )}
-                    </div>
-                    <div className="notifications-list">
-                      {notifications.length > 0 ? (
-                        notifications.map(notification => (
-                          <div 
-                            key={notification.id} 
-                            className={`notification-item ${!notification.read ? 'unread' : ''}`}
-                            onClick={() => markNotificationAsRead(notification.id)}
-                          >
-                            <div className="notification-title">{notification.title}</div>
-                            <div className="notification-content">{notification.content}</div>
-                            <div className="notification-time">
-                              {new Date(notification.createdAt).toLocaleString()}
-                            </div>
-                          </div>
-                        ))
-                      ) : (
-                        <div className="no-notifications">{t('noNotifications')}</div>
-                      )}
-                    </div>
-                    <div className="notifications-footer">
-                      <Link to="/notifications" onClick={() => setShowNotifications(false)}>
-                        {t('seeAll')}
+                      alt="Profile" 
+                      className="user-avatar"
+                    />
+                    <span className="user-name">{user?.username}</span>
+                    <span className="dropdown-arrow">▼</span>
+                  </button>
+
+                  {showUserMenu && (
+                    <div className="user-dropdown">
+                      <Link 
+                        to={user?.username ? `/profile/${encodeURIComponent(user.username)}` : "/profile/me"} 
+                        className="dropdown-item"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <span className="dropdown-icon">👤</span>
+                        {t('profile')}
                       </Link>
+                      <Link 
+                        to="/messages" 
+                        className="dropdown-item"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <span className="dropdown-icon">💬</span>
+                        {t('messages')}
+                        {unreadMessages > 0 && (
+                          <span className="dropdown-badge">{unreadMessages}</span>
+                        )}
+                      </Link>
+                      <Link 
+                        to="/settings" 
+                        className="dropdown-item"
+                        onClick={() => setShowUserMenu(false)}
+                      >
+                        <span className="dropdown-icon">⚙️</span>
+                        Settings
+                      </Link>
+                      <div className="dropdown-divider"></div>
+                      <button 
+                        className="dropdown-item logout-item"
+                        onClick={handleLogout}
+                      >
+                        <span className="dropdown-icon">🚪</span>
+                        {t('logout')}
+                      </button>
                     </div>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : (
+                <div className="auth-buttons">
+                  <Link to="/login" className="btn btn-outline">{t('login')}</Link>
+                  <Link to="/register" className="btn btn-primary">{t('register')}</Link>
+                </div>
+              )}
+            </div>
 
-              {/* User Menu */}
-              <div className="user-menu-container">
-                <button 
-                  className="user-button"
-                  onClick={() => setShowUserMenu(!showUserMenu)}
-                >
-                  <img 
-                    {...getOptimizedImageProps(
-                      replacePlaceholderUrl(user?.profilePicture) || placeholderImages.userSmall,
-                      { size: 40 }
+            {isLoggedIn && (
+              <div className="tools-row tools-row-bottom">
+                <Link to="/messages" className="icon-button">
+                  <span className="icon">💬</span>
+                  {unreadMessages > 0 && (
+                    <span className="badge">{unreadMessages}</span>
+                  )}
+                </Link>
+
+                <div className="notifications-container">
+                  <button 
+                    className="icon-button"
+                    onClick={toggleNotifications}
+                  >
+                    <span className="icon">🔔</span>
+                    {unreadNotifications > 0 && (
+                      <span className="badge">{unreadNotifications}</span>
                     )}
-                    alt="Profile" 
-                    className="user-avatar"
-                  />
-                  <span className="user-name">{user?.username}</span>
-                  <span className="dropdown-arrow">▼</span>
-                </button>
+                  </button>
 
-                {showUserMenu && (
-                  <div className="user-dropdown">
-                    <Link 
-                      to={user?.username ? `/profile/${encodeURIComponent(user.username)}` : "/profile/me"} 
-                      className="dropdown-item"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <span className="dropdown-icon">👤</span>
-                      {t('profile')}
-                    </Link>
-                    <Link 
-                      to="/messages" 
-                      className="dropdown-item"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <span className="dropdown-icon">💬</span>
-                      {t('messages')}
-                      {unreadMessages > 0 && (
-                        <span className="dropdown-badge">{unreadMessages}</span>
-                      )}
-                    </Link>
-                    <Link 
-                      to="/settings" 
-                      className="dropdown-item"
-                      onClick={() => setShowUserMenu(false)}
-                    >
-                      <span className="dropdown-icon">⚙️</span>
-                      Settings
-                    </Link>
-                    <div className="dropdown-divider"></div>
-                    <button 
-                      className="dropdown-item logout-item"
-                      onClick={handleLogout}
-                    >
-                      <span className="dropdown-icon">🚪</span>
-                      {t('logout')}
-                    </button>
-                  </div>
-                )}
+                  {showNotifications && (
+                    <div className="notifications-dropdown">
+                      <div className="notifications-header">
+                        <h3>{t('notifications')}</h3>
+                        {unreadNotifications > 0 && (
+                          <button 
+                            className="mark-all-read"
+                            onClick={markAllNotificationsAsRead}
+                          >
+                            {t('markAllAsRead')}
+                          </button>
+                        )}
+                      </div>
+                      <div className="notifications-list">
+                        {notifications.length > 0 ? (
+                          notifications.map(notification => (
+                            <div 
+                              key={notification.id} 
+                              className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                              onClick={() => markNotificationAsRead(notification.id)}
+                            >
+                              <div className="notification-title">{notification.title}</div>
+                              <div className="notification-content">{notification.content}</div>
+                              <div className="notification-time">
+                                {new Date(notification.createdAt).toLocaleString()}
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-notifications">{t('noNotifications')}</div>
+                        )}
+                      </div>
+                      <div className="notifications-footer">
+                        <Link to="/notifications" onClick={() => setShowNotifications(false)}>
+                          {t('seeAll')}
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="auth-buttons">
-              <Link to="/login" className="btn btn-outline">{t('login')}</Link>
-              <Link to="/register" className="btn btn-primary">{t('register')}</Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

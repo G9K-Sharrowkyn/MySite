@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { fightsRepo, usersRepo, votesRepo, withDb } from '../repositories/index.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -9,9 +9,6 @@ const resolveVoteTeam = (choice) => {
   if (choice === 'draw') return 'draw';
   return null;
 };
-
-const findFightById = (db, fightId) =>
-  (db.fights || []).find((entry) => entry.id === fightId);
 
 const countFightVotes = (votes, fightId) => {
   const fightVotes = votes.filter((vote) => vote.fightId === fightId);
@@ -43,8 +40,8 @@ export const vote = async (req, res) => {
 
     let storedVote;
 
-    await updateDb((db) => {
-      const fight = findFightById(db, fightId);
+    await withDb(async (db) => {
+      const fight = await fightsRepo.findById(fightId, { db });
       if (!fight) {
         const error = new Error('Fight not found');
         error.code = 'FIGHT_NOT_FOUND';
@@ -57,10 +54,10 @@ export const vote = async (req, res) => {
         throw error;
       }
 
-      db.votes = Array.isArray(db.votes) ? db.votes : [];
-      const existing = db.votes.find(
+      const existing = await votesRepo.findOne(
         (voteEntry) =>
-          voteEntry.fightId === fightId && voteEntry.userId === req.user.id
+          voteEntry.fightId === fightId && voteEntry.userId === req.user.id,
+        { db }
       );
 
       if (existing) {
@@ -79,14 +76,19 @@ export const vote = async (req, res) => {
           createdAt: now,
           updatedAt: now
         };
-        db.votes.push(storedVote);
-        
+        await votesRepo.insert(storedVote, { db });
+
         // Update user stats for new votes only
-        const user = db.users.find(u => (u.id || u._id) === req.user.id);
-        if (user) {
-          if (!user.stats) user.stats = {};
-          user.stats.votes = (user.stats.votes || 0) + 1;
-        }
+        await usersRepo.updateById(
+          req.user.id,
+          (user) => {
+            if (!user) return user;
+            if (!user.stats) user.stats = {};
+            user.stats.votes = (user.stats.votes || 0) + 1;
+            return user;
+          },
+          { db }
+        );
       }
 
       return db;
@@ -110,8 +112,7 @@ export const vote = async (req, res) => {
 // @access  Private
 export const getUserVote = async (req, res) => {
   try {
-    const db = await readDb();
-    const voteEntry = (db.votes || []).find(
+    const voteEntry = await votesRepo.findOne(
       (vote) => vote.fightId === req.params.fightId && vote.userId === req.user.id
     );
 
@@ -139,9 +140,8 @@ export const getUserVote = async (req, res) => {
 // @access  Public
 export const getFightVoteStats = async (req, res) => {
   try {
-    const db = await readDb();
     const { teamAVotes, teamBVotes, totalVotes } = countFightVotes(
-      db.votes || [],
+      await votesRepo.getAll(),
       req.params.fightId
     );
 
@@ -170,21 +170,31 @@ export const getFightVoteStats = async (req, res) => {
 // @access  Private
 export const removeVote = async (req, res) => {
   try {
-    await updateDb((db) => {
-      const fight = findFightById(db, req.params.fightId);
+    await withDb(async (db) => {
+      const fight = await fightsRepo.findById(req.params.fightId, { db });
       if (fight && fight.status !== 'active') {
         const error = new Error('Fight is not active');
         error.code = 'FIGHT_INACTIVE';
         throw error;
       }
 
-      const before = (db.votes || []).length;
-      db.votes = (db.votes || []).filter(
-        (voteEntry) =>
-          !(voteEntry.fightId === req.params.fightId && voteEntry.userId === req.user.id)
+      let removed = false;
+      await votesRepo.updateAll(
+        (votes) => {
+          const filtered = votes.filter(
+            (voteEntry) =>
+              !(
+                voteEntry.fightId === req.params.fightId &&
+                voteEntry.userId === req.user.id
+              )
+          );
+          removed = filtered.length !== votes.length;
+          return filtered;
+        },
+        { db }
       );
 
-      if (before === db.votes.length) {
+      if (!removed) {
         const error = new Error('Vote not found');
         error.code = 'VOTE_NOT_FOUND';
         throw error;
@@ -211,12 +221,13 @@ export const removeVote = async (req, res) => {
 // @access  Private
 export const getUserVotes = async (req, res) => {
   try {
-    const db = await readDb();
-    const userVotes = (db.votes || []).filter(
+    const userVotes = await votesRepo.filter(
       (voteEntry) => voteEntry.userId === req.user.id
     );
 
-    const fightsById = new Map((db.fights || []).map((fight) => [fight.id, fight]));
+    const fightsById = new Map(
+      (await fightsRepo.getAll()).map((fight) => [fight.id, fight])
+    );
 
     const votesWithFights = userVotes.map((voteEntry) => {
       const fight = fightsById.get(voteEntry.fightId);

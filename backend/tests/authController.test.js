@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import authRoutes from '../routes/auth.js';
-import { updateDb } from '../services/jsonDb.js';
+import { usersRepo } from '../repositories/index.js';
 
 const app = express();
 app.use(express.json());
@@ -19,10 +19,9 @@ describe('Auth Controller', () => {
   });
 
   afterAll(async () => {
-    await updateDb((db) => {
-      db.users = db.users.filter((user) => user.email !== testUser.email);
-      return db;
-    });
+    await usersRepo.updateAll((users) =>
+      users.filter((user) => user.email !== testUser.email)
+    );
   });
 
   test('registers a new user', async () => {

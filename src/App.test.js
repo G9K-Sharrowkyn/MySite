@@ -5,6 +5,6 @@ import App from './App';
 describe('App component', () => {
   test('renders App component without crashing', () => {
     render(<App />);
-    expect(screen.getByText(/GeekFights/i)).toBeInTheDocument();
+    expect(screen.getByText(/VersusVerseVault/i)).toBeInTheDocument();
   });
 });

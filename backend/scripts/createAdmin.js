@@ -1,13 +1,13 @@
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { usersRepo } from '../repositories/index.js';
 
 const createAdminUser = async () => {
   try {
-    const db = await readDb();
-    
     // Check if admin already exists
-    const existingAdmin = db.users.find(u => u.username === 'admin' || u.role === 'admin');
+    const existingAdmin = await usersRepo.findOne(
+      (u) => u.username === 'admin' || u.role === 'admin'
+    );
     if (existingAdmin) {
       console.log('❌ Admin user already exists!');
       console.log('Username:', existingAdmin.username);
@@ -44,10 +44,7 @@ const createAdminUser = async () => {
       badges: ['admin']
     };
     
-    await updateDb((db) => {
-      db.users.push(adminUser);
-      return db;
-    });
+    await usersRepo.insert(adminUser);
     
     console.log('✅ Admin user created successfully!');
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

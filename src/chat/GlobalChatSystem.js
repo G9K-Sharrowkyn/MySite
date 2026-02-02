@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
+﻿import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { AuthContext } from '../auth/AuthContext';
@@ -161,11 +161,11 @@ const GlobalChatSystem = () => {
       if (envUrl) return envUrl;
       const { hostname, port, protocol, origin } = window.location;
       if (port === '3000') {
-        return `${protocol}//${hostname}:5001`;
+        return `${protocol}//${hostname}:5000`;
       }
       return origin;
     }
-    return envUrl || 'http://localhost:5001';
+    return envUrl || 'http://localhost:5000';
   };
 
   // Extract stable values to prevent reconnection loops
@@ -612,7 +612,7 @@ const GlobalChatSystem = () => {
         <div className="chat-header-right">
           {activeTab === 'global' && (
             <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-              {isConnected ? '🟢' : '🔴'}
+              {isConnected ? 'đźź˘' : 'đź”´'}
             </span>
           )}
           <span 
@@ -849,7 +849,7 @@ const GlobalChatSystem = () => {
                 <div className="private-chat-container">
                   <div className="private-chat-header">
                     <button className="back-btn" onClick={backToPrivateConversations}>
-                      ← Back
+                      â† Back
                     </button>
                     <div className="private-chat-user-info">
                       <img 
@@ -884,7 +884,7 @@ const GlobalChatSystem = () => {
                   </div>
                   {showNewMessageNotification && (
                     <div className="new-message-notification" onClick={() => scrollPrivateToBottom(true)}>
-                      <span>↓ New message</span>
+                      <span>â†“ New message</span>
                     </div>
                   )}
                   <form className="private-message-input-form" onSubmit={sendPrivateMessage}>
@@ -916,3 +916,4 @@ const GlobalChatSystem = () => {
 };
 
 export default GlobalChatSystem;
+

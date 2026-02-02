@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { notificationsRepo } from '../repositories/index.js';
 
 const normalizeNotification = (notification) => ({
   id: notification.id || notification._id,
@@ -23,8 +23,7 @@ export const getNotifications = async (req, res) => {
     const pageNumber = Number(page) || 1;
     const limitNumber = Number(limit) || 20;
 
-    const db = await readDb();
-    const notifications = Array.isArray(db.notifications) ? db.notifications : [];
+    const notifications = await notificationsRepo.getAll();
 
     const filtered = notifications.filter((notification) => {
       if (notification.userId !== req.user.id) return false;
@@ -73,8 +72,8 @@ export const markAsRead = async (req, res) => {
   try {
     let found;
 
-    await updateDb((db) => {
-      const notification = db.notifications.find(
+    await notificationsRepo.updateAll((notifications) => {
+      const notification = notifications.find(
         (entry) => entry.id === req.params.id || entry._id === req.params.id
       );
       if (!notification || notification.userId !== req.user.id) {
@@ -86,7 +85,7 @@ export const markAsRead = async (req, res) => {
       notification.read = true;
       notification.readAt = new Date().toISOString();
       found = notification;
-      return db;
+      return notifications;
     });
 
     res.json({
@@ -107,15 +106,14 @@ export const markAsRead = async (req, res) => {
 // @access  Private
 export const markAllAsRead = async (req, res) => {
   try {
-    await updateDb((db) => {
-      db.notifications = Array.isArray(db.notifications) ? db.notifications : [];
-      db.notifications.forEach((notification) => {
+    await notificationsRepo.updateAll((notifications) => {
+      notifications.forEach((notification) => {
         if (notification.userId === req.user.id && !notification.read) {
           notification.read = true;
           notification.readAt = new Date().toISOString();
         }
       });
-      return db;
+      return notifications;
     });
 
     res.json({ msg: 'All notifications marked as read' });
@@ -132,17 +130,17 @@ export const deleteNotification = async (req, res) => {
   try {
     let removed = false;
 
-    await updateDb((db) => {
-      const before = db.notifications.length;
-      db.notifications = db.notifications.filter(
+    await notificationsRepo.updateAll((notifications) => {
+      const before = notifications.length;
+      const filtered = notifications.filter(
         (entry) =>
           !(
             (entry.id === req.params.id || entry._id === req.params.id) &&
             entry.userId === req.user.id
           )
       );
-      removed = db.notifications.length !== before;
-      return db;
+      removed = filtered.length !== before;
+      return filtered;
     });
 
     if (!removed) {
@@ -161,8 +159,7 @@ export const deleteNotification = async (req, res) => {
 // @access  Private
 export const getUnreadCount = async (req, res) => {
   try {
-    const db = await readDb();
-    const notifications = Array.isArray(db.notifications) ? db.notifications : [];
+    const notifications = await notificationsRepo.getAll();
     const unreadCount = notifications.filter(
       (notification) =>
         notification.userId === req.user.id && !notification.read
@@ -206,16 +203,11 @@ export const createNotification = async (
   };
 
   if (db && typeof db === 'object') {
-    db.notifications = Array.isArray(db.notifications) ? db.notifications : [];
-    db.notifications.push(notification);
+    await notificationsRepo.insert(notification, { db });
     return notification;
   }
 
-  await updateDb((data) => {
-    data.notifications = Array.isArray(data.notifications) ? data.notifications : [];
-    data.notifications.push(notification);
-    return data;
-  });
+  await notificationsRepo.insert(notification);
 
   return notification;
 };

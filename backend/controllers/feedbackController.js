@@ -1,4 +1,9 @@
-import { readDb, updateDb } from '../services/jsonDb.js';
+import {
+  charactersRepo,
+  feedbackRepo,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
 
 export const submitFeedback = async (req, res) => {
   try {
@@ -38,20 +43,19 @@ export const submitFeedback = async (req, res) => {
       adminNotes: null
     };
 
-    await updateDb(async (db) => {
-      if (!db.feedback) {
-        db.feedback = [];
-      }
-
-      db.feedback.push(feedback);
+    await withDb(async (db) => {
+      await feedbackRepo.insert(feedback, { db });
 
       // Send notification to all admins
-      const admins = (db.users || []).filter(user => user.role === 'admin');
-      const notificationText = type === 'user' 
-        ? `New user report: ${reportedUser}` 
-        : `New ${type} report: ${title}`;
+      const admins = await usersRepo.filter((user) => user.role === 'admin', {
+        db
+      });
+      const notificationText =
+        type === 'user'
+          ? `New user report: ${reportedUser}`
+          : `New ${type} report: ${title}`;
 
-      admins.forEach(admin => {
+      admins.forEach((admin) => {
         if (!admin.notifications) {
           admin.notifications = [];
         }
@@ -85,10 +89,9 @@ export const getFeedback = async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
-    const db = await readDb();
     const { status, type } = req.query;
 
-    let feedback = db.feedback || [];
+    let feedback = await feedbackRepo.getAll();
 
     if (status && status !== 'all') {
       feedback = feedback.filter(f => f.status === status);
@@ -124,22 +127,19 @@ export const updateFeedbackStatus = async (req, res) => {
 
     let updatedFeedback = null;
 
-    await updateDb(async (db) => {
-      const feedback = db.feedback?.find(f => f.id === id);
-
+    updatedFeedback = await feedbackRepo.updateById(id, (feedback) => {
       if (!feedback) {
-        return db;
+        return feedback;
       }
 
       feedback.status = status;
       feedback.adminNotes = adminNotes || feedback.adminNotes;
-      
+
       if (status === 'resolved') {
         feedback.resolvedAt = new Date().toISOString();
       }
 
-      updatedFeedback = feedback;
-      return db;
+      return feedback;
     });
 
     if (!updatedFeedback) {
@@ -162,16 +162,8 @@ export const deleteFeedback = async (req, res) => {
     const { id } = req.params;
     let deleted = false;
 
-    await updateDb(async (db) => {
-      const feedbackIndex = db.feedback?.findIndex(f => f.id === id);
-
-      if (feedbackIndex !== -1 && feedbackIndex !== undefined) {
-        db.feedback.splice(feedbackIndex, 1);
-        deleted = true;
-      }
-
-      return db;
-    });
+    const removed = await feedbackRepo.removeById(id);
+    deleted = Boolean(removed);
 
     if (!deleted) {
       return res.status(404).json({ msg: 'Feedback not found' });
@@ -194,8 +186,8 @@ export const approveCharacterSuggestion = async (req, res) => {
     let characterCreated = false;
     let newCharacter = null;
 
-    await updateDb(async (db) => {
-      const feedback = db.feedback?.find(f => f.id === id);
+    await withDb(async (db) => {
+      const feedback = await feedbackRepo.findById(id, { db });
 
       if (!feedback || feedback.type !== 'character') {
         return db;
@@ -212,11 +204,7 @@ export const approveCharacterSuggestion = async (req, res) => {
         approvedBy: req.user.username
       };
 
-      if (!db.characters) {
-        db.characters = [];
-      }
-
-      db.characters.push(character);
+      await charactersRepo.insert(character, { db });
       newCharacter = character;
 
       // Update feedback status

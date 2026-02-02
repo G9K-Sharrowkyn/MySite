@@ -1,10 +1,35 @@
-import express from 'express';
+﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import auth from '../middleware/auth.js';
 import moderatorAuth from '../middleware/moderatorAuth.js';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 
 const router = express.Router();
+
+const BADGE_ICON_BY_ID = {
+  badge_daily: '\u{1F4C5}',
+  badge_commentator: '\u{1F4AC}',
+  badge_reactive: '\u{1F44D}',
+  badge_manager: '\u{1F3AC}',
+  badge_gambler: '\u{1F3B0}',
+  badge_fighter: '\u{1F3C6}',
+  first_win: '\u{1F3C6}',
+  win_streak_5: '\u{1F525}',
+  fights_won_10: '\u2694\uFE0F',
+  champion_regular: '\u{1F947}',
+  first_post: '\u{1F4DD}',
+  social_butterfly: '\u{1F98B}',
+  first_bet: '\u{1F3B2}',
+  early_adopter: '\u{1F680}',
+  moderator: '\u{1F6E1}\uFE0F'
+};
+
+const withBadgeIcon = (badge) => {
+  if (!badge) return badge;
+  const id = badge.id || badge._id;
+  const icon = id ? BADGE_ICON_BY_ID[id] : null;
+  return icon ? { ...badge, icon } : badge;
+};
 
 // Leveled badges - odznaki z poziomami (1-20)
 const LEVELED_BADGES = [
@@ -165,7 +190,7 @@ const DEFAULT_BADGES = [
 ];
 
 const normalizeBadge = (badge) => ({
-  ...badge,
+  ...withBadgeIcon(badge),
   _id: badge._id || badge.id,
   id: badge.id || badge._id,
   isActive: badge.isActive !== false
@@ -177,7 +202,7 @@ const ensureBadges = async () => {
     return db;
   }
 
-  await updateDb((data) => {
+  await withDb((data) => {
     data.badges = DEFAULT_BADGES.map((badge) => ({
       ...badge,
       _id: badge.id,
@@ -323,7 +348,7 @@ router.get('/leveled/:userId', async (req, res) => {
     }
 
     const leveledBadges = LEVELED_BADGES.map((badge) =>
-      calculateLeveledBadgeProgress(user, badge)
+      calculateLeveledBadgeProgress(user, withBadgeIcon(badge))
     );
 
     res.json({ badges: leveledBadges });
@@ -336,7 +361,7 @@ router.get('/leveled/:userId', async (req, res) => {
 // GET /api/badges/leveled-all - Get all leveled badge definitions
 router.get('/leveled-all', async (_req, res) => {
   try {
-    res.json({ badges: LEVELED_BADGES });
+    res.json({ badges: LEVELED_BADGES.map(withBadgeIcon) });
   } catch (error) {
     console.error('Error fetching leveled badge definitions:', error);
     res.status(500).json({ message: 'Server error' });
@@ -366,7 +391,7 @@ router.get('/my-badges', auth, async (req, res) => {
 router.put('/display/:badgeId', auth, async (req, res) => {
   try {
     const { isDisplayed } = req.body;
-    await updateDb((db) => {
+    await withDb((db) => {
       db.userBadges = Array.isArray(db.userBadges) ? db.userBadges : [];
       const entry = db.userBadges.find(
         (badge) => badge.userId === req.user.id && badge.badgeId === req.params.badgeId
@@ -455,7 +480,7 @@ router.post('/award', moderatorAuth, async (req, res) => {
 
     let created;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       db.userBadges = Array.isArray(db.userBadges) ? db.userBadges : [];
       const existing = db.userBadges.find(
         (entry) => entry.userId === userId && entry.badgeId === badgeId
@@ -498,7 +523,7 @@ router.post('/create', moderatorAuth, async (req, res) => {
     }
 
     let created;
-    await updateDb((db) => {
+    await withDb((db) => {
       db.badges = Array.isArray(db.badges) ? db.badges : [];
       const exists = db.badges.some((badge) => badge.id === badgeData.id);
       if (exists) {
@@ -530,7 +555,7 @@ router.post('/create', moderatorAuth, async (req, res) => {
 router.put('/:badgeId', moderatorAuth, async (req, res) => {
   try {
     let updated;
-    await updateDb((db) => {
+    await withDb((db) => {
       const badge = (db.badges || []).find((entry) => entry.id === req.params.badgeId);
       if (!badge) {
         const error = new Error('Badge not found');
@@ -555,7 +580,7 @@ router.put('/:badgeId', moderatorAuth, async (req, res) => {
 // Moderator: delete badge (soft delete)
 router.delete('/:badgeId', moderatorAuth, async (req, res) => {
   try {
-    await updateDb((db) => {
+    await withDb((db) => {
       const badge = (db.badges || []).find((entry) => entry.id === req.params.badgeId);
       if (!badge) {
         const error = new Error('Badge not found');
@@ -608,7 +633,7 @@ router.get('/manage/user/:userId/history', moderatorAuth, async (req, res) => {
 // Moderator: revoke badge
 router.delete('/revoke/:userId/:badgeId', moderatorAuth, async (req, res) => {
   try {
-    await updateDb((db) => {
+    await withDb((db) => {
       const entry = (db.userBadges || []).find(
         (badge) =>
           badge.userId === req.params.userId && badge.badgeId === req.params.badgeId
@@ -663,3 +688,4 @@ router.get('/tournament/:userId', async (req, res) => {
 });
 
 export default router;
+

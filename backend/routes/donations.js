@@ -1,14 +1,13 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { donationsRepo } from '../repositories/index.js';
 
 const router = express.Router();
 
 // GET /api/donations/stats
 router.get('/stats', async (_req, res) => {
   try {
-    const db = await readDb();
-    const donations = db.donations || [];
+    const donations = await donationsRepo.getAll();
     const totalAmount = donations.reduce((sum, entry) => sum + (entry.amount || 0), 0);
     const totalDonations = donations.length;
 
@@ -64,19 +63,15 @@ router.post('/record', async (req, res) => {
     }
 
     let created;
-    await updateDb((db) => {
-      db.donations = Array.isArray(db.donations) ? db.donations : [];
-      created = {
-        id: uuidv4(),
-        amount: Number(amount),
-        message: message || '',
-        platform: platform || 'unknown',
-        timestamp: timestamp || new Date().toISOString(),
-        createdAt: new Date().toISOString()
-      };
-      db.donations.push(created);
-      return db;
-    });
+    created = {
+      id: uuidv4(),
+      amount: Number(amount),
+      message: message || '',
+      platform: platform || 'unknown',
+      timestamp: timestamp || new Date().toISOString(),
+      createdAt: new Date().toISOString()
+    };
+    await donationsRepo.insert(created);
 
     res.status(201).json(created);
   } catch (error) {

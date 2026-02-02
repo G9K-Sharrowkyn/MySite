@@ -1,5 +1,5 @@
-import express from 'express';
-import { readDb, updateDb } from '../services/jsonDb.js';
+﻿import express from 'express';
+import { readDb, withDb } from '../repositories/index.js';
 import { autoTagPost, getBaseTags } from '../utils/tagging.js';
 
 const router = express.Router();
@@ -321,7 +321,7 @@ router.post('/initialize', async (_req, res) => {
     const baseTags = getBaseTags();
     let created = [];
 
-    await updateDb((db) => {
+    await withDb((db) => {
       db.tags = Array.isArray(db.tags) ? db.tags : [];
       const existing = new Set(
         db.tags.map((tag) => `${tag.category}:${tag.name}`.toLowerCase())
@@ -391,7 +391,7 @@ router.get('/stats', async (_req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     let updated;
-    await updateDb((db) => {
+    await withDb((db) => {
       db.tags = Array.isArray(db.tags) ? db.tags : [];
       const index = findStoredTagIndex(db.tags, req.params.id);
       if (index < 0) {
@@ -432,7 +432,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     let removed = false;
-    await updateDb((db) => {
+    await withDb((db) => {
       db.tags = Array.isArray(db.tags) ? db.tags : [];
       const before = db.tags.length;
       db.tags = db.tags.filter(
@@ -454,3 +454,4 @@ router.delete('/:id', async (req, res) => {
 });
 
 export default router;
+

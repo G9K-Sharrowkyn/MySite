@@ -1,5 +1,5 @@
 import express from 'express';
-import { updateDb } from '../services/jsonDb.js';
+import { coinTransactionsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { applyDailyBonus, ensureCoinAccount } from '../utils/coinBonus.js';
 
 const router = express.Router();
@@ -13,8 +13,11 @@ const findUserById = (db, userId) =>
 router.get('/balance/:userId', async (req, res) => {
   try {
     let balance = 0;
-    await updateDb((db) => {
-      const user = findUserById(db, req.params.userId);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.params.userId,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -41,8 +44,11 @@ router.get('/transactions/:userId', async (req, res) => {
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 20);
     let response;
-    await updateDb((db) => {
-      const user = findUserById(db, req.params.userId);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.params.userId,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -50,9 +56,10 @@ router.get('/transactions/:userId', async (req, res) => {
       }
 
       applyDailyBonus(db, user);
-      const all = (db.coinTransactions || [])
-        .filter((entry) => entry.userId === req.params.userId)
-        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      const all = (await coinTransactionsRepo.filter(
+        (entry) => entry.userId === req.params.userId,
+        { db }
+      )).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       const paged = all.slice((page - 1) * limit, page * limit);
       response = {
         transactions: paged,
@@ -75,8 +82,11 @@ router.get('/transactions/:userId', async (req, res) => {
 router.get('/stats/:userId', async (req, res) => {
   try {
     let stats;
-    await updateDb((db) => {
-      const user = findUserById(db, req.params.userId);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.params.userId,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -85,8 +95,9 @@ router.get('/stats/:userId', async (req, res) => {
 
       applyDailyBonus(db, user);
       ensureCoinAccount(user);
-      const transactions = (db.coinTransactions || []).filter(
-        (entry) => entry.userId === req.params.userId
+      const transactions = await coinTransactionsRepo.filter(
+        (entry) => entry.userId === req.params.userId,
+        { db }
       );
       stats = {
         totalEarned: user.coins.totalEarned || 0,

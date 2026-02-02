@@ -8,15 +8,38 @@ export const translations = {
     leaderboard: 'Ranking',
     characters: 'Postacie',
     tournaments: 'Turnieje',
+    speedRacing: 'Speed Racing',
     moderator: 'Panel Moderatora',
     adminPanel: 'Panel Administratora',
     betting: 'Zakłady',
     login: 'Zaloguj',
     register: 'Zarejestruj',
     logout: 'Wyloguj',
+
+    // Speed Racing
+    speedRacingTagline: 'Mini-gra swoop racing',
+    speedRacingDescription: 'Unikaj skal, trafiaj w neonowe boosty i pilnuj zmiany biegów, by pobić czas.',
+    speedRacingReady: 'Czerwone, żółte, zielone — przygotuj gaz.',
+    speedRacingStart: 'Odpal start',
+    speedRacingInRun: 'Wyścig trwa',
+    speedRacingTarget: 'Czas do pobicia',
+    speedRacingBest: 'Twój rekord',
+    speedRacingControls: 'Sterowanie',
+    speedRacingSpeed: 'Prędkość',
+    speedRacingGear: 'Bieg',
+    speedRacingShiftNow: 'Zmiana biegu!',
+    speedRacingDistance: 'Dystans',
+    speedRacingCurrent: 'Aktualny czas',
+    speedRacingFinish: 'Czas okrążenia',
+    speedRacingStartLights: 'Światła startowe',
+    speedRacingStartCopy: 'Czerwone-żółte-zielone z gongiem. Wciśnij gaz dopiero gdy zapali się zielone.',
+    speedRacingBoosts: 'Boost pady',
+    speedRacingBoostsCopy: 'Niebiesko-zielone prostokąty przy krawędziach toru. Najedź, by dostać zastrzyk prędkości.',
+    speedRacingObstacles: 'Przeszkody',
+    speedRacingObstaclesCopy: 'Szare, kanciaste skały i gruz zwalniają i trzęsą ekranem — omiń je lekkimi ruchami A/D.',
     
     // Home page
-    welcomeTitle: 'Witaj w FightHub!',
+    welcomeTitle: 'Witaj w VersusVerseVault!',
     welcomeSubtitle: 'Największa społeczność fanów anime, gier i komiksów. Głosuj na swoich ulubionych bohaterów i weź udział w epicznych walkach!',
     betaWarning: 'Strona jest w wersji beta. Mogą występować błędy. Prosimy o zgłaszanie problemów za pomocą przycisku w lewym dolnym rogu.',
     joinFree: 'Dołącz za darmo',
@@ -216,7 +239,7 @@ export const translations = {
     daysAgo: 'd temu',
     
     // Features
-    featuresTitle: 'Co możesz robić na FightHub?',
+    featuresTitle: 'Co możesz robić na VersusVerseVault?',
     createFightsFeature: 'Twórz Walki',
     createFightsDesc: 'Stwórz własne walki między ulubionymi postaciami i zobacz, kto wygra w głosowaniu społeczności.',
     voteFeature: 'Głosuj',
@@ -232,7 +255,7 @@ export const translations = {
     
     // Call to Action
     readyForAdventure: 'Gotowy na przygodę?',
-    joinThousands: 'Dołącz do tysięcy fanów i rozpocznij swoją przygodę z FightHub już dziś!',
+    joinThousands: 'Dołącz do tysięcy fanów i rozpocznij swoją przygodę z VersusVerseVault już dziś!',
     registerFree: 'Zarejestruj się za darmo',
     seeCharacters: 'Zobacz postacie',
     
@@ -749,15 +772,38 @@ export const translations = {
     leaderboard: 'Leaderboard',
     characters: 'Characters',
     tournaments: 'Tournaments',
+    speedRacing: 'Speed Racing',
     moderator: 'Moderator Panel',
     adminPanel: 'Admin Panel',
     betting: 'Betting',
     login: 'Login',
     register: 'Register',
     logout: 'Logout',
+
+    // Speed Racing
+    speedRacingTagline: 'Mini-game: swoop racing time trial',
+    speedRacingDescription: 'Dodge rocks, hit neon pads, and shift on cue to chase a KOTOR-style swoop time.',
+    speedRacingReady: 'Red, yellow, green — get ready to punch it.',
+    speedRacingStart: 'Start lights',
+    speedRacingInRun: 'Race live',
+    speedRacingTarget: 'Time to beat',
+    speedRacingBest: 'Your best',
+    speedRacingControls: 'Controls',
+    speedRacingSpeed: 'Speed',
+    speedRacingGear: 'Gear',
+    speedRacingShiftNow: 'Shift now!',
+    speedRacingDistance: 'Distance',
+    speedRacingCurrent: 'Current time',
+    speedRacingFinish: 'Lap time',
+    speedRacingStartLights: 'Starting lights',
+    speedRacingStartCopy: 'Red-yellow-green with the gong. Hold throttle until green to launch clean.',
+    speedRacingBoosts: 'Boost pads',
+    speedRacingBoostsCopy: 'Glowing blue-green rectangles hugging the lane edges. Roll over them for a burst.',
+    speedRacingObstacles: 'Obstacles',
+    speedRacingObstaclesCopy: 'Jagged gray rocks and scrap piles slow you down and shake the frame — weave with A/D.',
     
     // Home page
-    welcomeTitle: 'Welcome to FightHub!',
+    welcomeTitle: 'Welcome to VersusVerseVault!',
     welcomeSubtitle: 'The largest community of anime, gaming and comic fans. Vote for your favorite heroes and participate in epic battles!',
     betaWarning: 'This site is in beta. Bugs may occur. Please report any issues using the feedback button in the bottom-left corner.',
     joinFree: 'Join for free',
@@ -954,7 +1000,7 @@ export const translations = {
     daysAgo: 'd ago',
     
     // Features
-    featuresTitle: 'What can you do on FightHub?',
+    featuresTitle: 'What can you do on VersusVerseVault?',
     createFightsFeature: 'Create Fights',
     createFightsDesc: 'Create your own battles between favorite characters and see who wins in community voting.',
     voteFeature: 'Vote',
@@ -970,7 +1016,7 @@ export const translations = {
     
     // Call to Action
     readyForAdventure: 'Ready for adventure?',
-    joinThousands: 'Join thousands of fans and start your FightHub adventure today!',
+    joinThousands: 'Join thousands of fans and start your VersusVerseVault adventure today!',
     registerFree: 'Register for free',
     seeCharacters: 'See characters',
     
@@ -1483,15 +1529,38 @@ export const translations = {
     leaderboard: 'Clasificación',
     characters: 'Personajes',
     tournaments: 'Torneos',
+    speedRacing: 'Speed Racing',
     moderator: 'Panel de Moderador',
     adminPanel: 'Panel de Administrador',
     betting: 'Apuestas',
     login: 'Iniciar sesión',
     register: 'Registrarse',
     logout: 'Cerrar sesión',
+
+    // Speed Racing
+    speedRacingTagline: 'Mini-juego: contrarreloj de swoop racing',
+    speedRacingDescription: 'Esquiva rocas, pisa los pads de neón y cambia de marcha a tiempo para marcar récord.',
+    speedRacingReady: 'Rojo, amarillo, verde — prepárate para acelerar.',
+    speedRacingStart: 'Luces de salida',
+    speedRacingInRun: 'Carrera en curso',
+    speedRacingTarget: 'Tiempo a batir',
+    speedRacingBest: 'Tu mejor',
+    speedRacingControls: 'Controles',
+    speedRacingSpeed: 'Velocidad',
+    speedRacingGear: 'Marcha',
+    speedRacingShiftNow: '¡Cambia ahora!',
+    speedRacingDistance: 'Distancia',
+    speedRacingCurrent: 'Tiempo actual',
+    speedRacingFinish: 'Tiempo de vuelta',
+    speedRacingStartLights: 'Semáforo de salida',
+    speedRacingStartCopy: 'Rojo-amarillo-verde con gong. Pisa el acelerador cuando aparezca el verde para un buen arranque.',
+    speedRacingBoosts: 'Pads de impulso',
+    speedRacingBoostsCopy: 'Rectángulos azul-verde cerca de los bordes de la pista. Súbete para conseguir una ráfaga.',
+    speedRacingObstacles: 'Obstáculos',
+    speedRacingObstaclesCopy: 'Rocas grises con bordes duros ralentizan y hacen vibrar la pantalla — esquiva con A/D.',
     
     // Home page
-    welcomeTitle: '¡Bienvenido a FightHub!',
+    welcomeTitle: '¡Bienvenido a VersusVerseVault!',
     welcomeSubtitle: 'La comunidad más grande de fanáticos del anime, juegos y cómics. ¡Vota por tus héroes favoritos y participa en batallas épicas!',
     betaWarning: 'Este sitio está en versión beta. Pueden ocurrir errores. Por favor, reporte cualquier problema usando el botón de comentarios en la esquina inferior izquierda.',
     joinFree: 'Únete gratis',
@@ -1668,7 +1737,7 @@ export const translations = {
     daysAgo: 'd hace',
     
     // Features
-    featuresTitle: '¿Qué puedes hacer en FightHub?',
+    featuresTitle: '¿Qué puedes hacer en VersusVerseVault?',
     createFightsFeature: 'Crear Peleas',
     createFightsDesc: 'Crea tus propias batallas entre personajes favoritos y ve quién gana en la votación de la comunidad.',
     voteFeature: 'Votar',
@@ -1684,7 +1753,7 @@ export const translations = {
     
     // Call to Action
     readyForAdventure: '¿Listo para la aventura?',
-    joinThousands: '¡Únete a miles de fanáticos y comienza tu aventura FightHub hoy!',
+    joinThousands: '¡Únete a miles de fanáticos y comienza tu aventura VersusVerseVault hoy!',
     registerFree: 'Regístrate gratis',
     seeCharacters: 'Ver personajes',
     

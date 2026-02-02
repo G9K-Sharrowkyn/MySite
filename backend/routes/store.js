@@ -1,6 +1,11 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { updateDb } from '../services/jsonDb.js';
+import {
+  coinTransactionsRepo,
+  storePurchasesRepo,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
 import { applyDailyBonus } from '../utils/coinBonus.js';
 
 const router = express.Router();
@@ -18,8 +23,11 @@ router.post('/purchase', async (req, res) => {
     let purchase;
     let balance = 0;
 
-    await updateDb((db) => {
-      const user = (db.users || []).find((entry) => resolveUserId(entry) === userId);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === userId,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -39,7 +47,6 @@ router.post('/purchase', async (req, res) => {
       user.coins.totalSpent = (user.coins.totalSpent || 0) + itemCost;
       user.virtualCoins = user.coins.balance;
 
-      db.storePurchases = Array.isArray(db.storePurchases) ? db.storePurchases : [];
       purchase = {
         id: uuidv4(),
         userId,
@@ -48,10 +55,9 @@ router.post('/purchase', async (req, res) => {
         cost: itemCost,
         purchasedAt: new Date().toISOString()
       };
-      db.storePurchases.push(purchase);
+      await storePurchasesRepo.insert(purchase, { db });
 
-      db.coinTransactions = Array.isArray(db.coinTransactions) ? db.coinTransactions : [];
-      db.coinTransactions.push({
+      await coinTransactionsRepo.insert({
         id: uuidv4(),
         _id: uuidv4(),
         userId,
@@ -60,7 +66,7 @@ router.post('/purchase', async (req, res) => {
         description: `Store purchase: ${itemId}`,
         balance: user.coins.balance,
         createdAt: new Date().toISOString()
-      });
+      }, { db });
 
       balance = user.coins.balance;
       return db;

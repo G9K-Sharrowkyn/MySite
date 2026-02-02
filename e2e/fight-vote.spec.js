@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+﻿const { test, expect } = require('@playwright/test');
 const { waitForBackend, registerUserViaApi, loginViaApi, loginViaUi } = require('./helpers');
 
 test('user can vote on a fight', async ({ page, request }) => {
@@ -17,7 +17,7 @@ test('user can vote on a fight', async ({ page, request }) => {
   expect(login.response.ok()).toBeTruthy();
   const token = login.data.token;
 
-  const createFight = await request.post('http://localhost:5001/api/fights', {
+  const createFight = await request.post('http://localhost:5000/api/fights', {
     data: {
       title: `E2E Fight ${timestamp}`,
       description: 'Automated fight for voting test',
@@ -41,10 +41,11 @@ test('user can vote on a fight', async ({ page, request }) => {
   await expect(fighterOneVote).toHaveClass(/voted/);
 
   const voteResponse = await request.get(
-    `http://localhost:5001/api/votes/fight/${fightData.fight.id}/user`,
+    `http://localhost:5000/api/votes/fight/${fightData.fight.id}/user`,
     { headers: { 'x-auth-token': token } }
   );
   expect(voteResponse.ok()).toBeTruthy();
   const voteData = await voteResponse.json();
   expect(voteData.choice).toBe('fighter1');
 });
+

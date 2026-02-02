@@ -252,5 +252,49 @@
       "createdAt": "2025-01-01T00:00:00.000Z",
       "updatedAt": "2025-01-01T00:00:00.000Z"
     }
+  ],
+  "characters": [
+    {
+      "id": "e2e-char-1",
+      "name": "Alpha One",
+      "universe": "Testverse",
+      "image": "/placeholder-character.png",
+      "division": "metahuman"
+    },
+    {
+      "id": "e2e-char-2",
+      "name": "Beta Two",
+      "universe": "Testverse",
+      "image": "/placeholder-character.png",
+      "division": "metahuman"
+    },
+    {
+      "id": "e2e-char-3",
+      "name": "Gamma Three",
+      "universe": "Testverse",
+      "image": "/placeholder-character.png",
+      "division": "metahuman"
+    },
+    {
+      "id": "e2e-char-4",
+      "name": "Delta Four",
+      "universe": "Testverse",
+      "image": "/placeholder-character.png",
+      "division": "metahuman"
+    },
+    {
+      "id": "e2e-char-5",
+      "name": "Epsilon Five",
+      "universe": "Testverse",
+      "image": "/placeholder-character.png",
+      "division": "metahuman"
+    },
+    {
+      "id": "e2e-char-6",
+      "name": "Zeta Six",
+      "universe": "Testverse",
+      "image": "/placeholder-character.png",
+      "division": "metahuman"
+    }
   ]
 }

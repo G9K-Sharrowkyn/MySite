@@ -1,7 +1,7 @@
-import express from 'express';
+﻿import express from 'express';
 import auth from '../middleware/auth.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { applyDailyBonus } from '../utils/coinBonus.js';
 
@@ -228,7 +228,7 @@ router.post('/fight/:fightId', auth, async (req, res) => {
     let newBalance = 0;
     let betRecord;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -306,7 +306,7 @@ router.post('/place/:fightId', auth, async (req, res) => {
     let betRecord;
     let remainingCoins = 0;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -389,7 +389,7 @@ router.post('/place-bet', async (req, res) => {
 
     let betRecord;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, userId);
       const fight = findFightById(db, fightId);
       if (!user || !fight) {
@@ -455,7 +455,7 @@ router.post('/parlay', auth, async (req, res) => {
     let parlayBet;
     let remainingCoins = 0;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -538,7 +538,7 @@ router.post('/place-parlay', async (req, res) => {
 
     let parlayBet;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, userId);
       if (!user) {
         const error = new Error('User not found');
@@ -676,7 +676,7 @@ router.post('/moderator/settle/:betId', auth, roleMiddleware(['moderator']), asy
       return res.status(400).json({ error: 'Invalid result' });
     }
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const bet = (db.bets || []).find((entry) => entry.id === req.params.betId || entry._id === req.params.betId);
       if (!bet) {
         const error = new Error('Bet not found');
@@ -718,7 +718,7 @@ router.post('/moderator/settle/:betId', auth, roleMiddleware(['moderator']), asy
 
 router.post('/moderator/refund/:betId', auth, roleMiddleware(['moderator']), async (req, res) => {
   try {
-    await updateDb((db) => {
+    await withDb((db) => {
       const bet = (db.bets || []).find((entry) => entry.id === req.params.betId || entry._id === req.params.betId);
       if (!bet) {
         const error = new Error('Bet not found');
@@ -757,3 +757,4 @@ router.post('/moderator/refund/:betId', auth, roleMiddleware(['moderator']), asy
 });
 
 export default router;
+

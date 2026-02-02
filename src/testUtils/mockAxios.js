@@ -49,7 +49,22 @@ export const createMockAxios = () => {
     post: jest.fn((url) => Promise.resolve(buildMockResponse(url, 'post'))),
     put: jest.fn((url) => Promise.resolve(buildMockResponse(url, 'put'))),
     delete: jest.fn((url) => Promise.resolve(buildMockResponse(url, 'delete'))),
-    create: jest.fn()
+    create: jest.fn(),
+    interceptors: {
+      request: {
+        use: jest.fn(),
+        eject: jest.fn()
+      },
+      response: {
+        use: jest.fn(),
+        eject: jest.fn()
+      }
+    },
+    defaults: {
+      headers: {
+        common: {}
+      }
+    }
   };
 
   mockAxios.create.mockImplementation(() => mockAxios);

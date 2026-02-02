@@ -1,6 +1,6 @@
-import express from 'express';
+﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 import { applyDailyBonus } from '../utils/coinBonus.js';
 
 const router = express.Router();
@@ -201,7 +201,7 @@ router.post('/claim-daily-task', async (req, res) => {
     let updatedTask;
     let newBalance = 0;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, userId);
       if (!user) {
         const error = new Error('User not found');
@@ -249,7 +249,7 @@ router.post('/claim-daily-task', async (req, res) => {
 router.get('/:userId/coins', async (req, res) => {
   try {
     let coins = 0;
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.params.userId);
       if (!user) {
         const error = new Error('User not found');
@@ -304,7 +304,7 @@ router.get('/:userId/inventory', async (req, res) => {
 router.get('/:userId/daily-tasks', async (req, res) => {
   try {
     let tasks = [];
-    await updateDb((db) => {
+    await withDb((db) => {
       const progress = ensureDailyProgress(db, req.params.userId);
       tasks = progress.tasks || [];
       return db;
@@ -429,7 +429,7 @@ router.get('/:userId/profile', async (req, res) => {
 router.put('/:userId/profile', async (req, res) => {
   try {
     let updatedProfile;
-    await updateDb((db) => {
+    await withDb((db) => {
       const user = findUserById(db, req.params.userId);
       if (!user) {
         const error = new Error('User not found');
@@ -500,7 +500,7 @@ router.post('/:userId/profile-comments', async (req, res) => {
     }
 
     let created;
-    await updateDb((db) => {
+    await withDb((db) => {
       const author = findUserById(db, authorId);
       if (!author) {
         const error = new Error('Author not found');
@@ -722,3 +722,4 @@ router.get('/:userId/champion-status', async (req, res) => {
 });
 
 export default router;
+

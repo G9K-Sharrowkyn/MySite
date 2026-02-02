@@ -1,0 +1,179 @@
+@import url('../assets/css/SciFiTheme.css');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.ccg-root {
+  background: var(--bg-primary);
+  min-height: 100vh;
+  font-family: var(--font-main);
+  color: var(--text-primary);
+}
+
+.ccg-root .card {
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.ccg-root .card:hover {
+  transform: translateY(-5px) scale(1.03);
+}
+
+.ccg-root .tapped {
+  transform: rotate(90deg);
+}
+
+.ccg-root .text-cyan-400,
+.ccg-root .text-green-400,
+.ccg-root .text-purple-400,
+.ccg-root .text-pink-400,
+.ccg-root .text-yellow-400,
+.ccg-root .text-yellow-300,
+.ccg-root .text-red-400 {
+  color: var(--text-primary);
+}
+
+.ccg-root .bg-cyan-400,
+.ccg-root .bg-purple-400,
+.ccg-root .bg-pink-400,
+.ccg-root .bg-green-400,
+.ccg-root .bg-yellow-400,
+.ccg-root .bg-orange-500,
+.ccg-root .bg-blue-500 {
+  background-color: var(--bg-secondary);
+}
+
+.ccg-root .from-cyan-400,
+.ccg-root .from-yellow-400,
+.ccg-root .from-purple-400 {
+  --tw-gradient-from: var(--bg-secondary);
+  --tw-gradient-to: rgba(255, 255, 255, 0);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.ccg-root .to-blue-500,
+.ccg-root .to-orange-500,
+.ccg-root .to-pink-500,
+.ccg-root .to-green-500 {
+  --tw-gradient-to: var(--bg-secondary);
+}
+
+.ccg-root .bg-white {
+  background-color: var(--bg-secondary);
+}
+
+.ccg-root .bg-gray-50 {
+  background-color: var(--bg-primary);
+}
+
+.ccg-root .bg-gray-100 {
+  background-color: var(--bg-primary);
+}
+
+.ccg-root .bg-gray-700 {
+  background-color: var(--bg-secondary);
+}
+
+.ccg-root .bg-gray-800 {
+  background-color: var(--bg-secondary);
+}
+
+.ccg-root .bg-gray-900 {
+  background-color: var(--bg-tertiary);
+}
+
+.ccg-root .bg-black {
+  background-color: var(--bg-tertiary);
+}
+
+.ccg-root .text-gray-900 {
+  color: var(--text-primary);
+}
+
+.ccg-root .text-gray-700 {
+  color: var(--text-secondary);
+}
+
+.ccg-root .text-gray-600 {
+  color: var(--text-secondary);
+}
+
+.ccg-root .text-gray-500 {
+  color: var(--text-muted);
+}
+
+.ccg-root .text-gray-400 {
+  color: var(--text-muted);
+}
+
+.ccg-root .text-gray-300 {
+  color: var(--text-muted);
+}
+
+.ccg-root .text-white,
+.ccg-root .text-black {
+  color: var(--text-primary);
+}
+
+.ccg-root .hover\:bg-gray-100:hover {
+  background-color: rgba(231, 76, 60, 0.12);
+}
+
+.ccg-root .border-gray-300 {
+  border-color: var(--border-color);
+}
+
+.ccg-root .placeholder-gray-500::placeholder {
+  color: var(--text-muted);
+}
+
+.ccg-root input,
+.ccg-root select,
+.ccg-root textarea {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.ccg-root input::placeholder,
+.ccg-root textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.ccg-root input:focus,
+.ccg-root select:focus,
+.ccg-root textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+body.dark-mode .ccg-root {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+body.dark-mode .ccg-root .bg-white,
+body.dark-mode .ccg-root .bg-gray-700,
+body.dark-mode .ccg-root .bg-gray-800 {
+  background-color: var(--bg-secondary);
+}
+
+body.dark-mode .ccg-root .bg-gray-900,
+body.dark-mode .ccg-root .bg-black {
+  background-color: var(--bg-tertiary);
+}
+
+body.dark-mode .ccg-root .scifi-panel,
+body.dark-mode .ccg-root .modular-frame,
+body.dark-mode .ccg-root .cosmic-game-board {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+body.dark-mode .ccg-root .scifi-button {
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-tertiary));
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}

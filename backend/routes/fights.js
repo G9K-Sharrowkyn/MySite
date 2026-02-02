@@ -1,7 +1,7 @@
-import express from 'express';
+﻿import express from 'express';
 import { createFight, getFights, getFight, updateFight, deleteFight, endFight, getCategories } from '../controllers/fightController.js';
 import auth from '../middleware/auth.js';
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readDb, withDb } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
@@ -154,7 +154,7 @@ router.post('/:id/vote', async (req, res) => {
 
     let storedVote;
 
-    await updateDb((db) => {
+    await withDb((db) => {
       const existing = (db.votes || []).find(
         (entry) => entry.fightId === req.params.id && entry.userId === userId
       );
@@ -212,7 +212,7 @@ router.post('/:id/comments', async (req, res) => {
     }
 
     let created;
-    await updateDb((db) => {
+    await withDb((db) => {
       const author = findUserById(db, userId);
       const now = new Date().toISOString();
       created = {
@@ -259,3 +259,4 @@ router.post('/:id/comments', async (req, res) => {
 router.post('/:id/result', auth, endFight);
 
 export default router;
+

@@ -1,0 +1,556 @@
+.speed-racing-page {
+  padding: 1rem;
+  color: var(--text-primary);
+}
+
+.speed-racing-stage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 180px);
+  padding: 0.5rem 0;
+}
+
+.speed-racing-hero {
+  background: linear-gradient(120deg, rgba(26, 41, 58, 0.8), rgba(14, 68, 95, 0.8));
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+}
+
+.speed-racing-label {
+  color: var(--accent-color);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+
+.speed-racing-title {
+  margin: 0;
+  font-size: 2rem;
+}
+
+.speed-racing-subtitle {
+  margin: 0.2rem 0 1rem 0;
+  color: var(--text-secondary);
+}
+
+.speed-racing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.speed-racing-actions button {
+  background: linear-gradient(135deg, #1dd1a1, #10ac84);
+  color: #0c1a20;
+  font-weight: 700;
+  padding: 0.7rem 1.4rem;
+}
+
+.time-block {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.6rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  min-width: 110px;
+}
+
+.time-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.time-value {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.time-value.bold {
+  font-size: 1.2rem;
+}
+
+.speed-racing-status {
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  border: 1px dashed var(--border-color);
+}
+
+.lights {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.track-hud {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 4;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(0, 198, 255, 0.2);
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  max-width: 46%;
+}
+
+.track-hud .status-text {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.light {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  opacity: 0.4;
+}
+
+.light.red {
+  background: #d64545;
+}
+
+.light.yellow {
+  background: #f4c542;
+}
+
+.light.green {
+  background: #00d46a;
+}
+
+.light.on {
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+  opacity: 1;
+}
+
+.status-text {
+  font-weight: 700;
+}
+
+.track-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+
+.track-pill {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.track-pill.muted {
+  color: var(--text-secondary);
+}
+
+.speed-racing-control-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 1rem;
+  box-shadow: var(--shadow);
+}
+
+.speed-racing-control-card h3 {
+  margin-top: 0;
+}
+
+.speed-racing-control-card ul {
+  padding-left: 1.2rem;
+  color: var(--text-secondary);
+  margin: 0 0 0.8rem 0;
+}
+
+.meters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.8rem;
+}
+
+.meter {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--border-color);
+}
+
+.meter-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.meter-bar {
+  height: 10px;
+  background: var(--bg-dark);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 0.35rem 0;
+  border: 1px solid var(--border-color);
+}
+
+.meter-bar.ready {
+  box-shadow: 0 0 12px rgba(0, 212, 106, 0.6);
+}
+
+.meter-fill {
+  height: 100%;
+  transition: width 0.15s ease;
+}
+
+.meter-fill.speed {
+  background: linear-gradient(90deg, #1dd1a1, #16a085);
+}
+
+.meter-fill.gear {
+  background: linear-gradient(90deg, #f6d365, #fda085);
+}
+
+.meter-fill.distance {
+  background: linear-gradient(90deg, #00c6ff, #0072ff);
+}
+
+.meter-value {
+  font-weight: 700;
+}
+
+.race-times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.6rem;
+}
+
+.speed-track {
+  position: relative;
+  width: min(100%, 1600px);
+  aspect-ratio: 16 / 9;
+  height: auto;
+  max-height: 82vh;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow);
+  margin: 0 auto;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+  background: radial-gradient(circle at 50% 20%, rgba(0, 255, 255, 0.06), transparent 28%), #05090f;
+  --lane-shift-pct: 0%;
+  --vanish-x: 50%;
+  --vanish-y: 50%;
+  --front-left: calc(0% + var(--lane-shift-pct));
+  --front-right: calc(100% + var(--lane-shift-pct));
+  cursor: pointer;
+}
+
+.speed-track.theme-canyon {
+  background: radial-gradient(circle at 40% 20%, rgba(0, 255, 255, 0.06), transparent 32%), linear-gradient(180deg, #0a1a2c 0%, #071019 35%, #04070c 100%);
+}
+
+.speed-track.theme-dune {
+  background: radial-gradient(circle at 60% 18%, rgba(0, 255, 255, 0.05), transparent 32%), linear-gradient(180deg, #0b1418 0%, #070f13 35%, #030709 100%);
+}
+
+.speed-track.theme-cave {
+  background: radial-gradient(circle at 55% 22%, rgba(0, 198, 255, 0.08), transparent 32%), linear-gradient(180deg, #0a1b23 0%, #081420 45%, #050a0f 100%);
+}
+
+.speed-track.shake {
+  animation: shake 0.4s linear;
+}
+
+@keyframes shake {
+  0% { transform: translateX(-2px); }
+  20% { transform: translateX(3px); }
+  40% { transform: translateX(-3px); }
+  60% { transform: translateX(2px); }
+  80% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}
+
+.parallax.layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.parallax.layer.stars {
+  background: radial-gradient(2px 2px at 20% 10%, rgba(255, 255, 255, 0.35), transparent),
+              radial-gradient(1.5px 1.5px at 70% 22%, rgba(255, 255, 255, 0.25), transparent),
+              radial-gradient(2px 2px at 50% 5%, rgba(255, 255, 255, 0.28), transparent);
+  animation: driftStars 14s linear infinite;
+}
+
+.parallax.layer.texture.theme-canyon {
+  background: radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.05), transparent 40%),
+              radial-gradient(circle at 80% 25%, rgba(255, 255, 255, 0.04), transparent 45%);
+  animation: driftLeft 18s linear infinite;
+}
+
+.parallax.layer.texture.theme-dune {
+  background: radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.05), transparent 40%),
+              radial-gradient(circle at 75% 18%, rgba(255, 255, 255, 0.04), transparent 45%);
+  animation: driftRight 16s linear infinite;
+}
+
+.parallax.layer.texture.theme-cave {
+  background: radial-gradient(circle at 35% 30%, rgba(124, 247, 255, 0.08), transparent 40%),
+              radial-gradient(circle at 70% 18%, rgba(0, 198, 255, 0.08), transparent 45%);
+  animation: driftLeft 20s linear infinite;
+}
+
+@keyframes driftStars {
+  from { transform: translateY(0); }
+  to { transform: translateY(12px); }
+}
+
+@keyframes driftLeft {
+  from { transform: translateX(0); }
+  to { transform: translateX(-18px); }
+}
+
+@keyframes driftRight {
+  from { transform: translateX(0); }
+  to { transform: translateX(18px); }
+}
+
+.corridor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.corridor-wall {
+  position: absolute;
+  inset: 0;
+  transition: clip-path 0.2s ease, opacity 0.2s ease;
+}
+
+.floor-wall {
+  clip-path: polygon(
+    var(--front-left) 100%,
+    var(--front-right) 100%,
+    var(--vanish-x) var(--vanish-y)
+  );
+  background: linear-gradient(180deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.04) 50%, transparent 80%);
+  opacity: 0.65;
+}
+
+.ceiling-wall {
+  clip-path: polygon(
+    var(--front-left) 0%,
+    var(--front-right) 0%,
+    var(--vanish-x) var(--vanish-y)
+  );
+  background: linear-gradient(0deg, rgba(0, 198, 255, 0.18), rgba(0, 198, 255, 0.04) 50%, transparent 80%);
+  opacity: 0.55;
+}
+
+.left-wall {
+  clip-path: polygon(
+    var(--front-left) 0%,
+    var(--vanish-x) var(--vanish-y),
+    var(--front-left) 100%
+  );
+  background: linear-gradient(90deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.05) 60%, transparent 85%);
+  opacity: 0.6;
+}
+
+.right-wall {
+  clip-path: polygon(
+    var(--front-right) 0%,
+    var(--vanish-x) var(--vanish-y),
+    var(--front-right) 100%,
+  );
+  background: linear-gradient(270deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.05) 60%, transparent 85%);
+  opacity: 0.6;
+}
+
+.floor-motion {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    var(--front-left) 100%,
+    var(--front-right) 100%,
+    var(--vanish-x) var(--vanish-y)
+  );
+  opacity: 0.4;
+  transition: clip-path 0.2s ease;
+  overflow: hidden;
+}
+
+.floor-line {
+  position: absolute;
+  height: 2px;
+  background: rgba(0, 198, 255, 0.3);
+  box-shadow: 0 0 8px rgba(0, 198, 255, 0.25);
+}
+
+.lane-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  clip-path: polygon(
+    var(--front-left) 100%,
+    var(--front-right) 100%,
+    var(--vanish-x) var(--vanish-y)
+  );
+}
+
+.lane-guides line {
+  stroke: rgba(0, 198, 255, 0.28);
+  stroke-width: 0.35;
+  stroke-dasharray: 2 4;
+}
+
+.track-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.65) 100%);
+  pointer-events: none;
+}
+
+
+.racer {
+  position: absolute;
+  bottom: 12px;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 70px;
+  z-index: 3;
+}
+
+.racer-body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #00c6ff 0%, #0072ff 100%);
+  clip-path: polygon(50% 0%, 80% 100%, 20% 100%);
+  box-shadow: 0 0 14px rgba(0, 198, 255, 0.6);
+}
+
+.racer-glow {
+  position: absolute;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 20px;
+  background: radial-gradient(circle, rgba(124, 247, 255, 0.8), rgba(0, 198, 255, 0.15));
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.track-items {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(
+    var(--front-left) 100%,
+    var(--front-right) 100%,
+    var(--vanish-x) var(--vanish-y)
+  );
+  z-index: 2;
+  pointer-events: none;
+}
+
+.track-item {
+  position: absolute;
+  width: 42px;
+  height: 28px;
+  border-radius: 8px;
+  transform-origin: center;
+  z-index: 2;
+  transform-style: preserve-3d;
+}
+
+.track-item.obstacle {
+  background: linear-gradient(135deg, #5f6368, #3a3d42);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+}
+
+.track-item.boost {
+  background: linear-gradient(135deg, #48f2c2, #7cf7ff);
+  box-shadow: 0 0 18px rgba(76, 246, 222, 0.6);
+  border: 1px solid rgba(124, 247, 255, 0.8);
+  filter: drop-shadow(0 6px 10px rgba(76, 246, 222, 0.45));
+}
+
+.track-item.boost::after {
+  content: '';
+  position: absolute;
+  inset: -20% 10% 60% 10%;
+  background: linear-gradient(180deg, rgba(124, 247, 255, 0.4), transparent);
+  filter: blur(8px);
+  border-radius: 10px;
+}
+
+.vanish-point {
+  position: absolute;
+  top: var(--vanish-y);
+  left: var(--vanish-x);
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(124, 247, 255, 0.9), rgba(0, 198, 255, 0.1));
+  border-radius: 50%;
+  box-shadow: 0 0 22px rgba(124, 247, 255, 0.6), 0 0 44px rgba(0, 198, 255, 0.2);
+  pointer-events: none;
+  z-index: 3;
+  transition: left 0.2s ease, top 0.2s ease;
+}
+
+.race-footer {
+  padding: 0.4rem;
+}
+
+.callouts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.8rem;
+}
+
+.callout {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.8rem;
+  box-shadow: var(--shadow);
+}
+
+.callout-title {
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.callout p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .speed-track {
+    max-height: 70vh;
+  }
+}
+
+@media (max-width: 600px) {
+  .speed-racing-page {
+    padding: 1rem 0.6rem;
+  }
+}

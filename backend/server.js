@@ -7,6 +7,7 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import hpp from 'hpp';
 import http from 'http';
+import { readFile } from 'fs/promises';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -45,7 +46,9 @@ import userRoutes from './routes/user.js';
 import pushRoutes from './routes/push.js';
 import feedbackRoutes from './routes/feedback.js';
 import translateRoutes from './routes/translate.js';
+import ccgRoutes from './routes/ccg.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
+import { notificationsRepo } from './repositories/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -106,6 +109,50 @@ io.engine.on('connection_error', (err) => {
   if (err.context) {
     console.error('Engine.IO context:', err.context);
   }
+});
+
+// CCG namespace socket handling
+const ccgNamespace = io.of('/ccg');
+const ccgRoomPlayers = {};
+const ccgCardsPath = path.join(__dirname, 'ccg', 'data', 'cards.json');
+
+ccgNamespace.on('connection', (socket) => {
+  socket.on('joinRoom', ({ roomId, user }) => {
+    socket.join(roomId);
+    if (!ccgRoomPlayers[roomId]) {
+      ccgRoomPlayers[roomId] = {};
+    }
+    ccgRoomPlayers[roomId][socket.id] = { id: user.id, username: user.username };
+    const players = Object.values(ccgRoomPlayers[roomId]);
+    ccgNamespace.to(roomId).emit('playersUpdate', players);
+  });
+
+  socket.on('startGame', async ({ roomId }) => {
+    try {
+      const raw = await readFile(ccgCardsPath, 'utf-8');
+      const fullDeck = JSON.parse(raw);
+      const shuffled = fullDeck.sort(() => 0.5 - Math.random()).slice(0, 40);
+      ccgNamespace.to(roomId).emit('gameStart', { deck: shuffled });
+    } catch (err) {
+      console.error('Error loading CCG cards.json:', err);
+    }
+  });
+
+  socket.on('playMove', ({ roomId, move }) => {
+    socket.to(roomId).emit('opponentMove', move);
+  });
+
+  socket.on('disconnecting', () => {
+    for (const roomId of socket.rooms) {
+      if (ccgRoomPlayers[roomId]) {
+        delete ccgRoomPlayers[roomId][socket.id];
+        ccgNamespace.to(roomId).emit(
+          'playersUpdate',
+          Object.values(ccgRoomPlayers[roomId])
+        );
+      }
+    }
+  });
 });
 
 // Security Middleware
@@ -201,6 +248,7 @@ app.use('/api/recommendations', recommendationsRoutes);
 app.use('/api/challenges', challengesRoutes);
 app.use('/api/store', storeRoutes);
 app.use('/api/translate', translateRoutes);
+app.use('/api/ccg', ccgRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/feedback', feedbackRoutes);
@@ -224,7 +272,7 @@ startDivisionScheduler();
 // Basic route or static frontend for production
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '..', 'build');
-  
+
   // Serve static files with proper cache control
   app.use(express.static(buildPath, {
     maxAge: 0, // Don't cache HTML
@@ -427,16 +475,15 @@ io.on('connection', (socket) => {
 });
 
 // One-time migration: Remove message-type notifications (they should only be on chat icon)
-import { readDb, updateDb } from './services/jsonDb.js';
 (async () => {
   try {
-    const db = await readDb();
-    const messageNotifications = db.notifications?.filter(n => n.type === 'message') || [];
+    const notifications = await notificationsRepo.getAll();
+    const messageNotifications =
+      notifications?.filter((n) => n.type === 'message') || [];
     if (messageNotifications.length > 0) {
-      await updateDb((db) => {
-        db.notifications = db.notifications.filter(n => n.type !== 'message');
-        return db;
-      });
+      await notificationsRepo.updateAll((items) =>
+        items.filter((n) => n.type !== 'message')
+      );
       console.log(`Cleaned up ${messageNotifications.length} message notifications from bell`);
     }
   } catch (err) {
@@ -446,8 +493,13 @@ import { readDb, updateDb } from './services/jsonDb.js';
 
 // Start the server
 server.listen(PORT, () => {
+  const databaseModeRaw = process.env.DATABASE || process.env.Database || 'local';
+  const databaseMode = databaseModeRaw.toLowerCase();
+  const databaseLabel = databaseMode === 'mongo' || databaseMode === 'mongodb'
+    ? 'mongo'
+    : 'local';
+  console.log(`Database mode: ${databaseLabel}`);
   console.log(`Server is running on port ${PORT}`);
 });
 
 export { io };
-

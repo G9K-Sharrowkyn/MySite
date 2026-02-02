@@ -1,6 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { updateDb } from '../services/jsonDb.js';
+import { coinTransactionsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { syncRankFromPoints } from '../utils/rankSystem.js';
 
 const router = express.Router();
@@ -15,8 +15,11 @@ router.post('/rewards', async (req, res) => {
       return res.status(400).json({ message: 'Missing reward data' });
     }
 
-    await updateDb((db) => {
-      const user = (db.users || []).find((entry) => resolveUserId(entry) === userId);
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === userId,
+        { db }
+      );
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -43,8 +46,7 @@ router.post('/rewards', async (req, res) => {
         user.coins.totalEarned = (user.coins.totalEarned || 0) + Number(reward.coins || 0);
         user.virtualCoins = user.coins.balance;
 
-        db.coinTransactions = Array.isArray(db.coinTransactions) ? db.coinTransactions : [];
-        db.coinTransactions.push({
+        await coinTransactionsRepo.insert({
           id: uuidv4(),
           _id: uuidv4(),
           userId,
@@ -53,7 +55,7 @@ router.post('/rewards', async (req, res) => {
           description: 'Challenge reward',
           balance: user.coins.balance,
           createdAt: new Date().toISOString()
-        });
+        }, { db });
       }
 
       user.updatedAt = new Date().toISOString();

@@ -18,7 +18,7 @@ import {
   searchUsersForChallenge
 } from '../controllers/postController.js';
 import auth from '../middleware/auth.js';
-import { readDb } from '../services/jsonDb.js';
+import { readDb } from '../repositories/index.js';
 
 const router = express.Router();
 

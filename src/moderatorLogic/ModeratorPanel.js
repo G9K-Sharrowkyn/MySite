@@ -555,7 +555,7 @@ const ModeratorPanel = () => {
     <div className="moderator-panel">
       <div className="panel-header">
         <h1>🛡️ Panel Moderatora</h1>
-        <p>Zarządzaj treścią i społecznością GeekFights</p>
+        <p>Zarządzaj treścią i społecznością VersusVerseVault</p>
       </div>
 
       {notification && (

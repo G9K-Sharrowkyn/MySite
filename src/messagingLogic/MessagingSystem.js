@@ -429,7 +429,7 @@ const MessagingSystem = ({ user }) => {
         ) : (
           <div className="no-chat-selected">
             <div className="welcome-content">
-              <h3>Welcome to GeekFights Messenger</h3>
+              <h3>Welcome to VersusVerseVault Messenger</h3>
               <p>Select a conversation or start a new one to begin chatting</p>
               <div className="quick-actions">
                 <button onClick={() => setIsComposing(true)}>

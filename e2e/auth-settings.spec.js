@@ -45,7 +45,7 @@ test('user can change password and log in with new credentials', async ({ page }
   await expect(page.locator('.toast-message')).toContainText('Password changed successfully');
 
   await logoutViaUi(page);
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/login/);
 
   await loginViaUi(page, email, newPassword);
   await expect(page).toHaveURL(/\/feed/, { timeout: 20000 });

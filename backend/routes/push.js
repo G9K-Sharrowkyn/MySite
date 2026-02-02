@@ -1,6 +1,6 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { updateDb } from '../services/jsonDb.js';
+import { pushSubscriptionsRepo } from '../repositories/index.js';
 
 const router = express.Router();
 
@@ -12,16 +12,12 @@ router.post('/subscribe', async (req, res) => {
       return res.status(400).json({ message: 'Subscription is required' });
     }
 
-    await updateDb((db) => {
-      db.pushSubscriptions = Array.isArray(db.pushSubscriptions)
-        ? db.pushSubscriptions
-        : [];
-
-      const existing = db.pushSubscriptions.find(
+    await pushSubscriptionsRepo.updateAll((subscriptions) => {
+      const existing = subscriptions.find(
         (entry) => entry.subscription?.endpoint === subscription.endpoint
       );
       if (!existing) {
-        db.pushSubscriptions.push({
+        subscriptions.push({
           id: uuidv4(),
           userId: userId || null,
           subscription,
@@ -29,7 +25,7 @@ router.post('/subscribe', async (req, res) => {
         });
       }
 
-      return db;
+      return subscriptions;
     });
 
     res.json({ message: 'Subscribed' });
@@ -47,15 +43,11 @@ router.post('/unsubscribe', async (req, res) => {
       return res.status(400).json({ message: 'Subscription is required' });
     }
 
-    await updateDb((db) => {
-      db.pushSubscriptions = Array.isArray(db.pushSubscriptions)
-        ? db.pushSubscriptions
-        : [];
-      db.pushSubscriptions = db.pushSubscriptions.filter(
+    await pushSubscriptionsRepo.updateAll((subscriptions) =>
+      subscriptions.filter(
         (entry) => entry.subscription?.endpoint !== subscription.endpoint
-      );
-      return db;
-    });
+      )
+    );
 
     res.json({ message: 'Unsubscribed' });
   } catch (error) {

@@ -36,9 +36,9 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
   const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
   
   const mailOptions = {
-    from: process.env.EMAIL_FROM || '"GeekFights" <noreply@geekfights.com>',
+    from: process.env.EMAIL_FROM || '"VersusVerseVault" <noreply@versusversevault.com>',
     to: email,
-    subject: 'Password Reset Request - GeekFights',
+    subject: 'Password Reset Request - VersusVerseVault',
     html: `
       <!DOCTYPE html>
       <html>
@@ -107,7 +107,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
       <body>
         <div class="container">
           <div class="header">
-            <div class="logo">🥊 GeekFights</div>
+            <div class="logo">🥊 VersusVerseVault</div>
           </div>
           
           <div class="content">
@@ -115,7 +115,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
             
             <p>Hello,</p>
             
-            <p>We received a request to reset the password for your GeekFights account associated with this email address.</p>
+            <p>We received a request to reset the password for your VersusVerseVault account associated with this email address.</p>
             
             <p>Click the button below to reset your password:</p>
             
@@ -135,7 +135,7 @@ export const sendPasswordResetEmail = async (email, resetToken) => {
           </div>
           
           <div class="footer">
-            <p>© 2026 GeekFights. All rights reserved.</p>
+            <p>© 2026 VersusVerseVault. All rights reserved.</p>
             <p>This is an automated message, please do not reply.</p>
           </div>
         </div>
