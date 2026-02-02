@@ -98,6 +98,7 @@ MONGO_URI=your_atlas_uri_here
 MONGO_DB_NAME=versusversevault
 JWT_SECRET=your_long_random_secret
 FRONTEND_URL=https://versusversevault.com
+MONGO_CACHE_TTL_MS=300000
 ```
 
 Save, then **Restart** the Node.js app.
@@ -135,4 +136,3 @@ Then you must:
 - **CORS error**: make sure `FRONTEND_URL` matches your real domain (https).
 - **Mongo connect error**: check Atlas IP whitelist and `MONGO_URI`.
 - **Socket.io not connecting**: some shared hosts block websockets. Use VPS if chat fails.
-

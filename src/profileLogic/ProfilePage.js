@@ -1,7 +1,12 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
+import {
+  replacePlaceholderUrl,
+  placeholderImages,
+  getOptimizedImageProps,
+  normalizeAssetUrl
+} from '../utils/placeholderImage';
 import { ChampionUsername, getChampionTitle } from '../utils/championUtils';
 import { useLanguage } from '../i18n/LanguageContext';
 import ImageUpload from '../ImageUpload/ImageUpload';
@@ -225,6 +230,7 @@ const handleCommentSubmit = async (e) => {
   const isChampion = profile?.divisions && Object.values(profile.divisions).some(d => d.isChampion);
   const championTitle = getChampionTitle(profile?.divisions);
   const normalizedDescription = normalizeDescription(profile?.description);
+  const normalizedBackgroundImage = normalizeAssetUrl(backgroundImage);
   const hasDescription = Boolean(normalizedDescription);
   const divisionEntries = useMemo(() => {
     if (!profile?.divisions) return [];
@@ -274,10 +280,10 @@ const handleCommentSubmit = async (e) => {
 
   return (
     <div className="profile-page">
-      {backgroundImage && (
+      {normalizedBackgroundImage && (
         <div className="profile-background-banner"
              style={{
-               backgroundImage: `url(${backgroundImage})`,
+               backgroundImage: `url(${normalizedBackgroundImage})`,
                backgroundSize: 'cover',
                backgroundPosition: 'center'
              }}>

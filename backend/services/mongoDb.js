@@ -5,9 +5,39 @@ const getMongoUri = () => process.env.MONGO_URI;
 const getMongoDbName = () => process.env.MONGO_DB_NAME || 'geekfights';
 const getMongoConnectTimeoutMs = () =>
   Number.parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS || '10000', 10);
+const getMongoCacheTtlMs = () =>
+  Number.parseInt(process.env.MONGO_CACHE_TTL_MS || '300000', 10);
 
 let client;
 let clientPromise;
+let dbCache;
+let dbCacheTimestamp = 0;
+
+const cloneData = (value) => {
+  if (typeof globalThis.structuredClone === 'function') {
+    return globalThis.structuredClone(value);
+  }
+  return JSON.parse(JSON.stringify(value));
+};
+
+const isCacheEnabled = () => getMongoCacheTtlMs() > 0;
+
+const hasFreshCache = () => {
+  if (!isCacheEnabled() || !dbCache) {
+    return false;
+  }
+  return Date.now() - dbCacheTimestamp < getMongoCacheTtlMs();
+};
+
+const setCache = (data) => {
+  if (!isCacheEnabled()) {
+    dbCache = undefined;
+    dbCacheTimestamp = 0;
+    return;
+  }
+  dbCache = data;
+  dbCacheTimestamp = Date.now();
+};
 
 const ensureMongoUri = () => {
   const uri = getMongoUri();
@@ -97,6 +127,10 @@ const enqueueWrite = async (task) => {
 };
 
 export const readDb = async () => {
+  if (hasFreshCache()) {
+    return cloneData(dbCache);
+  }
+
   const db = await getDb();
   const entries = await Promise.all(
     COLLECTION_KEYS.map(async (key) => {
@@ -106,7 +140,9 @@ export const readDb = async () => {
   );
 
   const data = Object.fromEntries(entries);
-  return normalizeDb(data);
+  const normalized = normalizeDb(data);
+  setCache(normalized);
+  return cloneData(normalized);
 };
 
 export const writeDb = async (data) => {
@@ -117,7 +153,8 @@ export const writeDb = async (data) => {
     COLLECTION_KEYS.map((key) => replaceCollection(db, key, normalized[key]))
   );
 
-  return normalized;
+  setCache(normalized);
+  return cloneData(normalized);
 };
 
 export const updateDb = async (mutator) => {
@@ -143,11 +180,13 @@ export const updateDb = async (mutator) => {
     }
 
     if (writes.length === 0) {
-      return updated;
+      setCache(updated);
+      return cloneData(updated);
     }
 
     await Promise.all(writes);
-    return updated;
+    setCache(updated);
+    return cloneData(updated);
   });
 };
 
@@ -157,10 +196,13 @@ export const closeMongo = async () => {
     client = undefined;
     clientPromise = undefined;
   }
+  dbCache = undefined;
+  dbCacheTimestamp = 0;
 };
 
 export const getMongoConfig = () => ({
   uri: getMongoUri(),
   dbName: getMongoDbName(),
-  connectTimeoutMs: getMongoConnectTimeoutMs()
+  connectTimeoutMs: getMongoConnectTimeoutMs(),
+  cacheTtlMs: getMongoCacheTtlMs()
 });

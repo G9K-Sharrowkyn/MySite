@@ -49,6 +49,7 @@ import translateRoutes from './routes/translate.js';
 import ccgRoutes from './routes/ccg.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
 import { notificationsRepo } from './repositories/index.js';
+import { readDb as warmupReadDb } from './services/jsonDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -500,6 +501,18 @@ server.listen(PORT, () => {
     : 'local';
   console.log(`Database mode: ${databaseLabel}`);
   console.log(`Server is running on port ${PORT}`);
+
+  // Prime Mongo cache once on startup to reduce first-request latency in production.
+  if (databaseLabel === 'mongo') {
+    const warmupStartedAt = Date.now();
+    warmupReadDb()
+      .then(() => {
+        console.log(`Mongo cache warmup completed in ${Date.now() - warmupStartedAt}ms`);
+      })
+      .catch((error) => {
+        console.error('Mongo cache warmup failed:', error?.message || error);
+      });
+  }
 });
 
 export { io };

@@ -123,39 +123,18 @@
 }
 
 @media (min-width: 1200px) {
-  .header-container {
-    grid-template-rows: auto;
-  }
-
   .header-body {
-    grid-template-rows: auto;
-    align-items: center;
-    grid-row: 1;
+    align-items: start;
   }
 
-  .header-logo {
-    grid-row: 1;
-  }
-
-  .header-nav-block {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .nav-row {
-    flex-wrap: nowrap;
-  }
-
+  .header-nav-block,
   .header-tools-block {
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
+    min-width: 0;
   }
 
+  .nav-row,
   .tools-row {
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
   }
 }
 

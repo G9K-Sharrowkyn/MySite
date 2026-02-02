@@ -19,6 +19,20 @@ export const placeholderImages = {
 
 const isExternalUrl = (url) => /^https?:\/\//i.test(url);
 const isCharacterAsset = (url) => typeof url === 'string' && url.startsWith('/characters/');
+const isBackendUploadAsset = (url) =>
+  typeof url === 'string' && url.startsWith('/uploads/');
+
+const getApiOrigin = () => {
+  const apiUrl = process.env.REACT_APP_API_URL;
+  if (typeof apiUrl !== 'string' || !/^https?:\/\//i.test(apiUrl)) {
+    return null;
+  }
+  try {
+    return new URL(apiUrl).origin;
+  } catch (_error) {
+    return null;
+  }
+};
 
 const safeDecode = (value) => {
   try {
@@ -49,9 +63,19 @@ export const normalizeAssetUrl = (url) => {
   }
 
   const parts = url.split('/');
-  return parts
+  const normalizedPath = parts
     .map((part, index) => (index === 0 ? part : encodeURIComponent(fullyDecode(part))))
     .join('/');
+
+  // User-uploaded media lives on the API host in production.
+  if (isBackendUploadAsset(normalizedPath)) {
+    const apiOrigin = getApiOrigin();
+    if (apiOrigin) {
+      return `${apiOrigin}${normalizedPath}`;
+    }
+  }
+
+  return normalizedPath;
 };
 
 const buildCharacterThumbUrl = (url) => {
