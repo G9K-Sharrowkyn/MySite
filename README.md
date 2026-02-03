@@ -16,6 +16,16 @@ This project was bootstrapped with [Create React App](https://github.com/faceboo
    npm start
    ```
 
+## Google Sign-In (optional)
+
+To enable login/register with Google:
+
+1. In Google Cloud Console, create an OAuth 2.0 Web Client.
+2. Add the frontend origin (e.g. `http://localhost:3000`, production domain) to authorized JavaScript origins.
+3. Set environment variables:
+   - Frontend (`.env` or `.env.production`): `REACT_APP_GOOGLE_CLIENT_ID=...`
+   - Backend (`backend/.env`): `GOOGLE_CLIENT_ID=...`
+
 
 ## Default Moderator Login
 

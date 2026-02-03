@@ -1,5 +1,13 @@
 import express from 'express';
-import { register, login, changePassword, updateTimezone, forgotPassword, resetPassword } from '../controllers/authController.js';
+import {
+  register,
+  login,
+  loginWithGoogle,
+  changePassword,
+  updateTimezone,
+  forgotPassword,
+  resetPassword
+} from '../controllers/authController.js';
 import { registerValidation, loginValidation } from '../middleware/validation.js';
 import auth from '../middleware/auth.js';
 
@@ -14,6 +22,11 @@ router.post('/register', registerValidation, register);
 // @desc    Authenticate user & get token
 // @access  Public
 router.post('/login', loginValidation, login);
+
+// @route   POST api/auth/google
+// @desc    Authenticate/register with Google ID token
+// @access  Public
+router.post('/google', loginWithGoogle);
 
 // @route   POST api/auth/forgot-password
 // @desc    Request password reset email

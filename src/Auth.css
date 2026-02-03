@@ -61,3 +61,35 @@
 .btn-primary:hover {
   background-color: #c0392b;
 }
+
+.google-auth-block {
+  width: 100%;
+  max-width: 400px;
+  margin-top: 14px;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 12px 0;
+  color: #888;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #333;
+}
+
+.auth-divider span {
+  padding: 0 10px;
+}
+
+.google-signin-button {
+  display: flex;
+  justify-content: center;
+}

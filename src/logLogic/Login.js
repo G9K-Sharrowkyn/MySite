@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import Notification from '../notificationLogic/Notification';
 import { AuthContext } from '../auth/AuthContext';
+import GoogleSignInButton from './GoogleSignInButton';
 import '../Auth.css';
 
 const getErrorMessage = (error, fallback) => {
@@ -91,6 +92,40 @@ const Login = () => {
     }
   };
 
+  const handleGoogleCredential = async (idToken) => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(
+        '/api/auth/google',
+        { idToken },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      if (!response.data?.token || !response.data?.userId) {
+        showNotification('Unexpected response from the server.', 'error');
+        return;
+      }
+
+      login(response.data.token, response.data.userId, response.data.user);
+      showNotification('Google sign-in successful!', 'success');
+      setTimeout(() => {
+        navigate('/feed', { replace: true });
+      }, 800);
+    } catch (error) {
+      console.error('Google login error:', error);
+      showNotification(
+        getErrorMessage(error, 'Google sign-in failed.'),
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="auth-container">
       <h1>Sign in</h1>
@@ -137,6 +172,10 @@ const Login = () => {
           disabled={isSubmitting}
         />
       </form>
+      <GoogleSignInButton
+        onCredential={handleGoogleCredential}
+        onError={(message) => showNotification(message, 'error')}
+      />
     </div>
   );
 };

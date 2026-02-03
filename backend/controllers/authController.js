@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import { usersRepo, withDb } from '../repositories/index.js';
@@ -20,6 +21,72 @@ const ensureAuthAvailability = (res) => {
 };
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
+const DEFAULT_AVATAR = '/logo192.png';
+
+const resolveGoogleClientIds = () =>
+  (process.env.GOOGLE_CLIENT_ID || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+const isGoogleAuthConfigured = () => resolveGoogleClientIds().length > 0;
+
+const needsDefaultAvatar = (value) =>
+  typeof value !== 'string' ||
+  value.trim().length === 0 ||
+  value.trim() === DEFAULT_AVATAR ||
+  value.trim() === '/placeholder-avatar.png';
+
+const sanitizeUsernameSource = (value) =>
+  (value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .slice(0, 18);
+
+const generateUniqueUsername = (users, { name, email }) => {
+  const emailPart = sanitizeUsernameSource((email || '').split('@')[0]);
+  const namePart = sanitizeUsernameSource(name);
+  const base = namePart || emailPart || `user${Date.now().toString().slice(-5)}`;
+  const existing = new Set(
+    users.map((user) => (user.username || '').toLowerCase())
+  );
+
+  if (!existing.has(base)) {
+    return base;
+  }
+
+  for (let i = 1; i <= 9999; i += 1) {
+    const candidate = `${base}${i}`;
+    if (!existing.has(candidate.toLowerCase())) {
+      return candidate;
+    }
+  }
+
+  return `${base}${Date.now().toString().slice(-4)}`;
+};
+
+const verifyGoogleIdToken = async (idToken) => {
+  const allowedClientIds = resolveGoogleClientIds();
+  const response = await axios.get('https://oauth2.googleapis.com/tokeninfo', {
+    params: { id_token: idToken },
+    timeout: 10000
+  });
+
+  const payload = response?.data || {};
+  const audience = payload.aud || payload.azp;
+  const isEmailVerified =
+    payload.email_verified === true || payload.email_verified === 'true';
+
+  if (!payload.email || !isEmailVerified) {
+    throw new Error('Google account email is missing or not verified.');
+  }
+
+  if (!audience || !allowedClientIds.includes(audience)) {
+    throw new Error('Google token audience is invalid.');
+  }
+
+  return payload;
+};
 
 const resolveUserId = (user) => user.id || user._id;
 
@@ -268,6 +335,109 @@ export const login = async (req, res) => {
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ msg: 'Server error. ' + error.message });
+  }
+};
+
+export const loginWithGoogle = async (req, res) => {
+  if (!ensureAuthAvailability(res)) {
+    return;
+  }
+
+  if (!isGoogleAuthConfigured()) {
+    return res.status(500).json({
+      msg: 'Google sign-in is not configured on the server.'
+    });
+  }
+
+  const idToken = req.body?.idToken;
+  if (!idToken || typeof idToken !== 'string') {
+    return res.status(400).json({ msg: 'Google ID token is required.' });
+  }
+
+  try {
+    const googlePayload = await verifyGoogleIdToken(idToken);
+    const normalizedEmail = normalizeEmail(googlePayload.email);
+    const now = new Date().toISOString();
+    let responseUser = null;
+    let created = false;
+
+    await withDb(async (db) => {
+      await usersRepo.updateAll((users) => {
+        let user = users.find(
+          (entry) => normalizeEmail(entry.email || '') === normalizedEmail
+        );
+
+        if (!user) {
+          const username = generateUniqueUsername(users, {
+            name: googlePayload.name,
+            email: normalizedEmail
+          });
+          const randomPassword = uuidv4();
+          const salt = bcrypt.genSaltSync(10);
+          const hashedPassword = bcrypt.hashSync(randomPassword, salt);
+          user = buildNewUser({
+            username,
+            email: normalizedEmail,
+            passwordHash: hashedPassword
+          });
+          user.authProvider = 'google';
+          user.googleId = googlePayload.sub || '';
+          created = true;
+          users.push(user);
+        }
+
+        user.profile = user.profile || {};
+        if (googlePayload.picture && needsDefaultAvatar(user.profile.profilePicture)) {
+          user.profile.profilePicture = googlePayload.picture;
+          user.profile.avatar = googlePayload.picture;
+        } else {
+          if (needsDefaultAvatar(user.profile.profilePicture)) {
+            user.profile.profilePicture = DEFAULT_AVATAR;
+          }
+          if (needsDefaultAvatar(user.profile.avatar)) {
+            user.profile.avatar = user.profile.profilePicture || DEFAULT_AVATAR;
+          }
+        }
+
+        if (!user.googleId && googlePayload.sub) {
+          user.googleId = googlePayload.sub;
+        }
+        user.authProvider = user.authProvider || 'local';
+
+        applyDailyBonus(db, user);
+        user.profile.lastActive = now;
+        user.updatedAt = now;
+        responseUser = user;
+        return users;
+      }, { db });
+
+      return db;
+    });
+
+    const payload = buildAuthPayload(responseUser);
+
+    jwt.sign(
+      payload,
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' },
+      (err, token) => {
+        if (err) {
+          throw err;
+        }
+
+        res.status(created ? 201 : 200).json({
+          token,
+          userId: resolveUserId(responseUser),
+          user: buildAuthResponse(responseUser),
+          isNewUser: created
+        });
+      }
+    );
+  } catch (error) {
+    console.error('Google login error:', error?.response?.data || error);
+    res.status(400).json({
+      msg: 'Google sign-in failed. Please try again.'
+    });
   }
 };
 

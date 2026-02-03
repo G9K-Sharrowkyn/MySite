@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import Notification from '../notificationLogic/Notification';
 import { AuthContext } from '../auth/AuthContext';
+import GoogleSignInButton from './GoogleSignInButton';
 import '../Auth.css';
 
 const getErrorMessage = (error, fallback) => {
@@ -102,6 +103,46 @@ const Register = () => {
     }
   };
 
+  const handleGoogleCredential = async (idToken) => {
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(
+        '/api/auth/google',
+        { idToken },
+        { headers: { 'Content-Type': 'application/json' } }
+      );
+
+      if (!response.data?.token || !response.data?.userId) {
+        showNotification('Unexpected response from the server.', 'error');
+        return;
+      }
+
+      login(response.data.token, response.data.userId, response.data.user);
+      showNotification(
+        response.data?.isNewUser
+          ? 'Google account linked and registered!'
+          : 'Google sign-in successful!',
+        'success'
+      );
+
+      setTimeout(() => {
+        navigate(response.data?.isNewUser ? '/profile/me' : '/feed', { replace: true });
+      }, 800);
+    } catch (error) {
+      console.error('Google registration error:', error);
+      showNotification(
+        getErrorMessage(error, 'Google sign-in failed.'),
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="auth-container">
       <h1>Create an account</h1>
@@ -168,6 +209,10 @@ const Register = () => {
           disabled={isSubmitting}
         />
       </form>
+      <GoogleSignInButton
+        onCredential={handleGoogleCredential}
+        onError={(message) => showNotification(message, 'error')}
+      />
     </div>
   );
 };
