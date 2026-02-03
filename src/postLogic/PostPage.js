@@ -9,6 +9,7 @@ import ChallengeResponse from './ChallengeResponse';
 import ChallengeApproval from './ChallengeApproval';
 import './PostPage.css';
 import { AuthContext } from '../auth/AuthContext';
+import { getUserDisplayName } from '../utils/userDisplay';
 
 const PostPage = () => {
   const { postId } = useParams();
@@ -297,7 +298,7 @@ const PostPage = () => {
     setReplyingTo({
       id: comment.id,
       threadId,
-      username: comment.authorUsername
+      username: getUserDisplayName(comment)
     });
     const mention = comment?.authorUsername ? `@${comment.authorUsername} ` : '';
     setReplyText(mention);
@@ -498,11 +499,11 @@ const PostPage = () => {
                   replacePlaceholderUrl(post.author?.profilePicture) || placeholderImages.userSmall,
                   { size: 50 }
                 )}
-                alt={post.author?.username}
+                alt={getUserDisplayName(post.author)}
                 className="author-avatar"
               />
               <div className="author-details">
-                <span className="author-name">{post.author?.username || 'Anonymous'}</span>
+                <span className="author-name">{getUserDisplayName(post.author) || 'Anonymous'}</span>
                   <span className="author-rank">{post.author?.rank || 'Mortal'}</span>
               </div>
             </Link>
@@ -765,10 +766,10 @@ const PostPage = () => {
                               placeholderImages.userSmall,
                             { size: 30 }
                           )}
-                          alt={root.authorUsername}
+                          alt={getUserDisplayName(root)}
                           className="comment-avatar"
                         />
-                        <strong>{root.authorUsername}</strong>
+                        <strong>{getUserDisplayName(root)}</strong>
                       </Link>
                       <span className="comment-time">{formatTimeAgo(root.createdAt)}</span>
                     </div>
@@ -844,10 +845,10 @@ const PostPage = () => {
                                     placeholderImages.userSmall,
                                   { size: 30 }
                                 )}
-                                alt={reply.authorUsername}
+                                alt={getUserDisplayName(reply)}
                                 className="comment-avatar"
                               />
-                              <strong>{reply.authorUsername}</strong>
+                              <strong>{getUserDisplayName(reply)}</strong>
                             </Link>
                             <span className="comment-time">
                               {formatTimeAgo(reply.createdAt)}

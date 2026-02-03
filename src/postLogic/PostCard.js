@@ -13,6 +13,7 @@ import { ChampionUsername } from '../utils/championUtils';
 import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
 import BettingPanel from '../economy/BettingPanel';
+import { getUserDisplayName } from '../utils/userDisplay';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import FightTimer from './FightTimer';
@@ -321,7 +322,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     setReplyingTo({
       id: comment.id,
       threadId,
-      username: comment.authorUsername
+      username: getUserDisplayName(comment)
     });
     const mention = comment?.authorUsername ? `@${comment.authorUsername} ` : '';
     setReplyText(mention);
@@ -874,7 +875,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               replacePlaceholderUrl(post.author?.profilePicture) || '/placeholder-character.png',
               { size: 50, lazy: imageLazy, decoding: imageDecoding }
             )} 
-            alt={post.author?.username} 
+            alt={getUserDisplayName(post.author)} 
             className="author-avatar"
           />
           <div className="author-info">
@@ -1112,10 +1113,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                               placeholderImages.userSmall,
                             { size: 32, lazy: imageLazy, decoding: imageDecoding }
                           )}
-                          alt={root.authorUsername}
+                          alt={getUserDisplayName(root)}
                           className="comment-avatar"
                         />
-                        <strong>{root.authorUsername}</strong>
+                        <strong>{getUserDisplayName(root)}</strong>
                       </Link>
                       <span className="comment-time">{formatTimeAgo(root.createdAt)}</span>
                     </div>
@@ -1208,10 +1209,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                                     placeholderImages.userSmall,
                                   { size: 32, lazy: imageLazy, decoding: imageDecoding }
                                 )}
-                                alt={reply.authorUsername}
+                                alt={getUserDisplayName(reply)}
                                 className="comment-avatar"
                               />
-                              <strong>{reply.authorUsername}</strong>
+                              <strong>{getUserDisplayName(reply)}</strong>
                             </Link>
                             <span className="comment-time">
                               {formatTimeAgo(reply.createdAt)}

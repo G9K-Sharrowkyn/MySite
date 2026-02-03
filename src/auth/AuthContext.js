@@ -12,6 +12,7 @@ const normalizeUser = (data, fallbackId) => {
   return {
     id: data.id || data._id || fallbackId || null,
     username: data.username || '',
+    displayName: data.displayName || data.profile?.displayName || data.username || '',
     email: data.email || '',
     profilePicture:
       data.profilePicture ||

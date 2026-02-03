@@ -9,6 +9,7 @@ import {
 import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
+import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveCommentId = (comment) => comment?.id || comment?._id;
@@ -101,6 +102,7 @@ const normalizeComment = (comment) => {
   return {
     ...comment,
     id: commentId,
+    authorDisplayName: comment.authorDisplayName || comment.authorUsername || 'User',
     parentId: comment.parentId || null,
     threadId,
     reactions: buildReactionSummary(comment.reactions || []),
@@ -179,6 +181,7 @@ export const addPostComment = async (req, res) => {
         threadId,
         authorId: req.user.id,
         authorUsername: author.username,
+        authorDisplayName: getUserDisplayName(author),
         authorAvatar: buildAuthorAvatar(author),
         text: commentText,
         createdAt: now,
@@ -533,6 +536,7 @@ export const addUserComment = async (req, res) => {
         threadId,
         authorId: req.user.id,
         authorUsername: author.username,
+        authorDisplayName: getUserDisplayName(author),
         authorAvatar: buildAuthorAvatar(author),
         text: text.trim(),
         createdAt: now,
@@ -681,6 +685,7 @@ export const addFightComment = async (req, res) => {
         threadId,
         authorId: req.user.id,
         authorUsername: author.username,
+        authorDisplayName: getUserDisplayName(author),
         authorAvatar: buildAuthorAvatar(author),
         text: text.trim(),
         createdAt: now,

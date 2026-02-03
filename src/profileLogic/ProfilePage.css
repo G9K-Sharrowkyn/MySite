@@ -72,6 +72,12 @@ body:not(.dark-mode) .profile-background-banner {
   color: var(--text-light);
 }
 
+.profile-handle {
+  margin-top: -4px;
+  margin-bottom: 12px;
+  color: var(--text-muted);
+}
+
 /* New Stats Cards Layout */
 .fight-stats-cards {
   display: grid;

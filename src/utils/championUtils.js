@@ -1,5 +1,6 @@
 import React from 'react';
 import axios from 'axios';
+import { getUserDisplayName } from './userDisplay';
 
 // Check if a user is a champion in any division
 export const checkUserChampionStatus = async (userId) => {
@@ -57,7 +58,7 @@ export const ChampionUsername = ({ user, className = '', showCrown = true }) => 
   return (
     <span className={`username-display ${championClasses} ${className}`}>
       {showCrown && isChampion && <span className="champion-crown-icon">👑</span>}
-      {user?.username || 'Unknown User'}
+      {getUserDisplayName(user)}
     </span>
   );
 }; 

@@ -3,11 +3,17 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import { fileURLToPath } from 'url';
-import { getMyProfile, getProfile, updateProfile } from '../controllers/profileController.js';
+import {
+  getMyProfile,
+  getNicknameChangeLogs,
+  getProfile,
+  updateProfile
+} from '../controllers/profileController.js';
 import { getLeaderboard, getUserStats, getUserAchievements } from '../controllers/statsController.js';
 import auth from '../middleware/auth.js';
 import { readDb, withDb } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
+import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const router = express.Router();
 
@@ -58,9 +64,10 @@ router.get('/all', auth, async (req, res) => {
     const users = (db.users || []).map(user => ({
       id: user.id,
       username: user.username,
+      displayName: getUserDisplayName(user),
       email: user.email,
       role: user.role,
-      profilePicture: user.profilePicture,
+      profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
       joinedDate: user.joinedDate,
       stats: user.stats,
       badges: user.badges
@@ -82,6 +89,11 @@ router.get('/leaderboard', getLeaderboard);
 // @desc    Get current user's profile (alias for root route)
 // @access  Private
 router.get('/me', auth, getMyProfile);
+
+// @route   GET api/profile/nickname-logs
+// @desc    Get nickname change logs (admin/moderator)
+// @access  Private
+router.get('/nickname-logs', auth, getNicknameChangeLogs);
 
 // @route   PUT api/profile
 // @desc    Update current user's profile

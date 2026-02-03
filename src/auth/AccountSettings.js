@@ -160,7 +160,7 @@ const AccountSettings = () => {
       <div className="settings-container">
         <div className="settings-header">
           <h1>⚙️ Account Settings</h1>
-          <p className="username-display">Logged in as: <strong>{user?.username}</strong></p>
+          <p className="username-display">Logged in as: <strong>{user?.displayName || user?.username}</strong></p>
         </div>
 
         <div className="settings-section">

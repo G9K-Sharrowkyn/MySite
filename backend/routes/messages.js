@@ -12,6 +12,7 @@ import {
 import auth from '../middleware/auth.js';
 import { readDb, withDb } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
+import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const router = express.Router();
 
@@ -40,6 +41,7 @@ const buildConversationResponse = (db, conversation, viewerId) => {
     return {
       id: participantId,
       username: user?.username || 'User',
+      displayName: getUserDisplayName(user),
       avatar: user?.profile?.profilePicture || user?.profile?.avatar || '',
       isModerator: user?.role === 'moderator'
     };
@@ -96,6 +98,7 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       otherUser: {
         id: otherUserId,
         username: otherUser?.username || 'User',
+        displayName: getUserDisplayName(otherUser),
         profilePicture: otherUser?.profile?.profilePicture || '',
         isModerator: otherUser?.role === 'moderator'
       }

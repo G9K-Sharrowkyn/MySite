@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getUserDisplayName } from '../utils/userDisplay';
 import './ConversationChat.css';
 
 const ConversationChat = () => {
@@ -176,11 +177,11 @@ const ConversationChat = () => {
                   replacePlaceholderUrl(otherUser.profilePicture) || placeholderImages.userSmall,
                   { size: 40 }
                 )}
-                alt={otherUser.username}
+                alt={getUserDisplayName(otherUser)}
                 className="chat-avatar"
               />
               <div className="chat-user-details">
-                <span className="chat-username">{otherUser.username}</span>
+                <span className="chat-username">{getUserDisplayName(otherUser)}</span>
                 <span className="chat-status">{t('clickToViewProfile')}</span>
               </div>
             </Link>

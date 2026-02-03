@@ -1,6 +1,8 @@
-import { readDb, usersRepo } from '../repositories/index.js';
+import { v4 as uuidv4 } from 'uuid';
+import { readDb, nicknameChangeLogsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getRankInfo } from '../utils/rankSystem.js';
+import { getUserDisplayName, normalizeDisplayName } from '../utils/userDisplayName.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -17,6 +19,7 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
   return {
     id: resolveUserId(user),
     username: user.username,
+    displayName: getUserDisplayName(user),
     ...(includeEmail ? { email: user.email } : {}),
     ...(includeEmail ? { timezone: user.timezone || 'UTC' } : {}),
     role: user.role || 'user',
@@ -113,7 +116,8 @@ export const getAllProfiles = async (_req, res) => {
     const users = await usersRepo.getAll();
     const profiles = users.map((user) => ({
       id: resolveUserId(user),
-      username: user.username
+      username: user.username,
+      displayName: getUserDisplayName(user)
     }));
     res.json(profiles);
   } catch (error) {
@@ -127,38 +131,86 @@ export const getAllProfiles = async (_req, res) => {
 // @access  Private
 export const updateProfile = async (req, res) => {
   try {
-    const { description, profilePicture, selectedCharacters, backgroundImage } = req.body;
+    const {
+      description,
+      profilePicture,
+      selectedCharacters,
+      backgroundImage,
+      displayName
+    } = req.body;
+    const normalizedDisplayName =
+      displayName === undefined ? undefined : normalizeDisplayName(displayName);
+
+    if (normalizedDisplayName !== undefined) {
+      if (!normalizedDisplayName) {
+        return res.status(400).json({ msg: 'Display name cannot be empty' });
+      }
+      if (normalizedDisplayName.length > 60) {
+        return res
+          .status(400)
+          .json({ msg: 'Display name cannot exceed 60 characters' });
+      }
+    }
 
     let updatedUser;
-
-    updatedUser = await usersRepo.updateById(req.user.id, (user) => {
-      if (!user) {
-        return user;
+    await withDb(async (db) => {
+      updatedUser = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
+      if (!updatedUser) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
       }
 
-      user.profile = user.profile || {};
+      updatedUser.profile = updatedUser.profile || {};
+      const previousDisplayName = getUserDisplayName(updatedUser);
 
       if (description !== undefined) {
-        user.profile.description = description;
-        user.profile.bio = description;
+        updatedUser.profile.description = description;
+        updatedUser.profile.bio = description;
       }
 
       if (profilePicture !== undefined) {
-        user.profile.profilePicture = profilePicture;
-        user.profile.avatar = profilePicture;
+        updatedUser.profile.profilePicture = profilePicture;
+        updatedUser.profile.avatar = profilePicture;
       }
 
       if (backgroundImage !== undefined) {
-        user.profile.backgroundImage = backgroundImage;
+        updatedUser.profile.backgroundImage = backgroundImage;
       }
 
       if (selectedCharacters !== undefined) {
-        user.profile.favoriteCharacters = selectedCharacters;
+        updatedUser.profile.favoriteCharacters = selectedCharacters;
       }
 
-      user.profile.lastActive = new Date().toISOString();
-      user.updatedAt = new Date().toISOString();
-      return user;
+      if (normalizedDisplayName !== undefined) {
+        updatedUser.profile.displayName = normalizedDisplayName;
+      } else if (!updatedUser.profile.displayName) {
+        updatedUser.profile.displayName = updatedUser.username;
+      }
+
+      const nextDisplayName = getUserDisplayName(updatedUser);
+      const now = new Date().toISOString();
+      updatedUser.profile.lastActive = now;
+      updatedUser.updatedAt = now;
+
+      if (nextDisplayName !== previousDisplayName) {
+        await nicknameChangeLogsRepo.insert(
+          {
+            id: uuidv4(),
+            userId: resolveUserId(updatedUser),
+            username: updatedUser.username,
+            previousDisplayName,
+            nextDisplayName,
+            changedAt: now
+          },
+          { db }
+        );
+      }
+
+      return db;
     });
 
     if (!updatedUser) {
@@ -173,6 +225,29 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
     console.error('Error updating profile:', error.message);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get nickname change log (admin/moderator)
+// @route   GET /api/profile/nickname-logs
+// @access  Private (admin/moderator)
+export const getNicknameChangeLogs = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'moderator') {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+
+    const logs = await nicknameChangeLogsRepo.getAll();
+    const sorted = [...logs]
+      .sort(
+        (a, b) =>
+          new Date(b.changedAt || 0).getTime() - new Date(a.changedAt || 0).getTime()
+      )
+      .slice(0, 200);
+    res.json(sorted);
+  } catch (error) {
+    console.error('Error fetching nickname change logs:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -195,6 +270,7 @@ export const searchProfiles = async (req, res) => {
     const result = users.map((user) => ({
       id: resolveUserId(user),
       username: user.username,
+      displayName: getUserDisplayName(user),
       profilePicture: user.profile?.profilePicture || user.profile?.avatar || ''
     }));
 
@@ -216,6 +292,7 @@ export const getLeaderboard = async (_req, res) => {
       return {
         id: resolveUserId(user),
         username: user.username,
+        displayName: getUserDisplayName(user),
         profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
         victories: stats.fightsWon || 0,
         losses: stats.fightsLost || 0,

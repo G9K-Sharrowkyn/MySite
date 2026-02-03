@@ -11,6 +11,7 @@ import { autoTagPost } from '../utils/tagging.js';
 import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, getRankInfo, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
+import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveRole = (user) => user?.role || 'user';
@@ -22,6 +23,7 @@ const buildAuthor = (user) => {
   return {
     id: resolveUserId(user),
     username: user.username,
+    displayName: getUserDisplayName(user),
     profilePicture: profile.profilePicture || profile.avatar || '',
     rank: rankInfo.rank
   };

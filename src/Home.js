@@ -254,11 +254,11 @@ const Home = () => {
                       replacePlaceholderUrl(user.profilePicture) || placeholderImages.userSmall,
                       { size: 45 }
                     )}
-                    alt={user.username}
+                    alt={user.displayName || user.username}
                     className="user-avatar"
                   />
                   <div className="user-info">
-                    <h4>{user.username}</h4>
+                    <h4>{user.displayName || user.username}</h4>
                     <p>{user.rank}</p>
                     <span className="user-points">{user.points} {t('points')}</span>
                   </div>

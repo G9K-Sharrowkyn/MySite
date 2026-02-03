@@ -3,6 +3,7 @@ import axios from 'axios';
 import io from 'socket.io-client';
 import { AuthContext } from '../auth/AuthContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
+import { getUserDisplayName } from '../utils/userDisplay';
 import './GlobalChatSystem.css';
 
 const DEFAULT_AVATAR = '/logo192.png';
@@ -101,11 +102,13 @@ const GlobalChatSystem = () => {
       messageData.forEach(message => {
         const otherUserId = message.senderId === currentUserId ? message.recipientId : message.senderId;
         const otherUsername = message.senderId === currentUserId ? message.recipientUsername : message.senderUsername;
+        const otherDisplayName = message.senderId === currentUserId ? (message.recipientDisplayName || otherUsername) : (message.senderDisplayName || otherUsername);
         
         if (!conversationMap.has(otherUserId)) {
           conversationMap.set(otherUserId, {
             userId: otherUserId,
             username: otherUsername,
+            displayName: otherDisplayName,
             profilePicture: null,
             lastMessage: message,
             unreadCount: 0
@@ -172,7 +175,7 @@ const GlobalChatSystem = () => {
 
   // Extract stable values to prevent reconnection loops
   const userId = user?.id;
-  const username = user?.username;
+  const username = getUserDisplayName(user);
   const profilePicture = user?.profilePicture;
 
   useEffect(() => {
@@ -648,7 +651,7 @@ const GlobalChatSystem = () => {
                     const isOwn = message.userId === user.id;
                     const reactionCounts = getReactionCounts(message.reactions);
                     const hasReactions = Object.keys(reactionCounts).length > 0;
-                    const authorLabel = message.username || (isOwn ? (username || 'Ty') : 'Unknown');
+                    const authorLabel = message.displayName || message.username || (isOwn ? (username || 'Ty') : 'Unknown');
                     
                     return (
                       <div key={message.id} className={`message ${isOwn ? 'own' : 'other'}`}>
@@ -658,7 +661,7 @@ const GlobalChatSystem = () => {
                               message.profilePicture || DEFAULT_AVATAR,
                               { size: 36 }
                             )}
-                            alt={message.username}
+                            alt={message.displayName || message.username}
                             className="message-avatar"
                           />
                         )}
@@ -717,9 +720,9 @@ const GlobalChatSystem = () => {
                             user.profilePicture || DEFAULT_AVATAR,
                             { size: 28 }
                           )}
-                          alt={user.username}
+                          alt={user.displayName || user.username}
                         />
-                        <span>{user.username} (You)</span>
+                        <span>{user.displayName || user.username} (You)</span>
                       </div>
                       {activeUsers.map(activeUser => (
                         <div key={activeUser.userId} className="user-item">
@@ -728,9 +731,9 @@ const GlobalChatSystem = () => {
                               activeUser.profilePicture || DEFAULT_AVATAR,
                               { size: 28 }
                             )}
-                            alt={activeUser.username}
+                            alt={activeUser.displayName || activeUser.username}
                           />
-                          <span>{activeUser.username}</span>
+                          <span>{activeUser.displayName || activeUser.username}</span>
                         </div>
                       ))}
                     </div>
@@ -781,10 +784,10 @@ const GlobalChatSystem = () => {
                                 user.avatar || DEFAULT_AVATAR,
                                 { size: 36 }
                               )}
-                              alt={user.username}
+                              alt={user.displayName || user.username}
                               className="private-user-avatar"
                             />
-                            <span className="private-user-name">{user.username}</span>
+                            <span className="private-user-name">{user.displayName || user.username}</span>
                             <button 
                               className="start-chat-btn"
                               onClick={() => startPrivateChat(user)}
@@ -823,13 +826,13 @@ const GlobalChatSystem = () => {
                             conv.profilePicture || DEFAULT_AVATAR,
                             { size: 40 }
                           )}
-                          alt={conv.username}
+                          alt={conv.displayName || conv.username}
                           className="private-conv-avatar"
                         />
                         <div className="private-conv-info">
                           <div className="private-conv-name-row">
-                            <span className="private-conv-name">{conv.username}</span>
-                            <span className={`user-online-status ${activeUsers.some(u => u.username === conv.username) ? 'online' : 'offline'}`}></span>
+                            <span className="private-conv-name">{conv.displayName || conv.username}</span>
+                            <span className={`user-online-status ${activeUsers.some(u => u.userId === conv.userId) ? 'online' : 'offline'}`}></span>
                             {conv.unreadCount > 0 && (
                               <span className="private-conv-unread-badge">{conv.unreadCount}</span>
                             )}
@@ -859,10 +862,10 @@ const GlobalChatSystem = () => {
                           selectedPrivateConversation.profilePicture || DEFAULT_AVATAR,
                           { size: 32, lazy: false, fetchPriority: 'high', decoding: 'sync' }
                         )}
-                        alt={selectedPrivateConversation.username}
+                        alt={selectedPrivateConversation.displayName || selectedPrivateConversation.username}
                         className="private-chat-avatar"
                       />
-                      <span>{selectedPrivateConversation.username}</span>
+                      <span>{selectedPrivateConversation.displayName || selectedPrivateConversation.username}</span>
                       <span className={`user-online-status ${activeUsers.some(u => u.username === selectedPrivateConversation.username) ? 'online' : 'offline'}`}></span>
                     </div>
                   </div>

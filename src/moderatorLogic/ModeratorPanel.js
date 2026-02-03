@@ -45,6 +45,7 @@ const ModeratorPanel = () => {
   const [showDeleteFeedbackModal, setShowDeleteFeedbackModal] = useState(false);
   const [feedbackToDelete, setFeedbackToDelete] = useState(null);
   const [tournaments, setTournaments] = useState([]);
+  const [nicknameLogs, setNicknameLogs] = useState([]);
   const [showDeleteTournamentModal, setShowDeleteTournamentModal] = useState(false);
   const [tournamentToDelete, setTournamentToDelete] = useState(null);
   
@@ -213,7 +214,7 @@ const ModeratorPanel = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, feedbackRes, tournamentsRes] = await Promise.all([
+      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, feedbackRes, tournamentsRes, nicknameLogsRes] = await Promise.all([
         axios.get('/api/posts/official'),
         axios.get('/api/posts'),
         axios.get('/api/profile/all', {
@@ -226,7 +227,10 @@ const ModeratorPanel = () => {
         axios.get('/api/feedback', {
           headers: { 'x-auth-token': token }
         }).catch(() => ({ data: [] })), // Fallback if feedback not available
-        axios.get('/api/tournaments').catch(() => ({ data: [] })) // Fallback if tournaments not available
+        axios.get('/api/tournaments').catch(() => ({ data: [] })), // Fallback if tournaments not available
+        axios.get('/api/profile/nickname-logs', {
+          headers: { 'x-auth-token': token }
+        }).catch(() => ({ data: [] }))
       ]);
 
       setFights(fightsRes.data.fights || fightsRes.data);
@@ -236,6 +240,7 @@ const ModeratorPanel = () => {
       setBets(betsRes.data || []);
       setFeedback(feedbackRes.data || []);
       setTournaments(tournamentsRes.data || []);
+      setNicknameLogs(nicknameLogsRes.data || []);
       
       // Fetch divisions data
       await Promise.all([fetchSeasons()]);
@@ -1149,6 +1154,22 @@ const ModeratorPanel = () => {
                   <p>{t('moderatorPanel.noUsersFound')}</p>
                 </div>
               )}
+            </div>
+            <div className="users-grid" style={{ marginTop: '18px' }}>
+              <div className="user-card" style={{ width: '100%' }}>
+                <div className="user-info" style={{ width: '100%' }}>
+                  <h4>Nickname change log</h4>
+                  {nicknameLogs.length === 0 ? (
+                    <p>No nickname changes yet.</p>
+                  ) : (
+                    nicknameLogs.slice(0, 25).map((entry) => (
+                      <p key={entry.id || `${entry.userId}-${entry.changedAt}`}>
+                        <strong>{entry.nextDisplayName}</strong> (was: {entry.previousDisplayName}) - @{entry.username}
+                      </p>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

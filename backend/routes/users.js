@@ -2,6 +2,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, withDb } from '../repositories/index.js';
 import { applyDailyBonus } from '../utils/coinBonus.js';
+import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const router = express.Router();
 
@@ -179,6 +180,7 @@ router.get('/search', async (req, res) => {
       .map((user) => ({
         id: resolveUserId(user),
         username: user.username,
+        displayName: getUserDisplayName(user),
         avatar: user.profile?.profilePicture || user.profile?.avatar || '',
         isModerator: user.role === 'moderator'
       }));
@@ -406,6 +408,7 @@ router.get('/:userId/profile', async (req, res) => {
     res.json({
       id: resolveUserId(user),
       username: user.username,
+      displayName: getUserDisplayName(user),
       avatar: profile.profilePicture || profile.avatar || '',
       bio: profile.bio || profile.description || '',
       location: profile.location || '',
@@ -479,6 +482,11 @@ router.get('/:userId/profile-comments', async (req, res) => {
           author: {
             id: comment.authorId,
             username: comment.authorUsername || author?.username || '',
+            displayName:
+              comment.authorDisplayName ||
+              getUserDisplayName(author) ||
+              comment.authorUsername ||
+              '',
             avatar: comment.authorAvatar || author?.profile?.profilePicture || author?.profile?.avatar || '',
             isModerator: author?.role === 'moderator'
           }
@@ -515,6 +523,7 @@ router.post('/:userId/profile-comments', async (req, res) => {
         targetId: req.params.userId,
         authorId,
         authorUsername: author.username,
+        authorDisplayName: getUserDisplayName(author),
         authorAvatar: author.profile?.profilePicture || author.profile?.avatar || '',
         content: content.trim(),
         text: content.trim(),
@@ -538,6 +547,7 @@ router.post('/:userId/profile-comments', async (req, res) => {
       author: {
         id: created.authorId,
         username: created.authorUsername,
+        displayName: created.authorDisplayName || created.authorUsername,
         avatar: created.authorAvatar,
         isModerator: false
       }

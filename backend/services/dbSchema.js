@@ -28,7 +28,8 @@ export const DEFAULT_DB = {
   recommendationEvents: [],
   characterSuggestions: [],
   divisionSeasons: [],
-  feedback: []
+  feedback: [],
+  nicknameChangeLogs: []
 };
 
 export const COLLECTION_KEYS = Object.keys(DEFAULT_DB);

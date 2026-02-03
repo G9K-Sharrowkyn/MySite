@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { usersRepo, withDb } from '../repositories/index.js';
 import { applyDailyBonus } from '../utils/coinBonus.js';
 import { sendPasswordResetEmail } from '../services/emailService.js';
+import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const isJwtConfigured = () =>
   typeof process.env.JWT_SECRET === 'string' &&
@@ -100,6 +101,7 @@ const buildAuthPayload = (user) => ({
 const buildAuthResponse = (user) => ({
   id: resolveUserId(user),
   username: user.username,
+  displayName: getUserDisplayName(user),
   email: user.email,
   role: user.role,
   profile: user.profile || {},
@@ -116,6 +118,7 @@ const buildNewUser = ({ username, email, passwordHash }) => {
     password: passwordHash,
     role: 'user',
     profile: {
+      displayName: username,
       bio: '',
       profilePicture: '/logo192.png',
       favoriteCharacters: [],
@@ -380,6 +383,8 @@ export const loginWithGoogle = async (req, res) => {
             email: normalizedEmail,
             passwordHash: hashedPassword
           });
+          user.profile.displayName =
+            (googlePayload.name || '').trim() || username;
           user.authProvider = 'google';
           user.googleId = googlePayload.sub || '';
           created = true;
@@ -387,6 +392,9 @@ export const loginWithGoogle = async (req, res) => {
         }
 
         user.profile = user.profile || {};
+        if (!user.profile.displayName) {
+          user.profile.displayName = user.username;
+        }
         if (googlePayload.picture && needsDefaultAvatar(user.profile.profilePicture)) {
           user.profile.profilePicture = googlePayload.picture;
           user.profile.avatar = googlePayload.picture;

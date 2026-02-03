@@ -5,6 +5,7 @@ import { useLanguage } from './i18n/LanguageContext';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from './utils/placeholderImage';
 import LanguageSwitcher from './LanguageSwitcher/LanguageSwitcher';
 import { AuthContext } from './auth/AuthContext';
+import { getUserDisplayName } from './utils/userDisplay';
 import './Header.css';
 
 const Header = () => {
@@ -19,6 +20,7 @@ const Header = () => {
   const isLoggedIn = !!user;
   const isModerator = user?.role === 'moderator' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
+  const userDisplayName = getUserDisplayName(user);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -180,7 +182,7 @@ const Header = () => {
                       alt="Profile" 
                       className="user-avatar"
                     />
-                    <span className="user-name">{user?.username}</span>
+                    <span className="user-name">{userDisplayName}</span>
                     <span className="dropdown-arrow">▼</span>
                   </button>
 

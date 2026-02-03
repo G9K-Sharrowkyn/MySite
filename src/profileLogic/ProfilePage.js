@@ -37,6 +37,9 @@ const ProfilePage = () => {
   const [description, setDescription] = useState(
     normalizeDescription(initialProfile?.description)
   );
+  const [displayName, setDisplayName] = useState(
+    initialProfile?.displayName || initialProfile?.username || ''
+  );
   const [profilePicture, setProfilePicture] = useState(initialProfile?.profilePicture || '');
   const [backgroundImage, setBackgroundImage] = useState(initialProfile?.profile?.backgroundImage || '');
   const [loading, setLoading] = useState(initialProfile === null); // only true if no profile yet
@@ -113,6 +116,7 @@ const ProfilePage = () => {
         setProfile({ ...res.data, description: normalizedDescription });
         if (!isEditingRef.current) {
           setDescription(normalizedDescription);
+          setDisplayName(res.data.displayName || res.data.username || '');
           setProfilePicture(res.data.profilePicture || '');
           setBackgroundImage(res.data.profile?.backgroundImage || '');
         }
@@ -201,6 +205,7 @@ const handleCommentSubmit = async (e) => {
     }
     try {
       await axios.put('/api/profile/me', { 
+        displayName,
         description, 
         profilePicture,
         backgroundImage 
@@ -303,6 +308,9 @@ const handleCommentSubmit = async (e) => {
           <h2>
             <ChampionUsername user={profile} showCrown={true} />
           </h2>
+          {profile?.displayName && profile?.username && profile.displayName !== profile.username && (
+            <p className="profile-handle">@{profile.username}</p>
+          )}
           {championTitle && (
             <p className="champion-title-display">{championTitle}</p>
           )}
@@ -384,6 +392,15 @@ const handleCommentSubmit = async (e) => {
               currentImage={profilePicture}
               onImageChange={setProfilePicture}
               className="profile-picture"
+            />
+          </div>
+          <div className="form-group">
+            <label>Nick:</label>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              maxLength={60}
             />
           </div>
           <div className="form-group">
@@ -631,10 +648,10 @@ const handleCommentSubmit = async (e) => {
                           replacePlaceholderUrl(comment.authorAvatar) || placeholderImages.userSmall,
                           { size: 24 }
                         )}
-                        alt={comment.authorUsername}
+                        alt={comment.authorDisplayName || comment.authorUsername}
                         className="author-avatar"
                       />
-                      <strong>{comment.authorUsername}</strong>
+                      <strong>{comment.authorDisplayName || comment.authorUsername}</strong>
                     </Link>
                   </div>
                   <span className="comment-date">

@@ -10,6 +10,7 @@
     "dev": "nodemon server.js",
     "migrate:mongo": "node scripts/migrateToMongo.js",
     "migrate:avatars": "node scripts/migrateDefaultAvatars.js",
+    "migrate:display-names": "node scripts/migrateDisplayNames.js",
     "export:json": "node scripts/exportToJson.js"
   },
   "keywords": [],

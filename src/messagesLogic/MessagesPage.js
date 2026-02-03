@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import io from 'socket.io-client';
 import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
+import { getUserDisplayName } from '../utils/userDisplay';
 import './MessagesPage.css';
 
 const MessagesPage = () => {
@@ -189,10 +190,10 @@ const MessagesPage = () => {
                 >
                   <img
                     {...getOptimizedImageProps(placeholderImages.userSmall, { size: 40 })}
-                    alt={user.username}
+                    alt={getUserDisplayName(user)}
                     className="user-avatar"
                   />
-                  <span className="user-name">{user.username}</span>
+                  <span className="user-name">{getUserDisplayName(user)}</span>
                 </div>
               ))}
             </div>
@@ -212,14 +213,14 @@ const MessagesPage = () => {
                 <div className="conversation-avatar-wrapper">
                   <img 
                     {...getOptimizedImageProps(placeholderImages.userSmall, { size: 56 })}
-                    alt={conversation.username}
+                    alt={getUserDisplayName(conversation)}
                     className="conversation-avatar"
                   />
                   <span className={`user-online-status ${activeUsers.some(u => u.userId === conversation.userId) ? 'online' : 'offline'}`}></span>
                 </div>
                 <div className="conversation-content">
                   <div className="conversation-top">
-                    <span className="conversation-name">{conversation.username}</span>
+                    <span className="conversation-name">{getUserDisplayName(conversation)}</span>
                     <span className="conversation-time">
                       {formatTime(conversation.lastMessage.createdAt)}
                     </span>

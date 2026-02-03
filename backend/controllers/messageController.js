@@ -5,6 +5,7 @@ import {
   usersRepo,
   withDb
 } from '../repositories/index.js';
+import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -25,8 +26,15 @@ const normalizeMessage = (message, users = []) => {
     id: message.id || message._id,
     senderId: message.senderId,
     senderUsername: message.senderUsername || sender?.username || '',
+    senderDisplayName:
+      message.senderDisplayName || getUserDisplayName(sender) || message.senderUsername || '',
     recipientId: message.recipientId,
     recipientUsername: message.recipientUsername || recipient?.username || '',
+    recipientDisplayName:
+      message.recipientDisplayName ||
+      getUserDisplayName(recipient) ||
+      message.recipientUsername ||
+      '',
     subject: message.subject || '',
     content: message.content || '',
     read: Boolean(message.read),
@@ -75,8 +83,10 @@ export const sendMessage = async (req, res) => {
         id: uuidv4(),
         senderId: resolveUserId(sender),
         senderUsername: sender.username,
+        senderDisplayName: getUserDisplayName(sender),
         recipientId: resolveUserId(recipient),
         recipientUsername: recipient.username,
+        recipientDisplayName: getUserDisplayName(recipient),
         subject: subject || '',
         content,
         read: false,
@@ -361,6 +371,7 @@ export const getConversation = async (req, res) => {
         ? {
             id: resolveUserId(otherUser),
             username: otherUser.username,
+            displayName: getUserDisplayName(otherUser),
             profilePicture:
               otherUser.profile?.profilePicture || otherUser.profile?.avatar || ''
           }
