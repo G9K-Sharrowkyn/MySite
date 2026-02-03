@@ -1,4 +1,5 @@
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { usersRepo, withDb } from '../repositories/index.js';
 
@@ -96,8 +97,24 @@ const desiredStaff = [
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 
+const generateRandomPassword = (length = 24) => {
+  const charset = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+  const bytes = crypto.randomBytes(length);
+  let password = '';
+  for (let i = 0; i < length; i += 1) {
+    password += charset[bytes[i] % charset.length];
+  }
+  return password;
+};
+
 const run = async () => {
-  const hashedPassword = await bcrypt.hash(STAFF_PASSWORD, 10);
+  const useFixedPassword = Boolean(process.env.STAFF_TEMP_PASSWORD);
+  const credentialMap = new Map(
+    desiredStaff.map((staff) => [
+      staff.email,
+      useFixedPassword ? STAFF_PASSWORD : generateRandomPassword()
+    ])
+  );
 
   await withDb(async (db) => {
     await usersRepo.updateAll((users) => {
@@ -114,7 +131,7 @@ const run = async () => {
 
       for (const staff of desiredStaff) {
         const user = buildBaseUser(staff);
-        user.password = hashedPassword;
+        user.password = bcrypt.hashSync(credentialMap.get(staff.email), 10);
         cleaned.push(user);
       }
 
@@ -125,9 +142,15 @@ const run = async () => {
   });
 
   console.log('Staff accounts provisioned.');
-  console.log('Temporary password for all staff:', STAFF_PASSWORD);
+  if (useFixedPassword) {
+    console.log('Temporary password for all staff:', STAFF_PASSWORD);
+  } else {
+    console.log('Generated unique random password for each staff account:');
+  }
   for (const staff of desiredStaff) {
-    console.log(`${staff.role.toUpperCase()}: ${staff.email}`);
+    console.log(
+      `${staff.role.toUpperCase()}: ${staff.email} | ${credentialMap.get(staff.email)}`
+    );
   }
 };
 
