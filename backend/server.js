@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
@@ -201,6 +202,7 @@ app.use('/api/auth/reset-password', authLimiter);
 
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
+app.use(compression());
 
 // Request logging middleware - disabled for cleaner output
 // if (process.env.NODE_ENV === 'production') {
@@ -223,10 +225,20 @@ app.use(cors({
 // Body parser
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(
+  '/uploads',
+  express.static(path.join(__dirname, 'uploads'), {
+    maxAge: '30d',
+    immutable: true,
+    etag: true
+  })
+);
 app.use(
   '/characters',
-  express.static(path.join(__dirname, '..', 'public', 'characters'))
+  express.static(path.join(__dirname, '..', 'public', 'characters'), {
+    maxAge: '7d',
+    etag: true
+  })
 );
 
 // Make io accessible to routes

@@ -40,6 +40,8 @@ const enqueueWrite = async (task) => {
   return result;
 };
 
+const ensureArray = (value) => (Array.isArray(value) ? value : []);
+
 const ensureDbFile = async () => {
   try {
     await fs.access(DB_PATH);
@@ -77,6 +79,25 @@ export const updateDb = async (mutator) => {
     await fs.writeFile(DB_PATH, JSON.stringify(updated, null, 2), 'utf8');
     return updated;
   });
+};
+
+export const readCollection = async (collectionKey) => {
+  const db = await readDb();
+  return ensureArray(db[collectionKey]);
+};
+
+export const updateCollection = async (collectionKey, mutator) => {
+  let updated;
+  await updateDb((db) => {
+    const current = ensureArray(db[collectionKey]);
+    const working = [...current];
+    const next = mutator(working);
+    const resolvedNext = Array.isArray(next) ? next : working;
+    db[collectionKey] = resolvedNext;
+    updated = resolvedNext;
+    return db;
+  });
+  return updated;
 };
 
 export const getDbPath = () => DB_PATH;

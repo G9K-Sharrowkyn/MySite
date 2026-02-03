@@ -12,6 +12,8 @@ let client;
 let clientPromise;
 let dbCache;
 let dbCacheTimestamp = 0;
+const collectionCache = new Map();
+let indexesReadyPromise;
 
 const cloneData = (value) => {
   if (typeof globalThis.structuredClone === 'function') {
@@ -39,6 +41,63 @@ const setCache = (data) => {
   dbCacheTimestamp = Date.now();
 };
 
+const getCollectionFromCache = (key) => {
+  if (!isCacheEnabled()) return null;
+  const cached = collectionCache.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp >= getMongoCacheTtlMs()) {
+    collectionCache.delete(key);
+    return null;
+  }
+  return cached.data;
+};
+
+const setCollectionCache = (key, data) => {
+  if (!isCacheEnabled()) {
+    collectionCache.delete(key);
+    return;
+  }
+  collectionCache.set(key, { data, timestamp: Date.now() });
+};
+
+const clearCollectionCache = (key) => {
+  collectionCache.delete(key);
+};
+
+const ensureIndexes = async (db) => {
+  if (indexesReadyPromise) return indexesReadyPromise;
+
+  indexesReadyPromise = (async () => {
+    const specs = [
+      ['users', [{ key: { id: 1 } }, { key: { username: 1 } }, { key: { email: 1 } }, { key: { role: 1 } }]],
+      ['posts', [{ key: { id: 1 } }, { key: { authorId: 1 } }, { key: { createdAt: -1 } }, { key: { type: 1 } }, { key: { category: 1 } }]],
+      ['comments', [{ key: { id: 1 } }, { key: { postId: 1 } }, { key: { targetId: 1 } }, { key: { authorId: 1 } }, { key: { type: 1 } }, { key: { createdAt: -1 } }]],
+      ['messages', [{ key: { id: 1 } }, { key: { senderId: 1, recipientId: 1, createdAt: -1 } }, { key: { recipientId: 1, read: 1, deleted: 1 } }]],
+      ['notifications', [{ key: { id: 1 } }, { key: { userId: 1, read: 1, createdAt: -1 } }]],
+      ['feedback', [{ key: { id: 1 } }, { key: { status: 1, createdAt: -1 } }, { key: { type: 1 } }]],
+      ['tournaments', [{ key: { id: 1 } }, { key: { status: 1, createdAt: -1 } }]],
+      ['nicknameChangeLogs', [{ key: { userId: 1, changedAt: -1 } }, { key: { username: 1, changedAt: -1 } }]],
+      ['moderatorActionLogs', [{ key: { createdAt: -1 } }, { key: { actorId: 1, createdAt: -1 } }, { key: { targetType: 1, createdAt: -1 } }]]
+    ];
+
+    for (const [collectionName, indexes] of specs) {
+      try {
+        const collection = db.collection(collectionName);
+        for (const index of indexes) {
+          await collection.createIndex(index.key, {
+            background: true,
+            ...(index.options || {})
+          });
+        }
+      } catch (error) {
+        console.error(`Index ensure failed for ${collectionName}:`, error?.message || error);
+      }
+    }
+  })();
+
+  return indexesReadyPromise;
+};
+
 const ensureMongoUri = () => {
   const uri = getMongoUri();
   if (!uri || typeof uri !== 'string') {
@@ -59,7 +118,11 @@ const getClient = async () => {
     serverSelectionTimeoutMS: timeoutMs
   });
 
-  clientPromise = client.connect().then(() => client);
+  clientPromise = client.connect().then(async () => {
+    const db = client.db(getMongoDbName());
+    await ensureIndexes(db);
+    return client;
+  });
   return clientPromise;
 };
 
@@ -142,6 +205,25 @@ export const readDb = async () => {
   const data = Object.fromEntries(entries);
   const normalized = normalizeDb(data);
   setCache(normalized);
+  for (const key of COLLECTION_KEYS) {
+    setCollectionCache(key, normalized[key] || []);
+  }
+  return cloneData(normalized);
+};
+
+export const readCollection = async (collectionKey) => {
+  if (!COLLECTION_KEYS.includes(collectionKey)) {
+    throw new Error(`Unknown collection: ${collectionKey}`);
+  }
+  const cached = getCollectionFromCache(collectionKey);
+  if (cached) {
+    return cloneData(cached);
+  }
+
+  const db = await getDb();
+  const docs = await db.collection(collectionKey).find({}).toArray();
+  const normalized = docs.map(stripMongoId);
+  setCollectionCache(collectionKey, normalized);
   return cloneData(normalized);
 };
 
@@ -154,7 +236,31 @@ export const writeDb = async (data) => {
   );
 
   setCache(normalized);
+  for (const key of COLLECTION_KEYS) {
+    setCollectionCache(key, normalized[key] || []);
+  }
   return cloneData(normalized);
+};
+
+export const updateCollection = async (collectionKey, mutator) => {
+  if (!COLLECTION_KEYS.includes(collectionKey)) {
+    throw new Error(`Unknown collection: ${collectionKey}`);
+  }
+
+  return enqueueWrite(async () => {
+    const current = await readCollection(collectionKey);
+    const working = [...current];
+    const next = mutator(working);
+    const resolved = Array.isArray(next) ? next : working;
+    const db = await getDb();
+    await replaceCollection(db, collectionKey, resolved);
+    clearCollectionCache(collectionKey);
+    if (dbCache && typeof dbCache === 'object') {
+      dbCache[collectionKey] = resolved;
+      dbCacheTimestamp = Date.now();
+    }
+    return cloneData(resolved);
+  });
 };
 
 export const updateDb = async (mutator) => {
@@ -198,6 +304,8 @@ export const closeMongo = async () => {
   }
   dbCache = undefined;
   dbCacheTimestamp = 0;
+  collectionCache.clear();
+  indexesReadyPromise = undefined;
 };
 
 export const getMongoConfig = () => ({

@@ -10,6 +10,7 @@ import {
 export const getCharacters = async (_req, res) => {
   try {
     const characters = await charactersRepo.getAll();
+    res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
     res.json(characters);
   } catch (error) {
     console.error('Error fetching characters:', error);

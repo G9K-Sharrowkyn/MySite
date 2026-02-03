@@ -1,4 +1,4 @@
-import { readDb, updateDb } from '../services/jsonDb.js';
+import { readCollection, updateCollection } from '../services/jsonDb.js';
 import { COLLECTION_KEYS } from '../services/dbSchema.js';
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
@@ -18,8 +18,7 @@ const getCollectionSnapshot = async (collectionKey, context) => {
   if (resolvedContext?.db) {
     return ensureArray(resolvedContext.db[collectionKey]);
   }
-  const db = await readDb();
-  return ensureArray(db[collectionKey]);
+  return ensureArray(await readCollection(collectionKey));
 };
 
 export const createCollectionRepo = (collectionKey) => {
@@ -59,11 +58,10 @@ export const createCollectionRepo = (collectionKey) => {
       return item;
     }
     let created;
-    await updateDb((db) => {
-      db[collectionKey] = ensureArray(db[collectionKey]);
-      db[collectionKey].push(item);
+    await updateCollection(collectionKey, (items) => {
+      items.push(item);
       created = item;
-      return db;
+      return items;
     });
     return created;
   };
@@ -75,10 +73,7 @@ export const createCollectionRepo = (collectionKey) => {
       resolvedContext.db[collectionKey] = safeItems;
       return safeItems;
     }
-    await updateDb((db) => {
-      db[collectionKey] = safeItems;
-      return db;
-    });
+    await updateCollection(collectionKey, () => safeItems);
     return safeItems;
   };
 
@@ -93,14 +88,12 @@ export const createCollectionRepo = (collectionKey) => {
       resolvedContext.db[collectionKey] = resolvedNext;
       return resolvedNext;
     }
-    await updateDb((db) => {
-      const current = ensureArray(db[collectionKey]);
-      const working = [...current];
+    await updateCollection(collectionKey, (items) => {
+      const working = [...items];
       const next = mutator(working);
       const resolvedNext = Array.isArray(next) ? next : working;
-      db[collectionKey] = resolvedNext;
       updated = resolvedNext;
-      return db;
+      return resolvedNext;
     });
     return updated;
   };
@@ -124,9 +117,8 @@ export const createCollectionRepo = (collectionKey) => {
       resolvedContext.db[collectionKey] = next;
       return updatedItem;
     }
-    await updateDb((db) => {
-      const current = ensureArray(db[collectionKey]);
-      const next = current.map((item) => {
+    await updateCollection(collectionKey, (items) => {
+      const next = items.map((item) => {
         if (!item || item[resolvedIdField] !== id) {
           return item;
         }
@@ -136,8 +128,7 @@ export const createCollectionRepo = (collectionKey) => {
         updatedItem = resolved;
         return resolved;
       });
-      db[collectionKey] = next;
-      return db;
+      return next;
     });
     return updatedItem;
   };
@@ -159,18 +150,16 @@ export const createCollectionRepo = (collectionKey) => {
       resolvedContext.db[collectionKey] = next;
       return removed;
     }
-    await updateDb((db) => {
-      const current = ensureArray(db[collectionKey]);
+    await updateCollection(collectionKey, (items) => {
       const next = [];
-      for (const item of current) {
+      for (const item of items) {
         if (item && item[resolvedIdField] === id) {
           removed = item;
         } else {
           next.push(item);
         }
       }
-      db[collectionKey] = next;
-      return db;
+      return next;
     });
     return removed;
   };

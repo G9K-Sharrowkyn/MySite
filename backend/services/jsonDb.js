@@ -8,7 +8,7 @@ import {
 const resolveDatabaseMode = () =>
   (process.env.DATABASE || process.env.Database || 'local').toLowerCase();
 
-const isMongoMode = () => {
+export const isMongoMode = () => {
   const mode = resolveDatabaseMode();
   return mode === 'mongo' || mode === 'mongodb';
 };
@@ -43,6 +43,24 @@ export const updateDb = async (...args) => {
     return updateMongoDb(...args);
   }
   return updateLocalDb(...args);
+};
+
+export const readCollection = async (...args) => {
+  if (isMongoMode()) {
+    const { readCollection: readMongoCollection } = await loadMongoApi();
+    return readMongoCollection(...args);
+  }
+  const { readCollection: readLocalCollection } = await import('./localDb.js');
+  return readLocalCollection(...args);
+};
+
+export const updateCollection = async (...args) => {
+  if (isMongoMode()) {
+    const { updateCollection: updateMongoCollection } = await loadMongoApi();
+    return updateMongoCollection(...args);
+  }
+  const { updateCollection: updateLocalCollection } = await import('./localDb.js');
+  return updateLocalCollection(...args);
 };
 
 export const getDbPath = () =>
