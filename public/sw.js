@@ -1,9 +1,7 @@
 // Service Worker for PWA
-const CACHE_NAME = 'fight-site-v2';
+const CACHE_NAME = 'fight-site-v3';
 const urlsToCache = [
   '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
   '/logo192.png',
   '/logo512.png',
   '/manifest.json',
@@ -44,38 +42,45 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Always fetch latest HTML to prevent "reverting" to old UI after reload.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, responseToCache))
+            .catch((err) => console.warn('Failed to cache navigation response:', err));
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          return cached || caches.match('/');
+        })
+    );
+    return;
+  }
+
+  // Cache-first for static assets.
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Return cached version or fetch from network
-        if (response) {
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+
+      return fetch(event.request).then((response) => {
+        if (!response || response.status !== 200 || response.type !== 'basic') {
           return response;
         }
-        
-        return fetch(event.request).then((response) => {
-          // Check if we received a valid response
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-          
-          // Clone the response
-          const responseToCache = response.clone();
-          
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            })
-            .catch(err => {
-              console.warn('Failed to cache response:', err);
-            });
-          
-          return response;
-        });
-      })
-      .catch(() => {
-        // Return offline page or fallback
-        return caches.match('/');
-      })
+
+        const responseToCache = response.clone();
+        caches.open(CACHE_NAME)
+          .then((cache) => cache.put(event.request, responseToCache))
+          .catch((err) => console.warn('Failed to cache response:', err));
+
+        return response;
+      });
+    }).catch(() => caches.match('/'))
   );
 });
 
