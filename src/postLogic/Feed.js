@@ -3,6 +3,7 @@ import axios from 'axios';
 import PostCard from './PostCard';
 import CreatePost from './CreatePost';
 import TagFilter from '../tags/TagFilter';
+import OnboardingChecklist from '../onboarding/OnboardingChecklist';
 import { replacePlaceholderUrl } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
 import './Feed.css';
@@ -312,9 +313,12 @@ const handlePostUpdate = (updatedPost, isDeleted) => {
         />
       )}
 
-      <CreatePost onPostCreated={handlePostCreated} />
+      <OnboardingChecklist />
+      <div id="create-post">
+        <CreatePost onPostCreated={handlePostCreated} />
+      </div>
 
-      <div className="posts-feed">
+      <div className="posts-feed" id="feed-list">
         {posts.map((post, index) => (
           <div key={post.id} ref={setPostRef(index)} data-post-index={index}>
             <PostCard 

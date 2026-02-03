@@ -27,6 +27,9 @@ import GlobalChatSystem from './chat/GlobalChatSystem';
 import FeedbackButton from './shared/FeedbackButton';
 import CcgApp from './ccg/App';
 import SpeedRacingPage from './speedRacing/SpeedRacingPage';
+import CookieConsent from './legal/CookieConsent';
+import LegalPolicyPage from './legal/LegalPolicyPage';
+import LegalQuickLinks from './legal/LegalQuickLinks';
 import './App.css';
 
 const ModeratorRoute = ({ children }) => {
@@ -128,6 +131,18 @@ function AppContent() {
         <Route path="/tournaments" element={<TournamentPage />} />
         <Route path="/post/:postId" element={<PostPage />} />
         <Route
+          path="/privacy-policy"
+          element={<LegalPolicyPage endpoint="/api/privacy/policy" title="Privacy Policy" />}
+        />
+        <Route
+          path="/terms"
+          element={<LegalPolicyPage endpoint="/api/privacy/terms" title="Terms of Service" />}
+        />
+        <Route
+          path="/cookie-policy"
+          element={<LegalPolicyPage endpoint="/api/privacy/cookies" title="Cookie Policy" />}
+        />
+        <Route
           path="/ccg/*"
           element={(
             <ModeratorRoute>
@@ -148,6 +163,8 @@ function AppContent() {
       {isLoggedIn && <GlobalChatSystem />}
       {/* Feedback Button - always visible */}
       <FeedbackButton />
+      <LegalQuickLinks />
+      <CookieConsent />
     </div>
   );
 }

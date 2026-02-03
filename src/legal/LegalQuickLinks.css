@@ -1,0 +1,31 @@
+.legal-quick-links {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  z-index: 80;
+  padding: 7px 10px;
+  border-radius: 999px;
+  border: 1px solid #364d7d;
+  background: rgba(11, 19, 35, 0.92);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+}
+
+.legal-quick-links a {
+  color: #b9cbf5;
+  text-decoration: none;
+}
+
+.legal-quick-links span {
+  color: #6f85b0;
+}
+
+@media (max-width: 740px) {
+  .legal-quick-links {
+    right: 8px;
+    bottom: 8px;
+    font-size: 0.72rem;
+  }
+}
