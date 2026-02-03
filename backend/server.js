@@ -61,6 +61,11 @@ const chatStore = {
 };
 const app = express();
 const PORT = process.env.PORT || 5000;
+const shouldTrustProxy =
+  process.env.TRUST_PROXY === 'true' || process.env.NODE_ENV === 'production';
+if (shouldTrustProxy) {
+  app.set('trust proxy', 1);
+}
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -165,9 +170,15 @@ app.use(helmet({
 }));
 
 // Rate limiting
+const apiLimitMax =
+  Number(process.env.API_RATE_LIMIT_MAX) ||
+  (isDev ? 1000 : 400);
+const authLimitMax =
+  Number(process.env.AUTH_RATE_LIMIT_MAX) ||
+  (isDev ? 80 : 12);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs (increased for development)
+  max: apiLimitMax,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
@@ -175,7 +186,7 @@ const limiter = rateLimit({
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 50, // Increased for development - limit each IP to 50 requests per windowMs
+  max: authLimitMax,
   message: 'Too many login attempts, please try again later.',
   skipSuccessfulRequests: true,
 });
@@ -183,6 +194,9 @@ const authLimiter = rateLimit({
 app.use('/api/', limiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/google', authLimiter);
+app.use('/api/auth/forgot-password', authLimiter);
+app.use('/api/auth/reset-password', authLimiter);
 
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
@@ -253,6 +267,24 @@ app.use('/api/ccg', ccgRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/feedback', feedbackRoutes);
+
+// Lightweight health endpoints for uptime checks
+app.get(['/healthz', '/api/health'], (req, res) => {
+  const databaseModeRaw = process.env.DATABASE || process.env.Database || 'local';
+  const databaseMode = databaseModeRaw.toLowerCase();
+  const databaseLabel = databaseMode === 'mongo' || databaseMode === 'mongodb'
+    ? 'mongo'
+    : 'local';
+
+  res.status(200).json({
+    ok: true,
+    service: 'versusversevault-backend',
+    env: process.env.NODE_ENV || 'development',
+    database: databaseLabel,
+    uptimeSec: Math.round(process.uptime()),
+    timestamp: new Date().toISOString()
+  });
+});
 
 // Division seasons scheduler (auto + manual trigger support)
 const DIVISION_SCHEDULER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
