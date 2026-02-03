@@ -46,6 +46,12 @@ const ModeratorPanel = () => {
   const [feedbackToDelete, setFeedbackToDelete] = useState(null);
   const [tournaments, setTournaments] = useState([]);
   const [nicknameLogs, setNicknameLogs] = useState([]);
+  const [moderationLogs, setModerationLogs] = useState([]);
+  const [reportsQueue, setReportsQueue] = useState({
+    counts: { pending: 0, reviewed: 0, resolved: 0, dismissed: 0, approved: 0 },
+    queue: [],
+    total: 0
+  });
   const [showDeleteTournamentModal, setShowDeleteTournamentModal] = useState(false);
   const [tournamentToDelete, setTournamentToDelete] = useState(null);
   
@@ -214,7 +220,7 @@ const ModeratorPanel = () => {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, feedbackRes, tournamentsRes, nicknameLogsRes] = await Promise.all([
+      const [fightsRes, postsRes, usersRes, charactersRes, betsRes, feedbackRes, tournamentsRes, nicknameLogsRes, moderationLogsRes, reportsQueueRes] = await Promise.all([
         axios.get('/api/posts/official'),
         axios.get('/api/posts'),
         axios.get('/api/profile/all', {
@@ -230,7 +236,13 @@ const ModeratorPanel = () => {
         axios.get('/api/tournaments').catch(() => ({ data: [] })), // Fallback if tournaments not available
         axios.get('/api/profile/nickname-logs', {
           headers: { 'x-auth-token': token }
-        }).catch(() => ({ data: [] }))
+        }).catch(() => ({ data: [] })),
+        axios.get('/api/moderation/logs', {
+          headers: { 'x-auth-token': token }
+        }).catch(() => ({ data: [] })),
+        axios.get('/api/moderation/reports-queue', {
+          headers: { 'x-auth-token': token }
+        }).catch(() => ({ data: { counts: {}, queue: [], total: 0 } }))
       ]);
 
       setFights(fightsRes.data.fights || fightsRes.data);
@@ -241,6 +253,8 @@ const ModeratorPanel = () => {
       setFeedback(feedbackRes.data || []);
       setTournaments(tournamentsRes.data || []);
       setNicknameLogs(nicknameLogsRes.data || []);
+      setModerationLogs(moderationLogsRes.data || []);
+      setReportsQueue(reportsQueueRes.data || { counts: {}, queue: [], total: 0 });
       
       // Fetch divisions data
       await Promise.all([fetchSeasons()]);
@@ -612,6 +626,12 @@ const ModeratorPanel = () => {
           onClick={() => setActiveTab('tournaments')}
         >
           🏆 Tournaments
+        </button>
+        <button
+          className={`tab-btn ${activeTab === 'audit' ? 'active' : ''}`}
+          onClick={() => setActiveTab('audit')}
+        >
+          Audit
         </button>
       </div>
 
@@ -1320,6 +1340,11 @@ const ModeratorPanel = () => {
           <div className="feedback-section">
             <div className="feedback-header">
               <h3>📋 {t('moderatorPanel.feedbackManagement')}</h3>
+              <p>
+                Pending: {reportsQueue.counts?.pending || 0} | Reviewed:{' '}
+                {reportsQueue.counts?.reviewed || 0} | Resolved:{' '}
+                {reportsQueue.counts?.resolved || 0}
+              </p>
               <div className="feedback-filters">
                 <button
                   className={`filter-btn ${feedbackFilter === 'all' ? 'active' : ''}`}
@@ -1528,6 +1553,50 @@ const ModeratorPanel = () => {
                   );
                 })
               )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'audit' && (
+          <div className="users-section">
+            <div className="users-header">
+              <h3>Moderation audit</h3>
+            </div>
+            <div className="users-grid">
+              <div className="user-card" style={{ width: '100%' }}>
+                <div className="user-info" style={{ width: '100%' }}>
+                  <h4>Recent moderator/admin actions</h4>
+                  {moderationLogs.length === 0 ? (
+                    <p>No actions logged yet.</p>
+                  ) : (
+                    moderationLogs.slice(0, 120).map((entry) => (
+                      <p key={entry.id || `${entry.actorId}-${entry.createdAt}`}>
+                        <strong>{entry.action}</strong> by @{entry.actorUsername} on {entry.targetType}:{' '}
+                        {entry.targetId || '-'} ({new Date(entry.createdAt).toLocaleString()})
+                      </p>
+                    ))
+                  )}
+                </div>
+              </div>
+              <div className="user-card" style={{ width: '100%' }}>
+                <div className="user-info" style={{ width: '100%' }}>
+                  <h4>Reports queue (pending + reviewed)</h4>
+                  <p>
+                    Pending: {reportsQueue.counts?.pending || 0} | Reviewed:{' '}
+                    {reportsQueue.counts?.reviewed || 0} | Resolved:{' '}
+                    {reportsQueue.counts?.resolved || 0}
+                  </p>
+                  {reportsQueue.queue?.length ? (
+                    reportsQueue.queue.slice(0, 50).map((entry) => (
+                      <p key={entry.id}>
+                        <strong>{entry.status}</strong> [{entry.type}] {entry.title}
+                      </p>
+                    ))
+                  ) : (
+                    <p>No open reports in queue.</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -29,7 +29,8 @@ export const DEFAULT_DB = {
   characterSuggestions: [],
   divisionSeasons: [],
   feedback: [],
-  nicknameChangeLogs: []
+  nicknameChangeLogs: [],
+  moderatorActionLogs: []
 };
 
 export const COLLECTION_KEYS = Object.keys(DEFAULT_DB);

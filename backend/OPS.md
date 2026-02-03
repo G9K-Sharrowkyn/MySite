@@ -44,3 +44,10 @@ Notes:
 - Scripts work with current `DATABASE` mode (`local` or `mongo`) through the shared DB adapter.
 - Backup output is a JSON envelope with metadata and full DB content.
 
+## Moderation Audit APIs
+
+For admin/moderator accounts:
+- `GET /api/moderation/logs?limit=200`
+- `GET /api/moderation/reports-queue`
+
+These endpoints power the moderation audit tab and report queue summary.

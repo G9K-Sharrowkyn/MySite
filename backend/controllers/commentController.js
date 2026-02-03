@@ -10,6 +10,7 @@ import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
+import { logModerationAction } from '../utils/moderationAudit.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveCommentId = (comment) => comment?.id || comment?._id;
@@ -400,6 +401,17 @@ export const deleteComment = async (req, res) => {
           entries.filter((entry) => !idsToDelete.has(resolveCommentId(entry))),
         { db }
       );
+      await logModerationAction({
+        db,
+        actor: user,
+        action: 'comment.delete',
+        targetType: 'comment',
+        targetId: req.params.id,
+        details: {
+          ownComment: comment.authorId === req.user.id,
+          deletedCount: idsToDelete.size
+        }
+      });
       return db;
     });
 

@@ -6,6 +6,7 @@ import {
   usersRepo,
   withDb
 } from '../repositories/index.js';
+import { logModerationAction } from '../utils/moderationAudit.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -949,6 +950,18 @@ export const deleteTournament = async (req, res) => {
         throw error;
       }
 
+      await logModerationAction({
+        db,
+        actor: user,
+        action: 'tournament.delete',
+        targetType: 'tournament',
+        targetId: id,
+        details: {
+          ownTournament: isCreator,
+          status: tournament.status || 'unknown',
+          name: tournament.name || tournament.title || ''
+        }
+      });
       await tournamentsRepo.removeById(id, { db });
       return db;
     });

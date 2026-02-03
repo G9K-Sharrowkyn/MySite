@@ -39,5 +39,6 @@ export const characterSuggestionsRepo = repositories.characterSuggestions;
 export const divisionSeasonsRepo = repositories.divisionSeasons;
 export const feedbackRepo = repositories.feedback;
 export const nicknameChangeLogsRepo = repositories.nicknameChangeLogs;
+export const moderatorActionLogsRepo = repositories.moderatorActionLogs;
 
 export { repositories };

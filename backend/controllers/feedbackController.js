@@ -4,6 +4,7 @@ import {
   usersRepo,
   withDb
 } from '../repositories/index.js';
+import { logModerationAction } from '../utils/moderationAudit.js';
 
 export const submitFeedback = async (req, res) => {
   try {
@@ -126,20 +127,38 @@ export const updateFeedbackStatus = async (req, res) => {
     }
 
     let updatedFeedback = null;
-
-    updatedFeedback = await feedbackRepo.updateById(id, (feedback) => {
-      if (!feedback) {
-        return feedback;
+    await withDb(async (db) => {
+      const actorUser = await usersRepo.findOne(
+        (entry) => (entry.id || entry._id) === req.user.id,
+        { db }
+      );
+      updatedFeedback = await feedbackRepo.findById(id, { db });
+      if (!updatedFeedback) {
+        return db;
       }
 
-      feedback.status = status;
-      feedback.adminNotes = adminNotes || feedback.adminNotes;
+      const previousStatus = updatedFeedback.status;
+      updatedFeedback.status = status;
+      updatedFeedback.adminNotes = adminNotes || updatedFeedback.adminNotes;
 
       if (status === 'resolved') {
-        feedback.resolvedAt = new Date().toISOString();
+        updatedFeedback.resolvedAt = new Date().toISOString();
       }
 
-      return feedback;
+      await logModerationAction({
+        db,
+        actor: actorUser || req.user,
+        action: 'feedback.status_update',
+        targetType: 'feedback',
+        targetId: id,
+        details: {
+          previousStatus,
+          nextStatus: status,
+          hasAdminNotes: Boolean(adminNotes)
+        }
+      });
+
+      return db;
     });
 
     if (!updatedFeedback) {
@@ -161,9 +180,32 @@ export const deleteFeedback = async (req, res) => {
 
     const { id } = req.params;
     let deleted = false;
-
-    const removed = await feedbackRepo.removeById(id);
-    deleted = Boolean(removed);
+    await withDb(async (db) => {
+      const actorUser = await usersRepo.findOne(
+        (entry) => (entry.id || entry._id) === req.user.id,
+        { db }
+      );
+      const existing = await feedbackRepo.findById(id, { db });
+      if (!existing) {
+        return db;
+      }
+      const removed = await feedbackRepo.removeById(id, { db });
+      deleted = Boolean(removed);
+      if (deleted) {
+        await logModerationAction({
+          db,
+          actor: actorUser || req.user,
+          action: 'feedback.delete',
+          targetType: 'feedback',
+          targetId: id,
+          details: {
+            feedbackType: existing.type || 'unknown',
+            feedbackStatus: existing.status || 'unknown'
+          }
+        });
+      }
+      return db;
+    });
 
     if (!deleted) {
       return res.status(404).json({ msg: 'Feedback not found' });
@@ -187,6 +229,11 @@ export const approveCharacterSuggestion = async (req, res) => {
     let newCharacter = null;
 
     await withDb(async (db) => {
+      const actorUser = await usersRepo.findOne(
+        (entry) => (entry.id || entry._id) === req.user.id,
+        { db }
+      );
+      const actorName = actorUser?.username || req.user.username || 'moderator';
       const feedback = await feedbackRepo.findById(id, { db });
 
       if (!feedback || feedback.type !== 'character') {
@@ -201,7 +248,7 @@ export const approveCharacterSuggestion = async (req, res) => {
         tags: feedback.characterTags || [],
         createdAt: new Date().toISOString(),
         suggestedBy: feedback.submittedBy,
-        approvedBy: req.user.username
+        approvedBy: actorName
       };
 
       await charactersRepo.insert(character, { db });
@@ -210,7 +257,18 @@ export const approveCharacterSuggestion = async (req, res) => {
       // Update feedback status
       feedback.status = 'approved';
       feedback.resolvedAt = new Date().toISOString();
-      feedback.adminNotes = `Character approved and added to database by ${req.user.username}`;
+      feedback.adminNotes = `Character approved and added to database by ${actorName}`;
+      await logModerationAction({
+        db,
+        actor: actorUser || req.user,
+        action: 'feedback.character_approved',
+        targetType: 'feedback',
+        targetId: id,
+        details: {
+          characterId: character.id,
+          characterName: character.name
+        }
+      });
 
       characterCreated = true;
       return db;

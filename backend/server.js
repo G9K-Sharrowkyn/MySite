@@ -45,6 +45,7 @@ import storeRoutes from './routes/store.js';
 import userRoutes from './routes/user.js';
 import pushRoutes from './routes/push.js';
 import feedbackRoutes from './routes/feedback.js';
+import moderationRoutes from './routes/moderation.js';
 import translateRoutes from './routes/translate.js';
 import ccgRoutes from './routes/ccg.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
@@ -267,6 +268,7 @@ app.use('/api/ccg', ccgRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/feedback', feedbackRoutes);
+app.use('/api/moderation', moderationRoutes);
 
 // Lightweight health endpoints for uptime checks
 app.get(['/healthz', '/api/health'], (req, res) => {
