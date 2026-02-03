@@ -103,14 +103,22 @@ self.addEventListener('activate', (event) => {
 
 // Push notification handling
 self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    payload = event.data ? event.data.json() : {};
+  } catch (error) {
+    payload = { body: event.data ? event.data.text() : 'New notification' };
+  }
+
   const options = {
-    body: event.data ? event.data.text() : 'New notification from Fight Site',
+    body: payload.body || 'New notification from VersusVerseVault',
     icon: '/logo192.png',
     badge: '/logo192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: 1
+      primaryKey: 1,
+      url: payload.url || '/notifications'
     },
     actions: [
       {
@@ -127,7 +135,7 @@ self.addEventListener('push', (event) => {
   };
   
   event.waitUntil(
-    self.registration.showNotification('Fight Site', options)
+    self.registration.showNotification(payload.title || 'VersusVerseVault', options)
   );
 });
 
@@ -137,7 +145,7 @@ self.addEventListener('notificationclick', (event) => {
   
   if (event.action === 'explore') {
     event.waitUntil(
-      clients.openWindow('/')
+      clients.openWindow(event.notification?.data?.url || '/')
     );
   }
 });

@@ -23,6 +23,7 @@ import PostPage from './postLogic/PostPage';
 import AccountSettings from './auth/AccountSettings';
 import ForgotPassword from './auth/ForgotPassword';
 import ResetPassword from './auth/ResetPassword';
+import VerifyEmail from './auth/VerifyEmail';
 import GlobalChatSystem from './chat/GlobalChatSystem';
 import FeedbackButton from './shared/FeedbackButton';
 import CcgApp from './ccg/App';
@@ -115,6 +116,7 @@ function AppContent() {
         <Route path="/login" element={<Login setIsLoggedIn={() => {}} />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/settings" element={<AccountSettings />} />
         <Route path="/moderator" element={<ModeratorPanel />} />
         <Route path="/admin" element={<AdminPanel />} />

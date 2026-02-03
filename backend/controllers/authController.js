@@ -2,9 +2,18 @@ import bcrypt from 'bcryptjs';
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import { usersRepo, withDb } from '../repositories/index.js';
+import {
+  authChallengesRepo,
+  emailVerificationTokensRepo,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
 import { applyDailyBonus } from '../utils/coinBonus.js';
-import { sendPasswordResetEmail } from '../services/emailService.js';
+import {
+  sendEmailVerificationEmail,
+  sendPasswordResetEmail,
+  sendTwoFactorCodeEmail
+} from '../services/emailService.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const isJwtConfigured = () =>
@@ -23,6 +32,33 @@ const ensureAuthAvailability = (res) => {
 
 const normalizeEmail = (email) => email.trim().toLowerCase();
 const DEFAULT_AVATAR = '/logo192.png';
+const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const TWO_FACTOR_TTL_MS = 10 * 60 * 1000;
+const requireEmailVerification =
+  process.env.REQUIRE_EMAIL_VERIFICATION === 'true' ||
+  process.env.NODE_ENV === 'production';
+
+const isStaffRole = (role) => role === 'admin' || role === 'moderator';
+
+const createTwoFactorCode = () =>
+  `${Math.floor(100000 + Math.random() * 900000)}`;
+
+const createSignedChallengeToken = (challengeId) =>
+  jwt.sign(
+    { purpose: '2fa_challenge', challengeId },
+    process.env.JWT_SECRET,
+    { expiresIn: '15m' }
+  );
+
+const verifySignedChallengeToken = (token) => {
+  const payload = jwt.verify(token, process.env.JWT_SECRET);
+  if (payload?.purpose !== '2fa_challenge' || !payload?.challengeId) {
+    const error = new Error('Invalid challenge token.');
+    error.code = 'INVALID_CHALLENGE_TOKEN';
+    throw error;
+  }
+  return payload.challengeId;
+};
 
 const resolveGoogleClientIds = () =>
   (process.env.GOOGLE_CLIENT_ID || '')
@@ -103,10 +139,89 @@ const buildAuthResponse = (user) => ({
   username: user.username,
   displayName: getUserDisplayName(user),
   email: user.email,
+  emailVerified: Boolean(user.emailVerified),
   role: user.role,
   profile: user.profile || {},
   coins: user.coins || {}
 });
+
+const ensureEmailVerificationToken = async (db, userId, email) => {
+  const existing = await emailVerificationTokensRepo.findOne(
+    (entry) =>
+      entry.userId === userId &&
+      entry.usedAt == null &&
+      Number(entry.expiresAt || 0) > Date.now(),
+    { db }
+  );
+
+  const token = existing?.token || uuidv4();
+  if (!existing) {
+    await emailVerificationTokensRepo.insert(
+      {
+        id: uuidv4(),
+        userId,
+        email,
+        token,
+        createdAt: Date.now(),
+        expiresAt: Date.now() + VERIFICATION_TOKEN_TTL_MS,
+        usedAt: null
+      },
+      { db }
+    );
+  }
+
+  return token;
+};
+
+const issueStaffTwoFactorChallenge = async (db, user) => {
+  const userId = resolveUserId(user);
+  const email = normalizeEmail(user.email || '');
+  const code = createTwoFactorCode();
+  const challengeId = uuidv4();
+
+  await authChallengesRepo.updateAll(
+    (challenges) =>
+      challenges.filter(
+        (entry) =>
+          !(
+            entry.userId === userId &&
+            entry.purpose === 'login_2fa' &&
+            entry.usedAt == null
+          )
+      ),
+    { db }
+  );
+
+  await authChallengesRepo.insert(
+    {
+      id: challengeId,
+      userId,
+      email,
+      purpose: 'login_2fa',
+      code,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + TWO_FACTOR_TTL_MS,
+      usedAt: null
+    },
+    { db }
+  );
+
+  await sendTwoFactorCodeEmail(email, code);
+
+  return createSignedChallengeToken(challengeId);
+};
+
+const finalizeLoginResponse = async (res, user) => {
+  const userId = resolveUserId(user);
+  const payload = buildAuthPayload(user);
+  const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+  return res.json({
+    token,
+    userId,
+    user: buildAuthResponse(user)
+  });
+};
 
 const buildNewUser = ({ username, email, passwordHash }) => {
   const now = new Date();
@@ -115,8 +230,10 @@ const buildNewUser = ({ username, email, passwordHash }) => {
     id: uuidv4(),
     username,
     email,
+    emailVerified: false,
     password: passwordHash,
     role: 'user',
+    authProvider: 'local',
     profile: {
       displayName: username,
       bio: '',
@@ -222,47 +339,61 @@ export const register = async (req, res) => {
       passwordHash: hashedPassword
     });
 
-    await usersRepo.updateAll((users) => {
-      const emailTaken = users.some(
-        (user) => normalizeEmail(user.email || '') === normalizedEmail
-      );
-      if (emailTaken) {
-        const error = new Error('Email is already in use.');
-        error.code = 'EMAIL_IN_USE';
-        throw error;
-      }
-
-      const usernameTaken = users.some(
-        (user) => (user.username || '').toLowerCase() === trimmedUsername.toLowerCase()
-      );
-      if (usernameTaken) {
-        const error = new Error('Username is already taken.');
-        error.code = 'USERNAME_TAKEN';
-        throw error;
-      }
-
-      users.push(newUser);
-      return users;
-    });
-
-    const payload = buildAuthPayload(newUser);
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
-      (err, token) => {
-        if (err) {
-          throw err;
+    let verificationToken = null;
+    await withDb(async (db) => {
+      await usersRepo.updateAll((users) => {
+        const emailTaken = users.some(
+          (user) => normalizeEmail(user.email || '') === normalizedEmail
+        );
+        if (emailTaken) {
+          const error = new Error('Email is already in use.');
+          error.code = 'EMAIL_IN_USE';
+          throw error;
         }
 
-        res.status(201).json({
-          token,
-          userId: newUser.id,
-          user: buildAuthResponse(newUser)
-        });
-      }
-    );
+        const usernameTaken = users.some(
+          (user) => (user.username || '').toLowerCase() === trimmedUsername.toLowerCase()
+        );
+        if (usernameTaken) {
+          const error = new Error('Username is already taken.');
+          error.code = 'USERNAME_TAKEN';
+          throw error;
+        }
+
+        users.push(newUser);
+        return users;
+      }, { db });
+
+      verificationToken = await ensureEmailVerificationToken(
+        db,
+        newUser.id,
+        normalizedEmail
+      );
+
+      return db;
+    });
+
+    await sendEmailVerificationEmail(normalizedEmail, verificationToken);
+
+    if (requireEmailVerification) {
+      return res.status(201).json({
+        msg: 'Account created. Please verify your email before logging in.',
+        requiresEmailVerification: true,
+        email: normalizedEmail
+      });
+    }
+
+    const payload = buildAuthPayload(newUser);
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '24h'
+    });
+
+    res.status(201).json({
+      token,
+      userId: newUser.id,
+      user: buildAuthResponse(newUser),
+      requiresEmailVerification: false
+    });
   } catch (error) {
     console.error('Registration error:', error);
 
@@ -300,8 +431,27 @@ export const login = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid email or password.' });
     }
 
+    if (requireEmailVerification && !user.emailVerified) {
+      await withDb(async (db) => {
+        const token = await ensureEmailVerificationToken(
+          db,
+          resolveUserId(user),
+          normalizedEmail
+        );
+        await sendEmailVerificationEmail(normalizedEmail, token);
+        return db;
+      });
+
+      return res.status(403).json({
+        msg: 'Please verify your email before logging in.',
+        requiresEmailVerification: true,
+        email: normalizedEmail
+      });
+    }
+
     const now = new Date().toISOString();
     let responseUser = user;
+    let challengeToken = null;
     await withDb(async (db) => {
       const storedUser = await usersRepo.findOne(
         (entry) => resolveUserId(entry) === resolveUserId(user),
@@ -313,28 +463,23 @@ export const login = async (req, res) => {
         storedUser.profile.lastActive = now;
         storedUser.updatedAt = now;
         responseUser = storedUser;
+
+        if (isStaffRole(storedUser.role)) {
+          challengeToken = await issueStaffTwoFactorChallenge(db, storedUser);
+        }
       }
       return db;
     });
 
-    const payload = buildAuthPayload(user);
+    if (challengeToken) {
+      return res.status(202).json({
+        requires2FA: true,
+        challengeToken,
+        msg: 'Security code sent to your email.'
+      });
+    }
 
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
-      (err, token) => {
-        if (err) {
-          throw err;
-        }
-
-        res.json({
-          token,
-          userId: resolveUserId(user),
-          user: buildAuthResponse(responseUser)
-        });
-      }
-    );
+    return finalizeLoginResponse(res, responseUser);
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ msg: 'Server error. ' + error.message });
@@ -387,6 +532,7 @@ export const loginWithGoogle = async (req, res) => {
             (googlePayload.name || '').trim() || username;
           user.authProvider = 'google';
           user.googleId = googlePayload.sub || '';
+          user.emailVerified = true;
           created = true;
           users.push(user);
         }
@@ -410,7 +556,8 @@ export const loginWithGoogle = async (req, res) => {
         if (!user.googleId && googlePayload.sub) {
           user.googleId = googlePayload.sub;
         }
-        user.authProvider = user.authProvider || 'local';
+        user.authProvider = 'google';
+        user.emailVerified = true;
 
         applyDailyBonus(db, user);
         user.profile.lastActive = now;
@@ -422,25 +569,37 @@ export const loginWithGoogle = async (req, res) => {
       return db;
     });
 
-    const payload = buildAuthPayload(responseUser);
-
-    jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' },
-      (err, token) => {
-        if (err) {
-          throw err;
+    if (isStaffRole(responseUser.role)) {
+      const challengeToken = await withDb(async (db) => {
+        const storedUser = await usersRepo.findOne(
+          (entry) => resolveUserId(entry) === resolveUserId(responseUser),
+          { db }
+        );
+        if (!storedUser) {
+          throw new Error('User not found for challenge');
         }
+        return issueStaffTwoFactorChallenge(db, storedUser);
+      });
 
-        res.status(created ? 201 : 200).json({
-          token,
-          userId: resolveUserId(responseUser),
-          user: buildAuthResponse(responseUser),
-          isNewUser: created
-        });
-      }
-    );
+      return res.status(202).json({
+        requires2FA: true,
+        challengeToken,
+        isNewUser: created,
+        msg: 'Security code sent to your email.'
+      });
+    }
+
+    const payload = buildAuthPayload(responseUser);
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: '24h'
+    });
+
+    return res.status(created ? 201 : 200).json({
+      token,
+      userId: resolveUserId(responseUser),
+      user: buildAuthResponse(responseUser),
+      isNewUser: created
+    });
   } catch (error) {
     console.error('Google login error:', error?.response?.data || error);
     res.status(400).json({
@@ -586,5 +745,194 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ msg: 'Error resetting password' });
+  }
+};
+
+// @route   POST /api/auth/verify-email
+// @desc    Verify account email by token
+// @access  Public
+export const verifyEmail = async (req, res) => {
+  const token = String(req.body?.token || '').trim();
+  if (!token) {
+    return res.status(400).json({ msg: 'Verification token is required.' });
+  }
+
+  try {
+    let verifiedUser = null;
+    await withDb(async (db) => {
+      const verificationRecord = await emailVerificationTokensRepo.findOne(
+        (entry) =>
+          entry.token === token &&
+          entry.usedAt == null &&
+          Number(entry.expiresAt || 0) > Date.now(),
+        { db }
+      );
+
+      if (!verificationRecord) {
+        const error = new Error('Invalid or expired verification token.');
+        error.code = 'INVALID_TOKEN';
+        throw error;
+      }
+
+      verificationRecord.usedAt = Date.now();
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === verificationRecord.userId,
+        { db }
+      );
+      if (!user) {
+        const error = new Error('User not found.');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
+
+      user.emailVerified = true;
+      user.updatedAt = new Date().toISOString();
+      verifiedUser = user;
+      return db;
+    });
+
+    return res.json({
+      msg: 'Email verified successfully.',
+      email: verifiedUser?.email || null
+    });
+  } catch (error) {
+    if (error.code === 'INVALID_TOKEN') {
+      return res.status(400).json({ msg: error.message });
+    }
+    if (error.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: error.message });
+    }
+    console.error('Email verification error:', error);
+    return res.status(500).json({ msg: 'Server error.' });
+  }
+};
+
+// @route   POST /api/auth/resend-verification
+// @desc    Resend email verification link
+// @access  Public
+export const resendVerificationEmail = async (req, res) => {
+  const rawEmail = String(req.body?.email || '').trim();
+  if (!rawEmail) {
+    return res.status(400).json({ msg: 'Email is required.' });
+  }
+
+  const normalizedEmail = normalizeEmail(rawEmail);
+  try {
+    let token = null;
+    await withDb(async (db) => {
+      const user = await usersRepo.findOne(
+        (entry) => normalizeEmail(entry.email || '') === normalizedEmail,
+        { db }
+      );
+
+      if (!user || user.emailVerified) {
+        return db;
+      }
+
+      token = await ensureEmailVerificationToken(
+        db,
+        resolveUserId(user),
+        normalizedEmail
+      );
+      return db;
+    });
+
+    if (token) {
+      await sendEmailVerificationEmail(normalizedEmail, token);
+    }
+
+    return res.json({
+      msg: 'If that account exists and is unverified, a new verification email has been sent.'
+    });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    return res.status(500).json({ msg: 'Server error.' });
+  }
+};
+
+// @route   POST /api/auth/verify-2fa
+// @desc    Complete staff login with one-time code
+// @access  Public
+export const verifyLoginTwoFactor = async (req, res) => {
+  if (!ensureAuthAvailability(res)) {
+    return;
+  }
+
+  const challengeToken = String(req.body?.challengeToken || '').trim();
+  const code = String(req.body?.code || '').trim();
+  if (!challengeToken || !code) {
+    return res.status(400).json({ msg: 'Challenge token and code are required.' });
+  }
+
+  try {
+    const challengeId = verifySignedChallengeToken(challengeToken);
+    let authenticatedUser = null;
+    await withDb(async (db) => {
+      const challenge = await authChallengesRepo.findOne(
+        (entry) =>
+          entry.id === challengeId &&
+          entry.purpose === 'login_2fa' &&
+          entry.usedAt == null,
+        { db }
+      );
+      if (!challenge) {
+        const error = new Error('Challenge not found.');
+        error.code = 'CHALLENGE_NOT_FOUND';
+        throw error;
+      }
+      if (Number(challenge.expiresAt || 0) <= Date.now()) {
+        const error = new Error('Challenge expired.');
+        error.code = 'CHALLENGE_EXPIRED';
+        throw error;
+      }
+      if (challenge.code !== code) {
+        const error = new Error('Invalid security code.');
+        error.code = 'INVALID_CODE';
+        throw error;
+      }
+
+      challenge.usedAt = Date.now();
+      const user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === challenge.userId,
+        { db }
+      );
+      if (!user) {
+        const error = new Error('User not found.');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
+
+      if (requireEmailVerification && !user.emailVerified) {
+        const error = new Error('Email must be verified before login.');
+        error.code = 'EMAIL_NOT_VERIFIED';
+        throw error;
+      }
+
+      user.profile = user.profile || {};
+      user.profile.lastActive = new Date().toISOString();
+      user.updatedAt = new Date().toISOString();
+      applyDailyBonus(db, user);
+      authenticatedUser = user;
+      return db;
+    });
+
+    return finalizeLoginResponse(res, authenticatedUser);
+  } catch (error) {
+    if (
+      error.code === 'INVALID_CHALLENGE_TOKEN' ||
+      error.code === 'CHALLENGE_NOT_FOUND' ||
+      error.code === 'CHALLENGE_EXPIRED' ||
+      error.code === 'INVALID_CODE'
+    ) {
+      return res.status(400).json({ msg: error.message });
+    }
+    if (error.code === 'EMAIL_NOT_VERIFIED') {
+      return res.status(403).json({ msg: error.message, requiresEmailVerification: true });
+    }
+    if (error.code === 'USER_NOT_FOUND') {
+      return res.status(404).json({ msg: error.message });
+    }
+    console.error('2FA verification error:', error);
+    return res.status(500).json({ msg: 'Server error.' });
   }
 };

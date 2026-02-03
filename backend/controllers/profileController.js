@@ -21,6 +21,7 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     username: user.username,
     displayName: getUserDisplayName(user),
     ...(includeEmail ? { email: user.email } : {}),
+    ...(includeEmail ? { emailVerified: Boolean(user.emailVerified) } : {}),
     ...(includeEmail ? { timezone: user.timezone || 'UTC' } : {}),
     role: user.role || 'user',
     description,

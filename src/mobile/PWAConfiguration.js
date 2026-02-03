@@ -7,6 +7,9 @@ const PWAConfiguration = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
   const [pushSubscription, setPushSubscription] = useState(null);
+  const [vapidPublicKey, setVapidPublicKey] = useState(
+    process.env.REACT_APP_VAPID_PUBLIC_KEY || ''
+  );
 
   useEffect(() => {
     // Check if app is installed
@@ -28,6 +31,7 @@ const PWAConfiguration = () => {
 
     // Register service worker
     registerServiceWorker();
+    fetchVapidPublicKey();
 
     // Initialize push notifications
     initializePushNotifications();
@@ -48,6 +52,28 @@ const PWAConfiguration = () => {
         console.log('SW registration failed: ', registrationError);
       }
     }
+  };
+
+  const fetchVapidPublicKey = async () => {
+    if (vapidPublicKey) {
+      return;
+    }
+    try {
+      const response = await fetch('/api/push/vapid-public-key');
+      const data = await response.json();
+      if (data?.publicKey) {
+        setVapidPublicKey(data.publicKey);
+      }
+    } catch (error) {
+      console.error('Unable to fetch VAPID public key:', error);
+    }
+  };
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
   };
 
   const initializePushNotifications = async () => {
@@ -89,11 +115,20 @@ const PWAConfiguration = () => {
 
   const subscribeToPushNotifications = async () => {
     try {
+      if (!vapidPublicKey) {
+        await fetchVapidPublicKey();
+      }
+      if (!vapidPublicKey) {
+        console.warn('Missing VAPID public key, push disabled.');
+        return;
+      }
+
       const registration = await navigator.serviceWorker.ready;
+      const authToken = localStorage.getItem('token');
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: process.env.REACT_APP_VAPID_PUBLIC_KEY
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
       });
 
       setPushSubscription(subscription);
@@ -103,8 +138,9 @@ const PWAConfiguration = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(authToken ? { 'x-auth-token': authToken } : {})
         },
-        body: JSON.stringify(subscription),
+        body: JSON.stringify({ subscription }),
       });
     } catch (error) {
       console.error('Error subscribing to push notifications:', error);
@@ -123,7 +159,7 @@ const PWAConfiguration = () => {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(pushSubscription),
+          body: JSON.stringify({ subscription: pushSubscription }),
         });
       }
     } catch (error) {

@@ -61,3 +61,33 @@ For admin/moderator accounts:
 - `GET /api/moderation/reports-queue`
 
 These endpoints power the moderation audit tab and report queue summary.
+
+## Auth Hardening
+
+- Email verification endpoints:
+  - `POST /api/auth/verify-email`
+  - `POST /api/auth/resend-verification`
+- Staff (admin/moderator) 2FA endpoint:
+  - `POST /api/auth/verify-2fa`
+
+Environment variables:
+- `REQUIRE_EMAIL_VERIFICATION` (`true`/`false`, default true in production)
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_SECURE`, `EMAIL_USER`, `EMAIL_PASS`, `EMAIL_FROM`
+
+## Push Delivery
+
+Backend can send web push notifications when in-app notifications are created.
+
+Environment variables:
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+- `VAPID_SUBJECT` (optional, e.g. `mailto:noreply@versusversevault.com`)
+
+Helper endpoint:
+- `GET /api/push/vapid-public-key`
+
+## Upload Compression
+
+- Avatar uploads are converted to `.webp` (max 640x640).
+- Profile backgrounds are converted to `.webp` (max 1920x1080).
+- Upload size limit is 8 MB.

@@ -2,6 +2,7 @@
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
+import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import {
   getMyProfile,
@@ -23,25 +24,35 @@ const avatarDir = path.resolve(__dirname, '..', 'uploads', 'avatars');
 fs.mkdirSync(uploadDir, { recursive: true });
 fs.mkdirSync(avatarDir, { recursive: true });
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase();
-    cb(null, `${Date.now()}-${Math.random().toString(16).slice(2)}${ext}`);
+const imageUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 8 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (String(file.mimetype || '').startsWith('image/')) {
+      cb(null, true);
+      return;
+    }
+    cb(new Error('Only image uploads are allowed'));
   }
 });
 
-const upload = multer({ storage });
+const saveOptimizedImage = async (file, targetDir, { maxWidth, maxHeight, quality }) => {
+  const filename = `${Date.now()}-${Math.random().toString(16).slice(2)}.webp`;
+  const outputPath = path.join(targetDir, filename);
 
-const avatarStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, avatarDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname || '').toLowerCase();
-    cb(null, `${Date.now()}-${Math.random().toString(16).slice(2)}${ext}`);
-  }
-});
+  await sharp(file.buffer)
+    .rotate()
+    .resize({
+      width: maxWidth,
+      height: maxHeight,
+      fit: 'inside',
+      withoutEnlargement: true
+    })
+    .webp({ quality })
+    .toFile(outputPath);
 
-const avatarUpload = multer({ storage: avatarStorage });
+  return filename;
+};
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -108,13 +119,18 @@ router.put('/me', auth, updateProfile);
 // @route   POST api/profile/avatar
 // @desc    Upload profile avatar
 // @access  Private
-router.post('/avatar', auth, avatarUpload.single('avatar'), async (req, res) => {
+router.post('/avatar', auth, imageUpload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No avatar file uploaded' });
     }
 
-    const avatarPath = `/uploads/avatars/${req.file.filename}`;
+    const avatarFilename = await saveOptimizedImage(req.file, avatarDir, {
+      maxWidth: 640,
+      maxHeight: 640,
+      quality: 82
+    });
+    const avatarPath = `/uploads/avatars/${avatarFilename}`;
     await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
@@ -134,6 +150,12 @@ router.post('/avatar', auth, avatarUpload.single('avatar'), async (req, res) => 
 
     res.json({ avatar: avatarPath, profilePicture: avatarPath });
   } catch (error) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'Image must be 8 MB or smaller' });
+    }
+    if (error.message === 'Only image uploads are allowed') {
+      return res.status(400).json({ message: error.message });
+    }
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -145,13 +167,18 @@ router.post('/avatar', auth, avatarUpload.single('avatar'), async (req, res) => 
 // @route   POST api/profile/background-upload
 // @desc    Upload profile background
 // @access  Private
-router.post('/background-upload', auth, upload.single('background'), async (req, res) => {
+router.post('/background-upload', auth, imageUpload.single('background'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No background file uploaded' });
     }
 
-    const backgroundPath = `/uploads/backgrounds/${req.file.filename}`;
+    const backgroundFilename = await saveOptimizedImage(req.file, uploadDir, {
+      maxWidth: 1920,
+      maxHeight: 1080,
+      quality: 80
+    });
+    const backgroundPath = `/uploads/backgrounds/${backgroundFilename}`;
     await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
@@ -170,6 +197,12 @@ router.post('/background-upload', auth, upload.single('background'), async (req,
 
     res.json({ backgroundPath });
   } catch (error) {
+    if (error.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: 'Image must be 8 MB or smaller' });
+    }
+    if (error.message === 'Only image uploads are allowed') {
+      return res.status(400).json({ message: error.message });
+    }
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ message: 'User not found' });
     }

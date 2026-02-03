@@ -1,155 +1,118 @@
 import nodemailer from 'nodemailer';
 
-// Create reusable transporter
+const APP_NAME = 'VersusVerseVault';
+
 const createTransporter = () => {
-  // For development, use ethereal.email (fake SMTP)
-  // For production, use real SMTP credentials from environment variables
-  
   if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
     return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
-      port: process.env.EMAIL_PORT || 587,
-      secure: process.env.EMAIL_SECURE === 'true', // true for 465, false for other ports
+      port: Number(process.env.EMAIL_PORT || 587),
+      secure: process.env.EMAIL_SECURE === 'true',
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
       }
     });
   }
-  
-  // Fallback to console logging in development
+
   return {
     sendMail: async (mailOptions) => {
-      console.log('📧 Email would be sent:');
-      console.log('To:', mailOptions.to);
-      console.log('Subject:', mailOptions.subject);
-      console.log('HTML:', mailOptions.html);
-      console.log('---');
-      return { messageId: 'dev-mode-' + Date.now() };
+      console.log('[email:dev] to:', mailOptions.to);
+      console.log('[email:dev] subject:', mailOptions.subject);
+      console.log('[email:dev] html:', mailOptions.html);
+      return { messageId: `dev-${Date.now()}` };
     }
   };
 };
 
-export const sendPasswordResetEmail = async (email, resetToken) => {
-  const transporter = createTransporter();
-  
-  const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-  
-  const mailOptions = {
-    from: process.env.EMAIL_FROM || '"VersusVerseVault" <noreply@versusversevault.com>',
-    to: email,
-    subject: 'Password Reset Request - VersusVerseVault',
-    html: `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body {
-            font-family: Arial, sans-serif;
-            background-color: #0a0a0a;
-            color: #ffffff;
-            margin: 0;
-            padding: 0;
-          }
-          .container {
-            max-width: 600px;
-            margin: 40px auto;
-            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-            border-radius: 16px;
-            padding: 40px;
-            border: 2px solid #ff6b00;
-          }
-          .header {
-            text-align: center;
-            margin-bottom: 30px;
-          }
-          .logo {
-            font-size: 32px;
-            font-weight: bold;
-            color: #ff6b00;
-          }
-          .content {
-            line-height: 1.8;
-            color: #cccccc;
-          }
-          .button {
-            display: inline-block;
-            margin: 30px 0;
-            padding: 15px 40px;
-            background: linear-gradient(135deg, #ff6b00, #ff9900);
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-          }
-          .button:hover {
-            background: linear-gradient(135deg, #ff7700, #ffaa00);
-          }
-          .warning {
-            margin-top: 30px;
-            padding: 15px;
-            background: rgba(255, 107, 0, 0.1);
-            border-left: 4px solid #ff6b00;
-            font-size: 14px;
-            color: #aaaaaa;
-          }
-          .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid #333;
-            text-align: center;
-            font-size: 12px;
-            color: #666;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">🥊 VersusVerseVault</div>
-          </div>
-          
-          <div class="content">
-            <h2 style="color: #ff6b00;">Password Reset Request</h2>
-            
-            <p>Hello,</p>
-            
-            <p>We received a request to reset the password for your VersusVerseVault account associated with this email address.</p>
-            
-            <p>Click the button below to reset your password:</p>
-            
-            <div style="text-align: center;">
-              <a href="${resetUrl}" class="button">Reset Password</a>
-            </div>
-            
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all; color: #ff6b00;">${resetUrl}</p>
-            
-            <div class="warning">
-              <strong>⚠️ Important:</strong><br>
-              • This link will expire in 1 hour<br>
-              • If you didn't request this, please ignore this email<br>
-              • Your password will remain unchanged unless you click the link
-            </div>
-          </div>
-          
-          <div class="footer">
-            <p>© 2026 VersusVerseVault. All rights reserved.</p>
-            <p>This is an automated message, please do not reply.</p>
-          </div>
-        </div>
-      </body>
-      </html>
-    `
-  };
+const buildBaseHtml = ({ title, intro, body, ctaLabel, ctaHref, footer }) => `
+  <div style="font-family:Arial,sans-serif;background:#0f1220;color:#f4f6ff;padding:24px">
+    <div style="max-width:640px;margin:0 auto;background:#171b2e;border:1px solid #2f375b;border-radius:12px;padding:24px">
+      <h1 style="margin:0 0 8px;color:#ff7b2f;font-size:28px">${APP_NAME}</h1>
+      <h2 style="margin:0 0 18px;font-size:20px;color:#ffffff">${title}</h2>
+      <p style="margin:0 0 12px;line-height:1.5">${intro}</p>
+      <div style="line-height:1.6;color:#d2d8ef">${body}</div>
+      ${
+        ctaLabel && ctaHref
+          ? `<p style="margin:22px 0 0"><a href="${ctaHref}" style="display:inline-block;background:#ff7b2f;color:#fff;text-decoration:none;padding:12px 18px;border-radius:8px;font-weight:700">${ctaLabel}</a></p>`
+          : ''
+      }
+      <p style="margin:24px 0 0;font-size:12px;color:#94a0ce">${footer}</p>
+    </div>
+  </div>
+`;
 
-  try {
-    const info = await transporter.sendMail(mailOptions);
-    console.log('Password reset email sent:', info.messageId);
-    return info;
-  } catch (error) {
-    console.error('Error sending password reset email:', error);
-    throw error;
-  }
+const sendEmail = async ({ to, subject, html }) => {
+  const transporter = createTransporter();
+  const from = process.env.EMAIL_FROM || `"${APP_NAME}" <noreply@versusversevault.com>`;
+  return transporter.sendMail({ from, to, subject, html });
+};
+
+export const sendPasswordResetEmail = async (email, resetToken) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(resetToken)}`;
+  const html = buildBaseHtml({
+    title: 'Password reset',
+    intro: 'We received a request to reset your password.',
+    body: `
+      <p>Use the button below to set a new password.</p>
+      <p>If you did not request this, you can safely ignore this email.</p>
+      <p>This link expires in 1 hour.</p>
+      <p style="word-break:break-all"><strong>Direct link:</strong> ${resetUrl}</p>
+    `,
+    ctaLabel: 'Reset password',
+    ctaHref: resetUrl,
+    footer: 'This is an automated message.'
+  });
+
+  const info = await sendEmail({
+    to: email,
+    subject: `${APP_NAME} - Password reset request`,
+    html
+  });
+  console.log('Password reset email sent:', info.messageId);
+};
+
+export const sendEmailVerificationEmail = async (email, verificationToken) => {
+  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  const verifyUrl = `${frontendUrl}/verify-email?token=${encodeURIComponent(verificationToken)}`;
+  const html = buildBaseHtml({
+    title: 'Verify your email',
+    intro: 'Please verify your email address to activate your account.',
+    body: `
+      <p>After verification, you can log in normally and use all features.</p>
+      <p>This verification link expires in 24 hours.</p>
+      <p style="word-break:break-all"><strong>Direct link:</strong> ${verifyUrl}</p>
+    `,
+    ctaLabel: 'Verify email',
+    ctaHref: verifyUrl,
+    footer: 'If you did not create this account, please ignore this email.'
+  });
+
+  const info = await sendEmail({
+    to: email,
+    subject: `${APP_NAME} - Verify your email`,
+    html
+  });
+  console.log('Email verification sent:', info.messageId);
+};
+
+export const sendTwoFactorCodeEmail = async (email, code) => {
+  const html = buildBaseHtml({
+    title: 'Security code',
+    intro: 'A sign-in attempt requires additional verification.',
+    body: `
+      <p>Your one-time security code is:</p>
+      <p style="font-size:28px;font-weight:700;letter-spacing:4px;color:#ffb267">${code}</p>
+      <p>The code expires in 10 minutes.</p>
+    `,
+    footer: 'If this was not you, change your password immediately.'
+  });
+
+  const info = await sendEmail({
+    to: email,
+    subject: `${APP_NAME} - Security code`,
+    html
+  });
+  console.log('2FA code email sent:', info.messageId);
 };

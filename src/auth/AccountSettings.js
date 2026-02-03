@@ -8,6 +8,7 @@ const AccountSettings = () => {
   const [user, setUser] = useState(null);
   const [toast, setToast] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [resendingVerification, setResendingVerification] = useState(false);
   
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -122,6 +123,29 @@ const AccountSettings = () => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!user?.email || resendingVerification) {
+      return;
+    }
+
+    setResendingVerification(true);
+    try {
+      await axios.post(
+        '/api/auth/resend-verification',
+        { email: user.email },
+        { headers: { 'x-auth-token': token } }
+      );
+      setToast({ message: 'Verification email sent again.', type: 'success' });
+    } catch (error) {
+      setToast({
+        message: error.response?.data?.msg || 'Could not resend verification email',
+        type: 'error'
+      });
+    } finally {
+      setResendingVerification(false);
+    }
+  };
+
   const getTimezoneLabel = (tz) => {
     try {
       const now = new Date();
@@ -161,6 +185,25 @@ const AccountSettings = () => {
         <div className="settings-header">
           <h1>⚙️ Account Settings</h1>
           <p className="username-display">Logged in as: <strong>{user?.displayName || user?.username}</strong></p>
+        </div>
+
+        <div className="settings-section">
+          <h2>Account Email</h2>
+          <p className="section-description">
+            {user?.emailVerified
+              ? `Verified: ${user?.email || ''}`
+              : `Not verified: ${user?.email || ''}`}
+          </p>
+          {!user?.emailVerified && (
+            <button
+              type="button"
+              className="btn-submit"
+              onClick={handleResendVerification}
+              disabled={resendingVerification}
+            >
+              {resendingVerification ? 'Sending...' : 'Resend verification email'}
+            </button>
+          )}
         </div>
 
         <div className="settings-section">

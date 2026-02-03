@@ -6,7 +6,10 @@ import {
   changePassword,
   updateTimezone,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  resendVerificationEmail,
+  verifyEmail,
+  verifyLoginTwoFactor
 } from '../controllers/authController.js';
 import { registerValidation, loginValidation } from '../middleware/validation.js';
 import auth from '../middleware/auth.js';
@@ -37,6 +40,9 @@ router.post('/forgot-password', forgotPassword);
 // @desc    Reset password with token
 // @access  Public
 router.post('/reset-password', resetPassword);
+router.post('/verify-email', verifyEmail);
+router.post('/resend-verification', resendVerificationEmail);
+router.post('/verify-2fa', verifyLoginTwoFactor);
 
 // @route   PUT api/auth/change-password
 // @desc    Change user password

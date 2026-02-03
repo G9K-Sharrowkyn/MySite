@@ -40,5 +40,7 @@ export const divisionSeasonsRepo = repositories.divisionSeasons;
 export const feedbackRepo = repositories.feedback;
 export const nicknameChangeLogsRepo = repositories.nicknameChangeLogs;
 export const moderatorActionLogsRepo = repositories.moderatorActionLogs;
+export const emailVerificationTokensRepo = repositories.emailVerificationTokens;
+export const authChallengesRepo = repositories.authChallenges;
 
 export { repositories };

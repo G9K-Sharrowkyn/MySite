@@ -30,7 +30,9 @@ export const DEFAULT_DB = {
   divisionSeasons: [],
   feedback: [],
   nicknameChangeLogs: [],
-  moderatorActionLogs: []
+  moderatorActionLogs: [],
+  emailVerificationTokens: [],
+  authChallenges: []
 };
 
 export const COLLECTION_KEYS = Object.keys(DEFAULT_DB);

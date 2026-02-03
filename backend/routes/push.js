@@ -1,16 +1,23 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { pushSubscriptionsRepo } from '../repositories/index.js';
+import { optionalAuth } from '../middleware/optionalAuth.js';
+import { getVapidPublicKey } from '../services/pushService.js';
 
 const router = express.Router();
 
+router.get('/vapid-public-key', (_req, res) => {
+  res.json({ publicKey: getVapidPublicKey() });
+});
+
 // POST /api/push/subscribe
-router.post('/subscribe', async (req, res) => {
+router.post('/subscribe', optionalAuth, async (req, res) => {
   try {
     const { subscription, userId } = req.body || {};
     if (!subscription) {
       return res.status(400).json({ message: 'Subscription is required' });
     }
+    const resolvedUserId = req.user?.id || userId || null;
 
     await pushSubscriptionsRepo.updateAll((subscriptions) => {
       const existing = subscriptions.find(
@@ -19,10 +26,12 @@ router.post('/subscribe', async (req, res) => {
       if (!existing) {
         subscriptions.push({
           id: uuidv4(),
-          userId: userId || null,
+          userId: resolvedUserId,
           subscription,
           createdAt: new Date().toISOString()
         });
+      } else if (resolvedUserId && existing.userId !== resolvedUserId) {
+        existing.userId = resolvedUserId;
       }
 
       return subscriptions;

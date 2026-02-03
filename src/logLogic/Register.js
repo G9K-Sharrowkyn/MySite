@@ -30,6 +30,7 @@ const Register = () => {
   });
   const [notification, setNotification] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
   const navigate = useNavigate();
 
   const { username, email, password, password2 } = formData;
@@ -81,6 +82,18 @@ const Register = () => {
         }
       );
 
+      if (response.data?.requiresEmailVerification) {
+        setPendingVerificationEmail(response.data?.email || email);
+        showNotification(
+          'Account created. Verify your email, then sign in.',
+          'success'
+        );
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 1200);
+        return;
+      }
+
       if (!response.data?.token || !response.data?.userId) {
         showNotification('Unexpected response from the server.', 'error');
         return;
@@ -103,6 +116,32 @@ const Register = () => {
     }
   };
 
+  const resendVerification = async () => {
+    const targetEmail = pendingVerificationEmail || email;
+    if (!targetEmail || isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await axios.post(
+        '/api/auth/resend-verification',
+        { email: targetEmail },
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+      showNotification('Verification email sent again.', 'success');
+    } catch (error) {
+      showNotification(
+        getErrorMessage(error, 'Unable to resend verification email.'),
+        'error'
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleGoogleCredential = async (idToken) => {
     if (isSubmitting) {
       return;
@@ -115,6 +154,14 @@ const Register = () => {
         { idToken },
         { headers: { 'Content-Type': 'application/json' } }
       );
+
+      if (response.data?.requires2FA) {
+        showNotification('This account requires 2FA. Please sign in from the login page.', 'info');
+        setTimeout(() => {
+          navigate('/login', { replace: true });
+        }, 800);
+        return;
+      }
 
       if (!response.data?.token || !response.data?.userId) {
         showNotification('Unexpected response from the server.', 'error');
@@ -213,6 +260,17 @@ const Register = () => {
         onCredential={handleGoogleCredential}
         onError={(message) => showNotification(message, 'error')}
       />
+      {pendingVerificationEmail && (
+        <button
+          type="button"
+          className="btn btn-secondary"
+          onClick={resendVerification}
+          disabled={isSubmitting}
+          style={{ marginTop: '12px' }}
+        >
+          Resend verification email
+        </button>
+      )}
     </div>
   );
 };

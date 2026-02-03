@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { notificationsRepo } from '../repositories/index.js';
+import { sendPushToUser } from '../services/pushService.js';
 
 const normalizeNotification = (notification) => ({
   id: notification.id || notification._id,
@@ -204,10 +205,16 @@ export const createNotification = async (
 
   if (db && typeof db === 'object') {
     await notificationsRepo.insert(notification, { db });
-    return notification;
+  } else {
+    await notificationsRepo.insert(notification);
   }
 
-  await notificationsRepo.insert(notification);
+  await sendPushToUser(userId, {
+    title: title || 'New notification',
+    body: content || '',
+    url: data?.url || '/notifications',
+    notificationId: notification.id
+  });
 
   return notification;
 };
