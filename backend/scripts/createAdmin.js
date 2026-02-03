@@ -25,7 +25,7 @@ const createAdminUser = async () => {
       email: 'admin@geekfights.com',
       password: hashedPassword,
       role: 'admin',
-      profilePicture: '/placeholder-avatar.png',
+      profilePicture: '/logo192.png',
       description: 'Site Administrator',
       joinedDate: new Date().toISOString(),
       stats: {

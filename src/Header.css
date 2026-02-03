@@ -8,7 +8,7 @@
 }
 
 .header-container {
-  max-width: 1600px;
+  max-width: none;
   margin: 0 auto;
   display: grid;
   grid-template-columns: auto 1fr;
@@ -35,6 +35,7 @@
   flex: 0 0 auto;
   grid-row: 1 / span 2;
   align-self: center;
+  display: flex;
 }
 
 .header-logo h1 {
@@ -145,8 +146,11 @@
   }
 
   .header-logo {
-    grid-row: 1;
-  }
+  flex: 0 0 auto;
+  grid-row: 1 / span 2;
+  align-self: center;
+  display: flex;
+}
 
   .header-body {
     grid-column: 1;
@@ -608,5 +612,317 @@
   .user-avatar {
     width: 35px;
     height: 35px;
+  }
+}
+
+.header-logo-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(78px, 7vw, 112px);
+  height: clamp(78px, 7vw, 112px);
+  border-radius: 16px;
+  border: 2px solid var(--accent);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.12), rgba(52, 152, 219, 0.08));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(52, 152, 219, 0.2) inset;
+  padding: 8px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.header-logo-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 9px 20px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(52, 152, 219, 0.35) inset;
+}
+
+.header-logo-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+  .header-logo-link {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    padding: 6px;
+  }
+}
+
+/* Unified Header Grid Layout */
+.header-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  align-items: stretch;
+  grid-auto-flow: row dense;
+}
+
+.header-nav-block,
+.header-tools-block,
+.nav-row,
+.tools-row {
+  display: contents;
+}
+
+.pre-ccg {
+  grid-row: 1;
+}
+
+.after-ccg {
+  grid-row: 2;
+}
+
+.after-ccg-priority {
+  order: 1;
+}
+
+.after-ccg-controls {
+  order: 2;
+}
+
+.after-ccg-user,
+.after-ccg-admin {
+  order: 3;
+}
+
+.header-grid-item,
+.after-ccg-priority,
+.after-ccg-controls,
+.after-ccg-user,
+.after-ccg-admin {
+  width: 100%;
+}
+
+.header .nav-link,
+.header .nav-link-disabled,
+.header .header-controls,
+.header .user-button,
+.header .auth-buttons .btn,
+.header .icon-button {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.header .header-controls {
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.header .theme-toggle,
+.header .language-button {
+  min-height: 40px;
+}
+
+.header .language-switcher {
+  flex: 1;
+}
+
+.header .language-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.header .after-ccg-user .user-button {
+  justify-content: center;
+}
+
+.header .after-ccg-user.auth-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.header .after-ccg-user.auth-buttons .btn {
+  flex: 1;
+}
+
+.header .icon-button {
+  padding: 8px;
+}
+
+@media (min-width: 2100px) {
+  .after-ccg {
+    grid-row: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-body {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+
+  .header .nav-link,
+  .header .nav-link-disabled,
+  .header .header-controls,
+  .header .user-button,
+  .header .auth-buttons .btn,
+  .header .icon-button {
+    min-height: 48px;
+  }
+}
+/* Equalized Header Tiles Override */
+.header .theme-toggle,
+.header .language-button,
+.header .icon-button,
+.header .user-button,
+.header .nav-link,
+.header .nav-link-disabled,
+.header .auth-buttons .btn {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header .language-switcher {
+  width: 100%;
+}
+
+.header .language-button {
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .header .theme-toggle,
+  .header .language-button,
+  .header .icon-button,
+  .header .user-button,
+  .header .nav-link,
+  .header .nav-link-disabled,
+  .header .auth-buttons .btn {
+    min-height: 48px;
+  }
+}
+/* Header Tile Visual Unification v2 */
+.header .nav-link,
+.header .nav-link-disabled,
+.header .icon-button,
+.header .user-button,
+.header .theme-toggle,
+.header .language-button,
+.header .auth-buttons .btn {
+  height: 52px !important;
+  min-height: 52px !important;
+  width: 100% !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  border: 2px solid rgba(255, 255, 255, 0.22) !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: var(--text-light) !important;
+  box-sizing: border-box !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-decoration: none !important;
+  backdrop-filter: blur(10px);
+}
+
+.header .nav-link:hover,
+.header .icon-button:hover,
+.header .user-button:hover,
+.header .theme-toggle:hover,
+.header .language-button:hover,
+.header .auth-buttons .btn:hover {
+  background: rgba(255, 255, 255, 0.18) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+.header .nav-link-disabled {
+  opacity: 0.55;
+}
+
+.header .user-button {
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.header .user-avatar {
+  width: 28px;
+  height: 28px;
+}
+
+.header .language-button {
+  gap: 8px;
+}
+
+.header .icon-button {
+  position: relative;
+}
+
+@media (max-width: 768px) {
+  .header .nav-link,
+  .header .nav-link-disabled,
+  .header .icon-button,
+  .header .user-button,
+  .header .theme-toggle,
+  .header .language-button,
+  .header .auth-buttons .btn {
+    height: 48px !important;
+    min-height: 48px !important;
+    padding: 8px 10px !important;
+  }
+
+  .header .user-avatar {
+    width: 24px;
+    height: 24px;
+  }
+}
+/* Header Tile Max Width v3 */
+.header-body {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 190px)) !important;
+  justify-content: start;
+}
+
+@media (max-width: 768px) {
+  .header-body {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 160px)) !important;
+  }
+}
+/* Header Tile Responsive Fill v4 */
+/* Default: when wrapping to next rows, tiles expand to fill width */
+.header-body {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+  justify-content: stretch;
+}
+
+/* Very wide screens: cap tile growth so first-row layout looks tighter */
+@media (min-width: 2000px) {
+  .header-body {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 190px)) !important;
+    justify-content: start;
+  }
+}
+
+@media (max-width: 768px) {
+  .header-body {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+  }
+}
+/* Header Tile No-Gap Final v5 */
+/* Single behavior across all widths: tiles always fill row width (no dead zone). */
+.header-body {
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+  justify-content: stretch !important;
+}
+
+@media (max-width: 768px) {
+  .header-body {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)) !important;
+  }
+}
+
+@media (min-width: 2000px) {
+  .header-body {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    justify-content: stretch !important;
   }
 }

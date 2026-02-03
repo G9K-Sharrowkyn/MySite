@@ -458,6 +458,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey) => {
     const isVoted = userVote === teamKey;
+    const totalVotes = getTotalVotes();
+    const votePercentage = getVotePercentage(votes, totalVotes);
     // New: multiline layout for 3 or 4 characters
     const multiline = teamList.length === 3 || teamList.length === 4;
     let rows = [];
@@ -547,6 +549,11 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               );
             })
           )}
+        </div>
+
+        <div className="team-vote-panel">
+          <div className="team-vote-count">{votes} {t('votes') || 'votes'}</div>
+          <div className="team-vote-percent">{votePercentage}%</div>
         </div>
       </div>
     );

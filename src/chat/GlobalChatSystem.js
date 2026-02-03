@@ -5,6 +5,8 @@ import { AuthContext } from '../auth/AuthContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './GlobalChatSystem.css';
 
+const DEFAULT_AVATAR = '/logo192.png';
+
 const GlobalChatSystem = () => {
   const { user, token } = useContext(AuthContext);
   const [socket, setSocket] = useState(null);
@@ -612,7 +614,7 @@ const GlobalChatSystem = () => {
         <div className="chat-header-right">
           {activeTab === 'global' && (
             <span className={`connection-status ${isConnected ? 'connected' : 'disconnected'}`}>
-              {isConnected ? 'đźź˘' : 'đź”´'}
+              {isConnected ? '\u{1F7E2}' : '\u{1F534}'}
             </span>
           )}
           <span 
@@ -653,7 +655,7 @@ const GlobalChatSystem = () => {
                         {!isOwn && (
                           <img 
                             {...getOptimizedImageProps(
-                              message.profilePicture || '/placeholder-avatar.png',
+                              message.profilePicture || DEFAULT_AVATAR,
                               { size: 36 }
                             )}
                             alt={message.username}
@@ -712,7 +714,7 @@ const GlobalChatSystem = () => {
                       <div className="user-item current-user">
                         <img 
                           {...getOptimizedImageProps(
-                            user.profilePicture || '/placeholder-avatar.png',
+                            user.profilePicture || DEFAULT_AVATAR,
                             { size: 28 }
                           )}
                           alt={user.username}
@@ -723,7 +725,7 @@ const GlobalChatSystem = () => {
                         <div key={activeUser.userId} className="user-item">
                           <img 
                             {...getOptimizedImageProps(
-                              activeUser.profilePicture || '/placeholder-avatar.png',
+                              activeUser.profilePicture || DEFAULT_AVATAR,
                               { size: 28 }
                             )}
                             alt={activeUser.username}
@@ -776,7 +778,7 @@ const GlobalChatSystem = () => {
                           <div key={user.id} className="private-user-item">
                             <img 
                               {...getOptimizedImageProps(
-                                user.avatar || '/placeholder-avatar.png',
+                                user.avatar || DEFAULT_AVATAR,
                                 { size: 36 }
                               )}
                               alt={user.username}
@@ -818,7 +820,7 @@ const GlobalChatSystem = () => {
                       >
                         <img 
                           {...getOptimizedImageProps(
-                            conv.profilePicture || '/placeholder-avatar.png',
+                            conv.profilePicture || DEFAULT_AVATAR,
                             { size: 40 }
                           )}
                           alt={conv.username}
@@ -849,12 +851,12 @@ const GlobalChatSystem = () => {
                 <div className="private-chat-container">
                   <div className="private-chat-header">
                     <button className="back-btn" onClick={backToPrivateConversations}>
-                      â† Back
+                      {'< Back'}
                     </button>
                     <div className="private-chat-user-info">
                       <img 
                         {...getOptimizedImageProps(
-                          selectedPrivateConversation.profilePicture || '/placeholder-avatar.png',
+                          selectedPrivateConversation.profilePicture || DEFAULT_AVATAR,
                           { size: 32, lazy: false, fetchPriority: 'high', decoding: 'sync' }
                         )}
                         alt={selectedPrivateConversation.username}
@@ -884,7 +886,7 @@ const GlobalChatSystem = () => {
                   </div>
                   {showNewMessageNotification && (
                     <div className="new-message-notification" onClick={() => scrollPrivateToBottom(true)}>
-                      <span>â†“ New message</span>
+                      <span>{'v New message'}</span>
                     </div>
                   )}
                   <form className="private-message-input-form" onSubmit={sendPrivateMessage}>

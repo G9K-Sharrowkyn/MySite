@@ -1574,6 +1574,18 @@ body.dark-mode .post-card {
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.25rem;
+}
+
+.team-vote-count {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-light);
+}
+
+.team-vote-percent {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .voting-footer-symmetrical {

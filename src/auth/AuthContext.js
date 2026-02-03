@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 
 export const AuthContext = createContext();
+const DEFAULT_AVATAR = '/logo192.png';
 
 const normalizeUser = (data, fallbackId) => {
   if (!data) {
@@ -16,7 +17,7 @@ const normalizeUser = (data, fallbackId) => {
       data.profilePicture ||
       data.profile?.profilePicture ||
       data.profile?.avatar ||
-      '',
+      DEFAULT_AVATAR,
     role: data.role || 'user'
   };
 };

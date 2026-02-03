@@ -50,11 +50,11 @@ const buildNewUser = ({ username, email, passwordHash }) => {
     role: 'user',
     profile: {
       bio: '',
-      profilePicture: '',
+      profilePicture: '/logo192.png',
       favoriteCharacters: [],
       joinDate: now.toISOString(),
       lastActive: now.toISOString(),
-      avatar: '',
+      avatar: '/logo192.png',
       description: '',
       backgroundImage: ''
     },

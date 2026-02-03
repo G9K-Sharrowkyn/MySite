@@ -21,10 +21,10 @@ const LanguageSwitcher = () => {
   };
 
   return (
-    <div className="header-controls">
+    <>
       {/* Dark Mode Toggle */}
-      <button 
-        className="theme-toggle"
+      <button
+        className="theme-toggle after-ccg after-ccg-controls"
         onClick={toggleDarkMode}
         title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
       >
@@ -32,8 +32,8 @@ const LanguageSwitcher = () => {
       </button>
 
       {/* Language Switcher */}
-      <div className="language-switcher">
-        <button 
+      <div className="language-switcher after-ccg after-ccg-controls">
+        <button
           className="language-button"
           onClick={() => setShowLanguageMenu(!showLanguageMenu)}
           title="Change Language"
@@ -43,6 +43,7 @@ const LanguageSwitcher = () => {
             className="flag"
             alt={currentLang?.name}
           />
+          <span className="language-code">{currentLang?.name || 'English'}</span>
           <span className="dropdown-arrow">▼</span>
         </button>
 
@@ -66,7 +67,7 @@ const LanguageSwitcher = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 

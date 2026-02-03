@@ -124,39 +124,41 @@ const Header = () => {
       <div className="header-container">
         {/* Logo */}
         <div className="header-logo">
-          <h1>VersusVerseVault</h1>
+          <Link to="/" className="header-logo-link" aria-label="VersusVerseVault Home">
+            <img src="/logo512.png" alt="VersusVerseVault" className="header-logo-image" />
+          </Link>
         </div>
 
         <div className="header-body">
           <nav className="header-nav-block">
             <div className="nav-row nav-row-top">
-              <Link to="/" className="nav-link">{t('home')}</Link>
-              <Link to="/divisions" className="nav-link">{t('divisions')}</Link>
-              <Link to="/leaderboard" className="nav-link">{t('leaderboard')}</Link>
+              <Link to="/" className="nav-link pre-ccg">{t('home')}</Link>
+              <Link to="/divisions" className="nav-link pre-ccg">{t('divisions')}</Link>
+              <Link to="/leaderboard" className="nav-link pre-ccg">{t('leaderboard')}</Link>
             </div>
             <div className="nav-row nav-row-bottom">
-              <Link to="/tournaments" className="nav-link">{t('tournaments')}</Link>
+              <Link to="/tournaments" className="nav-link pre-ccg">{t('tournaments')}</Link>
               {isModerator ? (
-                <Link to="/speed-racing" className="nav-link">{t('speedRacing')}</Link>
+                <Link to="/speed-racing" className="nav-link pre-ccg">{t('speedRacing')}</Link>
               ) : (
-                <span className="nav-link nav-link-disabled" aria-disabled="true" title="Dostęp tylko dla moderatorów">
+                <span className="nav-link nav-link-disabled pre-ccg" aria-disabled="true" title="Dostęp tylko dla moderatorów">
                   {t('speedRacing')}
                   <span className="nav-link-soon">(Soon!)</span>
                 </span>
               )}
               {isModerator ? (
-                <Link to="/ccg" className="nav-link">CCG</Link>
+                <Link to="/ccg" className="nav-link pre-ccg">CCG</Link>
               ) : (
-                <span className="nav-link nav-link-disabled" aria-disabled="true" title="Dostęp tylko dla moderatorów">
+                <span className="nav-link nav-link-disabled pre-ccg" aria-disabled="true" title="Dostęp tylko dla moderatorów">
                   CCG
                   <span className="nav-link-soon">(Soon!)</span>
                 </span>
               )}
               {isModerator && (
-                <Link to="/moderator" className="nav-link moderator-link">{t('moderator')}</Link>
+                <Link to="/moderator" className="nav-link moderator-link after-ccg after-ccg-admin">{t('moderator')}</Link>
               )}
               {isAdmin && (
-                <Link to="/admin" className="nav-link admin-link">{t('adminPanel') || 'Admin'}</Link>
+                <Link to="/admin" className="nav-link admin-link after-ccg after-ccg-admin">{t('adminPanel') || 'Admin'}</Link>
               )}
             </div>
           </nav>
@@ -165,7 +167,7 @@ const Header = () => {
             <div className="tools-row tools-row-top">
               <LanguageSwitcher />
               {isLoggedIn ? (
-                <div className="user-menu-container">
+                <div className="user-menu-container after-ccg after-ccg-user">
                   <button 
                     className="user-button"
                     onClick={() => setShowUserMenu(!showUserMenu)}
@@ -223,7 +225,7 @@ const Header = () => {
                   )}
                 </div>
               ) : (
-                <div className="auth-buttons">
+                <div className="auth-buttons after-ccg after-ccg-user">
                   <Link to="/login" className="btn btn-outline">{t('login')}</Link>
                   <Link to="/register" className="btn btn-primary">{t('register')}</Link>
                 </div>
@@ -232,14 +234,14 @@ const Header = () => {
 
             {isLoggedIn && (
               <div className="tools-row tools-row-bottom">
-                <Link to="/messages" className="icon-button">
+                <Link to="/messages" className="icon-button after-ccg after-ccg-priority">
                   <span className="icon">💬</span>
                   {unreadMessages > 0 && (
                     <span className="badge">{unreadMessages}</span>
                   )}
                 </Link>
 
-                <div className="notifications-container">
+                <div className="notifications-container after-ccg after-ccg-priority">
                   <button 
                     className="icon-button"
                     onClick={toggleNotifications}

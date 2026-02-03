@@ -239,7 +239,8 @@
   box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
-.featured-fights-grid {
+.featured-fights-grid,
+.official-fights-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 30px;
@@ -247,7 +248,8 @@
   margin: 0 auto;
 }
 
-.featured-fight-card {
+.featured-fight-card,
+.official-fight-card {
   background: rgba(255, 255, 255, 0.98);
   border-radius: 20px;
   padding: 30px;
@@ -256,7 +258,8 @@
   backdrop-filter: blur(10px);
 }
 
-.featured-fight-card:hover {
+.featured-fight-card:hover,
+.official-fight-card:hover {
   transform: translateY(-10px);
   box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
 }
@@ -692,7 +695,8 @@
     max-width: 300px;
   }
   
-  .featured-fights-grid {
+  .featured-fights-grid,
+  .official-fights-grid {
     grid-template-columns: 1fr;
     gap: 20px;
   }
@@ -763,6 +767,7 @@
   }
   
   .featured-fight-card,
+  .official-fight-card,
   .recent-posts,
   .top-users {
     padding: 20px;
@@ -795,8 +800,26 @@
 }
 
 .featured-fight-card,
+.official-fight-card,
 .feature-card,
 .post-preview,
 .user-preview {
   animation: fadeInUp 0.6s ease-out;
+}
+
+/* Home Post Card Proportion Fix */
+.official-fights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 420px));
+  justify-content: center;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .official-fights-grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
 }

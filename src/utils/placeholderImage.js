@@ -11,8 +11,8 @@ export const generatePlaceholderImage = (width = 150, height = 150, backgroundCo
 
 // Predefined placeholder images
 export const placeholderImages = {
-  user: generatePlaceholderImage(150, 150, '#666', '#fff', 'User'),
-  userSmall: generatePlaceholderImage(40, 40, '#666', '#fff', 'User'),
+  user: '/logo192.png',
+  userSmall: '/logo192.png',
   moderator: generatePlaceholderImage(150, 150, '#333', '#fff', 'Mod'),
   character: generatePlaceholderImage(150, 200, '#444', '#fff', 'Char'),
 };

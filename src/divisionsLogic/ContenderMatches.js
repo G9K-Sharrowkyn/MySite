@@ -121,7 +121,7 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
                 <div className="challenger-info">
                   <img 
                     {...getOptimizedImageProps(
-                      match.challenger1?.profilePicture || '/placeholder-avatar.png',
+                      match.challenger1?.profilePicture || '/logo192.png',
                       { size: 60 }
                     )}
                     alt={match.challenger1?.username}
@@ -139,7 +139,7 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
                 <div className="challenger-info">
                   <img 
                     {...getOptimizedImageProps(
-                      match.challenger2?.profilePicture || '/placeholder-avatar.png',
+                      match.challenger2?.profilePicture || '/logo192.png',
                       { size: 60 }
                     )}
                     alt={match.challenger2?.username}

@@ -424,7 +424,7 @@ const PostPage = () => {
   };
 
   const handleVote = async (team) => {
-    if (!token || userVote) return;
+    if (!token) return;
     
     try {
       await axios.post(`/api/posts/${postId}/fight-vote`, { team }, {
@@ -629,31 +629,23 @@ const PostPage = () => {
                 <button 
                   className={`vote-button team-a-btn ${userVote === 'A' ? 'voted' : ''}`}
                   onClick={() => handleVote('A')}
-                  disabled={!!userVote}
                 >
                   {userVote === 'A' ? 'Voted!' : 'Vote!'}
                 </button>
                 <button 
                   className={`vote-button draw-btn center-draw-btn ${userVote === 'draw' ? 'voted' : ''}`}
                   onClick={() => handleVote('draw')}
-                  disabled={!!userVote}
                 >
                   Draw
                 </button>
                 <button 
                   className={`vote-button team-b-btn ${userVote === 'B' ? 'voted' : ''}`}
                   onClick={() => handleVote('B')}
-                  disabled={!!userVote}
                 >
                   {userVote === 'B' ? 'Voted!' : 'Vote!'}
                 </button>
               </div>
               
-              {userVote && (
-                <div className="vote-status">
-                  ✅ You voted for: <strong>{userVote === 'A' ? post.fight.teamA : userVote === 'B' ? post.fight.teamB : 'Draw'}</strong>
-                </div>
-              )}
             </div>
           )}
         </div>

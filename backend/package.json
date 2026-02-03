@@ -9,6 +9,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "migrate:mongo": "node scripts/migrateToMongo.js",
+    "migrate:avatars": "node scripts/migrateDefaultAvatars.js",
     "export:json": "node scripts/exportToJson.js"
   },
   "keywords": [],
