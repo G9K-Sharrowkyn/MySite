@@ -15,7 +15,8 @@
     "restore:db": "node scripts/restoreDb.js",
     "export:json": "node scripts/exportToJson.js",
     "show:staff": "node scripts/showAdminCredentials.js",
-    "reset:admin-password": "node scripts/resetAdminPassword.js"
+    "reset:admin-password": "node scripts/resetAdminPassword.js",
+    "provision:staff": "node scripts/provisionStaffAccounts.js"
   },
   "keywords": [],
   "author": "",
