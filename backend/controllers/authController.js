@@ -195,16 +195,18 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
   const challengeId = uuidv4();
   const signedChallengeToken = createSignedChallengeToken(challengeId);
 
+  // Keep previous pending challenges to avoid invalidating a code/token pair
+  // when a user accidentally triggers login twice. Clean up only stale entries.
   await authChallengesRepo.updateAll(
     (challenges) =>
-      challenges.filter(
-        (entry) =>
-          !(
-            entry.userId === userId &&
-            entry.purpose === 'login_2fa' &&
-            entry.usedAt == null
-          )
-      ),
+      challenges.filter((entry) => {
+        if (entry.purpose !== 'login_2fa') {
+          return true;
+        }
+        const expired = Number(entry.expiresAt || 0) <= Date.now();
+        const consumed = entry.usedAt != null;
+        return !(expired || consumed);
+      }),
     { db }
   );
 
@@ -917,13 +919,17 @@ export const verifyLoginTwoFactor = async (req, res) => {
             (challengeTokenSignatureValid && entry.id === challengeId) ||
             entry.token === challengeToken
           ) &&
-          entry.purpose === 'login_2fa' &&
-          entry.usedAt == null,
+          entry.purpose === 'login_2fa',
         { db }
       );
       if (!challenge) {
         const error = new Error('Challenge not found.');
         error.code = 'CHALLENGE_NOT_FOUND';
+        throw error;
+      }
+      if (challenge.usedAt != null) {
+        const error = new Error('Security code already used. Please sign in again.');
+        error.code = 'CHALLENGE_ALREADY_USED';
         throw error;
       }
       if (Number(challenge.expiresAt || 0) <= Date.now()) {
@@ -987,7 +993,8 @@ export const verifyLoginTwoFactor = async (req, res) => {
       error.code === 'INVALID_CHALLENGE_TOKEN' ||
       error.code === 'CHALLENGE_NOT_FOUND' ||
       error.code === 'CHALLENGE_EXPIRED' ||
-      error.code === 'INVALID_CODE'
+      error.code === 'INVALID_CODE' ||
+      error.code === 'CHALLENGE_ALREADY_USED'
     ) {
       return res.status(400).json({ msg: error.message });
     }
