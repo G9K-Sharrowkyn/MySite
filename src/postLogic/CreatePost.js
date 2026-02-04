@@ -5,6 +5,27 @@ import { getOptimizedImageProps } from '../utils/placeholderImage';
 import CharacterSelector from '../feedLogic/CharacterSelector';
 import './CreatePost.css';
 
+const getApiBaseUrl = () => {
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl && /^https?:\/\//i.test(envUrl)) {
+    return envUrl.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const { protocol, hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '';
+    }
+    return `${protocol}//api.${hostname}`;
+  }
+  return '';
+};
+
+const parseCharactersPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.characters)) return payload.characters;
+  return [];
+};
+
 const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => {
   const { t, lang } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(!!initialData);
@@ -113,10 +134,21 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
 
   const fetchCharacters = async () => {
     try {
-      const response = await axios.get('/api/characters');
-      setCharacters(response.data);
+      let response = await axios.get('/api/characters');
+      let parsed = parseCharactersPayload(response.data);
+
+      if (!parsed.length) {
+        const apiBase = getApiBaseUrl();
+        if (apiBase) {
+          response = await axios.get(`${apiBase}/api/characters`);
+          parsed = parseCharactersPayload(response.data);
+        }
+      }
+
+      setCharacters(parsed);
     } catch (error) {
       console.error('Error fetching characters:', error);
+      setCharacters([]);
     }
   };
 

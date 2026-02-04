@@ -2,6 +2,27 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './CharacterSelector.css';
 
+const getApiBaseUrl = () => {
+  const envUrl = process.env.REACT_APP_API_URL;
+  if (envUrl && /^https?:\/\//i.test(envUrl)) {
+    return envUrl.replace(/\/$/, '');
+  }
+  if (typeof window !== 'undefined' && window.location?.hostname) {
+    const { protocol, hostname } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '';
+    }
+    return `${protocol}//api.${hostname}`;
+  }
+  return '';
+};
+
+const parseCharactersPayload = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.characters)) return payload.characters;
+  return [];
+};
+
 const CharacterSelector = ({ characters: externalCharacters = null, selectedCharacter, onSelect }) => {
   const hasExternalCharacters = Array.isArray(externalCharacters) && externalCharacters.length > 0;
   const [characters, setCharacters] = useState(hasExternalCharacters ? externalCharacters : []);
@@ -20,8 +41,23 @@ const CharacterSelector = ({ characters: externalCharacters = null, selectedChar
 
     const fetchCharacters = async () => {
       try {
-        const response = await axios.get('/api/characters');
-        setCharacters(Array.isArray(response.data) ? response.data : []);
+        let response = await axios.get('/api/characters');
+        let parsed = parseCharactersPayload(response.data);
+
+        if (!parsed.length) {
+          const apiBase = getApiBaseUrl();
+          if (apiBase) {
+            response = await axios.get(`${apiBase}/api/characters`);
+            parsed = parseCharactersPayload(response.data);
+          }
+        }
+
+        setCharacters(parsed);
+        if (!parsed.length) {
+          setError('Character list is currently unavailable');
+        } else {
+          setError(null);
+        }
       } catch (err) {
         setError('Failed to load characters');
       } finally {
