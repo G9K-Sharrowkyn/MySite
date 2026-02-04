@@ -124,10 +124,12 @@
 }
 
 .header-help-link {
-  min-width: 92px;
+  min-width: 106px;
   justify-content: center;
   font-weight: 700;
   letter-spacing: 0.04em;
+  font-size: 1rem;
+  padding: 10px 14px;
 }
 
 @media (min-width: 1200px) {

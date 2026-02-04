@@ -174,7 +174,7 @@ app.use(helmet({
 // Rate limiting
 const apiLimitMax =
   Number(process.env.API_RATE_LIMIT_MAX) ||
-  (isDev ? 1000 : 400);
+  (isDev ? 2000 : 5000);
 const loginAuthLimitMax =
   Number(process.env.LOGIN_RATE_LIMIT_MAX) ||
   (isDev ? 120 : 30);
@@ -186,13 +186,23 @@ const passwordAuthLimitMax =
   (isDev ? 120 : 30);
 const googleAuthLimitMax =
   Number(process.env.GOOGLE_AUTH_RATE_LIMIT_MAX) ||
-  (isDev ? 500 : 120);
+  (isDev ? 600 : 400);
+const buildRateLimitKey = (req) => {
+  const token = req.get('x-auth-token');
+  if (token && token.length > 16) {
+    return `token:${token.slice(-16)}`;
+  }
+  const ip = req.ip || req.socket?.remoteAddress || 'unknown-ip';
+  const ua = (req.get('user-agent') || 'unknown-ua').slice(0, 120);
+  return `${ip}:${ua}`;
+};
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: apiLimitMax,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: buildRateLimitKey,
   // Auth endpoints have dedicated limiters below.
   skip: (req) => req.path.startsWith('/api/auth/')
 });
@@ -201,6 +211,7 @@ const loginAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: loginAuthLimitMax,
   message: 'Too many login attempts, please try again later.',
+  keyGenerator: buildRateLimitKey,
   skipSuccessfulRequests: true,
 });
 
@@ -208,6 +219,7 @@ const registerAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: registerAuthLimitMax,
   message: 'Too many registration attempts, please try again later.',
+  keyGenerator: buildRateLimitKey,
   skipSuccessfulRequests: true
 });
 
@@ -215,6 +227,7 @@ const googleAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: googleAuthLimitMax,
   message: 'Too many Google sign-in attempts, please try again later.',
+  keyGenerator: buildRateLimitKey,
   skipSuccessfulRequests: true
 });
 
@@ -222,6 +235,7 @@ const passwordAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: passwordAuthLimitMax,
   message: 'Too many password reset attempts, please try again later.',
+  keyGenerator: buildRateLimitKey,
   skipSuccessfulRequests: true
 });
 

@@ -28,6 +28,45 @@ const parseCharactersPayload = (payload) => {
   return [];
 };
 
+const getCharacterPreviewFallbacks = (imageUrl) => {
+  if (!imageUrl || typeof imageUrl !== 'string') return [];
+  const clean = imageUrl.replace(/\?.*$/, '');
+  const out = [];
+  const pushUnique = (value) => {
+    if (value && !out.includes(value)) out.push(value);
+  };
+  pushUnique(clean);
+
+  const hasExt = /\.[a-z0-9]+$/i.test(clean);
+  if (!hasExt) {
+    pushUnique(`${clean}.webp`);
+    pushUnique(`${clean}.jpg`);
+    pushUnique(`${clean}.png`);
+  }
+
+  if (clean.includes('(SW)')) {
+    const starWarsVariant = clean.replace('(SW)', '(Star Wars)');
+    pushUnique(starWarsVariant);
+    if (!/\.[a-z0-9]+$/i.test(starWarsVariant)) {
+      pushUnique(`${starWarsVariant}.webp`);
+      pushUnique(`${starWarsVariant}.jpg`);
+      pushUnique(`${starWarsVariant}.png`);
+    }
+  }
+
+  if (clean.includes('(Star Wars)')) {
+    const shortVariant = clean.replace('(Star Wars)', '(SW)');
+    pushUnique(shortVariant);
+    if (!/\.[a-z0-9]+$/i.test(shortVariant)) {
+      pushUnique(`${shortVariant}.webp`);
+      pushUnique(`${shortVariant}.jpg`);
+      pushUnique(`${shortVariant}.png`);
+    }
+  }
+
+  return out;
+};
+
 const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => {
   const { t, lang } = useLanguage();
   const [isExpanded, setIsExpanded] = useState(!!initialData);
@@ -53,6 +92,28 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
   });
 
   const token = localStorage.getItem('token');
+
+  const handleCharacterPreviewError = (event, character) => {
+    const image = event.currentTarget;
+    let tried = [];
+    try {
+      tried = image.dataset.tried ? JSON.parse(image.dataset.tried) : [];
+    } catch (_error) {
+      tried = [];
+    }
+    const allCandidates = getCharacterPreviewFallbacks(character?.image);
+    const nextCandidate = allCandidates.find((candidate) => !tried.includes(candidate));
+
+    if (nextCandidate) {
+      const nextTried = [...tried, nextCandidate];
+      image.dataset.tried = JSON.stringify(nextTried);
+      image.src = nextCandidate;
+      return;
+    }
+
+    image.onerror = null;
+    image.src = '/placeholder-character.png';
+  };
 
   useEffect(() => {
     fetchCharacters();
@@ -646,6 +707,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                         <img
                                           {...getOptimizedImageProps(warrior.character.image, { size: null })}
                                           alt={warrior.character.name}
+                                          onError={(event) => handleCharacterPreviewError(event, warrior.character)}
                                           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                         />
                                       </div>
@@ -701,6 +763,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                     <img
                                       {...getOptimizedImageProps(warrior.character.image, { size: null })}
                                       alt={warrior.character.name}
+                                      onError={(event) => handleCharacterPreviewError(event, warrior.character)}
                                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                     />
                                   </div>
@@ -767,6 +830,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                     <img
                                       {...getOptimizedImageProps(warrior.character.image, { size: null })}
                                       alt={warrior.character.name}
+                                      onError={(event) => handleCharacterPreviewError(event, warrior.character)}
                                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                     />
                                   </div>
