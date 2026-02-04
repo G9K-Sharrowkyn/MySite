@@ -1,8 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 import { readDb, nicknameChangeLogsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getRankInfo } from '../utils/rankSystem.js';
 import { getUserDisplayName, normalizeDisplayName } from '../utils/userDisplayName.js';
+import { logModerationAction } from '../utils/moderationAudit.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -250,6 +252,126 @@ export const getNicknameChangeLogs = async (req, res) => {
   } catch (error) {
     console.error('Error fetching nickname change logs:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Change another user's role (admin only, password confirmation required)
+// @route   POST /api/profile/:userId/role
+// @access  Private (admin)
+export const changeUserRole = async (req, res) => {
+  const actorId = req.user?.id;
+  const targetUserId = String(req.params.userId || '');
+  const nextRole = String(req.body?.role || '').trim();
+  const adminPassword = String(req.body?.adminPassword || '');
+
+  if (!actorId) {
+    return res.status(401).json({ msg: 'Unauthorized' });
+  }
+
+  if (!['moderator', 'user'].includes(nextRole)) {
+    return res.status(400).json({ msg: 'Role must be moderator or user.' });
+  }
+
+  if (!adminPassword) {
+    return res.status(400).json({ msg: 'Admin password is required.' });
+  }
+
+  try {
+    let updatedUser = null;
+    await withDb(async (db) => {
+      const adminUser = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === actorId,
+        { db }
+      );
+
+      if (!adminUser || adminUser.role !== 'admin') {
+        const error = new Error('Only admins can change user roles.');
+        error.code = 'FORBIDDEN';
+        throw error;
+      }
+
+      const passwordOk = await bcrypt.compare(adminPassword, adminUser.password || '');
+      if (!passwordOk) {
+        const error = new Error('Admin password is incorrect.');
+        error.code = 'BAD_PASSWORD';
+        throw error;
+      }
+
+      const targetUser = await usersRepo.findOne(
+        (entry) =>
+          resolveUserId(entry) === targetUserId ||
+          (entry.username || '').toLowerCase() === targetUserId.toLowerCase(),
+        { db }
+      );
+
+      if (!targetUser) {
+        const error = new Error('Target user not found.');
+        error.code = 'TARGET_NOT_FOUND';
+        throw error;
+      }
+
+      if (resolveUserId(targetUser) === actorId) {
+        const error = new Error('Admin role cannot be changed this way.');
+        error.code = 'SELF_CHANGE_FORBIDDEN';
+        throw error;
+      }
+
+      if (targetUser.role === 'admin') {
+        const error = new Error('Cannot change role of another admin.');
+        error.code = 'TARGET_ADMIN_FORBIDDEN';
+        throw error;
+      }
+
+      const previousRole = targetUser.role || 'user';
+      if (previousRole === nextRole) {
+        updatedUser = targetUser;
+        return db;
+      }
+
+      targetUser.role = nextRole;
+      targetUser.updatedAt = new Date().toISOString();
+      updatedUser = targetUser;
+
+      await logModerationAction({
+        db,
+        actor: adminUser,
+        action: 'user.role_change',
+        targetType: 'user',
+        targetId: resolveUserId(targetUser),
+        details: {
+          targetUsername: targetUser.username || '',
+          previousRole,
+          nextRole
+        }
+      });
+
+      return db;
+    });
+
+    return res.json({
+      msg: 'User role updated successfully.',
+      user: {
+        id: resolveUserId(updatedUser),
+        username: updatedUser.username,
+        role: updatedUser.role
+      }
+    });
+  } catch (error) {
+    if (error.code === 'FORBIDDEN') {
+      return res.status(403).json({ msg: error.message });
+    }
+    if (error.code === 'BAD_PASSWORD') {
+      return res.status(401).json({ msg: error.message });
+    }
+    if (
+      error.code === 'TARGET_NOT_FOUND' ||
+      error.code === 'SELF_CHANGE_FORBIDDEN' ||
+      error.code === 'TARGET_ADMIN_FORBIDDEN'
+    ) {
+      return res.status(400).json({ msg: error.message });
+    }
+    console.error('Error changing user role:', error);
+    return res.status(500).json({ msg: 'Server error' });
   }
 };
 

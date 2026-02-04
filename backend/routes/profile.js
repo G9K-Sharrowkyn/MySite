@@ -5,6 +5,7 @@ import multer from 'multer';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import {
+  changeUserRole,
   getMyProfile,
   getNicknameChangeLogs,
   getProfile,
@@ -241,6 +242,11 @@ router.delete('/background', auth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+// @route   POST api/profile/:userId/role
+// @desc    Grant/revoke moderator role (admin only)
+// @access  Private
+router.post('/:userId/role', auth, changeUserRole);
 
 // @route   GET api/profile/:userId
 // @desc    Get profile by user ID

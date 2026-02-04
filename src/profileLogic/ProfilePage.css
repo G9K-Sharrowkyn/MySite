@@ -809,6 +809,88 @@ body:not(.dark-mode) .fight-item-link:hover .fight-item {
   transform: translateY(-2px);
 }
 
+.role-management-btn {
+  border: 1px solid rgba(255, 161, 61, 0.55);
+  background: rgba(255, 161, 61, 0.12);
+}
+
+.role-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 5, 14, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 16px;
+}
+
+.role-modal {
+  width: min(460px, 100%);
+  background: #111a33;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.role-modal h3 {
+  margin: 0 0 8px;
+}
+
+.role-modal p {
+  margin: 0 0 14px;
+  color: #d4dbef;
+}
+
+.role-modal label {
+  display: block;
+  margin-bottom: 6px;
+  color: #f2f5ff;
+  font-size: 0.95rem;
+}
+
+.role-modal input {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 8px;
+  border: 1px solid #3f4f7a;
+  background: #0c142b;
+  color: #fff;
+  padding: 10px 12px;
+}
+
+.role-modal-error {
+  margin: 10px 0 0;
+  color: #ff8080;
+}
+
+.role-modal-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.role-modal-cancel,
+.role-modal-confirm {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.role-modal-cancel {
+  background: #2a3557;
+  color: #f4f7ff;
+}
+
+.role-modal-confirm {
+  background: #f28d2f;
+  color: #fff;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
   .profile-header {

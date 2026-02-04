@@ -16,7 +16,8 @@
     "export:json": "node scripts/exportToJson.js",
     "show:staff": "node scripts/showAdminCredentials.js",
     "reset:admin-password": "node scripts/resetAdminPassword.js",
-    "provision:staff": "node scripts/provisionStaffAccounts.js"
+    "provision:staff": "node scripts/provisionStaffAccounts.js",
+    "set:primary-admin": "node scripts/setPrimaryAdminAndCleanupModerators.js"
   },
   "keywords": [],
   "author": "",
