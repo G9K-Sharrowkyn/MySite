@@ -3,15 +3,16 @@ import axios from 'axios';
 import './CharacterSelector.css';
 
 const CharacterSelector = ({ characters: externalCharacters = null, selectedCharacter, onSelect }) => {
-  const [characters, setCharacters] = useState(Array.isArray(externalCharacters) ? externalCharacters : []);
+  const hasExternalCharacters = Array.isArray(externalCharacters) && externalCharacters.length > 0;
+  const [characters, setCharacters] = useState(hasExternalCharacters ? externalCharacters : []);
   const [filteredCharacters, setFilteredCharacters] = useState([]);
   const [inputValue, setInputValue] = useState(selectedCharacter ? selectedCharacter.name : '');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loading, setLoading] = useState(!Array.isArray(externalCharacters));
+  const [loading, setLoading] = useState(!hasExternalCharacters);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (Array.isArray(externalCharacters)) {
+    if (hasExternalCharacters) {
       setCharacters(externalCharacters);
       setLoading(false);
       return;
@@ -28,7 +29,7 @@ const CharacterSelector = ({ characters: externalCharacters = null, selectedChar
       }
     };
     fetchCharacters();
-  }, [externalCharacters]);
+  }, [externalCharacters, hasExternalCharacters]);
 
   useEffect(() => {
     setInputValue(selectedCharacter ? selectedCharacter.name : '');

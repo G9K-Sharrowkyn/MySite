@@ -167,7 +167,7 @@ ccgNamespace.on('connection', (socket) => {
 app.use(helmet({
   contentSecurityPolicy: false, // Disable for development, enable in production
   crossOriginEmbedderPolicy: false,
-  crossOriginResourcePolicy: isDev ? false : undefined,
+  crossOriginResourcePolicy: isDev ? false : { policy: 'cross-origin' },
   crossOriginOpenerPolicy: isDev ? false : undefined
 }));
 

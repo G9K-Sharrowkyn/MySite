@@ -3,7 +3,7 @@
   background: var(--bg-light);
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+  overflow: visible;
   margin-bottom: 25px;
   backdrop-filter: blur(10px);
   transition: all 0.3s ease;
@@ -950,6 +950,7 @@
   box-shadow: 0 2px 12px rgba(0,0,0,0.06);
   padding: 24px 16px 16px 16px;
   position: relative;
+  overflow: visible;
 }
 
 .team-builder:hover {
@@ -1013,6 +1014,7 @@
   border-radius: 12px;
   border: 1px solid var(--border-color);
   transition: all 0.3s ease;
+  overflow: visible;
 }
 
 .warrior-pair:hover {
@@ -1031,6 +1033,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  overflow: visible;
 }
 
 .warrior-input label {
