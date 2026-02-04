@@ -41,6 +41,10 @@ const requireEmailVerification =
   process.env.NODE_ENV === 'production';
 
 const isStaffRole = (role) => role === 'admin' || role === 'moderator';
+const isPrimaryAdminAccount = (user) =>
+  Boolean(user) &&
+  Boolean(PRIMARY_ADMIN_EMAIL) &&
+  normalizeEmail(user.email || '') === PRIMARY_ADMIN_EMAIL;
 
 const ensurePrimaryAdminRole = (user) => {
   if (!user || !PRIMARY_ADMIN_EMAIL) return false;
@@ -498,7 +502,7 @@ export const login = async (req, res) => {
         storedUser.updatedAt = now;
         responseUser = storedUser;
 
-        if (isStaffRole(storedUser.role)) {
+        if (isStaffRole(storedUser.role) && !isPrimaryAdminAccount(storedUser)) {
           challengeToken = await issueStaffTwoFactorChallenge(db, storedUser);
         }
       }
@@ -607,7 +611,7 @@ export const loginWithGoogle = async (req, res) => {
       return db;
     });
 
-    if (isStaffRole(responseUser.role)) {
+    if (isStaffRole(responseUser.role) && !isPrimaryAdminAccount(responseUser)) {
       const challengeToken = await withDb(async (db) => {
         const storedUser = await usersRepo.findOne(
           (entry) => resolveUserId(entry) === resolveUserId(responseUser),
