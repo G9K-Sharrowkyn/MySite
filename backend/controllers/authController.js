@@ -34,11 +34,21 @@ const normalizeEmail = (email) => email.trim().toLowerCase();
 const DEFAULT_AVATAR = '/logo192.png';
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const TWO_FACTOR_TTL_MS = 10 * 60 * 1000;
+const PRIMARY_ADMIN_EMAIL = normalizeEmail(process.env.PRIMARY_ADMIN_EMAIL || '');
 const requireEmailVerification =
   process.env.REQUIRE_EMAIL_VERIFICATION === 'true' ||
   process.env.NODE_ENV === 'production';
 
 const isStaffRole = (role) => role === 'admin' || role === 'moderator';
+
+const ensurePrimaryAdminRole = (user) => {
+  if (!user || !PRIMARY_ADMIN_EMAIL) return false;
+  if (normalizeEmail(user.email || '') !== PRIMARY_ADMIN_EMAIL) return false;
+  if (user.role === 'admin') return false;
+  user.role = 'admin';
+  user.updatedAt = new Date().toISOString();
+  return true;
+};
 
 const createTwoFactorCode = () =>
   `${Math.floor(100000 + Math.random() * 900000)}`;
@@ -468,6 +478,7 @@ export const login = async (req, res) => {
         if (!storedUser.id) {
           storedUser.id = uuidv4();
         }
+        ensurePrimaryAdminRole(storedUser);
         applyDailyBonus(db, storedUser);
         storedUser.profile = storedUser.profile || {};
         storedUser.profile.lastActive = now;
@@ -571,6 +582,7 @@ export const loginWithGoogle = async (req, res) => {
         if (!user.id) {
           user.id = uuidv4();
         }
+        ensurePrimaryAdminRole(user);
 
         applyDailyBonus(db, user);
         user.profile.lastActive = now;
@@ -594,6 +606,7 @@ export const loginWithGoogle = async (req, res) => {
         if (!storedUser.id) {
           storedUser.id = uuidv4();
         }
+        ensurePrimaryAdminRole(storedUser);
         return issueStaffTwoFactorChallenge(db, storedUser);
       });
 
@@ -952,6 +965,7 @@ export const verifyLoginTwoFactor = async (req, res) => {
       if (!user.id) {
         user.id = uuidv4();
       }
+      ensurePrimaryAdminRole(user);
       user.profile = user.profile || {};
       user.profile.lastActive = new Date().toISOString();
       user.updatedAt = new Date().toISOString();
