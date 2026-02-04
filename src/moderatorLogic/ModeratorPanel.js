@@ -222,7 +222,7 @@ const ModeratorPanel = () => {
       
       // Allow both moderators and admins
       if (response.data.role !== 'moderator' && response.data.role !== 'admin') {
-        showNotification('Brak uprawnieÄąâ€ž moderatora', 'error');
+        showNotification('Brak uprawnie moderatora', 'error');
         navigate('/');
       }
     } catch (error) {
@@ -278,7 +278,7 @@ const ModeratorPanel = () => {
       await Promise.all([fetchSeasons()]);
     } catch (error) {
       console.error('Error fetching data:', error);
-      showNotification('BÄąâ€šĂ„â€¦d podczas Äąâ€šadowania danych', 'error');
+      showNotification('Bd podczas adowania danych', 'error');
     } finally {
       setLoading(false);
     }
@@ -321,7 +321,7 @@ const ModeratorPanel = () => {
         headers: { 'x-auth-token': token }
       });
 
-      showNotification('Oficjalna walka zostaÄąâ€ša utworzona!', 'success');
+      showNotification('Oficjalna walka zostaa utworzona!', 'success');
       setNewFight({
         title: '',
         description: '',
@@ -334,7 +334,7 @@ const ModeratorPanel = () => {
       fetchData();
     } catch (error) {
       console.error('Error creating fight:', error);
-      showNotification('BÄąâ€šĂ„â€¦d podczas tworzenia walki', 'error');
+      showNotification('Bd podczas tworzenia walki', 'error');
     } finally {
       setLoading(false);
     }
@@ -476,13 +476,13 @@ const ModeratorPanel = () => {
       );
       
       showNotification(
-        !featured ? 'Post zostaÄąâ€š wyrÄ‚Ĺ‚ÄąÄ˝niony' : 'Post przestaÄąâ€š byĂ„â€ˇ wyrÄ‚Ĺ‚ÄąÄ˝niony', 
+        !featured ? 'Post zosta wyrniony' : 'Post przesta by wyrniony', 
         'success'
       );
       fetchData();
     } catch (error) {
       console.error('Error featuring post:', error);
-      showNotification('BÄąâ€šĂ„â€¦d podczas zmiany statusu postu', 'error');
+      showNotification('Bd podczas zmiany statusu postu', 'error');
     }
   };
 
@@ -493,11 +493,11 @@ const ModeratorPanel = () => {
         { headers: { 'x-auth-token': token } }
       );
       
-      showNotification('ZakÄąâ€šad zostaÄąâ€š rozliczony', 'success');
+      showNotification('Zakad zosta rozliczony', 'success');
       fetchData();
     } catch (error) {
       console.error('Error settling bet:', error);
-      showNotification('BÄąâ€šĂ„â€¦d podczas rozliczania zakÄąâ€šadu', 'error');
+      showNotification('Bd podczas rozliczania zakadu', 'error');
     }
   };
 
@@ -507,11 +507,11 @@ const ModeratorPanel = () => {
         headers: { 'x-auth-token': token }
       });
       
-      showNotification('ZakÄąâ€šad zostaÄąâ€š zwrÄ‚Ĺ‚cony', 'success');
+      showNotification('Zakad zosta zwrcony', 'success');
       fetchData();
     } catch (error) {
       console.error('Error refunding bet:', error);
-      showNotification('BÄąâ€šĂ„â€¦d podczas zwracania zakÄąâ€šadu', 'error');
+      showNotification('Bd podczas zwracania zakadu', 'error');
     }
   };
 
@@ -572,7 +572,7 @@ const ModeratorPanel = () => {
   };
 
   const formatCurrency = (amount) => {
-    return `${amount} Ä‘ĹşĹžâ„˘`;
+    return `${amount} `;
   };
 
   const updateSeasonField = (seasonId, field, value) => {
@@ -645,11 +645,11 @@ const ModeratorPanel = () => {
         { headers: { 'x-auth-token': token } }
       );
       
-      showNotification('Walka o tytuÄąâ€š zostaÄąâ€ša utworzona!', 'success');
+      showNotification('Walka o tytu zostaa utworzona!', 'success');
       fetchData();
     } catch (error) {
       console.error('Error creating title fight:', error);
-      showNotification('BÄąâ€šĂ„â€¦d podczas tworzenia walki o tytuÄąâ€š', 'error');
+      showNotification('Bd podczas tworzenia walki o tytu', 'error');
     }
   };
 
@@ -660,11 +660,11 @@ const ModeratorPanel = () => {
         { headers: { 'x-auth-token': token } }
       );
       
-      showNotification('Walka pretendentÄ‚Ĺ‚w zostaÄąâ€ša utworzona!', 'success');
+      showNotification('Walka pretendentw zostaa utworzona!', 'success');
       fetchData();
     } catch (error) {
       console.error('Error creating contender match:', error);
-      showNotification('BÄąâ€šĂ„â€¦d podczas tworzenia walki pretendentÄ‚Ĺ‚w', 'error');
+      showNotification('Bd podczas tworzenia walki pretendentw', 'error');
     }
   };
 
@@ -750,7 +750,7 @@ const ModeratorPanel = () => {
         {activeTab === 'fights' && (
           <div className="fights-section">
             <div className="create-fight-card">
-              <h3>Ä‘ĹşĹšĹş {t('moderatorPanel.createFight')}</h3>
+              <h3> {t('moderatorPanel.createFight')}</h3>
               <form onSubmit={handleFightSubmit} className="fight-form">
                 <div className="form-row">
                   <div className="form-group">
@@ -821,21 +821,21 @@ const ModeratorPanel = () => {
                 </div>
 
                 <button type="submit" className="create-btn" disabled={loading}>
-                  {loading ? `Ă˘ĹąĹ‚ ${t('moderatorPanel.creating')}` : `Ä‘ĹşĹˇâ‚¬ ${t('moderatorPanel.createFightBtn')}`}
+                  {loading ? ` ${t('moderatorPanel.creating')}` : ` ${t('moderatorPanel.createFightBtn')}`}
                 </button>
               </form>
             </div>
 
             <div className="existing-fights">
-              <h3>Ä‘ĹşĹ˝Ĺ» {t('moderatorPanel.existingFights')}</h3>
+              <h3> {t('moderatorPanel.existingFights')}</h3>
               <div className="fights-grid">
                 {fights.map(fight => (
                   <div key={fight.id} className="fight-card">
                     <div className="fight-header">
                       <h4>{fight.title}</h4>
                       <div className="fight-badges">
-                        <span className="badge badge-official">Ä‘Ĺşâ€şË‡ÄŹÂ¸Ĺą {t('moderatorPanel.official')}</span>
-                        {fight.featured && <span className="badge badge-featured">Ă˘Â­Â {t('moderatorPanel.featuredBadge')}</span>}
+                        <span className="badge badge-official"> {t('moderatorPanel.official')}</span>
+                        {fight.featured && <span className="badge badge-featured"> {t('moderatorPanel.featuredBadge')}</span>}
                         {fight.category && <span className="badge badge-category">{fight.category}</span>}
                       </div>
                     </div>
@@ -846,13 +846,13 @@ const ModeratorPanel = () => {
                         <span className="fighter">{fight.teamB}</span>
                       </div>
                       <div className="fight-stats">
-                        <span>Ä‘Ĺşâ€Ĺ¤ {fight.likes?.length || 0}</span>
-                        <span>Ä‘Ĺşâ€”Ĺ‚ÄŹÂ¸Ĺą {(fight.fight?.votes?.teamA || 0) + (fight.fight?.votes?.teamB || 0)}</span>
-                        <span>Ä‘Ĺşâ€™Â¬ {fight.comments?.length || 0}</span>
+                        <span> {fight.likes?.length || 0}</span>
+                        <span> {(fight.fight?.votes?.teamA || 0) + (fight.fight?.votes?.teamB || 0)}</span>
+                        <span> {fight.comments?.length || 0}</span>
                       </div>
                       <div className="fight-meta">
                         <span className="fight-date">{formatDate(fight.createdAt)}</span>
-                        <span className="fight-status">{fight.fight?.status === 'active' ? `Ä‘ĹşĹşË ${t('moderatorPanel.active')}` : `Ä‘Ĺşâ€ťÂ´ ${t('moderatorPanel.finished')}`}</span>
+                        <span className="fight-status">{fight.fight?.status === 'active' ? ` ${t('moderatorPanel.active')}` : ` ${t('moderatorPanel.finished')}`}</span>
                       </div>
                     </div>
                     <div className="fight-actions">
@@ -860,13 +860,13 @@ const ModeratorPanel = () => {
                         onClick={() => handleFeaturePost(fight.id, fight.featured)}
                         className="feature-btn"
                       >
-                        {fight.featured ? `Ă˘Â­Â ${t('moderatorPanel.removeFeature')}` : `Ă˘Â­Â ${t('moderatorPanel.featurePost')}`}
+                        {fight.featured ? ` ${t('moderatorPanel.removeFeature')}` : ` ${t('moderatorPanel.featurePost')}`}
                       </button>
                       <button 
                         onClick={() => handleDeletePost(fight.id)}
                         className="delete-btn"
                       >
-                        Ä‘Ĺşâ€”â€ÄŹÂ¸Ĺą {t('moderatorPanel.deletePost')}
+                         {t('moderatorPanel.deletePost')}
                       </button>
                     </div>
                   </div>
@@ -884,7 +884,7 @@ const ModeratorPanel = () => {
         {activeTab === 'divisions' && (
           <div className="divisions-section">
             <div className="divisions-moderator-header">
-              <h3>Ä‘ĹşĹąâ€  {t('moderatorPanel.divisionsSystem')}</h3>
+              <h3> {t('moderatorPanel.divisionsSystem')}</h3>
               <p>{t('moderatorPanel.divisionsManagement')}</p>
             </div>
 
@@ -917,9 +917,9 @@ const ModeratorPanel = () => {
                         <p className="category-description">{season.description}</p>
                         <div className="category-meta">
                           <span className="category-season">
-                            {season.status === 'active' ? 'Ă˘Ĺ›â€¦ Aktywny' : 
-                             season.status === 'scheduled' ? 'Ä‘Ĺşâ€śâ€¦ Zaplanowany' : 
-                             'Ä‘Ĺşâ€ťâ€™ Zablokowany'}
+                            {season.status === 'active' ? ' Aktywny' : 
+                             season.status === 'scheduled' ? ' Zaplanowany' : 
+                             ' Zablokowany'}
                           </span>
                         </div>
                       </div>
@@ -932,14 +932,14 @@ const ModeratorPanel = () => {
                         <>
                           <div className="scheduled-dates">
                             <div className="scheduled-date-item">
-                              <span className="date-icon">Ä‘Ĺşâ€śâ€¦</span>
+                              <span className="date-icon"></span>
                               <div className="date-info">
                                 <span className="date-label">{t('moderatorPanel.start')}</span>
                                 <span className="date-value">{new Date(season.startAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
                               </div>
                             </div>
                             <div className="scheduled-date-item">
-                              <span className="date-icon">Ä‘ĹşĹąÂ</span>
+                              <span className="date-icon"></span>
                               <div className="date-info">
                                 <span className="date-label">{t('moderatorPanel.end')}</span>
                                 <span className="date-value">{new Date(season.endAt).toLocaleString('pl-PL', { dateStyle: 'short', timeStyle: 'short' })}</span>
@@ -973,21 +973,21 @@ const ModeratorPanel = () => {
                               className="schedule-btn remove"
                               title={t('moderatorPanel.removeSchedule')}
                             >
-                              Ä‘Ĺşâ€”â€ÄŹÂ¸Ĺą {t('moderatorPanel.remove')}
+                               {t('moderatorPanel.remove')}
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleStartSeasonNow(season.id); }}
                               className="schedule-btn start"
                               title="Start teraz"
                             >
-                              Ă˘â€“Â¶ÄŹÂ¸Ĺą
+                              
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleEndSeasonNow(season.id); }}
                               className="schedule-btn end"
                               title="Koniec teraz"
                             >
-                              Ă˘ĹąÄ…ÄŹÂ¸Ĺą
+                              
                             </button>
                           </div>
                         </>
@@ -996,7 +996,7 @@ const ModeratorPanel = () => {
                         <>
                           <div className="schedule-fields">
                             <label className="schedule-field">
-                              <span className="field-label">Ä‘Ĺşâ€śâ€¦ Start</span>
+                              <span className="field-label"> Start</span>
                               <input
                                 type="datetime-local"
                                 value={season.startAt ? season.startAt.slice(0, 16) : ''}
@@ -1005,7 +1005,7 @@ const ModeratorPanel = () => {
                               />
                             </label>
                             <label className="schedule-field">
-                              <span className="field-label">Ä‘ĹşĹąÂ Koniec</span>
+                              <span className="field-label"> Koniec</span>
                               <input
                                 type="datetime-local"
                                 value={season.endAt ? season.endAt.slice(0, 16) : ''}
@@ -1020,21 +1020,21 @@ const ModeratorPanel = () => {
                               className="schedule-btn save"
                               title="Zapisz harmonogram"
                             >
-                              Ä‘Ĺşâ€™Äľ
+                              
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleStartSeasonNow(season.id); }}
                               className="schedule-btn start"
                               title="Start teraz"
                             >
-                              Ă˘â€“Â¶ÄŹÂ¸Ĺą
+                              
                             </button>
                             <button
                               onClick={(e) => { e.stopPropagation(); handleEndSeasonNow(season.id); }}
                               className="schedule-btn end"
                               title="Koniec teraz"
                             >
-                              Ă˘ĹąÄ…ÄŹÂ¸Ĺą
+                              
                             </button>
                           </div>
                         </>
@@ -1054,11 +1054,11 @@ const ModeratorPanel = () => {
                     className="detail-back-btn-mod"
                     onClick={() => setSelectedSeasonId(null)}
                   >
-                    Ă˘â€ Â PowrÄ‚Ĺ‚t do kategorii
+                     Powrt do kategorii
                   </button>
                   <div className="division-detail-info-mod">
                     <h2>{seasonConfigs.find(s => s.id === selectedSeasonId)?.name || 'Dywizja'}</h2>
-                    <p>{seasonConfigs.find(s => s.id === selectedSeasonId)?.description || 'ZarzĂ„â€¦dzaj dywizjĂ„â€¦'}</p>
+                    <p>{seasonConfigs.find(s => s.id === selectedSeasonId)?.description || 'Zarzdzaj dywizj'}</p>
                   </div>
                 </div>
 
@@ -1066,7 +1066,7 @@ const ModeratorPanel = () => {
                 {divisionOverview.champions[selectedSeasonId] && (
                   <div className="champion-display-mod">
                     <div className="champion-badge-mod">
-                      <span className="champion-icon">Ä‘Ĺşâ€â€</span>
+                      <span className="champion-icon"></span>
                       <span>Aktualny Mistrz</span>
                     </div>
                     <div className="champion-info-display">
@@ -1106,7 +1106,7 @@ const ModeratorPanel = () => {
                 {/* Active Fights */}
                 {divisionOverview.activeFights[selectedSeasonId]?.length > 0 && (
                   <div className="active-fights-display-mod">
-                    <h4>Ä‘Ĺşâ€ťÄ„ Aktywne Walki</h4>
+                    <h4> Aktywne Walki</h4>
                     <div className="fights-list-mod">
                       {divisionOverview.activeFights[selectedSeasonId].map((fight) => (
                         <div key={fight._id || fight.id} className="fight-item-mod">
@@ -1117,13 +1117,13 @@ const ModeratorPanel = () => {
                           </div>
                           <div className="fight-meta-mod">
                             <span className="fight-type-mod">
-                              {fight.fightType === 'title' ? 'Ä‘Ĺşâ€â€ Title Fight' :
-                               fight.fightType === 'contender' ? 'Ä‘ĹşÄ„Ĺ  Contender Match' :
-                               'Ă˘Ĺˇâ€ťÄŹÂ¸Ĺą Official Fight'}
+                              {fight.fightType === 'title' ? ' Title Fight' :
+                               fight.fightType === 'contender' ? ' Contender Match' :
+                               ' Official Fight'}
                             </span>
-                            <span className="fight-votes-mod">Ä‘Ĺşâ€”Ĺ‚ÄŹÂ¸Ĺą {fight.votes?.length || 0} votes</span>
+                            <span className="fight-votes-mod"> {fight.votes?.length || 0} votes</span>
                             {fight.endTime && (
-                              <span className="fight-timer-mod">Ă˘ĹąÂ° {new Date(fight.endTime).toLocaleDateString()}</span>
+                              <span className="fight-timer-mod"> {new Date(fight.endTime).toLocaleDateString()}</span>
                             )}
                           </div>
                         </div>
@@ -1136,12 +1136,12 @@ const ModeratorPanel = () => {
                 <div className="division-management-actions">
                   <button
                     onClick={() => {
-                      const challengerId = prompt('ID pretendenta do walki o tytuÄąâ€š:');
+                      const challengerId = prompt('ID pretendenta do walki o tytu:');
                       if (challengerId) handleCreateTitleFight(selectedSeasonId, challengerId);
                     }}
                     className="manage-btn title-fight-btn-mod"
                   >
-                    Ä‘Ĺşâ€â€ StwÄ‚Ĺ‚rz WalkĂ„â„˘ o TytuÄąâ€š
+                     Stwrz Walk o Tytu
                   </button>
                   <button
                     onClick={() => {
@@ -1153,29 +1153,29 @@ const ModeratorPanel = () => {
                     }}
                     className="manage-btn contender-match-btn-mod"
                   >
-                    Ä‘ĹşÄ„Ĺ  StwÄ‚Ĺ‚rz WalkĂ„â„˘ PretendentÄ‚Ĺ‚w
+                     Stwrz Walk Pretendentw
                   </button>
                 </div>
 
                 {/* Division Stats */}
                 <div className="division-stats-display-mod">
                   <div className="stat-box-mod">
-                    <span className="stat-icon-mod">Ä‘Ĺşâ€Ä„</span>
-                    <span className="stat-label-mod">Aktywne ZespoÄąâ€šy</span>
+                    <span className="stat-icon-mod"></span>
+                    <span className="stat-label-mod">Aktywne Zespoy</span>
                     <span className="stat-value-mod">{divisionOverview.stats[selectedSeasonId]?.activeTeams || 0}</span>
                   </div>
                   <div className="stat-box-mod">
-                    <span className="stat-icon-mod">Ă˘Ĺˇâ€ťÄŹÂ¸Ĺą</span>
+                    <span className="stat-icon-mod"></span>
                     <span className="stat-label-mod">Oficjalne Walki</span>
                     <span className="stat-value-mod">{divisionOverview.stats[selectedSeasonId]?.totalOfficialFights || 0}</span>
                   </div>
                   <div className="stat-box-mod">
-                    <span className="stat-icon-mod">Ä‘Ĺşâ€”Ĺ‚ÄŹÂ¸Ĺą</span>
-                    <span className="stat-label-mod">ÄąĹˇrednie GÄąâ€šosy</span>
+                    <span className="stat-icon-mod"></span>
+                    <span className="stat-label-mod">rednie Gosy</span>
                     <span className="stat-value-mod">{divisionOverview.stats[selectedSeasonId]?.averageVotes || 0}</span>
                   </div>
                   <div className="stat-box-mod">
-                    <span className="stat-icon-mod">Ä‘Ĺşâ€ťÄ„</span>
+                    <span className="stat-icon-mod"></span>
                     <span className="stat-label-mod">Aktywne Walki</span>
                     <span className="stat-value-mod">{divisionOverview.activeFights[selectedSeasonId]?.length || 0}</span>
                   </div>
@@ -1197,12 +1197,12 @@ const ModeratorPanel = () => {
                       <div className="post-info">
                         <h4>{post.title}</h4>
                         <p className="post-meta">
-                          Author: {post.author?.username || 'Unknown'} â€˘ {formatDate(post.createdAt)} â€˘ Type: {post.type}
+                          Author: {post.author?.username || 'Unknown'}  {formatDate(post.createdAt)}  Type: {post.type}
                         </p>
                       </div>
                       <div className="post-stats">
-                        <span>đź‘Ť {post.likes?.length || 0}</span>
-                        <span>đź’¬ {post.comments?.length || 0}</span>
+                        <span> {post.likes?.length || 0}</span>
+                        <span> {post.comments?.length || 0}</span>
                       </div>
                     </div>
                     <div className="post-content">
@@ -1277,7 +1277,7 @@ const ModeratorPanel = () => {
                     onClick={() => setUserSearchQuery('')}
                     className="clear-search-btn"
                   >
-                    âś•
+                    
                   </button>
                 )}
               </div>
@@ -1368,32 +1368,32 @@ const ModeratorPanel = () => {
         )}
         {activeTab === 'betting' && (
           <div className="betting-section">
-            <h3>Ä‘Ĺşâ€™Â° {t('moderatorPanel.bettingManagement')}</h3>
+            <h3> {t('moderatorPanel.bettingManagement')}</h3>
             
             <div className="betting-stats">
               <div className="stat-card">
-                <div className="stat-icon">Ä‘ĹşĹ˝Ĺ»</div>
+                <div className="stat-icon"></div>
                 <div className="stat-info">
                   <h4>{bets.length}</h4>
                   <p>{t('moderatorPanel.totalBets')}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">Ă˘ĹąĹ‚</div>
+                <div className="stat-icon"></div>
                 <div className="stat-info">
                   <h4>{bets.filter(bet => bet.status === 'pending').length}</h4>
                   <p>{t('moderatorPanel.pendingBets')}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">Ă˘Ĺ›â€¦</div>
+                <div className="stat-icon"></div>
                 <div className="stat-info">
                   <h4>{bets.filter(bet => bet.status === 'won').length}</h4>
                   <p>{t('moderatorPanel.wonBets')}</p>
                 </div>
               </div>
               <div className="stat-card">
-                <div className="stat-icon">Ă˘ĹĄĹš</div>
+                <div className="stat-icon"></div>
                 <div className="stat-info">
                   <h4>{bets.filter(bet => bet.status === 'lost').length}</h4>
                   <p>{t('moderatorPanel.lostBets')}</p>
@@ -1402,19 +1402,19 @@ const ModeratorPanel = () => {
             </div>
 
             <div className="bets-list">
-              <h4>Ä‘ĹşĹ˝Ë› {t('moderatorPanel.allBets')}</h4>
+              <h4> {t('moderatorPanel.allBets')}</h4>
               {bets.length > 0 ? (
                 <div className="bets-grid">
                   {bets.map(bet => (
                     <div key={bet._id} className="bet-card">
                       <div className="bet-header">
                         <div className="bet-info">
-                          <h5>{bet.type === 'single' ? `Ä‘ĹşĹ˝Ĺ» ${t('moderatorPanel.singleBet')}` : `Ä‘ĹşĹ˝Â° ${t('moderatorPanel.parlayBet')}`}</h5>
+                          <h5>{bet.type === 'single' ? ` ${t('moderatorPanel.singleBet')}` : ` ${t('moderatorPanel.parlayBet')}`}</h5>
                           <span className={`bet-status status-${bet.status}`}>
-                            {bet.status === 'pending' && `Ă˘ĹąĹ‚ ${t('moderatorPanel.betStatus.pending')}`}
-                            {bet.status === 'won' && `Ă˘Ĺ›â€¦ ${t('moderatorPanel.betStatus.won')}`}
-                            {bet.status === 'lost' && `Ă˘ĹĄĹš ${t('moderatorPanel.betStatus.lost')}`}
-                            {bet.status === 'refunded' && `Ä‘Ĺşâ€ťâ€ž ${t('moderatorPanel.betStatus.refunded')}`}
+                            {bet.status === 'pending' && ` ${t('moderatorPanel.betStatus.pending')}`}
+                            {bet.status === 'won' && ` ${t('moderatorPanel.betStatus.won')}`}
+                            {bet.status === 'lost' && ` ${t('moderatorPanel.betStatus.lost')}`}
+                            {bet.status === 'refunded' && ` ${t('moderatorPanel.betStatus.refunded')}`}
                           </span>
                         </div>
                         <div className="bet-amounts">
@@ -1451,7 +1451,7 @@ const ModeratorPanel = () => {
                               <strong>{t('moderatorPanel.betDetails.parlayFights')}:</strong>
                               {bet.fights?.map((fight, index) => (
                                 <div key={index} className="parlay-fight">
-                                  Ă˘â‚¬Ë {fight.fightTitle} - {fight.selectedTeam} ({fight.odds})
+                                   {fight.fightTitle} - {fight.selectedTeam} ({fight.odds})
                                 </div>
                               ))}
                             </div>
@@ -1463,7 +1463,7 @@ const ModeratorPanel = () => {
 
                         {bet.insurance && (
                           <div className="insurance-info">
-                            <span className="insurance-badge">Ä‘Ĺşâ€şË‡ÄŹÂ¸Ĺą {t('moderatorPanel.betDetails.insured')}</span>
+                            <span className="insurance-badge"> {t('moderatorPanel.betDetails.insured')}</span>
                           </div>
                         )}
                       </div>
@@ -1474,19 +1474,19 @@ const ModeratorPanel = () => {
                             onClick={() => handleSettleBet(bet._id, 'won')}
                             className="settle-btn win-btn"
                           >
-                            Ă˘Ĺ›â€¦ {t('moderatorPanel.betActions.markWon')}
+                             {t('moderatorPanel.betActions.markWon')}
                           </button>
                           <button
                             onClick={() => handleSettleBet(bet._id, 'lost')}
                             className="settle-btn lose-btn"
                           >
-                            Ă˘ĹĄĹš {t('moderatorPanel.betActions.markLost')}
+                             {t('moderatorPanel.betActions.markLost')}
                           </button>
                           <button
                             onClick={() => handleRefundBet(bet._id)}
                             className="refund-btn"
                           >
-                            Ä‘Ĺşâ€ťâ€ž {t('moderatorPanel.betActions.refund')}
+                             {t('moderatorPanel.betActions.refund')}
                           </button>
                         </div>
                       )}
@@ -1511,7 +1511,7 @@ const ModeratorPanel = () => {
         {activeTab === 'feedback' && (
           <div className="feedback-section">
             <div className="feedback-header">
-              <h3>Ä‘Ĺşâ€śâ€ą {t('moderatorPanel.feedbackManagement')}</h3>
+              <h3> {t('moderatorPanel.feedbackManagement')}</h3>
               <p>
                 Pending: {reportsQueue.counts?.pending || 0} | Reviewed:{' '}
                 {reportsQueue.counts?.reviewed || 0} | Resolved:{' '}
@@ -1580,9 +1580,9 @@ const ModeratorPanel = () => {
                             <p><strong>{t('moderatorPanel.imageSource')}:</strong></p>
                             <div className="image-source-display">
                               {item.characterImage.startsWith('data:') ? (
-                                <span className="image-type-badge">Ä‘Ĺşâ€śÂ¤ {t('moderatorPanel.uploadedFile')}</span>
+                                <span className="image-type-badge"> {t('moderatorPanel.uploadedFile')}</span>
                               ) : (
-                                <span className="image-type-badge">Ä‘Ĺşâ€ťâ€” {t('moderatorPanel.imageUrl')}</span>
+                                <span className="image-type-badge"> {t('moderatorPanel.imageUrl')}</span>
                               )}
                               {!item.characterImage.startsWith('data:') && (
                                 <a href={item.characterImage} target="_blank" rel="noopener noreferrer" className="image-url-link">
@@ -1597,7 +1597,7 @@ const ModeratorPanel = () => {
                                 e.target.style.display = 'none';
                                 const errorMsg = document.createElement('div');
                                 errorMsg.className = 'image-load-error';
-                                errorMsg.textContent = 'Ă˘ĹˇÂ ÄŹÂ¸Ĺą Failed to load image';
+                                errorMsg.textContent = ' Failed to load image';
                                 e.target.parentElement.appendChild(errorMsg);
                               }} 
                             />
@@ -1626,26 +1626,26 @@ const ModeratorPanel = () => {
                               onClick={() => handleApproveCharacter(item.id)}
                               className="feedback-btn approve-character-btn"
                             >
-                              Ă˘Ĺ›Â¨ {t('moderatorPanel.approveCharacter')}
+                               {t('moderatorPanel.approveCharacter')}
                             </button>
                           )}
                           <button
                             onClick={() => handleUpdateFeedback(item.id, 'reviewed')}
                             className="feedback-btn reviewed-btn"
                           >
-                            Ä‘Ĺşâ€ÂÄŹÂ¸Ĺą {t('moderatorPanel.markAsReviewed')}
+                             {t('moderatorPanel.markAsReviewed')}
                           </button>
                           <button
                             onClick={() => handleUpdateFeedback(item.id, 'resolved')}
                             className="feedback-btn resolved-btn"
                           >
-                            Ă˘Ĺ›â€¦ {t('moderatorPanel.markAsResolved')}
+                             {t('moderatorPanel.markAsResolved')}
                           </button>
                           <button
                             onClick={() => handleUpdateFeedback(item.id, 'dismissed')}
                             className="feedback-btn dismissed-btn"
                           >
-                            Ă˘ĹĄĹš {t('moderatorPanel.markAsDismissed')}
+                             {t('moderatorPanel.markAsDismissed')}
                           </button>
                         </>
                       )}
@@ -1653,7 +1653,7 @@ const ModeratorPanel = () => {
                         onClick={() => handleDeleteFeedback(item.id)}
                         className="feedback-btn delete-btn"
                       >
-                        Ä‘Ĺşâ€”â€ÄŹÂ¸Ĺą {t('moderatorPanel.deleteFeedback')}
+                         {t('moderatorPanel.deleteFeedback')}
                       </button>
                     </div>
                   </div>
@@ -1669,7 +1669,7 @@ const ModeratorPanel = () => {
 
         {activeTab === 'tournaments' && (
           <div className="tournaments-management">
-            <h2>Ä‘ĹşĹąâ€  Tournament Management</h2>
+            <h2> Tournament Management</h2>
             <p className="section-description">Manage all tournaments - delete recruiting or active tournaments</p>
             
             <div className="tournaments-grid">
@@ -1679,8 +1679,8 @@ const ModeratorPanel = () => {
                 </div>
               ) : (
                 tournaments.map(tournament => {
-                  const statusEmoji = tournament.status === 'recruiting' ? 'Ä‘Ĺşâ€śË' : 
-                                     tournament.status === 'active' ? 'Ă˘Ĺˇâ€ťÄŹÂ¸Ĺą' : 'Ä‘ĹşĹąâ€ ';
+                  const statusEmoji = tournament.status === 'recruiting' ? '' : 
+                                     tournament.status === 'active' ? '' : '';
                   const statusClass = `status-${tournament.status}`;
                   
                   return (
@@ -1718,7 +1718,7 @@ const ModeratorPanel = () => {
                           }}
                           className="btn-delete-tournament"
                         >
-                          Ä‘Ĺşâ€”â€ÄŹÂ¸Ĺą Delete Tournament
+                           Delete Tournament
                         </button>
                       </div>
                     </div>
