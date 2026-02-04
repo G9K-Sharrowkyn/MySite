@@ -644,7 +644,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                     <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
                                       <div className="warrior-preview-frame">
                                         <img
-                                          {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
+                                          {...getOptimizedImageProps(warrior.character.image, { size: null })}
                                           alt={warrior.character.name}
                                           style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                         />
@@ -699,7 +699,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                 <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
                                   <div className="warrior-preview-frame">
                                     <img
-                                      {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
+                                      {...getOptimizedImageProps(warrior.character.image, { size: null })}
                                       alt={warrior.character.name}
                                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                     />
@@ -765,7 +765,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                                 <div style={{ width: '100%', marginTop: '8px', display: 'flex', justifyContent: 'center' }}>
                                   <div className="warrior-preview-frame">
                                     <img
-                                      {...getOptimizedImageProps(warrior.character.image, { size: 220 })}
+                                      {...getOptimizedImageProps(warrior.character.image, { size: null })}
                                       alt={warrior.character.name}
                                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
                                     />

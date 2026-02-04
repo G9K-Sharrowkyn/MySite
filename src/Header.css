@@ -123,6 +123,13 @@
   justify-content: flex-end;
 }
 
+.header-help-link {
+  min-width: 92px;
+  justify-content: center;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
 @media (min-width: 1200px) {
   .header-body {
     align-items: start;

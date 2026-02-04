@@ -137,7 +137,6 @@ const Header = () => {
               <Link to="/" className="nav-link pre-ccg">{t('home')}</Link>
               <Link to="/divisions" className="nav-link pre-ccg">{t('divisions')}</Link>
               <Link to="/leaderboard" className="nav-link pre-ccg">{t('leaderboard')}</Link>
-              <Link to="/help" className="nav-link pre-ccg">{t('help') || 'Help'}</Link>
             </div>
             <div className="nav-row nav-row-bottom">
               <Link to="/tournaments" className="nav-link pre-ccg">{t('tournaments')}</Link>
@@ -169,6 +168,7 @@ const Header = () => {
           <div className="header-tools-block">
             <div className="tools-row tools-row-top">
               <LanguageSwitcher />
+              <Link to="/help" className="nav-link header-help-link">{(t('help') || 'Help').toUpperCase()}</Link>
               {isLoggedIn ? (
                 <div className="user-menu-container after-ccg after-ccg-user">
                   <button 
