@@ -175,12 +175,18 @@ app.use(helmet({
 const apiLimitMax =
   Number(process.env.API_RATE_LIMIT_MAX) ||
   (isDev ? 1000 : 400);
-const authLimitMax =
+const loginAuthLimitMax =
+  Number(process.env.LOGIN_RATE_LIMIT_MAX) ||
+  (isDev ? 120 : 30);
+const registerAuthLimitMax =
+  Number(process.env.REGISTER_RATE_LIMIT_MAX) ||
+  (isDev ? 120 : 60);
+const passwordAuthLimitMax =
   Number(process.env.AUTH_RATE_LIMIT_MAX) ||
-  (isDev ? 80 : 12);
+  (isDev ? 120 : 30);
 const googleAuthLimitMax =
   Number(process.env.GOOGLE_AUTH_RATE_LIMIT_MAX) ||
-  (isDev ? 300 : 40);
+  (isDev ? 500 : 120);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: apiLimitMax,
@@ -191,11 +197,18 @@ const limiter = rateLimit({
   skip: (req) => req.path.startsWith('/api/auth/')
 });
 
-const authLimiter = rateLimit({
+const loginAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: authLimitMax,
+  max: loginAuthLimitMax,
   message: 'Too many login attempts, please try again later.',
   skipSuccessfulRequests: true,
+});
+
+const registerAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: registerAuthLimitMax,
+  message: 'Too many registration attempts, please try again later.',
+  skipSuccessfulRequests: true
 });
 
 const googleAuthLimiter = rateLimit({
@@ -205,12 +218,19 @@ const googleAuthLimiter = rateLimit({
   skipSuccessfulRequests: true
 });
 
+const passwordAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: passwordAuthLimitMax,
+  message: 'Too many password reset attempts, please try again later.',
+  skipSuccessfulRequests: true
+});
+
 app.use('/api/', limiter);
-app.use('/api/auth/login', authLimiter);
-app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/login', loginAuthLimiter);
+app.use('/api/auth/register', registerAuthLimiter);
 app.use('/api/auth/google', googleAuthLimiter);
-app.use('/api/auth/forgot-password', authLimiter);
-app.use('/api/auth/reset-password', authLimiter);
+app.use('/api/auth/forgot-password', passwordAuthLimiter);
+app.use('/api/auth/reset-password', passwordAuthLimiter);
 
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
