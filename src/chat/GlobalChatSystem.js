@@ -83,8 +83,8 @@ const GlobalChatSystem = () => {
 
     if (token) {
       fetchUnreadPrivateMessages();
-      // Poll every 3 seconds
-      const interval = setInterval(fetchUnreadPrivateMessages, 3000);
+      // Poll every 15 seconds
+      const interval = setInterval(fetchUnreadPrivateMessages, 15000);
       return () => clearInterval(interval);
     }
   }, [token]);

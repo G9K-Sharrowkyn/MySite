@@ -1,8 +1,27 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+import axios from 'axios';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
+
+const configureAxiosBaseUrl = () => {
+  const envApiUrl = (process.env.REACT_APP_API_URL || '').trim();
+  if (!envApiUrl) return;
+
+  const isAbsolute = /^https?:\/\//i.test(envApiUrl);
+  if (!isAbsolute) return;
+
+  if (typeof window !== 'undefined') {
+    const hostname = window.location?.hostname || '';
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
+    if (isLocalhost) return;
+  }
+
+  axios.defaults.baseURL = envApiUrl.replace(/\/$/, '');
+};
+
+configureAxiosBaseUrl();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
