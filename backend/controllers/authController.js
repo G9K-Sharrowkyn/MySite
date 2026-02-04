@@ -1,5 +1,6 @@
 import bcrypt from 'bcryptjs';
 import axios from 'axios';
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -53,9 +54,15 @@ const ensurePrimaryAdminRole = (user) => {
 const createTwoFactorCode = () =>
   `${Math.floor(100000 + Math.random() * 900000)}`;
 
-const createSignedChallengeToken = (challengeId) =>
+const createTwoFactorCodeDigest = (code) =>
+  crypto
+    .createHmac('sha256', process.env.JWT_SECRET)
+    .update(String(code || ''))
+    .digest('hex');
+
+const createSignedChallengeToken = (challengeId, metadata = {}) =>
   jwt.sign(
-    { purpose: '2fa_challenge', challengeId },
+    { purpose: '2fa_challenge', challengeId, ...metadata },
     process.env.JWT_SECRET,
     { expiresIn: '15m' }
   );
@@ -67,7 +74,7 @@ const verifySignedChallengeToken = (token) => {
     error.code = 'INVALID_CHALLENGE_TOKEN';
     throw error;
   }
-  return payload.challengeId;
+  return payload;
 };
 
 const resolveGoogleClientIds = () =>
@@ -193,7 +200,11 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
   }
   const code = createTwoFactorCode();
   const challengeId = uuidv4();
-  const signedChallengeToken = createSignedChallengeToken(challengeId);
+  const signedChallengeToken = createSignedChallengeToken(challengeId, {
+    userId,
+    email,
+    codeDigest: createTwoFactorCodeDigest(code)
+  });
 
   // Keep previous pending challenges to avoid invalidating a code/token pair
   // when a user accidentally triggers login twice. Clean up only stale entries.
@@ -896,10 +907,12 @@ export const verifyLoginTwoFactor = async (req, res) => {
   }
 
   try {
+    let challengePayload = null;
     let challengeId = null;
     let challengeTokenSignatureValid = false;
     try {
-      challengeId = verifySignedChallengeToken(challengeToken);
+      challengePayload = verifySignedChallengeToken(challengeToken);
+      challengeId = challengePayload.challengeId;
       challengeTokenSignatureValid = true;
     } catch (tokenError) {
       if (
@@ -923,6 +936,44 @@ export const verifyLoginTwoFactor = async (req, res) => {
         { db }
       );
       if (!challenge) {
+        // Fallback for cases where a previously issued challenge entry is not
+        // persisted but the signed token is still valid.
+        if (
+          challengeTokenSignatureValid &&
+          challengePayload?.codeDigest &&
+          createTwoFactorCodeDigest(code) === challengePayload.codeDigest
+        ) {
+          let fallbackUser = null;
+          if (challengePayload?.userId) {
+            fallbackUser = await usersRepo.findOne(
+              (entry) => resolveUserId(entry) === challengePayload.userId,
+              { db }
+            );
+          }
+          if (!fallbackUser && challengePayload?.email) {
+            fallbackUser = await usersRepo.findOne(
+              (entry) => normalizeEmail(entry.email || '') === normalizeEmail(challengePayload.email || ''),
+              { db }
+            );
+          }
+          if (!fallbackUser) {
+            const error = new Error('User not found.');
+            error.code = 'USER_NOT_FOUND';
+            throw error;
+          }
+
+          if (!fallbackUser.id) {
+            fallbackUser.id = uuidv4();
+          }
+          ensurePrimaryAdminRole(fallbackUser);
+          fallbackUser.profile = fallbackUser.profile || {};
+          fallbackUser.profile.lastActive = new Date().toISOString();
+          fallbackUser.updatedAt = new Date().toISOString();
+          applyDailyBonus(db, fallbackUser);
+          authenticatedUser = fallbackUser;
+          return db;
+        }
+
         const error = new Error('Challenge not found.');
         error.code = 'CHALLENGE_NOT_FOUND';
         throw error;
