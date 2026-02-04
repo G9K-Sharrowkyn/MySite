@@ -178,6 +178,9 @@ const apiLimitMax =
 const authLimitMax =
   Number(process.env.AUTH_RATE_LIMIT_MAX) ||
   (isDev ? 80 : 12);
+const googleAuthLimitMax =
+  Number(process.env.GOOGLE_AUTH_RATE_LIMIT_MAX) ||
+  (isDev ? 300 : 40);
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: apiLimitMax,
@@ -193,10 +196,17 @@ const authLimiter = rateLimit({
   skipSuccessfulRequests: true,
 });
 
+const googleAuthLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: googleAuthLimitMax,
+  message: 'Too many Google sign-in attempts, please try again later.',
+  skipSuccessfulRequests: true
+});
+
 app.use('/api/', limiter);
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
-app.use('/api/auth/google', authLimiter);
+app.use('/api/auth/google', googleAuthLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
 app.use('/api/auth/reset-password', authLimiter);
 
