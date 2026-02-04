@@ -46,6 +46,17 @@ const isPrimaryAdminAccount = (user) =>
   Boolean(PRIMARY_ADMIN_EMAIL) &&
   normalizeEmail(user.email || '') === PRIMARY_ADMIN_EMAIL;
 
+const getActiveSuspension = (user) => {
+  const suspension = user?.moderation?.suspension;
+  if (!suspension?.active) return null;
+  if (suspension.type === 'time' && suspension.until) {
+    if (new Date(suspension.until).getTime() <= Date.now()) {
+      return null;
+    }
+  }
+  return suspension;
+};
+
 const ensurePrimaryAdminRole = (user) => {
   if (!user || !PRIMARY_ADMIN_EMAIL) return false;
   if (normalizeEmail(user.email || '') !== PRIMARY_ADMIN_EMAIL) return false;
@@ -163,7 +174,8 @@ const buildAuthResponse = (user) => ({
   emailVerified: Boolean(user.emailVerified),
   role: user.role,
   profile: user.profile || {},
-  coins: user.coins || {}
+  coins: user.coins || {},
+  suspension: getActiveSuspension(user)
 });
 
 const ensureEmailVerificationToken = async (db, userId, email) => {
@@ -465,6 +477,17 @@ export const login = async (req, res) => {
       return res.status(400).json({ msg: 'Invalid email or password.' });
     }
 
+    const suspension = getActiveSuspension(user);
+    if (suspension) {
+      return res.status(403).json({
+        msg: suspension.type === 'time'
+          ? `Account suspended until ${suspension.until}.`
+          : 'Account suspended.',
+        suspended: true,
+        suspension
+      });
+    }
+
     if (requireEmailVerification && !user.emailVerified) {
       await withDb(async (db) => {
         const token = await ensureEmailVerificationToken(
@@ -529,7 +552,7 @@ export const loginWithGoogle = async (req, res) => {
     return;
   }
 
-  if (!isGoogleAuthConfigured()) {
+    if (!isGoogleAuthConfigured()) {
     return res.status(500).json({
       msg: 'Google sign-in is not configured on the server.'
     });
@@ -601,6 +624,18 @@ export const loginWithGoogle = async (req, res) => {
         }
         ensurePrimaryAdminRole(user);
 
+        const suspension = getActiveSuspension(user);
+        if (suspension) {
+          const error = new Error(
+            suspension.type === 'time'
+              ? `Account suspended until ${suspension.until}.`
+              : 'Account suspended.'
+          );
+          error.code = 'ACCOUNT_SUSPENDED';
+          error.details = suspension;
+          throw error;
+        }
+
         applyDailyBonus(db, user);
         user.profile.lastActive = now;
         user.updatedAt = now;
@@ -647,6 +682,13 @@ export const loginWithGoogle = async (req, res) => {
       isNewUser: created
     });
   } catch (error) {
+    if (error.code === 'ACCOUNT_SUSPENDED') {
+      return res.status(403).json({
+        msg: error.message,
+        suspended: true,
+        suspension: error.details || null
+      });
+    }
     console.error('Google login error:', error?.response?.data || error);
     res.status(400).json({
       msg: 'Google sign-in failed. Please try again.'
@@ -1027,6 +1069,16 @@ export const verifyLoginTwoFactor = async (req, res) => {
         user.id = uuidv4();
       }
       ensurePrimaryAdminRole(user);
+      const suspension = getActiveSuspension(user);
+      if (suspension) {
+        const error = new Error(
+          suspension.type === 'time'
+            ? `Account suspended until ${suspension.until}.`
+            : 'Account suspended.'
+        );
+        error.code = 'ACCOUNT_SUSPENDED';
+        throw error;
+      }
       user.profile = user.profile || {};
       user.profile.lastActive = new Date().toISOString();
       user.updatedAt = new Date().toISOString();
@@ -1058,6 +1110,9 @@ export const verifyLoginTwoFactor = async (req, res) => {
     }
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ msg: error.message });
+    }
+    if (error.code === 'ACCOUNT_SUSPENDED') {
+      return res.status(403).json({ msg: error.message, suspended: true });
     }
     console.error('2FA verification error:', error);
     return res.status(500).json({ msg: 'Server error.' });

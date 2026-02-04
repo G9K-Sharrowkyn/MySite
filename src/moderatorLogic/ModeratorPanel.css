@@ -4917,3 +4917,65 @@ body.light-mode .no-tournaments {
 .no-tournaments p {
   font-size: 1.1rem;
 }
+
+.posts-subsection {
+  margin-bottom: 24px;
+}
+
+.posts-subsection h4 {
+  margin: 0 0 12px 0;
+  color: #fff;
+}
+
+body.light-mode .posts-subsection h4 {
+  color: #1a202c;
+}
+
+.deleted-post-card {
+  border-style: dashed;
+}
+
+.empty-state {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+body.light-mode .empty-state {
+  color: #4a5568;
+}
+
+.moderation-user-card .user-info {
+  width: 100%;
+}
+
+.moderation-user-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.suspension-active {
+  color: #fca5a5 !important;
+  font-weight: 700;
+}
+
+.suspension-none {
+  color: #86efac !important;
+  font-weight: 700;
+}
+
+.moderation-confirm-input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  font-size: 0.95rem;
+}
+
+.moderation-field-label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}

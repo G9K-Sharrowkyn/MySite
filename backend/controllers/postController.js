@@ -70,6 +70,9 @@ const normalizePostForResponse = (post, users) => {
 const findPostById = (posts, id) =>
   posts.find((entry) => entry.id === id || entry._id === id);
 
+const isPostSoftDeleted = (post) =>
+  Boolean(post?.moderation?.deleted?.isDeleted);
+
 const sortPosts = (posts, sortBy) => {
   if (sortBy === 'likes') {
     return [...posts].sort(
@@ -143,7 +146,7 @@ export const getAllPosts = async (req, res) => {
   try {
     const db = await readDb();
     const normalizedCategory = String(category || '').toLowerCase();
-    let filteredPosts = db.posts || [];
+    let filteredPosts = (db.posts || []).filter((post) => !isPostSoftDeleted(post));
     const commentCounts = buildCommentCountByPostId(db.comments || []);
 
     if (normalizedCategory && normalizedCategory !== 'all') {
@@ -196,7 +199,9 @@ export const getPostsByUser = async (req, res) => {
 
   try {
     const db = await readDb();
-    let posts = db.posts.filter((post) => post.authorId === userId);
+    let posts = (db.posts || []).filter(
+      (post) => post.authorId === userId && !isPostSoftDeleted(post)
+    );
 
     // Apply category filter if specified
     if (category && category !== 'all') {
@@ -236,7 +241,7 @@ export const getPostById = async (req, res) => {
     const db = await readDb();
     const post = findPostById(db.posts, id);
 
-    if (!post) {
+    if (!post || isPostSoftDeleted(post)) {
       return res.status(404).json({ msg: 'Post not found' });
     }
 
@@ -547,14 +552,17 @@ export const deletePost = async (req, res) => {
         throw error;
       }
 
-      await postsRepo.updateAll(
-        (entries) => entries.filter((entry) => entry.id !== id && entry._id !== id),
-        { db }
-      );
-      await commentsRepo.updateAll(
-        (comments) => comments.filter((comment) => comment.postId !== id),
-        { db }
-      );
+      const now = new Date().toISOString();
+      post.moderation = post.moderation || {};
+      post.moderation.deleted = {
+        isDeleted: true,
+        deletedAt: now,
+        deletedById: req.user.id,
+        deletedByUsername: user.username || '',
+        deletedByRole: user.role || 'user',
+        reason: String(req.body?.reason || '').trim()
+      };
+      post.updatedAt = now;
       await logModerationAction({
         db,
         actor: user,
@@ -563,7 +571,8 @@ export const deletePost = async (req, res) => {
         targetId: id,
         details: {
           postType: post.type || 'unknown',
-          ownPost: post.authorId === req.user.id
+          ownPost: post.authorId === req.user.id,
+          reason: post.moderation?.deleted?.reason || ''
         }
       });
       return db;
@@ -582,6 +591,92 @@ export const deletePost = async (req, res) => {
     }
     console.error('Error deleting post:', err.message);
     res.status(500).send('Server Error');
+  }
+};
+
+export const getDeletedPosts = async (req, res) => {
+  try {
+    const db = await readDb();
+    const actor = await usersRepo.findOne(
+      (entry) => resolveUserId(entry) === req.user.id,
+      { db }
+    );
+    if (!actor || (actor.role !== 'admin' && actor.role !== 'moderator')) {
+      return res.status(403).json({ msg: 'Access denied' });
+    }
+
+    const deleted = (db.posts || [])
+      .filter((post) => isPostSoftDeleted(post))
+      .sort((a, b) => new Date(b.moderation?.deleted?.deletedAt || 0) - new Date(a.moderation?.deleted?.deletedAt || 0))
+      .map((post) => normalizePostForResponse(post, db.users));
+    return res.json({ posts: deleted });
+  } catch (err) {
+    console.error('Error fetching deleted posts:', err.message);
+    return res.status(500).json({ msg: 'Server Error' });
+  }
+};
+
+export const restorePost = async (req, res) => {
+  const { id } = req.params;
+  try {
+    let restoredPost = null;
+    await withDb(async (db) => {
+      const actor = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === req.user.id,
+        { db }
+      );
+      if (!actor || (actor.role !== 'admin' && actor.role !== 'moderator')) {
+        const error = new Error('Access denied');
+        error.code = 'ACCESS_DENIED';
+        throw error;
+      }
+
+      const post = await postsRepo.findOne(
+        (entry) => entry.id === id || entry._id === id,
+        { db }
+      );
+      if (!post) {
+        const error = new Error('Post not found');
+        error.code = 'POST_NOT_FOUND';
+        throw error;
+      }
+      if (!isPostSoftDeleted(post)) {
+        const error = new Error('Post is not deleted');
+        error.code = 'NOT_DELETED';
+        throw error;
+      }
+
+      post.moderation = post.moderation || {};
+      post.moderation.deleted = {
+        ...(post.moderation.deleted || {}),
+        isDeleted: false,
+        restoredAt: new Date().toISOString(),
+        restoredById: req.user.id,
+        restoredByUsername: actor.username || ''
+      };
+      post.updatedAt = new Date().toISOString();
+      restoredPost = post;
+
+      await logModerationAction({
+        db,
+        actor,
+        action: 'post.restore',
+        targetType: 'post',
+        targetId: resolveUserId(post) || id,
+        details: {
+          postType: post.type || 'unknown'
+        }
+      });
+      return db;
+    });
+
+    return res.json({ msg: 'Post restored successfully', post: restoredPost });
+  } catch (err) {
+    if (err.code === 'ACCESS_DENIED') return res.status(403).json({ msg: 'Access denied' });
+    if (err.code === 'POST_NOT_FOUND') return res.status(404).json({ msg: 'Post not found' });
+    if (err.code === 'NOT_DELETED') return res.status(400).json({ msg: 'Post is not deleted' });
+    console.error('Error restoring post:', err.message);
+    return res.status(500).json({ msg: 'Server Error' });
   }
 };
 

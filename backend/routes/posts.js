@@ -6,6 +6,8 @@ import {
   getPostsByUser,
   updatePost,
   deletePost,
+  restorePost,
+  getDeletedPosts,
   toggleLike,
   voteInFight,
   voteInPoll,
@@ -32,6 +34,9 @@ const normalizeFightTeam = (value) => {
   if (typeof value === 'string') return value;
   return value ? String(value) : '';
 };
+
+const isPostSoftDeleted = (post) =>
+  Boolean(post?.moderation?.deleted?.isDeleted);
 
 const collectTags = (posts) => {
   const counts = new Map();
@@ -79,7 +84,9 @@ router.get('/official', async (req, res) => {
     // Build sort object
     const db = await readDb();
     const sortKey = sortBy === 'likes' ? 'likes' : 'createdAt';
-    const officialPosts = db.posts.filter((post) => post.isOfficial);
+    const officialPosts = db.posts.filter(
+      (post) => post.isOfficial && !isPostSoftDeleted(post)
+    );
 
     const sorted = [...officialPosts].sort((a, b) => {
       if (sortKey === 'likes') {
@@ -147,7 +154,9 @@ router.get('/tags/popular', async (req, res) => {
   try {
     const limit = Number(req.query.limit || 10);
     const db = await readDb();
-    const tags = collectTags(db.posts || []).slice(0, limit);
+    const tags = collectTags(
+      (db.posts || []).filter((post) => !isPostSoftDeleted(post))
+    ).slice(0, limit);
     res.json(tags);
   } catch (error) {
     console.error('Error fetching popular tags:', error);
@@ -161,7 +170,9 @@ router.get('/tags/popular', async (req, res) => {
 router.get('/tags/all', async (_req, res) => {
   try {
     const db = await readDb();
-    const tags = collectTags(db.posts || []).map((entry) => entry.tag);
+    const tags = collectTags(
+      (db.posts || []).filter((post) => !isPostSoftDeleted(post))
+    ).map((entry) => entry.tag);
     res.json(tags);
   } catch (error) {
     console.error('Error fetching tags:', error);
@@ -187,6 +198,11 @@ router.get('/search-users', auth, searchUsersForChallenge);
 // @desc    Create a user-vs-user challenge
 // @access  Private
 router.post('/user-challenge', auth, createUserChallenge);
+
+// @route   GET api/posts/deleted
+// @desc    Get soft-deleted posts (staff only)
+// @access  Private
+router.get('/deleted', auth, getDeletedPosts);
 
 // @route   GET api/posts/:id
 // @desc    Get post by ID
@@ -222,6 +238,11 @@ router.put('/:id', auth, updatePost);
 // @desc    Delete post
 // @access  Private
 router.delete('/:id', auth, deletePost);
+
+// @route   POST api/posts/:id/restore
+// @desc    Restore soft-deleted post
+// @access  Private (staff)
+router.post('/:id/restore', auth, restorePost);
 
 // @route   POST api/posts/:id/like
 // @desc    Like/unlike a post
