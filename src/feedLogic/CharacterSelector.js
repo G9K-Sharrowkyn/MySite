@@ -20,6 +20,8 @@ const getApiBaseUrl = () => {
 const parseCharactersPayload = (payload) => {
   if (Array.isArray(payload)) return payload;
   if (Array.isArray(payload?.characters)) return payload.characters;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.data?.characters)) return payload.data.characters;
   return [];
 };
 
@@ -36,6 +38,7 @@ const CharacterSelector = ({ characters: externalCharacters = null, selectedChar
     if (hasExternalCharacters) {
       setCharacters(externalCharacters);
       setLoading(false);
+      setError(null);
       return;
     }
 
@@ -120,7 +123,6 @@ const CharacterSelector = ({ characters: externalCharacters = null, selectedChar
   };
 
   if (loading) return <div className="character-selector-loading">Loading characters...</div>;
-  if (error) return <div className="character-selector-error">{error}</div>;
 
   return (
     <div className="character-selector">
@@ -147,6 +149,7 @@ const CharacterSelector = ({ characters: externalCharacters = null, selectedChar
           ))}
         </div>
       )}
+      {error && <div className="character-selector-error">{error}</div>}
     </div>
   );
 };
