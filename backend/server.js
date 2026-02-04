@@ -187,6 +187,8 @@ const limiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  // Auth endpoints have dedicated limiters below.
+  skip: (req) => req.path.startsWith('/api/auth/')
 });
 
 const authLimiter = rateLimit({
