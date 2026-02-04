@@ -1,15 +1,36 @@
 import { v4 as uuidv4 } from 'uuid';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   charactersRepo,
   characterSuggestionsRepo
 } from '../repositories/index.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const STATIC_CHARACTERS_PATH = path.join(__dirname, '..', 'scripts', 'characters.json');
+
+let staticCharactersCache = null;
+const loadStaticCharacters = async () => {
+  if (Array.isArray(staticCharactersCache)) {
+    return staticCharactersCache;
+  }
+  const raw = await fs.readFile(STATIC_CHARACTERS_PATH, 'utf-8');
+  const parsed = JSON.parse(raw);
+  staticCharactersCache = Array.isArray(parsed) ? parsed : [];
+  return staticCharactersCache;
+};
 
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
 export const getCharacters = async (_req, res) => {
   try {
-    const characters = await charactersRepo.getAll();
+    let characters = await charactersRepo.getAll();
+    if (!Array.isArray(characters) || characters.length === 0) {
+      characters = await loadStaticCharacters();
+    }
     res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
     res.json(characters);
   } catch (error) {

@@ -30,7 +30,7 @@ import CcgApp from './ccg/App';
 import SpeedRacingPage from './speedRacing/SpeedRacingPage';
 import CookieConsent from './legal/CookieConsent';
 import LegalPolicyPage from './legal/LegalPolicyPage';
-import LegalQuickLinks from './legal/LegalQuickLinks';
+import HelpPage from './legal/HelpPage';
 import './App.css';
 
 const ModeratorRoute = ({ children }) => {
@@ -144,6 +144,7 @@ function AppContent() {
           path="/cookie-policy"
           element={<LegalPolicyPage endpoint="/api/privacy/cookies" title="Cookie Policy" />}
         />
+        <Route path="/help" element={<HelpPage />} />
         <Route
           path="/ccg/*"
           element={(
@@ -165,7 +166,6 @@ function AppContent() {
       {isLoggedIn && <GlobalChatSystem />}
       {/* Feedback Button - always visible */}
       <FeedbackButton />
-      <LegalQuickLinks />
       <CookieConsent />
     </div>
   );

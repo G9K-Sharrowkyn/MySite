@@ -1,0 +1,52 @@
+.help-page {
+  min-height: calc(100vh - 100px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 110px 20px 30px;
+}
+
+.help-card {
+  width: min(760px, 100%);
+  background: rgba(11, 19, 35, 0.9);
+  border: 1px solid #364d7d;
+  border-radius: 16px;
+  padding: 24px;
+  color: #d8e3ff;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25);
+}
+
+.help-card h1 {
+  margin: 0 0 8px;
+}
+
+.help-lead {
+  margin: 0 0 18px;
+  color: #a9bde9;
+}
+
+.help-links {
+  display: grid;
+  gap: 10px;
+}
+
+.help-link {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid #4568a6;
+  text-decoration: none;
+  color: #dbe7ff;
+  background: rgba(22, 35, 63, 0.85);
+}
+
+.help-link:hover {
+  border-color: #5f86cb;
+  background: rgba(32, 49, 87, 0.9);
+}
+
+.help-note {
+  margin: 18px 0 0;
+  color: #9cb2df;
+  line-height: 1.5;
+}
