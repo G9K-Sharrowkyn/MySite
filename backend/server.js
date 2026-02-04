@@ -73,6 +73,7 @@ if (shouldTrustProxy) {
 const server = http.createServer(app);
 
 const isDev = process.env.NODE_ENV !== 'production';
+const authDebugLogsEnabled = process.env.AUTH_DEBUG_LOGS === 'true';
 const normalizeOrigin = (value) => {
   if (!value) return null;
   return value.replace(/\/$/, '');
@@ -91,6 +92,26 @@ const isOriginAllowed = (origin) => {
   if (!origin) return true;
   const normalized = normalizeOrigin(origin);
   return allowedOrigins.includes(normalized);
+};
+
+const logAuthDebug = (req, res, label, extra = {}) => {
+  if (!authDebugLogsEnabled) return;
+  console.log(
+    '[AUTH_DEBUG]',
+    JSON.stringify({
+      label,
+      method: req.method,
+      path: req.originalUrl || req.url,
+      status: res?.statusCode,
+      ip: req.ip,
+      forwardedFor: req.headers['x-forwarded-for'] || null,
+      userAgent: req.get('user-agent') || null,
+      rateLimitLimit: res?.getHeader?.('ratelimit-limit') || null,
+      rateLimitRemaining: res?.getHeader?.('ratelimit-remaining') || null,
+      rateLimitReset: res?.getHeader?.('ratelimit-reset') || null,
+      ...extra
+    })
+  );
 };
 
 // Configure Socket.io
@@ -203,6 +224,13 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: buildRateLimitKey,
+  requestPropertyName: 'rateLimitInfo',
+  handler: (req, res) => {
+    logAuthDebug(req, res, 'rate_limit_global', {
+      rateLimit: req.rateLimitInfo || null
+    });
+    return res.status(429).send('Too many requests from this IP, please try again later.');
+  },
   // Auth endpoints have dedicated limiters below.
   skip: (req) => req.path.startsWith('/api/auth/')
 });
@@ -212,6 +240,13 @@ const loginAuthLimiter = rateLimit({
   max: loginAuthLimitMax,
   message: 'Too many login attempts, please try again later.',
   keyGenerator: buildRateLimitKey,
+  requestPropertyName: 'rateLimitInfo',
+  handler: (req, res) => {
+    logAuthDebug(req, res, 'rate_limit_login', {
+      rateLimit: req.rateLimitInfo || null
+    });
+    return res.status(429).send('Too many login attempts, please try again later.');
+  },
   skipSuccessfulRequests: true,
 });
 
@@ -220,6 +255,13 @@ const registerAuthLimiter = rateLimit({
   max: registerAuthLimitMax,
   message: 'Too many registration attempts, please try again later.',
   keyGenerator: buildRateLimitKey,
+  requestPropertyName: 'rateLimitInfo',
+  handler: (req, res) => {
+    logAuthDebug(req, res, 'rate_limit_register', {
+      rateLimit: req.rateLimitInfo || null
+    });
+    return res.status(429).send('Too many registration attempts, please try again later.');
+  },
   skipSuccessfulRequests: true
 });
 
@@ -228,6 +270,13 @@ const googleAuthLimiter = rateLimit({
   max: googleAuthLimitMax,
   message: 'Too many Google sign-in attempts, please try again later.',
   keyGenerator: buildRateLimitKey,
+  requestPropertyName: 'rateLimitInfo',
+  handler: (req, res) => {
+    logAuthDebug(req, res, 'rate_limit_google', {
+      rateLimit: req.rateLimitInfo || null
+    });
+    return res.status(429).send('Too many Google sign-in attempts, please try again later.');
+  },
   skipSuccessfulRequests: true
 });
 
@@ -236,6 +285,13 @@ const passwordAuthLimiter = rateLimit({
   max: passwordAuthLimitMax,
   message: 'Too many password reset attempts, please try again later.',
   keyGenerator: buildRateLimitKey,
+  requestPropertyName: 'rateLimitInfo',
+  handler: (req, res) => {
+    logAuthDebug(req, res, 'rate_limit_password', {
+      rateLimit: req.rateLimitInfo || null
+    });
+    return res.status(429).send('Too many password reset attempts, please try again later.');
+  },
   skipSuccessfulRequests: true
 });
 
@@ -271,6 +327,25 @@ app.use(cors({
 // Body parser
 app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
 app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
+
+app.use((req, res, next) => {
+  if (!authDebugLogsEnabled) return next();
+  const path = req.originalUrl || req.url;
+  const isTracked =
+    path.startsWith('/api/auth/') || path.startsWith('/api/profile/me');
+  if (!isTracked) return next();
+
+  const start = Date.now();
+  res.on('finish', () => {
+    if (res.statusCode >= 400) {
+      logAuthDebug(req, res, 'tracked_error', {
+        durationMs: Date.now() - start
+      });
+    }
+  });
+  next();
+});
+
 app.use(
   '/uploads',
   express.static(path.join(__dirname, 'uploads'), {

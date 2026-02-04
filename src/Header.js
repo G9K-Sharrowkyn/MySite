@@ -67,7 +67,7 @@ const Header = () => {
       // Set up polling for real-time updates
       const interval = setInterval(() => {
         fetchUnreadCounts();
-      }, 3000); // Check every 3 seconds
+      }, 15000); // Check every 15 seconds
 
       return () => clearInterval(interval);
     }
