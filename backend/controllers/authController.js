@@ -176,6 +176,11 @@ const ensureEmailVerificationToken = async (db, userId, email) => {
 const issueStaffTwoFactorChallenge = async (db, user) => {
   const userId = resolveUserId(user);
   const email = normalizeEmail(user.email || '');
+  if (!userId || !email) {
+    const error = new Error('Cannot create 2FA challenge: user is missing id or email.');
+    error.code = 'INVALID_STAFF_ACCOUNT';
+    throw error;
+  }
   const code = createTwoFactorCode();
   const challengeId = uuidv4();
 
@@ -458,6 +463,9 @@ export const login = async (req, res) => {
         { db }
       );
       if (storedUser) {
+        if (!storedUser.id) {
+          storedUser.id = uuidv4();
+        }
         applyDailyBonus(db, storedUser);
         storedUser.profile = storedUser.profile || {};
         storedUser.profile.lastActive = now;
@@ -558,6 +566,9 @@ export const loginWithGoogle = async (req, res) => {
         }
         user.authProvider = 'google';
         user.emailVerified = true;
+        if (!user.id) {
+          user.id = uuidv4();
+        }
 
         applyDailyBonus(db, user);
         user.profile.lastActive = now;
@@ -577,6 +588,9 @@ export const loginWithGoogle = async (req, res) => {
         );
         if (!storedUser) {
           throw new Error('User not found for challenge');
+        }
+        if (!storedUser.id) {
+          storedUser.id = uuidv4();
         }
         return issueStaffTwoFactorChallenge(db, storedUser);
       });
@@ -893,7 +907,9 @@ export const verifyLoginTwoFactor = async (req, res) => {
 
       challenge.usedAt = Date.now();
       const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === challenge.userId,
+        (entry) =>
+          resolveUserId(entry) === challenge.userId ||
+          normalizeEmail(entry.email || '') === normalizeEmail(challenge.email || ''),
         { db }
       );
       if (!user) {
@@ -908,6 +924,9 @@ export const verifyLoginTwoFactor = async (req, res) => {
         throw error;
       }
 
+      if (!user.id) {
+        user.id = uuidv4();
+      }
       user.profile = user.profile || {};
       user.profile.lastActive = new Date().toISOString();
       user.updatedAt = new Date().toISOString();
@@ -918,6 +937,13 @@ export const verifyLoginTwoFactor = async (req, res) => {
 
     return finalizeLoginResponse(res, authenticatedUser);
   } catch (error) {
+    if (
+      error?.name === 'TokenExpiredError' ||
+      error?.name === 'JsonWebTokenError' ||
+      error?.name === 'NotBeforeError'
+    ) {
+      return res.status(400).json({ msg: 'Invalid or expired challenge token.' });
+    }
     if (
       error.code === 'INVALID_CHALLENGE_TOKEN' ||
       error.code === 'CHALLENGE_NOT_FOUND' ||
