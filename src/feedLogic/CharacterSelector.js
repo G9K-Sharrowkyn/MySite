@@ -2,20 +2,25 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import './CharacterSelector.css';
 
-const CharacterSelector = ({ selectedCharacter, onSelect }) => {
-  const [characters, setCharacters] = useState([]);
+const CharacterSelector = ({ characters: externalCharacters = null, selectedCharacter, onSelect }) => {
+  const [characters, setCharacters] = useState(Array.isArray(externalCharacters) ? externalCharacters : []);
   const [filteredCharacters, setFilteredCharacters] = useState([]);
   const [inputValue, setInputValue] = useState(selectedCharacter ? selectedCharacter.name : '');
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!Array.isArray(externalCharacters));
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (Array.isArray(externalCharacters)) {
+      setCharacters(externalCharacters);
+      setLoading(false);
+      return;
+    }
+
     const fetchCharacters = async () => {
       try {
         const response = await axios.get('/api/characters');
-        setCharacters(response.data);
-        setFilteredCharacters(response.data);
+        setCharacters(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         setError('Failed to load characters');
       } finally {
@@ -23,7 +28,11 @@ const CharacterSelector = ({ selectedCharacter, onSelect }) => {
       }
     };
     fetchCharacters();
-  }, []);
+  }, [externalCharacters]);
+
+  useEffect(() => {
+    setInputValue(selectedCharacter ? selectedCharacter.name : '');
+  }, [selectedCharacter]);
 
   useEffect(() => {
     const query = inputValue.trim().toLowerCase();
@@ -88,7 +97,7 @@ const CharacterSelector = ({ selectedCharacter, onSelect }) => {
         onBlur={handleBlur}
       />
       {showSuggestions && filteredCharacters.length > 0 && (
-        <div className="character-suggestions-right">
+        <div className="character-suggestions">
           {filteredCharacters.map(character => (
             <div
               key={character.id}

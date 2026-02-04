@@ -34,6 +34,21 @@ const getApiOrigin = () => {
   }
 };
 
+const guessApiOriginFromWindow = () => {
+  if (typeof window === 'undefined' || !window.location) {
+    return null;
+  }
+  const { protocol, hostname, origin } = window.location;
+  if (!hostname) return null;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
+    return origin;
+  }
+  if (hostname.startsWith('api.')) {
+    return origin;
+  }
+  return `${protocol}//api.${hostname}`;
+};
+
 const safeDecode = (value) => {
   try {
     return decodeURIComponent(value);
@@ -69,7 +84,7 @@ export const normalizeAssetUrl = (url) => {
 
   // User-uploaded media lives on the API host in production.
   if (isBackendUploadAsset(normalizedPath)) {
-    const apiOrigin = getApiOrigin();
+    const apiOrigin = getApiOrigin() || guessApiOriginFromWindow();
     if (apiOrigin) {
       return `${apiOrigin}${normalizedPath}`;
     }
