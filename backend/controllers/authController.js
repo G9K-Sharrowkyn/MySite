@@ -925,12 +925,18 @@ export const verifyLoginTwoFactor = async (req, res) => {
       }
 
       challenge.usedAt = Date.now();
-      const user = await usersRepo.findOne(
-        (entry) =>
-          resolveUserId(entry) === challenge.userId ||
-          normalizeEmail(entry.email || '') === normalizeEmail(challenge.email || ''),
+      // Resolve by challenge userId first to avoid matching a different account
+      // that happens to share the same email (e.g. legacy local + google account).
+      let user = await usersRepo.findOne(
+        (entry) => resolveUserId(entry) === challenge.userId,
         { db }
       );
+      if (!user) {
+        user = await usersRepo.findOne(
+          (entry) => normalizeEmail(entry.email || '') === normalizeEmail(challenge.email || ''),
+          { db }
+        );
+      }
       if (!user) {
         const error = new Error('User not found.');
         error.code = 'USER_NOT_FOUND';
