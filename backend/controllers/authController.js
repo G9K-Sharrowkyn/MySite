@@ -419,11 +419,25 @@ export const register = async (req, res) => {
       return db;
     });
 
-    await sendEmailVerificationEmail(normalizedEmail, verificationToken);
+    let verificationEmailSent = true;
+    try {
+      await sendEmailVerificationEmail(normalizedEmail, verificationToken);
+    } catch (emailError) {
+      verificationEmailSent = false;
+      console.error('Registration verification email error:', emailError);
+    }
 
-    if (requireEmailVerification) {
+    if (requireEmailVerification && verificationEmailSent) {
       return res.status(201).json({
         msg: 'Account created. Please verify your email before logging in.',
+        requiresEmailVerification: true,
+        email: normalizedEmail
+      });
+    }
+
+    if (requireEmailVerification && !verificationEmailSent) {
+      return res.status(503).json({
+        msg: 'Account created, but verification email could not be sent right now. Please try again later.',
         requiresEmailVerification: true,
         email: normalizedEmail
       });
@@ -438,7 +452,8 @@ export const register = async (req, res) => {
       token,
       userId: newUser.id,
       user: buildAuthResponse(newUser),
-      requiresEmailVerification: false
+      requiresEmailVerification: false,
+      verificationEmailSent
     });
   } catch (error) {
     console.error('Registration error:', error);
