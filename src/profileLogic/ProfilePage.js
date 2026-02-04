@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, useContext } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
@@ -13,13 +13,11 @@ import ImageUpload from '../ImageUpload/ImageUpload';
 import ProfileBackgroundUpload from './ProfileBackgroundUpload';
 import UserBadges from './UserBadges';
 import PostCard from '../postLogic/PostCard';
-import { AuthContext } from '../auth/AuthContext';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
   const { userId } = useParams();
   const { t } = useLanguage();
-  const { user: authUser } = useContext(AuthContext);
 
   // Initialize profile state from localStorage if available
   const storedProfile = localStorage.getItem('cachedProfile');
@@ -49,10 +47,6 @@ const ProfilePage = () => {
   const [posts, setPosts] = useState([]);
   const [contentFilter, setContentFilter] = useState('all');
   const [fightFilter, setFightFilter] = useState('division');
-  const [showRoleModal, setShowRoleModal] = useState(false);
-  const [adminPassword, setAdminPassword] = useState('');
-  const [roleActionError, setRoleActionError] = useState('');
-  const [isRoleActionLoading, setIsRoleActionLoading] = useState(false);
   const isEditingRef = useRef(false);
   const navigate = useNavigate();
 
@@ -69,9 +63,6 @@ const ProfilePage = () => {
     profile?.userId ||
     (userId === 'me' ? currentUserId : null);
   const isOwner = Boolean(currentUserId && resolvedUserId && currentUserId === resolvedUserId);
-  const isAdminViewer = authUser?.role === 'admin';
-  const canManageRole = isAdminViewer && !isOwner && profile?.role !== 'admin';
-  const nextRole = profile?.role === 'moderator' ? 'user' : 'moderator';
 
 
   const fetchComments = useCallback(async (id) => {
@@ -203,31 +194,6 @@ const handleCommentSubmit = async (e) => {
 
   const handleFilterChange = (filter) => {
     setContentFilter(filter);
-  };
-
-  const handleRoleChange = async () => {
-    if (!token || !resolvedUserId) return;
-    if (!adminPassword) {
-      setRoleActionError('Enter your admin password.');
-      return;
-    }
-
-    setIsRoleActionLoading(true);
-    setRoleActionError('');
-    try {
-      await axios.post(
-        `/api/profile/${resolvedUserId}/role`,
-        { role: nextRole, adminPassword },
-        { headers: { 'x-auth-token': token } }
-      );
-      setShowRoleModal(false);
-      setAdminPassword('');
-      await fetchProfile(actualUserId);
-    } catch (err) {
-      setRoleActionError(err?.response?.data?.msg || 'Failed to update user role.');
-    } finally {
-      setIsRoleActionLoading(false);
-    }
   };
 
   const handleProfileUpdate = async (e) => {
@@ -410,69 +376,9 @@ const handleCommentSubmit = async (e) => {
                 Message me!
               </Link>
             )}
-            {canManageRole && (
-              <button
-                type="button"
-                className="edit-profile-btn role-management-btn"
-                onClick={() => {
-                  setRoleActionError('');
-                  setAdminPassword('');
-                  setShowRoleModal(true);
-                }}
-              >
-                {profile?.role === 'moderator'
-                  ? 'Revoke moderator rights'
-                  : 'Give moderator rights'}
-              </button>
-            )}
           </div>
         </div>
       </div>
-
-      {showRoleModal && (
-        <div className="role-modal-overlay" onClick={() => setShowRoleModal(false)}>
-          <div className="role-modal" onClick={(event) => event.stopPropagation()}>
-            <h3>
-              {profile?.role === 'moderator'
-                ? 'Revoke moderator rights'
-                : 'Give moderator rights'}
-            </h3>
-            <p>
-              {profile?.role === 'moderator'
-                ? `This will change ${profile?.displayName || profile?.username} to a regular user.`
-                : `This will promote ${profile?.displayName || profile?.username} to moderator.`}
-            </p>
-            <label htmlFor="admin-password-confirmation">Confirm with admin password</label>
-            <input
-              id="admin-password-confirmation"
-              type="password"
-              value={adminPassword}
-              onChange={(event) => setAdminPassword(event.target.value)}
-              placeholder="Admin password"
-              autoComplete="current-password"
-            />
-            {roleActionError && <p className="role-modal-error">{roleActionError}</p>}
-            <div className="role-modal-actions">
-              <button
-                type="button"
-                className="role-modal-cancel"
-                onClick={() => setShowRoleModal(false)}
-                disabled={isRoleActionLoading}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="role-modal-confirm"
-                onClick={handleRoleChange}
-                disabled={isRoleActionLoading}
-              >
-                {isRoleActionLoading ? 'Saving...' : 'Confirm'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isEditing && isOwner ? (
         <form onSubmit={handleProfileUpdate} className="edit-profile-form">

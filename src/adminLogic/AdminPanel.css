@@ -42,6 +42,26 @@
   color: var(--accent-color);
 }
 
+.admin-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-tab {
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.admin-tab.active {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
 .admin-status {
   padding: 16px;
   border-radius: 12px;
@@ -147,10 +167,90 @@
   background: rgba(220, 53, 69, 0.12);
 }
 
+.role-management-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.role-controls {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(260px, 1fr) auto;
+  gap: 10px;
+}
+
+.role-controls input {
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.role-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.role-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+}
+
+.role-user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.role-user-meta span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.role-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.role-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  text-transform: capitalize;
+  font-size: 0.85rem;
+}
+
+.role-badge.role-moderator {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+
 @media (max-width: 768px) {
   .admin-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .admin-tabs {
+    width: 100%;
+  }
+
+  .admin-tab {
+    flex: 1;
   }
 
   .admin-card-header {
@@ -161,5 +261,19 @@
   .admin-card-actions {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .role-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .role-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .role-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
