@@ -183,6 +183,7 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
   }
   const code = createTwoFactorCode();
   const challengeId = uuidv4();
+  const signedChallengeToken = createSignedChallengeToken(challengeId);
 
   await authChallengesRepo.updateAll(
     (challenges) =>
@@ -203,6 +204,7 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
       userId,
       email,
       purpose: 'login_2fa',
+      token: signedChallengeToken,
       code,
       createdAt: Date.now(),
       expiresAt: Date.now() + TWO_FACTOR_TTL_MS,
@@ -213,7 +215,7 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
 
   await sendTwoFactorCodeEmail(email, code);
 
-  return createSignedChallengeToken(challengeId);
+  return signedChallengeToken;
 };
 
 const finalizeLoginResponse = async (res, user) => {
@@ -879,12 +881,29 @@ export const verifyLoginTwoFactor = async (req, res) => {
   }
 
   try {
-    const challengeId = verifySignedChallengeToken(challengeToken);
+    let challengeId = null;
+    let challengeTokenSignatureValid = false;
+    try {
+      challengeId = verifySignedChallengeToken(challengeToken);
+      challengeTokenSignatureValid = true;
+    } catch (tokenError) {
+      if (
+        tokenError?.name !== 'TokenExpiredError' &&
+        tokenError?.name !== 'JsonWebTokenError' &&
+        tokenError?.name !== 'NotBeforeError'
+      ) {
+        throw tokenError;
+      }
+    }
+
     let authenticatedUser = null;
     await withDb(async (db) => {
       const challenge = await authChallengesRepo.findOne(
         (entry) =>
-          entry.id === challengeId &&
+          (
+            (challengeTokenSignatureValid && entry.id === challengeId) ||
+            entry.token === challengeToken
+          ) &&
           entry.purpose === 'login_2fa' &&
           entry.usedAt == null,
         { db }
