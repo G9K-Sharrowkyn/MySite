@@ -27,6 +27,8 @@ const AdminPanel = () => {
   const [characterDraft, setCharacterDraft] = useState(null);
   const [characterBusy, setCharacterBusy] = useState(false);
   const [characterImageBusy, setCharacterImageBusy] = useState(false);
+  const [characterDeleteArmed, setCharacterDeleteArmed] = useState(false);
+  const [characterDeleteConfirmName, setCharacterDeleteConfirmName] = useState('');
 
   const fetchAlerts = useCallback(async () => {
     if (!token) {
@@ -168,6 +170,8 @@ const AdminPanel = () => {
 
   const openCharacterDraft = (entry) => {
     const safe = entry || {};
+    setCharacterDeleteArmed(false);
+    setCharacterDeleteConfirmName('');
     setCharacterDraft({
       id: safe.id || '',
       name: safe.name || '',
@@ -179,6 +183,8 @@ const AdminPanel = () => {
   };
 
   const newCharacterDraft = () => {
+    setCharacterDeleteArmed(false);
+    setCharacterDeleteConfirmName('');
     setCharacterDraft({
       id: '',
       name: '',
@@ -247,6 +253,41 @@ const AdminPanel = () => {
     } catch (err) {
       console.error('Error saving character:', err);
       setCharactersError(err?.response?.data?.msg || 'Failed to save character.');
+    } finally {
+      setCharacterBusy(false);
+    }
+  };
+
+  const confirmDeleteCharacter = async () => {
+    if (!token || !characterDraft?.id) {
+      return;
+    }
+
+    const expectedName = String(characterDraft.name || '').trim();
+    const typedName = String(characterDeleteConfirmName || '').trim();
+    if (!expectedName || typedName.toLowerCase() !== expectedName.toLowerCase()) {
+      setCharactersError('Type the exact character name to confirm deletion.');
+      return;
+    }
+
+    setCharacterBusy(true);
+    setCharactersError('');
+    try {
+      await axios.delete(`/api/characters/${encodeURIComponent(characterDraft.id)}`, {
+        headers: { 'x-auth-token': token },
+        data: {
+          confirmPhrase: 'DELETE',
+          confirmName: expectedName
+        }
+      });
+
+      setCharacterDraft(null);
+      setCharacterDeleteArmed(false);
+      setCharacterDeleteConfirmName('');
+      await fetchCharacters();
+    } catch (err) {
+      console.error('Error deleting character:', err);
+      setCharactersError(err?.response?.data?.msg || 'Failed to delete character.');
     } finally {
       setCharacterBusy(false);
     }
@@ -475,7 +516,11 @@ const AdminPanel = () => {
                 <button
                   type="button"
                   className="admin-delete"
-                  onClick={() => setCharacterDraft(null)}
+                  onClick={() => {
+                    setCharacterDraft(null);
+                    setCharacterDeleteArmed(false);
+                    setCharacterDeleteConfirmName('');
+                  }}
                 >
                   Close
                 </button>
@@ -555,6 +600,20 @@ const AdminPanel = () => {
                 </div>
 
                 <div className="admin-character-actions">
+                  {characterDraft.id && (
+                    <button
+                      type="button"
+                      className="admin-delete"
+                      disabled={characterBusy}
+                      onClick={() => {
+                        setCharacterDeleteArmed((prev) => !prev);
+                        setCharacterDeleteConfirmName('');
+                        setCharactersError('');
+                      }}
+                    >
+                      {characterDeleteArmed ? 'Cancel delete' : 'Delete character'}
+                    </button>
+                  )}
                   <button
                     type="button"
                     className="admin-refresh"
@@ -564,6 +623,27 @@ const AdminPanel = () => {
                     {characterBusy ? 'Saving...' : 'Save'}
                   </button>
                 </div>
+
+                {characterDraft.id && characterDeleteArmed && (
+                  <div className="admin-character-delete-confirm">
+                    <p>
+                      Type <strong>{characterDraft.name}</strong> to confirm deletion.
+                    </p>
+                    <input
+                      value={characterDeleteConfirmName}
+                      onChange={(event) => setCharacterDeleteConfirmName(event.target.value)}
+                      placeholder="Type exact character name"
+                    />
+                    <button
+                      type="button"
+                      className="admin-delete"
+                      disabled={characterBusy}
+                      onClick={confirmDeleteCharacter}
+                    >
+                      {characterBusy ? 'Deleting...' : 'Confirm delete'}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

@@ -43,6 +43,14 @@ const deriveBaseName = (name) => {
   return (index > 0 ? safe.slice(0, index) : safe).trim();
 };
 
+const normalizeCharacterKey = (character) => {
+  const name = typeof character?.name === 'string' ? character.name.trim().toLowerCase() : '';
+  if (name) return `name:${name}`;
+  const id = typeof character?.id === 'string' ? character.id : '';
+  if (id) return `id:${id}`;
+  return `idx:${Math.random().toString(16).slice(2)}`;
+};
+
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
@@ -60,23 +68,21 @@ export const getCharacters = async (_req, res) => {
 
     if (dbCharacters.length > 0) {
       const byName = new Map();
-      const keyFor = (c) => {
-        const name = typeof c?.name === 'string' ? c.name.trim().toLowerCase() : '';
-        if (name) return `name:${name}`;
-        const id = typeof c?.id === 'string' ? c.id : '';
-        if (id) return `id:${id}`;
-        return `idx:${Math.random().toString(16).slice(2)}`;
-      };
 
       for (const c of staticCharacters) {
-        byName.set(keyFor(c), c);
+        byName.set(normalizeCharacterKey(c), c);
       }
       for (const c of dbCharacters) {
-        byName.set(keyFor(c), c); // DB overrides static if same name.
+        byName.set(normalizeCharacterKey(c), c); // DB overrides static if same name.
       }
 
       characters = Array.from(byName.values());
     }
+
+    // Hide hard-deleted entries represented by DB tombstones.
+    characters = characters.filter(
+      (character) => String(character?.status || 'active').toLowerCase() !== 'deleted'
+    );
 
     res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
     res.json(characters);
@@ -243,5 +249,65 @@ export const suggestCharacter = async (req, res) => {
   } catch (error) {
     console.error('Error saving character suggestion:', error);
     res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Delete a character (admin only, with explicit confirmation)
+// @route   DELETE /api/characters/:id
+// @access  Private (Admin)
+export const deleteCharacter = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const confirmPhrase = String(req.body?.confirmPhrase || '').trim().toUpperCase();
+    const confirmName = String(req.body?.confirmName || '').trim();
+
+    if (confirmPhrase !== 'DELETE') {
+      return res.status(400).json({ msg: 'Double confirmation phrase is required.' });
+    }
+
+    const dbCharacters = await charactersRepo.getAll();
+    const staticCharacters = await loadStaticCharacters();
+    const dbEntry = dbCharacters.find((entry) => String(entry?.id || '') === String(id));
+    const staticEntry = staticCharacters.find((entry) => String(entry?.id || '') === String(id));
+
+    const target = dbEntry || staticEntry;
+    if (!target) {
+      return res.status(404).json({ msg: 'Character not found.' });
+    }
+
+    const expectedName = String(target.name || '').trim();
+    if (!expectedName) {
+      return res.status(400).json({ msg: 'Character has invalid name.' });
+    }
+
+    if (confirmName.toLowerCase() !== expectedName.toLowerCase()) {
+      return res.status(400).json({ msg: 'Character name confirmation does not match.' });
+    }
+
+    if (dbEntry) {
+      await charactersRepo.removeById(String(dbEntry.id));
+    }
+
+    // If this character exists in static catalog, write a tombstone override in DB
+    // so merged output will keep it hidden.
+    if (staticEntry) {
+      const tombstone = {
+        id: `deleted:${uuidv4()}`,
+        name: expectedName,
+        baseName: deriveBaseName(expectedName),
+        universe: staticEntry.universe || 'Other',
+        tags: normalizeTags(staticEntry.tags),
+        image: staticEntry.image || '/logo512.png',
+        status: 'deleted',
+        deletedAt: new Date().toISOString(),
+        deletedBy: req.user?.id || null
+      };
+      await charactersRepo.insert(tombstone);
+    }
+
+    return res.json({ msg: `Character "${expectedName}" deleted successfully.` });
+  } catch (error) {
+    console.error('Error deleting character:', error);
+    return res.status(500).json({ msg: 'Server error' });
   }
 };

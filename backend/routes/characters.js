@@ -4,7 +4,13 @@ import fs from 'fs';
 import multer from 'multer';
 import sharp from 'sharp';
 import { fileURLToPath } from 'url';
-import { getCharacters, addCharacter, updateCharacter, suggestCharacter } from '../controllers/characterController.js';
+import {
+  getCharacters,
+  addCharacter,
+  updateCharacter,
+  suggestCharacter,
+  deleteCharacter
+} from '../controllers/characterController.js';
 import auth from '../middleware/auth.js';
 import authorize from '../middleware/roleMiddleware.js';
 
@@ -92,6 +98,11 @@ router.post('/', auth, authorize(['moderator', 'admin']), addCharacter);
 // @desc    Update character availability
 // @access  Private (Moderator)
 router.put('/:id', auth, authorize(['moderator', 'admin']), updateCharacter);
+
+// @route   DELETE api/characters/:id
+// @desc    Delete character (admin only, requires double-confirm payload)
+// @access  Private (Admin)
+router.delete('/:id', auth, authorize(['admin']), deleteCharacter);
 
 // @route   POST api/characters/suggest
 // @desc    Suggest a new character (User suggestion)
