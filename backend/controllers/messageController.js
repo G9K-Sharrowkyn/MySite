@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
+  blocksRepo,
   messagesRepo,
   readDb,
   usersRepo,
@@ -28,6 +29,7 @@ const normalizeMessage = (message, users = []) => {
     senderUsername: message.senderUsername || sender?.username || '',
     senderDisplayName:
       message.senderDisplayName || getUserDisplayName(sender) || message.senderUsername || '',
+    senderProfilePicture: sender?.profile?.profilePicture || sender?.profile?.avatar || message.senderProfilePicture || '',
     recipientId: message.recipientId,
     recipientUsername: message.recipientUsername || recipient?.username || '',
     recipientDisplayName:
@@ -35,6 +37,7 @@ const normalizeMessage = (message, users = []) => {
       getUserDisplayName(recipient) ||
       message.recipientUsername ||
       '',
+    recipientProfilePicture: recipient?.profile?.profilePicture || recipient?.profile?.avatar || message.recipientProfilePicture || '',
     subject: message.subject || '',
     content: message.content || '',
     read: Boolean(message.read),
@@ -59,6 +62,16 @@ export const sendMessage = async (req, res) => {
     let createdMessage;
 
     await withDb(async (db) => {
+      const blocks = await blocksRepo.getAll({ db });
+      const isBlocked =
+        blocks.some((b) => b.blockerId === req.user.id && b.blockedId === recipientId) ||
+        blocks.some((b) => b.blockerId === recipientId && b.blockedId === req.user.id);
+      if (isBlocked) {
+        const error = new Error('Messaging is blocked');
+        error.code = 'BLOCKED';
+        throw error;
+      }
+
       const sender = await usersRepo.findOne(
         (entry) => resolveUserId(entry) === req.user.id,
         { db }
@@ -122,6 +135,9 @@ export const sendMessage = async (req, res) => {
   } catch (error) {
     if (error.code === 'RECIPIENT_NOT_FOUND' || error.code === 'SENDER_NOT_FOUND') {
       return res.status(404).json({ msg: error.message });
+    }
+    if (error.code === 'BLOCKED') {
+      return res.status(403).json({ msg: 'Cannot message this user.' });
     }
     console.error('Error sending message:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -107,6 +107,23 @@ const Header = () => {
     }
   };
 
+  const handleFriendRequestAction = async (requestId, action, notificationId) => {
+    if (!token || !requestId) return;
+    try {
+      await axios.post(`/api/friends/requests/${encodeURIComponent(requestId)}/${action}`, {}, {
+        headers: { 'x-auth-token': token }
+      });
+      if (notificationId) {
+        await markNotificationAsRead(notificationId);
+      } else {
+        fetchUnreadCounts();
+        fetchNotifications();
+      }
+    } catch (error) {
+      console.error('Error handling friend request action:', error);
+    }
+  };
+
   const markAllNotificationsAsRead = async () => {
     if (!token) return;
 
@@ -278,6 +295,27 @@ const Header = () => {
                             >
                               <div className="notification-title">{notification.title}</div>
                               <div className="notification-content">{notification.content}</div>
+                              {notification.type === 'friend_request' && notification.data?.requestId && (
+                                <div
+                                  className="notification-actions"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <button
+                                    type="button"
+                                    className="notification-action-btn primary"
+                                    onClick={() => handleFriendRequestAction(notification.data.requestId, 'accept', notification.id)}
+                                  >
+                                    Accept
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="notification-action-btn"
+                                    onClick={() => handleFriendRequestAction(notification.data.requestId, 'decline', notification.id)}
+                                  >
+                                    Decline
+                                  </button>
+                                </div>
+                              )}
                               <div className="notification-time">
                                 {new Date(notification.createdAt).toLocaleString()}
                               </div>

@@ -13,6 +13,7 @@ import ImageUpload from '../ImageUpload/ImageUpload';
 import ProfileBackgroundUpload from './ProfileBackgroundUpload';
 import UserBadges from './UserBadges';
 import PostCard from '../postLogic/PostCard';
+import UserHoverMenu from '../shared/UserHoverMenu';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -47,6 +48,10 @@ const ProfilePage = () => {
   const [posts, setPosts] = useState([]);
   const [contentFilter, setContentFilter] = useState('all');
   const [fightFilter, setFightFilter] = useState('division');
+  const [friends, setFriends] = useState([]);
+  const [friendRequests, setFriendRequests] = useState({ incoming: [], outgoing: [] });
+  const [friendStatus, setFriendStatus] = useState({ status: 'unknown', requestId: null });
+  const [blockStatus, setBlockStatus] = useState({ blocked: false, blockedBy: false });
   const isEditingRef = useRef(false);
   const navigate = useNavigate();
 
@@ -137,6 +142,46 @@ const ProfilePage = () => {
       setLoading(false);
     }
   }, [fetchComments, fetchUserPosts, navigate, normalizeDescription, t, userId]);
+
+  const fetchFriends = useCallback(async (idOrUsername) => {
+    try {
+      const response = await axios.get(`/api/friends/user/${encodeURIComponent(idOrUsername)}`);
+      setFriends(response.data?.friends || []);
+    } catch (error) {
+      setFriends([]);
+    }
+  }, []);
+
+  const fetchRelationStatus = useCallback(async (targetId) => {
+    if (!token || !targetId || isOwner) return;
+    try {
+      const [friendRes, blockRes] = await Promise.all([
+        axios.get(`/api/friends/status/${encodeURIComponent(targetId)}`, {
+          headers: { 'x-auth-token': token }
+        }),
+        axios.get(`/api/blocks/status/${encodeURIComponent(targetId)}`, {
+          headers: { 'x-auth-token': token }
+        })
+      ]);
+      setFriendStatus(friendRes.data || { status: 'none' });
+      setBlockStatus(blockRes.data || { blocked: false, blockedBy: false });
+    } catch (_error) {
+      setFriendStatus({ status: 'unknown', requestId: null });
+      setBlockStatus({ blocked: false, blockedBy: false });
+    }
+  }, [isOwner, token]);
+
+  const fetchMyFriendRequests = useCallback(async () => {
+    if (!token) return;
+    try {
+      const res = await axios.get('/api/friends/requests', {
+        headers: { 'x-auth-token': token }
+      });
+      setFriendRequests(res.data || { incoming: [], outgoing: [] });
+    } catch (_error) {
+      setFriendRequests({ incoming: [], outgoing: [] });
+    }
+  }, [token]);
   useEffect(() => {
     if (!actualUserId) {
       setError(t('profileNotFound') || 'Cannot find your profile. Please log in again.');
@@ -145,6 +190,24 @@ const ProfilePage = () => {
     }
     fetchProfile(actualUserId);
   }, [actualUserId, fetchProfile, t]);
+
+  useEffect(() => {
+    const idOrUsername = profile?.username || actualUserId;
+    if (idOrUsername) {
+      fetchFriends(idOrUsername);
+    }
+  }, [actualUserId, fetchFriends, profile?.username]);
+
+  useEffect(() => {
+    if (!resolvedUserId) return;
+    fetchRelationStatus(resolvedUserId);
+  }, [fetchRelationStatus, resolvedUserId]);
+
+  useEffect(() => {
+    if (isOwner) {
+      fetchMyFriendRequests();
+    }
+  }, [fetchMyFriendRequests, isOwner]);
 
 
 
@@ -219,6 +282,71 @@ const handleCommentSubmit = async (e) => {
     } catch (err) {
       console.error('Błąd podczas aktualizacji profilu:', err.response?.data);
     }
+  };
+
+  const sendFriendRequest = async () => {
+    if (!token || !resolvedUserId) return;
+    try {
+      await axios.post('/api/friends/requests', { toUserId: resolvedUserId }, {
+        headers: { 'x-auth-token': token }
+      });
+      await fetchRelationStatus(resolvedUserId);
+    } catch (_error) {}
+  };
+
+  const acceptFriendRequest = async (requestId) => {
+    if (!token || !requestId) return;
+    try {
+      await axios.post(`/api/friends/requests/${encodeURIComponent(requestId)}/accept`, {}, {
+        headers: { 'x-auth-token': token }
+      });
+      await fetchMyFriendRequests();
+      await fetchRelationStatus(resolvedUserId);
+      await fetchFriends(profile?.username || actualUserId);
+    } catch (_error) {}
+  };
+
+  const declineFriendRequest = async (requestId) => {
+    if (!token || !requestId) return;
+    try {
+      await axios.post(`/api/friends/requests/${encodeURIComponent(requestId)}/decline`, {}, {
+        headers: { 'x-auth-token': token }
+      });
+      await fetchMyFriendRequests();
+      await fetchRelationStatus(resolvedUserId);
+    } catch (_error) {}
+  };
+
+  const removeFriend = async () => {
+    if (!token || !resolvedUserId) return;
+    try {
+      await axios.delete(`/api/friends/${encodeURIComponent(resolvedUserId)}`, {
+        headers: { 'x-auth-token': token }
+      });
+      await fetchRelationStatus(resolvedUserId);
+      await fetchFriends(profile?.username || actualUserId);
+    } catch (_error) {}
+  };
+
+  const blockUser = async () => {
+    if (!token || !resolvedUserId) return;
+    try {
+      await axios.post(`/api/blocks/${encodeURIComponent(resolvedUserId)}`, {}, {
+        headers: { 'x-auth-token': token }
+      });
+      await fetchRelationStatus(resolvedUserId);
+      await fetchFriends(profile?.username || actualUserId);
+    } catch (_error) {}
+  };
+
+  const unblockUser = async () => {
+    if (!token || !resolvedUserId) return;
+    try {
+      await axios.delete(`/api/blocks/${encodeURIComponent(resolvedUserId)}`, {
+        headers: { 'x-auth-token': token }
+      });
+      await fetchRelationStatus(resolvedUserId);
+    } catch (_error) {}
   };
 
   const handleBackgroundUpdate = (newBackgroundPath) => {
@@ -369,16 +497,118 @@ const handleCommentSubmit = async (e) => {
               </button>
             )}
             {!isOwner && resolvedUserId && (
-              <Link 
-                to={`/messages/${resolvedUserId}`}
-                className="send-message-btn"
-              >
-                Message me!
-              </Link>
+              <>
+                <Link 
+                  to={`/messages/${resolvedUserId}`}
+                  className="send-message-btn"
+                >
+                  Message me!
+                </Link>
+
+                {!blockStatus.blockedBy && (
+                  <div className="friend-actions">
+                    {blockStatus.blocked ? (
+                      <button className="friend-btn secondary" onClick={unblockUser}>
+                        Unblock
+                      </button>
+                    ) : (
+                      <button className="friend-btn danger" onClick={blockUser}>
+                        Block
+                      </button>
+                    )}
+
+                    {!blockStatus.blocked && (
+                      <>
+                        {friendStatus.status === 'friends' && (
+                          <button className="friend-btn secondary" onClick={removeFriend}>
+                            Remove friend
+                          </button>
+                        )}
+                        {friendStatus.status === 'none' && (
+                          <button className="friend-btn primary" onClick={sendFriendRequest}>
+                            Add friend
+                          </button>
+                        )}
+                        {friendStatus.status === 'outgoing' && (
+                          <button className="friend-btn secondary" disabled>
+                            Request sent
+                          </button>
+                        )}
+                        {friendStatus.status === 'incoming' && (
+                          <>
+                            <button
+                              className="friend-btn primary"
+                              onClick={() => acceptFriendRequest(friendStatus.requestId)}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              className="friend-btn secondary"
+                              onClick={() => declineFriendRequest(friendStatus.requestId)}
+                            >
+                              Decline
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
       </div>
+
+      <div className="friends-card">
+        <div className="friends-card-header">
+          <h3>Friends</h3>
+          <span className="friends-count">{friends.length}</span>
+        </div>
+        {friends.length === 0 ? (
+          <p className="friends-empty">No friends yet.</p>
+        ) : (
+          <div className="friends-grid">
+            {friends.slice(0, 24).map((f) => (
+              <UserHoverMenu key={f.id} user={f}>
+                <Link to={`/profile/${encodeURIComponent(f.username)}`} className="friend-tile">
+                  <img
+                    {...getOptimizedImageProps(replacePlaceholderUrl(f.profilePicture) || placeholderImages.userSmall, { size: 48 })}
+                    alt={f.displayName || f.username}
+                  />
+                  <span>{f.displayName || f.username}</span>
+                </Link>
+              </UserHoverMenu>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {isOwner && (
+        <div className="friends-card">
+          <div className="friends-card-header">
+            <h3>Friend requests</h3>
+            <span className="friends-count">{friendRequests.incoming.length}</span>
+          </div>
+          {friendRequests.incoming.length === 0 ? (
+            <p className="friends-empty">No incoming requests.</p>
+          ) : (
+            <div className="friend-requests">
+              {friendRequests.incoming.slice(0, 20).map((req) => (
+                <div key={req.id} className="friend-request-row">
+                  <Link to={`/profile/${encodeURIComponent(req.from.username)}`} className="friend-request-user">
+                    {req.from.displayName || req.from.username}
+                  </Link>
+                  <div className="friend-request-actions">
+                    <button className="friend-btn primary" onClick={() => acceptFriendRequest(req.id)}>Accept</button>
+                    <button className="friend-btn secondary" onClick={() => declineFriendRequest(req.id)}>Decline</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {isEditing && isOwner ? (
         <form onSubmit={handleProfileUpdate} className="edit-profile-form">

@@ -341,6 +341,32 @@
   font-size: 0.8em;
 }
 
+.notification-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.notification-action-btn {
+  border: 1px solid #364d7d;
+  background: rgba(22, 35, 63, 0.8);
+  color: #dbe7ff;
+  padding: 6px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 650;
+}
+
+.notification-action-btn.primary {
+  border-color: rgba(86, 140, 255, 0.9);
+  background: rgba(34, 74, 170, 0.85);
+}
+
+.notification-action-btn:hover {
+  border-color: rgba(120, 165, 255, 0.9);
+}
+
 .no-notifications {
   padding: 30px 20px;
   text-align: center;

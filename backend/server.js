@@ -50,9 +50,12 @@ import feedbackRoutes from './routes/feedback.js';
 import moderationRoutes from './routes/moderation.js';
 import translateRoutes from './routes/translate.js';
 import ccgRoutes from './routes/ccg.js';
+import friendsRoutes from './routes/friends.js';
+import blocksRoutes from './routes/blocks.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
 import { notificationsRepo } from './repositories/index.js';
 import { usersRepo } from './repositories/index.js';
+import { readDb } from './repositories/index.js';
 import { readDb as warmupReadDb } from './services/jsonDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -404,6 +407,8 @@ app.use('/api/user', userRoutes);
 app.use('/api/push', pushRoutes);
 app.use('/api/feedback', feedbackRoutes);
 app.use('/api/moderation', moderationRoutes);
+app.use('/api/friends', friendsRoutes);
+app.use('/api/blocks', blocksRoutes);
 
 // Lightweight health endpoints for uptime checks
 app.get(['/healthz', '/api/health'], (req, res) => {
@@ -512,9 +517,12 @@ io.on('connection', (socket) => {
     let trustedUsername = userData.username;
     let trustedProfilePicture = userData.profilePicture;
     try {
-      const storedUser = await usersRepo.findOne(
-        (entry) => (entry.id || entry._id) === trustedUserId
-      );
+      // NOTE: repositories default to local JSON snapshots unless a db context is provided.
+      // On production we run on MongoDB, so read the active DB first.
+      const db = await readDb();
+      const storedUser =
+        (db?.users || []).find((entry) => (entry?.id || entry?._id) === trustedUserId) ||
+        (await usersRepo.findOne((entry) => (entry.id || entry._id) === trustedUserId, { db }));
       if (storedUser) {
         trustedUsername = storedUser.username || trustedUsername;
         trustedProfilePicture =
@@ -547,11 +555,35 @@ io.on('connection', (socket) => {
     // Load recent chat messages
     try {
       const recentMessages = await chatStore.getRecentMessages(50);
+
+      // Make sure avatars reflect the current profile, not the cached chat snapshot.
+      let profilePictureByUserId = new Map();
+      try {
+        const db = await readDb();
+        const users = Array.isArray(db?.users) ? db.users : [];
+        profilePictureByUserId = new Map(
+          users
+            .map((u) => {
+              const id = u?.id || u?._id;
+              if (!id) return null;
+              const pic =
+                u?.profile?.profilePicture ||
+                u?.profile?.avatar ||
+                u?.profilePicture ||
+                null;
+              return [id, pic];
+            })
+            .filter(Boolean)
+        );
+      } catch (error) {
+        console.warn('join-chat: failed to resolve user avatars for history:', error?.message || error);
+      }
+
       const formattedMessages = recentMessages.map((msg) => ({
         id: msg.id,
         userId: msg.userId,
         username: msg.username,
-        profilePicture: msg.profilePicture,
+        profilePicture: profilePictureByUserId.get(msg.userId) || msg.profilePicture,
         text: msg.text,
         timestamp: msg.timestamp || msg.createdAt,
         reactions: msg.reactions || [],

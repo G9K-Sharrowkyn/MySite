@@ -27,6 +27,10 @@
 build.zip
 backend.zip
 
+# local subtitle/translation scratch
+*.srt
+translations/
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
-import { readDb, nicknameChangeLogsRepo, usersRepo, withDb } from '../repositories/index.js';
+import { blocksRepo, readDb, nicknameChangeLogsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getRankInfo } from '../utils/rankSystem.js';
 import { getUserDisplayName, normalizeDisplayName } from '../utils/userDisplayName.js';
@@ -102,6 +102,19 @@ export const getProfile = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
+    }
+
+    // Hard block: if viewer is authenticated and either side blocked the other, deny.
+    const viewerId = req.user?.id;
+    if (viewerId) {
+      const blocks = await blocksRepo.getAll({ db });
+      const targetId = resolveUserId(user);
+      const blocked =
+        blocks.some((b) => b.blockerId === viewerId && b.blockedId === targetId) ||
+        blocks.some((b) => b.blockerId === targetId && b.blockedId === viewerId);
+      if (blocked) {
+        return res.status(403).json({ msg: 'Access denied' });
+      }
     }
 
     res.json(buildProfileResponse(user, false, db));

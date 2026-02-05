@@ -13,6 +13,7 @@ import {
 } from '../controllers/profileController.js';
 import { getLeaderboard, getUserStats, getUserAchievements } from '../controllers/statsController.js';
 import auth from '../middleware/auth.js';
+import authOptional from '../middleware/authOptional.js';
 import { readDb, withDb } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
@@ -251,7 +252,7 @@ router.post('/:userId/role', auth, changeUserRole);
 // @route   GET api/profile/:userId
 // @desc    Get profile by user ID
 // @access  Public
-router.get('/:userId', getProfile);
+router.get('/:userId', authOptional, getProfile);
 
 // @route   GET api/profile/:userId/stats
 // @desc    Get user statistics

@@ -5,6 +5,7 @@ import io from 'socket.io-client';
 import { AuthContext } from '../auth/AuthContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import { getUserDisplayName } from '../utils/userDisplay';
+import UserHoverMenu from '../shared/UserHoverMenu';
 import './GlobalChatSystem.css';
 
 const DEFAULT_AVATAR = '/logo192.png';
@@ -105,19 +106,25 @@ const GlobalChatSystem = () => {
         const otherUserId = message.senderId === currentUserId ? message.recipientId : message.senderId;
         const otherUsername = message.senderId === currentUserId ? message.recipientUsername : message.senderUsername;
         const otherDisplayName = message.senderId === currentUserId ? (message.recipientDisplayName || otherUsername) : (message.senderDisplayName || otherUsername);
+        const otherProfilePicture = message.senderId === currentUserId
+          ? (message.recipientProfilePicture || message.recipientAvatar || null)
+          : (message.senderProfilePicture || message.senderAvatar || null);
         
         if (!conversationMap.has(otherUserId)) {
           conversationMap.set(otherUserId, {
             userId: otherUserId,
             username: otherUsername,
             displayName: otherDisplayName,
-            profilePicture: null,
+            profilePicture: otherProfilePicture,
             lastMessage: message,
             unreadCount: 0
           });
         }
         
         const conversation = conversationMap.get(otherUserId);
+        if (!conversation.profilePicture && otherProfilePicture) {
+          conversation.profilePicture = otherProfilePicture;
+        }
         if (new Date(message.createdAt) > new Date(conversation.lastMessage.createdAt)) {
           conversation.lastMessage = message;
         }
@@ -664,26 +671,30 @@ const GlobalChatSystem = () => {
                     return (
                       <div key={message.id} className={`message ${isOwn ? 'own' : 'other'}`}>
                         {!isOwn && (
-                          <img 
-                            {...getOptimizedImageProps(
-                              message.profilePicture || DEFAULT_AVATAR,
-                              { size: 36 }
-                            )}
-                            alt={message.displayName || message.username}
-                            className="message-avatar"
-                            onClick={() => goToProfile(message.username)}
-                            style={{ cursor: 'pointer' }}
-                          />
+                          <UserHoverMenu user={{ id: message.userId, username: message.username }}>
+                            <img 
+                              {...getOptimizedImageProps(
+                                message.profilePicture || DEFAULT_AVATAR,
+                                { size: 36 }
+                              )}
+                              alt={message.displayName || message.username}
+                              className="message-avatar"
+                              onClick={() => goToProfile(message.username)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </UserHoverMenu>
                         )}
                         <div className="message-content">
-                          <span
-                            className="message-author"
-                            onClick={() => goToProfile(message.username)}
-                            style={{ cursor: 'pointer' }}
-                            title="View profile"
-                          >
-                            {authorLabel}
-                          </span>
+                          <UserHoverMenu user={{ id: message.userId, username: message.username }}>
+                            <span
+                              className="message-author"
+                              onClick={() => goToProfile(message.username)}
+                              style={{ cursor: 'pointer' }}
+                              title="View profile"
+                            >
+                              {authorLabel}
+                            </span>
+                          </UserHoverMenu>
                           <div className="message-bubble">
                             <p className="message-text">{message.text}</p>
                           </div>
@@ -743,22 +754,26 @@ const GlobalChatSystem = () => {
                       </div>
                       {activeUsers.map(activeUser => (
                         <div key={activeUser.userId} className="user-item">
-                          <img 
-                            {...getOptimizedImageProps(
-                              activeUser.profilePicture || DEFAULT_AVATAR,
-                              { size: 28 }
-                            )}
-                            alt={activeUser.displayName || activeUser.username}
-                            onClick={() => goToProfile(activeUser.username)}
-                            style={{ cursor: 'pointer' }}
-                          />
-                          <span
-                            onClick={() => goToProfile(activeUser.username)}
-                            style={{ cursor: 'pointer' }}
-                            title="View profile"
-                          >
-                            {activeUser.displayName || activeUser.username}
-                          </span>
+                          <UserHoverMenu user={{ id: activeUser.userId, username: activeUser.username }}>
+                            <img 
+                              {...getOptimizedImageProps(
+                                activeUser.profilePicture || DEFAULT_AVATAR,
+                                { size: 28 }
+                              )}
+                              alt={activeUser.displayName || activeUser.username}
+                              onClick={() => goToProfile(activeUser.username)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                          </UserHoverMenu>
+                          <UserHoverMenu user={{ id: activeUser.userId, username: activeUser.username }}>
+                            <span
+                              onClick={() => goToProfile(activeUser.username)}
+                              style={{ cursor: 'pointer' }}
+                              title="View profile"
+                            >
+                              {activeUser.displayName || activeUser.username}
+                            </span>
+                          </UserHoverMenu>
                         </div>
                       ))}
                     </div>
@@ -862,6 +877,7 @@ const GlobalChatSystem = () => {
                         />
                         <div className="private-conv-info">
                           <div className="private-conv-name-row">
+                            <UserHoverMenu user={{ id: conv.userId, username: conv.username }}>
                             <span
                               className="private-conv-name"
                               onClick={(e) => {
@@ -873,6 +889,7 @@ const GlobalChatSystem = () => {
                             >
                               {conv.displayName || conv.username}
                             </span>
+                            </UserHoverMenu>
                             <span className={`user-online-status ${activeUsers.some(u => u.userId === conv.userId) ? 'online' : 'offline'}`}></span>
                             {conv.unreadCount > 0 && (
                               <span className="private-conv-unread-badge">{conv.unreadCount}</span>
@@ -898,24 +915,28 @@ const GlobalChatSystem = () => {
                       {'< Back'}
                     </button>
                     <div className="private-chat-user-info">
-                      <img 
-                        {...getOptimizedImageProps(
-                          selectedPrivateConversation.profilePicture || DEFAULT_AVATAR,
-                          { size: 32, lazy: false, fetchPriority: 'high', decoding: 'sync' }
-                        )}
-                        alt={selectedPrivateConversation.displayName || selectedPrivateConversation.username}
-                        className="private-chat-avatar"
-                        onClick={() => goToProfile(selectedPrivateConversation.username)}
-                        style={{ cursor: 'pointer' }}
-                      />
-                      <span
-                        onClick={() => goToProfile(selectedPrivateConversation.username)}
-                        style={{ cursor: 'pointer' }}
-                        title="View profile"
-                      >
-                        {selectedPrivateConversation.displayName || selectedPrivateConversation.username}
-                      </span>
-                      <span className={`user-online-status ${activeUsers.some(u => u.userId === selectedPrivateConversation.id) ? 'online' : 'offline'}`}></span>
+                      <UserHoverMenu user={{ id: selectedPrivateConversation.userId, username: selectedPrivateConversation.username }}>
+                        <img 
+                          {...getOptimizedImageProps(
+                            selectedPrivateConversation.profilePicture || DEFAULT_AVATAR,
+                            { size: 32, lazy: false, fetchPriority: 'high', decoding: 'sync' }
+                          )}
+                          alt={selectedPrivateConversation.displayName || selectedPrivateConversation.username}
+                          className="private-chat-avatar"
+                          onClick={() => goToProfile(selectedPrivateConversation.username)}
+                          style={{ cursor: 'pointer' }}
+                        />
+                      </UserHoverMenu>
+                      <UserHoverMenu user={{ id: selectedPrivateConversation.userId, username: selectedPrivateConversation.username }}>
+                        <span
+                          onClick={() => goToProfile(selectedPrivateConversation.username)}
+                          style={{ cursor: 'pointer' }}
+                          title="View profile"
+                        >
+                          {selectedPrivateConversation.displayName || selectedPrivateConversation.username}
+                        </span>
+                      </UserHoverMenu>
+                      <span className={`user-online-status ${activeUsers.some(u => u.userId === selectedPrivateConversation.userId) ? 'online' : 'offline'}`}></span>
                     </div>
                   </div>
                   <div className="private-messages-area" ref={privateMessagesContainerRef}>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './FeedbackButton.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import axios from 'axios';
@@ -19,6 +19,23 @@ const FeedbackButton = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
+
+  useEffect(() => {
+    const handler = (event) => {
+      const detail = event?.detail || {};
+      if (detail?.type === 'user' && typeof detail?.username === 'string') {
+        setReportType('user');
+        setReportedUser(detail.username);
+        setTitle(`User report: ${detail.username}`);
+        setDescription('');
+        setSuccessMessage('');
+        setErrorMessage('');
+        setIsOpen(true);
+      }
+    };
+    window.addEventListener('open-feedback', handler);
+    return () => window.removeEventListener('open-feedback', handler);
+  }, []);
 
   const handleImageFileChange = (e) => {
     const file = e.target.files[0];
