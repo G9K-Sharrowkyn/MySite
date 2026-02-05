@@ -44,17 +44,18 @@ const deriveBaseName = (name) => {
 };
 
 const normalizeCharacterKey = (character) => {
+  // Prefer ID so admin edits (including renames) override static entries reliably.
+  const id = typeof character?.id === 'string' ? character.id.trim() : '';
+  if (id) return `id:${id.toLowerCase()}`;
   const name = typeof character?.name === 'string' ? character.name.trim().toLowerCase() : '';
   if (name) return `name:${name}`;
-  const id = typeof character?.id === 'string' ? character.id : '';
-  if (id) return `id:${id}`;
   return `idx:${Math.random().toString(16).slice(2)}`;
 };
 
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
-export const getCharacters = async (_req, res) => {
+export const getCharacters = async (req, res) => {
   try {
     const dbCharactersRaw = await charactersRepo.getAll();
     const dbCharacters = Array.isArray(dbCharactersRaw) ? dbCharactersRaw : [];
@@ -94,7 +95,12 @@ export const getCharacters = async (_req, res) => {
       (character) => String(character?.status || 'active').toLowerCase() !== 'deleted'
     );
 
-    res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+    // Avoid stale list right after moderation/admin edits.
+    if (req.header('x-auth-token')) {
+      res.set('Cache-Control', 'no-store');
+    } else {
+      res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
+    }
     res.json(characters);
   } catch (error) {
     console.error('Error fetching characters:', error);
@@ -158,6 +164,8 @@ export const updateCharacter = async (req, res) => {
     const { available, status, name, universe, image, tags, baseName } = req.body;
     let updated;
 
+    const hasTagsField = Object.prototype.hasOwnProperty.call(req.body || {}, 'tags');
+    const hasBaseNameField = Object.prototype.hasOwnProperty.call(req.body || {}, 'baseName');
     const normalizedTags = normalizeTags(tags);
     const resolvedName = typeof name === 'string' ? name.trim() : '';
     const resolvedBaseName =
@@ -213,8 +221,12 @@ export const updateCharacter = async (req, res) => {
         character.images.thumbnail = character.image;
       }
 
-      if (normalizedTags.length) {
+      if (hasTagsField) {
         character.tags = normalizedTags;
+      }
+
+      if (hasBaseNameField && resolvedBaseName) {
+        character.baseName = resolvedBaseName;
       }
 
       character.updatedAt = new Date().toISOString();
