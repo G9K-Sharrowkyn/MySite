@@ -12,6 +12,7 @@ import { readFile } from 'fs/promises';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import jwt from 'jsonwebtoken';
 import {
   addMessage as addLocalMessage,
   addReaction as addLocalReaction,
@@ -51,6 +52,7 @@ import translateRoutes from './routes/translate.js';
 import ccgRoutes from './routes/ccg.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
 import { notificationsRepo } from './repositories/index.js';
+import { usersRepo } from './repositories/index.js';
 import { readDb as warmupReadDb } from './services/jsonDb.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -480,6 +482,20 @@ if (process.env.NODE_ENV === 'production') {
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
 
+  const resolveSocketAuthUser = () => {
+    const token = socket.handshake?.auth?.token;
+    if (!token || typeof token !== 'string') return null;
+    try {
+      const payload = jwt.verify(token, process.env.JWT_SECRET);
+      const userId = payload?.user?.id || payload?.userId || payload?.id;
+      if (!userId) return null;
+      return { id: userId, role: payload?.user?.role || payload?.role || 'user' };
+    } catch (_error) {
+      return null;
+    }
+  };
+  const authUser = resolveSocketAuthUser();
+
   socket.conn.on('upgradeError', (err) => {
     console.error('Socket upgrade error:', err?.message || err);
   });
@@ -491,17 +507,38 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Prefer server-trusted identity/profile data when available.
+    const trustedUserId = authUser?.id || userData.userId;
+    let trustedUsername = userData.username;
+    let trustedProfilePicture = userData.profilePicture;
+    try {
+      const storedUser = await usersRepo.findOne(
+        (entry) => (entry.id || entry._id) === trustedUserId
+      );
+      if (storedUser) {
+        trustedUsername = storedUser.username || trustedUsername;
+        trustedProfilePicture =
+          storedUser.profile?.profilePicture ||
+          storedUser.profile?.avatar ||
+          storedUser.profilePicture ||
+          trustedProfilePicture;
+      }
+    } catch (error) {
+      console.warn('join-chat: failed to resolve stored user profile:', error?.message || error);
+    }
+
     // Store user info
     activeUsers.set(socket.id, {
-      userId: userData.userId,
-      username: userData.username,
-      profilePicture: userData.profilePicture
+      userId: trustedUserId,
+      username: trustedUsername,
+      profilePicture: trustedProfilePicture
     });
 
     // Notify others that user joined
     socket.broadcast.emit('user-joined', {
-      userId: userData.userId,
-      username: userData.username
+      userId: trustedUserId,
+      username: trustedUsername,
+      profilePicture: trustedProfilePicture
     });
 
     // Send active users list
@@ -518,7 +555,7 @@ io.on('connection', (socket) => {
         text: msg.text,
         timestamp: msg.timestamp || msg.createdAt,
         reactions: msg.reactions || [],
-        isOwn: msg.userId === userData.userId
+        isOwn: msg.userId === trustedUserId
       }));
 
       socket.emit('message-history', formattedMessages);

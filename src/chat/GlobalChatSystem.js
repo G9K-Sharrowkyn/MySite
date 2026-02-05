@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { AuthContext } from '../auth/AuthContext';
@@ -10,6 +11,7 @@ const DEFAULT_AVATAR = '/logo192.png';
 
 const GlobalChatSystem = () => {
   const { user, token } = useContext(AuthContext);
+  const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -177,6 +179,12 @@ const GlobalChatSystem = () => {
   const userId = user?.id;
   const username = getUserDisplayName(user);
   const profilePicture = user?.profilePicture;
+
+  const goToProfile = (targetUsername) => {
+    const safe = (targetUsername || '').trim();
+    if (!safe) return;
+    navigate(`/profile/${encodeURIComponent(safe)}`);
+  };
 
   useEffect(() => {
     isMinimizedRef.current = isMinimized;
@@ -663,10 +671,19 @@ const GlobalChatSystem = () => {
                             )}
                             alt={message.displayName || message.username}
                             className="message-avatar"
+                            onClick={() => goToProfile(message.username)}
+                            style={{ cursor: 'pointer' }}
                           />
                         )}
                         <div className="message-content">
-                          <span className="message-author">{authorLabel}</span>
+                          <span
+                            className="message-author"
+                            onClick={() => goToProfile(message.username)}
+                            style={{ cursor: 'pointer' }}
+                            title="View profile"
+                          >
+                            {authorLabel}
+                          </span>
                           <div className="message-bubble">
                             <p className="message-text">{message.text}</p>
                           </div>
@@ -732,8 +749,16 @@ const GlobalChatSystem = () => {
                               { size: 28 }
                             )}
                             alt={activeUser.displayName || activeUser.username}
+                            onClick={() => goToProfile(activeUser.username)}
+                            style={{ cursor: 'pointer' }}
                           />
-                          <span>{activeUser.displayName || activeUser.username}</span>
+                          <span
+                            onClick={() => goToProfile(activeUser.username)}
+                            style={{ cursor: 'pointer' }}
+                            title="View profile"
+                          >
+                            {activeUser.displayName || activeUser.username}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -815,6 +840,7 @@ const GlobalChatSystem = () => {
                           setSelectedPrivateConversation({
                             id: conv.userId,
                             username: conv.username,
+                            displayName: conv.displayName || conv.username,
                             profilePicture: conv.profilePicture
                           });
                           setPrivateView('chat');
@@ -828,10 +854,25 @@ const GlobalChatSystem = () => {
                           )}
                           alt={conv.displayName || conv.username}
                           className="private-conv-avatar"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            goToProfile(conv.username);
+                          }}
+                          style={{ cursor: 'pointer' }}
                         />
                         <div className="private-conv-info">
                           <div className="private-conv-name-row">
-                            <span className="private-conv-name">{conv.displayName || conv.username}</span>
+                            <span
+                              className="private-conv-name"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                goToProfile(conv.username);
+                              }}
+                              style={{ cursor: 'pointer' }}
+                              title="View profile"
+                            >
+                              {conv.displayName || conv.username}
+                            </span>
                             <span className={`user-online-status ${activeUsers.some(u => u.userId === conv.userId) ? 'online' : 'offline'}`}></span>
                             {conv.unreadCount > 0 && (
                               <span className="private-conv-unread-badge">{conv.unreadCount}</span>
@@ -864,9 +905,17 @@ const GlobalChatSystem = () => {
                         )}
                         alt={selectedPrivateConversation.displayName || selectedPrivateConversation.username}
                         className="private-chat-avatar"
+                        onClick={() => goToProfile(selectedPrivateConversation.username)}
+                        style={{ cursor: 'pointer' }}
                       />
-                      <span>{selectedPrivateConversation.displayName || selectedPrivateConversation.username}</span>
-                      <span className={`user-online-status ${activeUsers.some(u => u.username === selectedPrivateConversation.username) ? 'online' : 'offline'}`}></span>
+                      <span
+                        onClick={() => goToProfile(selectedPrivateConversation.username)}
+                        style={{ cursor: 'pointer' }}
+                        title="View profile"
+                      >
+                        {selectedPrivateConversation.displayName || selectedPrivateConversation.username}
+                      </span>
+                      <span className={`user-online-status ${activeUsers.some(u => u.userId === selectedPrivateConversation.id) ? 'online' : 'offline'}`}></span>
                     </div>
                   </div>
                   <div className="private-messages-area" ref={privateMessagesContainerRef}>

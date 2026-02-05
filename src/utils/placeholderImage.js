@@ -77,7 +77,15 @@ export const normalizeAssetUrl = (url) => {
     return url;
   }
 
-  const parts = url.split('/');
+  // Normalize known character asset naming variants so legacy data keeps working.
+  // We currently store many SW characters on disk as "(Star Wars)" even if older
+  // DB entries reference "(SW)".
+  let normalizedInput = fullyDecode(url);
+  if (isCharacterAsset(normalizedInput) && normalizedInput.includes('(SW)')) {
+    normalizedInput = normalizedInput.replace(/\(SW\)/g, '(Star Wars)');
+  }
+
+  const parts = normalizedInput.split('/');
   const normalizedPath = parts
     .map((part, index) => (index === 0 ? part : encodeURIComponent(fullyDecode(part))))
     .join('/');
