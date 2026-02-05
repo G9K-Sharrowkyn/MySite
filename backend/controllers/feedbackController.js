@@ -4,7 +4,41 @@ import {
   usersRepo,
   withDb
 } from '../repositories/index.js';
+import { v4 as uuidv4 } from 'uuid';
 import { logModerationAction } from '../utils/moderationAudit.js';
+
+const normalizeTags = (tags) => {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+  return tags
+    .map((tag) => String(tag || '').trim())
+    .filter(Boolean)
+    .slice(0, 20);
+};
+
+const deriveBaseName = (name) => {
+  const safe = String(name || '').trim();
+  if (!safe) return '';
+  const index = safe.indexOf('(');
+  return (index > 0 ? safe.slice(0, index) : safe).trim();
+};
+
+const guessUniverseFromTags = (tags) => {
+  const haystack = normalizeTags(tags).join(' ').toLowerCase();
+  const candidates = [
+    ['star wars', 'Star Wars'],
+    ['sw', 'Star Wars'],
+    ['dragon ball', 'Dragon Ball'],
+    ['db', 'Dragon Ball'],
+    ['marvel', 'Marvel'],
+    ['dc', 'DC']
+  ];
+  for (const [needle, label] of candidates) {
+    if (haystack.includes(needle)) return label;
+  }
+  return 'Other';
+};
 
 export const submitFeedback = async (req, res) => {
   try {
@@ -241,11 +275,22 @@ export const approveCharacterSuggestion = async (req, res) => {
       }
 
       // Create new character
+      const tags = normalizeTags(feedback.characterTags);
+      const name = String(feedback.characterName || '').trim();
+      const baseName = deriveBaseName(name);
+      const universe = guessUniverseFromTags(tags);
+      const image =
+        typeof feedback.characterImage === 'string' && feedback.characterImage.trim()
+          ? feedback.characterImage.trim()
+          : '/logo512.png'; // Guaranteed to exist in CRA builds.
+
       const character = {
-        id: Date.now().toString(),
-        name: feedback.characterName,
-        image: feedback.characterImage || '/characters/default.jpg',
-        tags: feedback.characterTags || [],
+        id: uuidv4(),
+        name,
+        baseName,
+        tags,
+        universe,
+        image,
         createdAt: new Date().toISOString(),
         suggestedBy: feedback.submittedBy,
         approvedBy: actorName
