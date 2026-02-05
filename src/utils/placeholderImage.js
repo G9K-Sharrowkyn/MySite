@@ -19,6 +19,8 @@ export const placeholderImages = {
 
 const isExternalUrl = (url) => /^https?:\/\//i.test(url);
 const isCharacterAsset = (url) => typeof url === 'string' && url.startsWith('/characters/');
+const isCharacterThumbAsset = (url) =>
+  typeof url === 'string' && url.startsWith('/characters/thumbs/');
 const isBackendUploadAsset = (url) =>
   typeof url === 'string' && url.startsWith('/uploads/');
 
@@ -81,7 +83,11 @@ export const normalizeAssetUrl = (url) => {
   // We currently store many SW characters on disk as "(Star Wars)" even if older
   // DB entries reference "(SW)".
   let normalizedInput = fullyDecode(url);
-  if (isCharacterAsset(normalizedInput) && normalizedInput.includes('(SW)')) {
+  if (
+    isCharacterAsset(normalizedInput) &&
+    !isCharacterThumbAsset(normalizedInput) &&
+    normalizedInput.includes('(SW)')
+  ) {
     normalizedInput = normalizedInput.replace(/\(SW\)/g, '(Star Wars)');
   }
 
@@ -140,6 +146,20 @@ export const getOptimizedImageProps = (
   if (srcSet && size) {
     props.srcSet = srcSet;
     props.sizes = `${size}px`;
+  }
+
+  if (!preferFull && thumb && src && thumb !== src) {
+    // If a generated thumb file is missing, fall back to full image seamlessly.
+    props.onError = (event) => {
+      const img = event?.currentTarget;
+      if (!img || img.dataset.fullFallbackApplied === '1') {
+        return;
+      }
+      img.dataset.fullFallbackApplied = '1';
+      img.src = src;
+      img.removeAttribute('srcset');
+      img.removeAttribute('sizes');
+    };
   }
   return props;
 };
