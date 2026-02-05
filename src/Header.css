@@ -961,3 +961,101 @@
     justify-content: stretch !important;
   }
 }
+
+/* Mobile stability override: keep full-width layout on phones/tablets */
+.header,
+.header-container,
+.header-body {
+  width: 100%;
+  max-width: 100%;
+}
+
+@media (max-width: 980px) {
+  .header-container {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: auto auto !important;
+    padding: 10px 12px !important;
+    gap: 10px !important;
+  }
+
+  .header-logo {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    justify-content: center;
+  }
+
+  .header-logo-link {
+    width: min(22vw, 88px);
+    height: min(22vw, 88px);
+    border-radius: 12px;
+  }
+
+  .header-body {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .header-nav-block,
+  .header-tools-block,
+  .nav-row,
+  .tools-row {
+    display: contents !important;
+  }
+
+  .header .nav-link,
+  .header .nav-link-disabled,
+  .header .icon-button,
+  .header .user-button,
+  .header .theme-toggle,
+  .header .language-button,
+  .header .auth-buttons .btn,
+  .header .header-controls {
+    min-width: 0 !important;
+    width: 100% !important;
+    min-height: 46px !important;
+    height: auto !important;
+    padding: 8px 10px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .header .header-help-link {
+    font-size: 1.05rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.06em;
+  }
+
+  .header .user-name {
+    max-width: 100% !important;
+  }
+
+  .header .notifications-dropdown,
+  .header .user-dropdown {
+    width: min(92vw, 340px) !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%);
+  }
+}
+
+@media (max-width: 560px) {
+  .header-body {
+    grid-template-columns: 1fr !important;
+  }
+
+  .header .nav-link,
+  .header .nav-link-disabled,
+  .header .icon-button,
+  .header .user-button,
+  .header .theme-toggle,
+  .header .language-button,
+  .header .auth-buttons .btn,
+  .header .header-controls {
+    min-height: 44px !important;
+    font-size: 0.88rem !important;
+  }
+}

@@ -482,7 +482,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
   return (
     <div className="create-post-card">
       {!isExpanded ? (
-        <div className="create-post-prompt" onClick={() => setIsExpanded(true)}>
+        <div className="create-post-prompt create-post-prompt-emphasis" onClick={() => setIsExpanded(true)}>
           <div className="prompt-content">
             <span className="prompt-icon">✨</span>
             <span className="prompt-text">{t('createPost')}</span>

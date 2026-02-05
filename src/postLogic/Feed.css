@@ -188,6 +188,16 @@
   margin-right: auto;
 }
 
+#create-post {
+  width: min(100%, 980px);
+  margin: 0 auto 20px;
+}
+
+#create-post .create-post-card {
+  border: 1px solid rgba(88, 160, 255, 0.28);
+  box-shadow: 0 12px 28px rgba(8, 22, 44, 0.35);
+}
+
 .posts-feed {
   display: flex;
   flex-direction: column;
