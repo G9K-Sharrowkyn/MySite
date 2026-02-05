@@ -1059,3 +1059,51 @@
     font-size: 0.88rem !important;
   }
 }
+
+/* Final phone/tablet guardrail: prevent tiny overlapping header tiles */
+@media (max-width: 1400px) {
+  .header-body {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 1100px) {
+  .header-body {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 820px) {
+  .header-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .header .nav-link,
+  .header .nav-link-disabled,
+  .header .icon-button,
+  .header .user-button,
+  .header .theme-toggle,
+  .header .language-button,
+  .header .auth-buttons .btn,
+  .header .header-controls {
+    min-height: 48px !important;
+    padding: 8px 10px !important;
+    white-space: normal !important;
+    line-height: 1.15 !important;
+    text-align: center !important;
+    justify-content: center !important;
+    overflow-wrap: anywhere;
+  }
+
+  .header .nav-link-soon {
+    display: block;
+    margin: 2px 0 0;
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .header-body {
+    grid-template-columns: 1fr !important;
+  }
+}
