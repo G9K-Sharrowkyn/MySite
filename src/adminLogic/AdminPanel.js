@@ -67,7 +67,10 @@ const AdminPanel = () => {
 
   const fetchCharacters = useCallback(async () => {
     try {
-      const response = await axios.get('/api/characters');
+      const response = await axios.get('/api/characters', {
+        params: { _: Date.now() },
+        headers: token ? { 'x-auth-token': token } : undefined
+      });
       setCharacters(Array.isArray(response.data) ? response.data : []);
       setCharactersError('');
     } catch (err) {
@@ -76,7 +79,7 @@ const AdminPanel = () => {
     } finally {
       setCharactersLoading(false);
     }
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     if (!token || user?.role !== 'admin') {

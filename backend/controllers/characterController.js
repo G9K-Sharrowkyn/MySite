@@ -68,8 +68,18 @@ export const getCharacters = async (_req, res) => {
 
     if (dbCharacters.length > 0) {
       const byName = new Map();
+      const deletedNames = new Set(
+        dbCharacters
+          .filter((entry) => String(entry?.status || '').toLowerCase() === 'deleted')
+          .map((entry) => String(entry?.name || '').trim().toLowerCase())
+          .filter(Boolean)
+      );
 
       for (const c of staticCharacters) {
+        const lowerName = String(c?.name || '').trim().toLowerCase();
+        if (lowerName && deletedNames.has(lowerName)) {
+          continue;
+        }
         byName.set(normalizeCharacterKey(c), c);
       }
       for (const c of dbCharacters) {
@@ -284,8 +294,15 @@ export const deleteCharacter = async (req, res) => {
       return res.status(400).json({ msg: 'Character name confirmation does not match.' });
     }
 
-    if (dbEntry) {
-      await charactersRepo.removeById(String(dbEntry.id));
+    // Remove all DB entries that match this character name (including prior duplicates).
+    const loweredName = expectedName.toLowerCase();
+    const dbEntriesToRemove = dbCharacters.filter(
+      (entry) => String(entry?.name || '').trim().toLowerCase() === loweredName
+    );
+    for (const entry of dbEntriesToRemove) {
+      if (entry?.id) {
+        await charactersRepo.removeById(String(entry.id));
+      }
     }
 
     // If this character exists in static catalog, write a tombstone override in DB
