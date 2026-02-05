@@ -27,10 +27,36 @@ const loadStaticCharacters = async () => {
 // @access  Public
 export const getCharacters = async (_req, res) => {
   try {
-    let characters = await charactersRepo.getAll();
-    if (!Array.isArray(characters) || characters.length === 0) {
-      characters = await loadStaticCharacters();
+    const dbCharactersRaw = await charactersRepo.getAll();
+    const dbCharacters = Array.isArray(dbCharactersRaw) ? dbCharactersRaw : [];
+
+    // Always keep the large static catalog available, even if the DB contains only
+    // moderator-approved additions. Otherwise a single approved suggestion would
+    // hide the whole catalog in production.
+    const staticCharacters = await loadStaticCharacters();
+
+    let characters = staticCharacters;
+
+    if (dbCharacters.length > 0) {
+      const byName = new Map();
+      const keyFor = (c) => {
+        const name = typeof c?.name === 'string' ? c.name.trim().toLowerCase() : '';
+        if (name) return `name:${name}`;
+        const id = typeof c?.id === 'string' ? c.id : '';
+        if (id) return `id:${id}`;
+        return `idx:${Math.random().toString(16).slice(2)}`;
+      };
+
+      for (const c of staticCharacters) {
+        byName.set(keyFor(c), c);
+      }
+      for (const c of dbCharacters) {
+        byName.set(keyFor(c), c); // DB overrides static if same name.
+      }
+
+      characters = Array.from(byName.values());
     }
+
     res.set('Cache-Control', 'public, max-age=120, stale-while-revalidate=300');
     res.json(characters);
   } catch (error) {
