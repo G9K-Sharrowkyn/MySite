@@ -40,6 +40,33 @@ const guessUniverseFromTags = (tags) => {
   return 'Other';
 };
 
+const normalizeCharacterImage = (value) => {
+  if (typeof value !== 'string') return '';
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  // Stored uploads / static assets are safe.
+  if (trimmed.startsWith('/characters/') || trimmed.startsWith('/uploads/')) {
+    return trimmed;
+  }
+
+  // Allow data-URLs for now (small images); long-term we'll want to store files server-side.
+  if (trimmed.startsWith('data:image/')) {
+    return trimmed;
+  }
+
+  // In production the site is HTTPS; http:// images become mixed-content and will be blocked.
+  if (/^http:\/\//i.test(trimmed)) {
+    return '';
+  }
+
+  if (/^https:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return '';
+};
+
 export const submitFeedback = async (req, res) => {
   try {
     const { type, title, description, reportedUser } = req.body;
@@ -279,10 +306,7 @@ export const approveCharacterSuggestion = async (req, res) => {
       const name = String(feedback.characterName || '').trim();
       const baseName = deriveBaseName(name);
       const universe = guessUniverseFromTags(tags);
-      const image =
-        typeof feedback.characterImage === 'string' && feedback.characterImage.trim()
-          ? feedback.characterImage.trim()
-          : '/logo512.png'; // Guaranteed to exist in CRA builds.
+      const image = normalizeCharacterImage(feedback.characterImage) || '/logo512.png'; // Guaranteed to exist in CRA builds.
 
       const character = {
         id: uuidv4(),
