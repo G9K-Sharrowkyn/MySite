@@ -883,6 +883,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             <span className="post-meta">
               {post.author?.rank || 'Mortal'} • {formatTimeAgo(post.createdAt)}
             </span>
+            {post.isOfficial && post.type === 'fight' && (
+              <span className="official-fight-badge">Official Fight</span>
+            )}
           </div>
         </Link>
         <div className="post-meta">

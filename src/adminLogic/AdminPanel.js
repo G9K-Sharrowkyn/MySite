@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { AuthContext } from '../auth/AuthContext';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './AdminPanel.css';
 
 const AdminPanel = () => {
@@ -18,6 +19,14 @@ const AdminPanel = () => {
   const [roleActionError, setRoleActionError] = useState('');
   const [roleActionStatus, setRoleActionStatus] = useState('');
   const [roleActionUserId, setRoleActionUserId] = useState(null);
+
+  const [characters, setCharacters] = useState([]);
+  const [charactersLoading, setCharactersLoading] = useState(true);
+  const [charactersError, setCharactersError] = useState('');
+  const [characterSearch, setCharacterSearch] = useState('');
+  const [characterDraft, setCharacterDraft] = useState(null);
+  const [characterBusy, setCharacterBusy] = useState(false);
+  const [characterImageBusy, setCharacterImageBusy] = useState(false);
 
   const fetchAlerts = useCallback(async () => {
     if (!token) {
@@ -54,18 +63,33 @@ const AdminPanel = () => {
     }
   }, [token]);
 
+  const fetchCharacters = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/characters');
+      setCharacters(Array.isArray(response.data) ? response.data : []);
+      setCharactersError('');
+    } catch (err) {
+      console.error('Error fetching characters:', err);
+      setCharactersError('Failed to load characters.');
+    } finally {
+      setCharactersLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!token || user?.role !== 'admin') {
       setAlertsLoading(false);
       setUsersLoading(false);
+      setCharactersLoading(false);
       return;
     }
 
     fetchAlerts();
     fetchUsers();
+    fetchCharacters();
     const interval = setInterval(fetchAlerts, 10000);
     return () => clearInterval(interval);
-  }, [token, user?.role, fetchAlerts, fetchUsers]);
+  }, [token, user?.role, fetchAlerts, fetchUsers, fetchCharacters]);
 
   const handleDeletePost = async (postId) => {
     if (!token || !postId) return;
@@ -127,6 +151,107 @@ const AdminPanel = () => {
       );
     });
 
+  const filteredCharacters = (Array.isArray(characters) ? characters : []).filter((entry) => {
+    if (!characterSearch.trim()) return true;
+    const query = characterSearch.trim().toLowerCase();
+    const name = String(entry?.name || '').toLowerCase();
+    const baseName = String(entry?.baseName || '').toLowerCase();
+    const universe = String(entry?.universe || '').toLowerCase();
+    const tags = Array.isArray(entry?.tags) ? entry.tags.join(' ').toLowerCase() : '';
+    return (
+      name.includes(query) ||
+      baseName.includes(query) ||
+      universe.includes(query) ||
+      tags.includes(query)
+    );
+  });
+
+  const openCharacterDraft = (entry) => {
+    const safe = entry || {};
+    setCharacterDraft({
+      id: safe.id || '',
+      name: safe.name || '',
+      baseName: safe.baseName || '',
+      universe: safe.universe || '',
+      tags: Array.isArray(safe.tags) ? safe.tags.join(', ') : '',
+      image: safe.image || ''
+    });
+  };
+
+  const newCharacterDraft = () => {
+    setCharacterDraft({
+      id: '',
+      name: '',
+      baseName: '',
+      universe: 'Other',
+      tags: '',
+      image: ''
+    });
+  };
+
+  const uploadCharacterImage = async (file) => {
+    if (!token || !file) return null;
+    const form = new FormData();
+    form.append('image', file);
+    setCharacterImageBusy(true);
+    try {
+      const res = await axios.post('/api/characters/upload', form, {
+        headers: { 'x-auth-token': token }
+      });
+      return res.data?.path || null;
+    } catch (err) {
+      console.error('Error uploading character image:', err);
+      setCharactersError(err?.response?.data?.msg || 'Failed to upload character image.');
+      return null;
+    } finally {
+      setCharacterImageBusy(false);
+    }
+  };
+
+  const saveCharacterDraft = async () => {
+    if (!token || !characterDraft) return;
+    if (!String(characterDraft.name || '').trim()) {
+      setCharactersError('Character name is required.');
+      return;
+    }
+    if (!String(characterDraft.image || '').trim()) {
+      setCharactersError('Character image is required.');
+      return;
+    }
+
+    setCharacterBusy(true);
+    setCharactersError('');
+    try {
+      const payload = {
+        id: characterDraft.id || undefined,
+        name: characterDraft.name,
+        baseName: characterDraft.baseName,
+        universe: characterDraft.universe,
+        tags: characterDraft.tags,
+        image: characterDraft.image
+      };
+
+      if (characterDraft.id) {
+        await axios.put(`/api/characters/${encodeURIComponent(characterDraft.id)}`, payload, {
+          headers: { 'x-auth-token': token }
+        });
+      } else {
+        const createRes = await axios.post('/api/characters', payload, {
+          headers: { 'x-auth-token': token }
+        });
+        const created = createRes.data;
+        setCharacterDraft((prev) => (prev ? { ...prev, id: created?.id || prev.id } : prev));
+      }
+
+      await fetchCharacters();
+    } catch (err) {
+      console.error('Error saving character:', err);
+      setCharactersError(err?.response?.data?.msg || 'Failed to save character.');
+    } finally {
+      setCharacterBusy(false);
+    }
+  };
+
   if (!user || user.role !== 'admin') {
     return (
       <div className="admin-panel access-denied">
@@ -162,6 +287,13 @@ const AdminPanel = () => {
           onClick={() => setActiveTab('roles')}
         >
           Moderator Roles
+        </button>
+        <button
+          type="button"
+          className={`admin-tab ${activeTab === 'characters' ? 'active' : ''}`}
+          onClick={() => setActiveTab('characters')}
+        >
+          Characters
         </button>
       </div>
 
@@ -281,6 +413,158 @@ const AdminPanel = () => {
               {filteredUsers.length === 0 && (
                 <div className="admin-status">No users match this search.</div>
               )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'characters' && (
+        <div className="admin-characters-panel">
+          <div className="admin-characters-toolbar">
+            <input
+              type="text"
+              value={characterSearch}
+              onChange={(event) => setCharacterSearch(event.target.value)}
+              placeholder="Search characters..."
+            />
+            <button type="button" className="admin-refresh" onClick={fetchCharacters}>
+              Refresh
+            </button>
+            <button type="button" className="admin-refresh" onClick={newCharacterDraft}>
+              Add character
+            </button>
+          </div>
+
+          {charactersLoading && <div className="admin-status">Loading characters...</div>}
+          {!charactersLoading && charactersError && (
+            <div className="admin-status error">{charactersError}</div>
+          )}
+
+          {!charactersLoading && !charactersError && filteredCharacters.length === 0 && (
+            <div className="admin-status">No characters match this search.</div>
+          )}
+
+          {!charactersLoading && filteredCharacters.length > 0 && (
+            <div className="admin-character-grid">
+              {filteredCharacters.slice(0, 200).map((entry) => (
+                <button
+                  key={entry.id || entry.name}
+                  type="button"
+                  className="admin-character-card"
+                  onClick={() => openCharacterDraft(entry)}
+                  title="Edit character"
+                >
+                  <img
+                    {...getOptimizedImageProps(entry.image || '/logo512.png', { size: 56 })}
+                    alt={entry.name}
+                    className="admin-character-thumb"
+                  />
+                  <div className="admin-character-meta">
+                    <strong>{entry.name}</strong>
+                    <span>{entry.universe || 'Other'}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {characterDraft && (
+            <div className="admin-character-editor">
+              <div className="admin-character-editor-header">
+                <h2>{characterDraft.id ? 'Edit character' : 'Add character'}</h2>
+                <button
+                  type="button"
+                  className="admin-delete"
+                  onClick={() => setCharacterDraft(null)}
+                >
+                  Close
+                </button>
+              </div>
+
+              <div className="admin-character-form">
+                <label>
+                  Name *
+                  <input
+                    value={characterDraft.name}
+                    onChange={(e) =>
+                      setCharacterDraft((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  Base name
+                  <input
+                    value={characterDraft.baseName}
+                    onChange={(e) =>
+                      setCharacterDraft((prev) => ({ ...prev, baseName: e.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  Universe
+                  <input
+                    value={characterDraft.universe}
+                    onChange={(e) =>
+                      setCharacterDraft((prev) => ({ ...prev, universe: e.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  Tags (comma separated)
+                  <input
+                    value={characterDraft.tags}
+                    onChange={(e) =>
+                      setCharacterDraft((prev) => ({ ...prev, tags: e.target.value }))
+                    }
+                  />
+                </label>
+
+                <div className="admin-character-image-row">
+                  <div className="admin-character-image-preview">
+                    <img
+                      {...getOptimizedImageProps(characterDraft.image || '/logo512.png', { size: 120 })}
+                      alt="Character"
+                    />
+                  </div>
+                  <div className="admin-character-image-actions">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const uploaded = await uploadCharacterImage(file);
+                        if (uploaded) {
+                          setCharacterDraft((prev) => ({ ...prev, image: uploaded }));
+                        }
+                      }}
+                    />
+                    <div className="admin-character-image-hint">
+                      {characterImageBusy ? 'Uploading...' : 'Upload a new image (webp optimized).'} 
+                    </div>
+                    <label>
+                      Image path
+                      <input
+                        value={characterDraft.image}
+                        onChange={(e) =>
+                          setCharacterDraft((prev) => ({ ...prev, image: e.target.value }))
+                        }
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                <div className="admin-character-actions">
+                  <button
+                    type="button"
+                    className="admin-refresh"
+                    disabled={characterBusy}
+                    onClick={saveCharacterDraft}
+                  >
+                    {characterBusy ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

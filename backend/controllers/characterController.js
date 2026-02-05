@@ -22,6 +22,27 @@ const loadStaticCharacters = async () => {
   return staticCharactersCache;
 };
 
+const normalizeTags = (tags) => {
+  if (Array.isArray(tags)) {
+    return tags.map((t) => String(t || '').trim()).filter(Boolean).slice(0, 30);
+  }
+  if (typeof tags === 'string') {
+    return tags
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 30);
+  }
+  return [];
+};
+
+const deriveBaseName = (name) => {
+  const safe = String(name || '').trim();
+  if (!safe) return '';
+  const index = safe.indexOf('(');
+  return (index > 0 ? safe.slice(0, index) : safe).trim();
+};
+
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
@@ -70,19 +91,23 @@ export const getCharacters = async (_req, res) => {
 // @access  Private (Moderator)
 export const addCharacter = async (req, res) => {
   try {
-    const { name, universe, image, powerTier, category } = req.body;
+    const { id, name, universe, image, tags, baseName, powerTier, category } = req.body;
 
     if (!name || !image) {
       return res.status(400).json({ msg: 'Name and image are required' });
     }
 
     let created;
+    const normalizedTags = normalizeTags(tags);
+    const resolvedBaseName = String(baseName || '').trim() || deriveBaseName(name);
 
     const newCharacter = {
-      id: uuidv4(),
-      name,
+      id: String(id || '').trim() || uuidv4(),
+      name: String(name || '').trim(),
+      baseName: resolvedBaseName,
+      tags: normalizedTags,
       universe: universe || 'Other',
-      image,
+      image: String(image || '').trim(),
       images: {
         primary: image,
         gallery: [],
@@ -114,14 +139,40 @@ export const addCharacter = async (req, res) => {
 export const updateCharacter = async (req, res) => {
   try {
     const { id } = req.params;
-    const { available, status } = req.body;
+    const { available, status, name, universe, image, tags, baseName } = req.body;
     let updated;
 
-    updated = await charactersRepo.updateById(id, (character) => {
-      if (!character) {
-        return character;
-      }
+    const normalizedTags = normalizeTags(tags);
+    const resolvedName = typeof name === 'string' ? name.trim() : '';
+    const resolvedBaseName =
+      typeof baseName === 'string' && baseName.trim()
+        ? baseName.trim()
+        : (resolvedName ? deriveBaseName(resolvedName) : '');
 
+    const existing = await charactersRepo.findById(id);
+
+    if (!existing) {
+      // Upsert: allow overriding static catalog entries by writing an entry into DB.
+      const created = {
+        id,
+        name: resolvedName || id,
+        baseName: resolvedBaseName || deriveBaseName(resolvedName || id),
+        tags: normalizedTags,
+        universe: typeof universe === 'string' && universe.trim() ? universe.trim() : 'Other',
+        image: typeof image === 'string' && image.trim() ? image.trim() : '/logo512.png',
+        createdAt: new Date().toISOString(),
+        addedBy: req.user?.id || null,
+        status: 'active'
+      };
+      if (available !== undefined) {
+        created.status = available ? 'active' : 'inactive';
+      }
+      if (status !== undefined) {
+        created.status = status;
+      }
+      updated = await charactersRepo.insert(created);
+    } else {
+      updated = await charactersRepo.updateById(id, (character) => {
       if (available !== undefined) {
         character.status = available ? 'active' : 'inactive';
       }
@@ -130,8 +181,30 @@ export const updateCharacter = async (req, res) => {
         character.status = status;
       }
 
+      if (resolvedName) {
+        character.name = resolvedName;
+        character.baseName = resolvedBaseName || character.baseName || deriveBaseName(resolvedName);
+      }
+
+      if (typeof universe === 'string' && universe.trim()) {
+        character.universe = universe.trim();
+      }
+
+      if (typeof image === 'string' && image.trim()) {
+        character.image = image.trim();
+        character.images = character.images || {};
+        character.images.primary = character.image;
+        character.images.thumbnail = character.image;
+      }
+
+      if (normalizedTags.length) {
+        character.tags = normalizedTags;
+      }
+
+      character.updatedAt = new Date().toISOString();
       return character;
-    });
+      });
+    }
 
     if (!updated) {
       const error = new Error('Character not found');

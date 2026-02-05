@@ -8,10 +8,18 @@ import { logModerationAction } from '../utils/moderationAudit.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
+const getRoleRankOverride = (role) => {
+  const safe = String(role || '').toLowerCase();
+  if (safe === 'admin') return 'Overwatcher';
+  if (safe === 'moderator') return 'Seer';
+  return null;
+};
+
 const buildProfileResponse = (user, includeEmail = false, db = null) => {
   const profile = user.profile || {};
   const stats = user.stats || {};
   const rankInfo = getRankInfo(stats.points || 0);
+  const roleRank = getRoleRankOverride(user.role);
   const description = profile.description || profile.bio || '';
 
   const fights = db
@@ -29,7 +37,7 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     description,
     profilePicture: profile.profilePicture || profile.avatar || '',
     points: stats.points || 0,
-    rank: rankInfo.rank,
+    rank: roleRank || rankInfo.rank,
     stats: {
       fightsWon: stats.fightsWon || 0,
       fightsLost: stats.fightsLost || 0,

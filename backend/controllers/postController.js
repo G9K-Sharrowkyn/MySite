@@ -17,16 +17,24 @@ import { logModerationAction } from '../utils/moderationAudit.js';
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveRole = (user) => user?.role || 'user';
 
+const getRoleRankOverride = (role) => {
+  const safe = String(role || '').toLowerCase();
+  if (safe === 'admin') return 'Overwatcher';
+  if (safe === 'moderator') return 'Seer';
+  return null;
+};
+
 const buildAuthor = (user) => {
   if (!user) return null;
   const profile = user.profile || {};
   const rankInfo = getRankInfo(user.stats?.points || 0);
+  const roleRank = getRoleRankOverride(user.role);
   return {
     id: resolveUserId(user),
     username: user.username,
     displayName: getUserDisplayName(user),
     profilePicture: profile.profilePicture || profile.avatar || '',
-    rank: rankInfo.rank
+    rank: roleRank || rankInfo.rank
   };
 };
 
