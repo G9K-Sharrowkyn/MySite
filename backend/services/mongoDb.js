@@ -280,21 +280,32 @@ export const updateDb = async (mutator) => {
     const db = await getDb();
 
     const writes = [];
+    const changedKeys = [];
     for (const key of COLLECTION_KEYS) {
       const before = beforeSnapshots.get(key);
       const after = JSON.stringify(updated[key] || []);
       if (before !== after) {
         writes.push(replaceCollection(db, key, updated[key] || []));
+        changedKeys.push(key);
       }
     }
 
     if (writes.length === 0) {
       setCache(updated);
+      // Keep per-collection cache coherent with the db-level cache.
+      for (const key of COLLECTION_KEYS) {
+        setCollectionCache(key, updated[key] || []);
+      }
       return cloneData(updated);
     }
 
     await Promise.all(writes);
     setCache(updated);
+    // Clear/update per-collection caches for any collections we modified.
+    for (const key of changedKeys) {
+      clearCollectionCache(key);
+      setCollectionCache(key, updated[key] || []);
+    }
     return cloneData(updated);
   });
 };

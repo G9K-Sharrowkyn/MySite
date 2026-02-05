@@ -5,9 +5,7 @@
 }
 
 .user-hover-menu {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  /* Position is computed in JS to avoid clipping in chat containers. */
   min-width: 180px;
   padding: 10px;
   border-radius: 12px;
@@ -62,4 +60,3 @@
   border-color: rgba(255, 120, 120, 0.95);
   background: rgba(110, 30, 30, 0.85);
 }
-
