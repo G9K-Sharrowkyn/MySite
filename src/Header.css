@@ -1160,6 +1160,11 @@
     gap: 10px;
   }
 
+  .header-mobile-actions .user-menu-container,
+  .header-mobile-actions .auth-buttons {
+    grid-column: 1 / -1;
+  }
+
   .header-mobile-actions .icon-button,
   .header-mobile-actions .user-button,
   .header-mobile-actions .theme-toggle,
@@ -1230,6 +1235,7 @@
 
   .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item,
   .header-mobile .user-dropdown.user-dropdown-mobile .logout-item {
+    width: 100%;
     border: 2px solid rgba(231, 76, 60, 0.7);
     background: rgba(20, 24, 34, 0.9);
     color: #f5f7ff;
