@@ -8,11 +8,13 @@ import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
 import hpp from 'hpp';
 import http from 'http';
+import axios from 'axios';
 import { readFile } from 'fs/promises';
 import { Server } from 'socket.io';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
+import sharp from 'sharp';
 import {
   addMessage as addLocalMessage,
   addReaction as addLocalReaction,
@@ -145,6 +147,207 @@ const normalizeCharacterAssetPath = (value) => {
   return decoded;
 };
 
+const normalizeTeamLabel = (value) =>
+  String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .join(', ');
+
+const pickPrimaryTeamName = (value) =>
+  String(value || '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean)[0] || '';
+
+const truncateText = (value, maxLength) => {
+  const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!maxLength || cleaned.length <= maxLength) return cleaned;
+  return `${cleaned.slice(0, maxLength - 3)}...`;
+};
+
+const resolveAssetUrl = (raw, options = {}) => {
+  if (!raw) return '';
+  if (/^data:/i.test(raw)) return raw;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  const normalized = raw.startsWith('/') ? raw : `/${raw}`;
+  const base =
+    normalized.startsWith('/uploads/') || normalized.startsWith('/api/uploads/')
+      ? normalizeBaseUrl(options.apiBaseUrl)
+      : normalizeBaseUrl(options.imageBaseUrl || options.baseUrl);
+  if (!base) return normalized;
+  return buildAbsoluteUrl(base, normalized);
+};
+
+const guessImageType = (url, contentType) => {
+  if (contentType && contentType.startsWith('image/')) return contentType;
+  const lower = String(url || '').toLowerCase();
+  if (lower.endsWith('.png')) return 'image/png';
+  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+  if (lower.endsWith('.webp')) return 'image/webp';
+  if (lower.endsWith('.gif')) return 'image/gif';
+  if (lower.endsWith('.svg')) return 'image/svg+xml';
+  return 'image/png';
+};
+
+const buildFallbackSvgDataUri = (label) => {
+  const safeLabel = escapeHtml(truncateText(label || 'VVV', 12));
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="600" height="600">
+      <rect width="600" height="600" fill="#1f2937" />
+      <text x="300" y="320" font-family="Arial, Helvetica, sans-serif" font-size="48" fill="#f8fafc" text-anchor="middle">
+        ${safeLabel}
+      </text>
+    </svg>
+  `;
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+};
+
+const fetchImageDataUri = async (url) => {
+  if (!url) return null;
+  try {
+    const response = await axios.get(url, {
+      responseType: 'arraybuffer',
+      timeout: 5000,
+      validateStatus: (status) => status >= 200 && status < 300
+    });
+    const contentType = response.headers?.['content-type'] || '';
+    const buffer = Buffer.from(response.data);
+    if (!buffer.length) return null;
+    const mime = guessImageType(url, contentType);
+    return `data:${mime};base64,${buffer.toString('base64')}`;
+  } catch (_error) {
+    return null;
+  }
+};
+
+const resolveCharacterImageByName = async (name, db) => {
+  if (!name) return '';
+  const dbCharacters = Array.isArray(db?.characters) ? db.characters : [];
+  let image = findCharacterImage(name, dbCharacters);
+  if (!image) {
+    const staticCharacters = await loadStaticCharacters();
+    image = findCharacterImage(name, staticCharacters);
+  }
+  return normalizeCharacterAssetPath(image || '');
+};
+
+const buildShareImageSvg = async (post, db, options = {}) => {
+  const width = 1200;
+  const height = 630;
+  const imageBaseUrl = options.imageBaseUrl || options.frontendOrigin || '';
+  const apiBaseUrl = options.apiBaseUrl || '';
+  const isFight = post?.type === 'fight' || post?.fight?.teamA || post?.fight?.teamB;
+  const siteLabel = 'VersusVerseVault';
+
+  const teamALabel = normalizeTeamLabel(post?.fight?.teamA);
+  const teamBLabel = normalizeTeamLabel(post?.fight?.teamB);
+  const leftName = isFight ? (teamALabel || 'Team A') : (post?.title || 'Post');
+  const rightName = isFight ? (teamBLabel || 'Team B') : '';
+
+  let leftImageUrl = '';
+  let rightImageUrl = '';
+
+  if (isFight) {
+    const leftCharacter = pickPrimaryTeamName(teamALabel);
+    const rightCharacter = pickPrimaryTeamName(teamBLabel);
+    const leftImage = await resolveCharacterImageByName(leftCharacter, db);
+    const rightImage = await resolveCharacterImageByName(rightCharacter, db);
+    leftImageUrl = resolveAssetUrl(leftImage, { imageBaseUrl, apiBaseUrl });
+    rightImageUrl = resolveAssetUrl(rightImage, { imageBaseUrl, apiBaseUrl });
+  } else {
+    const primary = await resolvePostImage(post, db, {
+      imageBaseUrl,
+      apiBaseUrl
+    });
+    leftImageUrl = primary;
+  }
+
+  const fallbackImageUrl = resolveAssetUrl('/logo512.png', { imageBaseUrl, apiBaseUrl });
+  const leftData =
+    (await fetchImageDataUri(leftImageUrl)) ||
+    (await fetchImageDataUri(fallbackImageUrl)) ||
+    buildFallbackSvgDataUri(leftName);
+  const rightData =
+    isFight
+      ? (await fetchImageDataUri(rightImageUrl)) ||
+        (await fetchImageDataUri(fallbackImageUrl)) ||
+        buildFallbackSvgDataUri(rightName)
+      : leftData;
+
+  const title = truncateText(
+    post?.title ||
+      (isFight && teamALabel && teamBLabel ? `${teamALabel} vs ${teamBLabel}` : 'Post'),
+    70
+  );
+  const subtitle = truncateText(post?.content || '', 120);
+
+  if (isFight) {
+    return `
+      <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+        <defs>
+          <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0b1020" />
+            <stop offset="100%" stop-color="#111827" />
+          </linearGradient>
+          <clipPath id="leftClip">
+            <rect x="60" y="120" width="430" height="430" rx="28" ry="28" />
+          </clipPath>
+          <clipPath id="rightClip">
+            <rect x="710" y="120" width="430" height="430" rx="28" ry="28" />
+          </clipPath>
+        </defs>
+        <rect width="${width}" height="${height}" fill="url(#bg)" />
+        <text x="60" y="70" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#e2e8f0">
+          ${escapeHtml(siteLabel)}
+        </text>
+        <image href="${leftData}" x="60" y="120" width="430" height="430" preserveAspectRatio="xMidYMid slice" clip-path="url(#leftClip)" />
+        <image href="${rightData}" x="710" y="120" width="430" height="430" preserveAspectRatio="xMidYMid slice" clip-path="url(#rightClip)" />
+        <circle cx="600" cy="335" r="72" fill="#0f172a" stroke="#f8fafc" stroke-width="4" />
+        <text x="600" y="350" font-family="Arial, Helvetica, sans-serif" font-size="48" fill="#f8fafc" text-anchor="middle">
+          VS
+        </text>
+        <text x="60" y="580" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc">
+          ${escapeHtml(truncateText(leftName, 28))}
+        </text>
+        <text x="1140" y="580" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc" text-anchor="end">
+          ${escapeHtml(truncateText(rightName, 28))}
+        </text>
+        ${title ? `
+          <text x="600" y="610" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
+            ${escapeHtml(truncateText(title, 80))}
+          </text>` : ''}
+      </svg>
+    `;
+  }
+
+  return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
+      <defs>
+        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0b1020" />
+          <stop offset="100%" stop-color="#111827" />
+        </linearGradient>
+        <clipPath id="singleClip">
+          <rect x="120" y="120" width="960" height="360" rx="32" ry="32" />
+        </clipPath>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#bg)" />
+      <text x="60" y="70" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#e2e8f0">
+        ${escapeHtml(siteLabel)}
+      </text>
+      <image href="${leftData}" x="120" y="120" width="960" height="360" preserveAspectRatio="xMidYMid slice" clip-path="url(#singleClip)" />
+      <text x="120" y="540" font-family="Arial, Helvetica, sans-serif" font-size="40" fill="#f8fafc">
+        ${escapeHtml(truncateText(title, 60))}
+      </text>
+      ${subtitle ? `
+        <text x="120" y="580" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#cbd5f5">
+          ${escapeHtml(truncateText(subtitle, 90))}
+        </text>` : ''}
+    </svg>
+  `;
+};
+
 const resolvePostImage = async (post, db, baseUrlOrOptions) => {
   if (!post) return '';
   const options =
@@ -216,10 +419,12 @@ const buildShareMetaTags = async (req, post, db, options = {}) => {
     160
   );
   const resolvedDb = db || (await readDb().catch(() => null));
-  const image = await resolvePostImage(post, resolvedDb, {
-    imageBaseUrl: options.imageBaseUrl || frontendOrigin,
-    apiBaseUrl
-  });
+  const image =
+    options.imageUrl ||
+    (await resolvePostImage(post, resolvedDb, {
+      imageBaseUrl: options.imageBaseUrl || frontendOrigin,
+      apiBaseUrl
+    }));
 
   return `
     <title>${escapeHtml(title)}</title>
@@ -604,6 +809,35 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
+app.get(['/share/post/:id/image', '/api/share/post/:id/image'], async (req, res) => {
+  try {
+    const db = await readDb();
+    const postId = req.params.id;
+    const post =
+      (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
+      null;
+    const frontendOrigin = resolveFrontendOrigin(req);
+    const apiOrigin = `${req.protocol}://${req.get('host')}`;
+    const svg = await buildShareImageSvg(
+      post || { id: postId, title: 'Post', content: '' },
+      db,
+      {
+        imageBaseUrl: frontendOrigin,
+        apiBaseUrl: apiOrigin,
+        frontendOrigin
+      }
+    );
+    const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
+    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    return res.send(buffer);
+  } catch (error) {
+    console.error('Share image error:', error?.message || error);
+    return res.status(500).send('Unable to render share image.');
+  }
+});
+
 app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
   try {
     const db = await readDb();
@@ -614,12 +848,14 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
     const frontendOrigin = resolveFrontendOrigin(req);
     const apiOrigin = `${req.protocol}://${req.get('host')}`;
     const postUrl = `${frontendOrigin}/post/${postId}`;
+    const imageUrl = `${apiOrigin}/share/post/${postId}/image`;
     const meta = await buildShareMetaTags(
       req,
       post || { id: postId, title: 'Post', content: '' },
       db,
       {
         url: postUrl,
+        imageUrl,
         imageBaseUrl: frontendOrigin,
         apiBaseUrl: apiOrigin,
         frontendOrigin
@@ -717,6 +953,7 @@ if (process.env.NODE_ENV === 'production') {
       const meta = post
         ? await buildShareMetaTags(req, post, db, {
             url: `${frontendOrigin}/post/${postId}`,
+            imageUrl: `${apiOrigin}/share/post/${postId}/image`,
             imageBaseUrl: frontendOrigin,
             apiBaseUrl: apiOrigin,
             frontendOrigin
