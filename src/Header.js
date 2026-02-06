@@ -460,7 +460,7 @@ const Header = () => {
                 <div className="user-dropdown user-dropdown-mobile">
                   <Link
                     to={user?.username ? `/profile/${encodeURIComponent(user.username)}` : "/profile/me"}
-                    className="dropdown-item"
+                    className="dropdown-item mobile-nav-link"
                     onClick={() => setShowUserMenu(false)}
                   >
                     <span className="dropdown-icon">👤</span>
@@ -468,7 +468,7 @@ const Header = () => {
                   </Link>
                   <Link
                     to="/messages"
-                    className="dropdown-item"
+                    className="dropdown-item mobile-nav-link"
                     onClick={() => setShowUserMenu(false)}
                   >
                     <span className="dropdown-icon">💬</span>
@@ -479,7 +479,7 @@ const Header = () => {
                   </Link>
                   <Link
                     to="/settings"
-                    className="dropdown-item"
+                    className="dropdown-item mobile-nav-link"
                     onClick={() => setShowUserMenu(false)}
                   >
                     <span className="dropdown-icon">⚙️</span>
@@ -487,7 +487,7 @@ const Header = () => {
                   </Link>
                   <div className="dropdown-divider"></div>
                   <button
-                    className="dropdown-item logout-item"
+                    className="dropdown-item logout-item mobile-nav-link"
                     onClick={handleLogout}
                   >
                     <span className="dropdown-icon">🚪</span>
