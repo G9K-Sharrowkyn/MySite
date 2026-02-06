@@ -457,7 +457,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   // Helper to get character object by name
 
-  const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey) => {
+  const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey, showVoteButton) => {
     const isVoted = userVote === teamKey;
     const totalVotes = getTotalVotes();
     const votePercentage = getVotePercentage(votes, totalVotes);
@@ -556,6 +556,14 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           <div className="team-vote-count">{votes} {t('votes') || 'votes'}</div>
           <div className="team-vote-percent">{votePercentage}%</div>
         </div>
+        {showVoteButton && (
+          <button
+            className={`animated-vote-btn ${teamKey === 'A' ? 'team-a' : 'team-b'}${isVoted ? ' voted' : ''}`}
+            onClick={onVote}
+          >
+            {isVoted ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+          </button>
+        )}
       </div>
     );
   };
@@ -563,6 +571,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const renderFightVoting = () => {
     const teamAVotes = post.fight.votes?.teamA || 0;
     const teamBVotes = post.fight.votes?.teamB || 0;
+    const canVote = post.fight.status !== 'locked' && post.fight.status !== 'completed';
 
     const teamAList = (post.fight.teamA || '').split(',').map(n => n.trim()).filter(Boolean);
     const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
@@ -578,12 +587,21 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               userVote === 'A',
               () => handleVote('A'),
               teamAVotes,
-              'A'
+              'A',
+              canVote
             )}
           </div>
 
           {/* Draw column */}
           <div className="draw-vote-col">
+            {canVote && (
+              <button
+                className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
+                onClick={() => handleVote('draw')}
+              >
+                {t('draw')}
+              </button>
+            )}
           </div>
 
           {/* Team B column */}
@@ -594,7 +612,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               userVote === 'B',
               () => handleVote('B'),
               teamBVotes,
-              'B'
+              'B',
+              canVote
             )}
           </div>
         </div>
@@ -933,32 +952,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         
         {renderVotingSection()}
       </div>
-
-      {/* Fight Voting Actions - New frame for fight voting buttons */}
-      {post.type === 'fight' && post.fight && post.fight.status !== 'locked' && post.fight.status !== 'completed' && (
-        <div className={`fight-voting-actions${userVote ? ' has-voted' : ''}`} onClick={e => e.stopPropagation()}>
-          <button
-            className={`animated-vote-btn team-a${userVote === 'A' ? ' voted' : ''}`}
-            onClick={() => handleVote('A')}
-          >
-            {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-          </button>
-          
-          <button
-            className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
-            onClick={() => handleVote('draw')}
-          >
-            {t('draw')}
-          </button>
-          
-          <button
-            className={`animated-vote-btn team-b${userVote === 'B' ? ' voted' : ''}`}
-            onClick={() => handleVote('B')}
-          >
-            {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-          </button>
-        </div>
-      )}
 
       {/* Fight Results - Show when fight is locked */}
       {post.type === 'fight' && post.fight && (post.fight.status === 'locked' || post.fight.status === 'completed') && (

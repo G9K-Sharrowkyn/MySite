@@ -1438,9 +1438,10 @@ body.dark-mode .post-card {
 
 @media (max-width: 900px) {
   .fight-teams-symmetrical {
-    flex-direction: column;
-    gap: 1.5rem;
-    align-items: center;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: flex-start;
   }
 }
 
@@ -1775,15 +1776,15 @@ body.dark-mode .post-card {
 
 /* 3-column fight voting layout */
 .fight-vote-row-3col {
-  --team-zone-width: clamp(220px, 28vw, 360px);
-  display: flex;
-  flex-direction: row;
+  --team-zone-width: clamp(200px, 24vw, 320px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 160px) minmax(0, 1fr);
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  gap: clamp(12px, 2.2vw, 28px);
+  gap: clamp(10px, 2vw, 24px);
   justify-content: center;
-  align-items: flex-start;
+  align-items: start;
 }
 
 .fight-vote-row-3col.has-voted {
@@ -1814,7 +1815,7 @@ body.dark-mode .post-card {
 }
 
 .fight-vote-row-3col > .draw-vote-col {
-  display: none;
+  display: flex;
 }
 
 .fight-vote-row-3col::after {
@@ -1866,14 +1867,14 @@ body.dark-mode .post-card {
 
 @media (max-width: 900px) {
   .fight-vote-row-3col {
-    flex-direction: column;
-    align-items: center;
-    gap: 1.2rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 120px) minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
     justify-content: center;
-    --team-zone-width: clamp(180px, 35vw, 280px);
+    --team-zone-width: clamp(150px, 38vw, 240px);
   }
   .fight-vote-row-3col.has-voted {
-    gap: 1.2rem;
+    gap: 12px;
     justify-content: center;
   }
   .fight-vote-row-3col.has-voted > .team-vote-col {
@@ -1884,7 +1885,6 @@ body.dark-mode .post-card {
   }
   .team-vote-col, .draw-vote-col {
     min-width: 0;
-    flex: 1 1 0;
     width: auto;
     max-width: none;
   }
@@ -1904,6 +1904,17 @@ body.dark-mode .post-card {
     height: 44px;
     font-size: 0.95rem;
   }
+}
+
+.fight-vote-row-3col .animated-vote-btn {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.fight-vote-row-3col .animated-vote-btn::before {
+  min-width: calc(100% + 12px);
+  min-height: calc(48px + 12px);
 }
 
 /* Animated Vote Button Styles */
