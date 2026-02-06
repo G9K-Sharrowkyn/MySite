@@ -14,6 +14,7 @@ const Header = () => {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
   const { t } = useLanguage();
@@ -160,7 +161,7 @@ const Header = () => {
               {isModerator ? (
                 <Link to="/speed-racing" className="nav-link pre-ccg">{t('speedRacing')}</Link>
               ) : (
-                <span className="nav-link nav-link-disabled pre-ccg" aria-disabled="true" title="Dostęp tylko dla moderatorów">
+                <span className="nav-link nav-link-disabled pre-ccg" aria-disabled="true" title="DostÄ™p tylko dla moderatorĂłw">
                   {t('speedRacing')}
                   <span className="nav-link-soon">(Soon!)</span>
                 </span>
@@ -168,7 +169,7 @@ const Header = () => {
               {isModerator ? (
                 <Link to="/ccg" className="nav-link pre-ccg">CCG</Link>
               ) : (
-                <span className="nav-link nav-link-disabled pre-ccg" aria-disabled="true" title="Dostęp tylko dla moderatorów">
+                <span className="nav-link nav-link-disabled pre-ccg" aria-disabled="true" title="DostÄ™p tylko dla moderatorĂłw">
                   CCG
                   <span className="nav-link-soon">(Soon!)</span>
                 </span>
@@ -201,7 +202,7 @@ const Header = () => {
                       className="user-avatar"
                     />
                     <span className="user-name">{userDisplayName}</span>
-                    <span className="dropdown-arrow">▼</span>
+                    <span className="dropdown-arrow">â–Ľ</span>
                   </button>
 
                   {showUserMenu && (
@@ -211,7 +212,7 @@ const Header = () => {
                         className="dropdown-item"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <span className="dropdown-icon">👤</span>
+                        <span className="dropdown-icon">đź‘¤</span>
                         {t('profile')}
                       </Link>
                       <Link 
@@ -219,7 +220,7 @@ const Header = () => {
                         className="dropdown-item"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <span className="dropdown-icon">💬</span>
+                        <span className="dropdown-icon">đź’¬</span>
                         {t('messages')}
                         {unreadMessages > 0 && (
                           <span className="dropdown-badge">{unreadMessages}</span>
@@ -230,7 +231,7 @@ const Header = () => {
                         className="dropdown-item"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <span className="dropdown-icon">⚙️</span>
+                        <span className="dropdown-icon">âš™ď¸Ź</span>
                         Settings
                       </Link>
                       <div className="dropdown-divider"></div>
@@ -238,7 +239,7 @@ const Header = () => {
                         className="dropdown-item logout-item"
                         onClick={handleLogout}
                       >
-                        <span className="dropdown-icon">🚪</span>
+                        <span className="dropdown-icon">đźšŞ</span>
                         {t('logout')}
                       </button>
                     </div>
@@ -255,7 +256,7 @@ const Header = () => {
             {isLoggedIn && (
               <div className="tools-row tools-row-bottom">
                 <Link to="/messages" className="icon-button after-ccg after-ccg-priority">
-                  <span className="icon">💬</span>
+                  <span className="icon">đź’¬</span>
                   {unreadMessages > 0 && (
                     <span className="badge">{unreadMessages}</span>
                   )}
@@ -266,7 +267,7 @@ const Header = () => {
                     className="icon-button"
                     onClick={toggleNotifications}
                   >
-                    <span className="icon">🔔</span>
+                    <span className="icon">đź””</span>
                     {unreadNotifications > 0 && (
                       <span className="badge">{unreadNotifications}</span>
                     )}
@@ -339,6 +340,197 @@ const Header = () => {
         </div>
       </div>
 
+      <div className="header-mobile">
+        <div className="header-mobile-top">
+          <Link to="/" className="header-logo-link" aria-label="VersusVerseVault Home">
+            <img src="/logo512.png" alt="VersusVerseVault" className="header-logo-image" />
+          </Link>
+          <button
+            type="button"
+            className="mobile-menu-button"
+            onClick={() => setShowMobileMenu(!showMobileMenu)}
+          >
+            {showMobileMenu ? (t('close') || 'Close') : (t('menu') || 'Menu')}
+          </button>
+        </div>
+
+        <div className="header-mobile-actions">
+          {isLoggedIn && (
+            <>
+              <Link to="/messages" className="icon-button mobile-action">
+                <span className="icon">💬</span>
+                {unreadMessages > 0 && (
+                  <span className="badge">{unreadMessages}</span>
+                )}
+              </Link>
+              <div className="notifications-container mobile-action">
+                <button
+                  className="icon-button"
+                  onClick={toggleNotifications}
+                >
+                  <span className="icon">🔔</span>
+                  {unreadNotifications > 0 && (
+                    <span className="badge">{unreadNotifications}</span>
+                  )}
+                </button>
+
+                {showNotifications && (
+                  <div className="notifications-dropdown">
+                    <div className="notifications-header">
+                      <h3>{t('notifications')}</h3>
+                      {unreadNotifications > 0 && (
+                        <button
+                          className="mark-all-read"
+                          onClick={markAllNotificationsAsRead}
+                        >
+                          {t('markAllAsRead')}
+                        </button>
+                      )}
+                    </div>
+                    <div className="notifications-list">
+                      {notifications.length > 0 ? (
+                        notifications.map(notification => (
+                          <div
+                            key={notification.id}
+                            className={`notification-item ${!notification.read ? 'unread' : ''}`}
+                            onClick={() => markNotificationAsRead(notification.id)}
+                          >
+                            <div className="notification-title">{notification.title}</div>
+                            <div className="notification-content">{notification.content}</div>
+                            {notification.type === 'friend_request' && notification.data?.requestId && (
+                              <div
+                                className="notification-actions"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <button
+                                  type="button"
+                                  className="notification-action-btn primary"
+                                  onClick={() => handleFriendRequestAction(notification.data.requestId, 'accept', notification.id)}
+                                >
+                                  Accept
+                                </button>
+                                <button
+                                  type="button"
+                                  className="notification-action-btn"
+                                  onClick={() => handleFriendRequestAction(notification.data.requestId, 'decline', notification.id)}
+                                >
+                                  Decline
+                                </button>
+                              </div>
+                            )}
+                            <div className="notification-time">
+                              {new Date(notification.createdAt).toLocaleString()}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="no-notifications">{t('noNotifications')}</div>
+                      )}
+                    </div>
+                    <div className="notifications-footer">
+                      <Link to="/notifications" onClick={() => setShowNotifications(false)}>
+                        {t('seeAll')}
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+          <LanguageSwitcher />
+          {isLoggedIn ? (
+            <div className="user-menu-container mobile-action">
+              <button
+                className="user-button"
+                onClick={() => setShowUserMenu(!showUserMenu)}
+              >
+                <img
+                  {...getOptimizedImageProps(
+                    replacePlaceholderUrl(user?.profilePicture) || placeholderImages.userSmall,
+                    { size: 40 }
+                  )}
+                  alt="Profile"
+                  className="user-avatar"
+                />
+                <span className="user-name">{userDisplayName}</span>
+                <span className="dropdown-arrow">▼</span>
+              </button>
+
+              {showUserMenu && (
+                <div className="user-dropdown">
+                  <Link
+                    to={user?.username ? `/profile/${encodeURIComponent(user.username)}` : "/profile/me"}
+                    className="dropdown-item"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <span className="dropdown-icon">👤</span>
+                    {t('profile')}
+                  </Link>
+                  <Link
+                    to="/messages"
+                    className="dropdown-item"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <span className="dropdown-icon">💬</span>
+                    {t('messages')}
+                    {unreadMessages > 0 && (
+                      <span className="dropdown-badge">{unreadMessages}</span>
+                    )}
+                  </Link>
+                  <Link
+                    to="/settings"
+                    className="dropdown-item"
+                    onClick={() => setShowUserMenu(false)}
+                  >
+                    <span className="dropdown-icon">⚙️</span>
+                    Settings
+                  </Link>
+                  <div className="dropdown-divider"></div>
+                  <button
+                    className="dropdown-item logout-item"
+                    onClick={handleLogout}
+                  >
+                    <span className="dropdown-icon">🚪</span>
+                    {t('logout')}
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="auth-buttons mobile-action">
+              <Link to="/login" className="btn btn-outline">{t('login')}</Link>
+              <Link to="/register" className="btn btn-primary">{t('register')}</Link>
+            </div>
+          )}
+        </div>
+
+        {showMobileMenu && (
+          <div className="header-mobile-menu">
+            <Link to="/" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('home')}</Link>
+            <Link to="/divisions" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('divisions')}</Link>
+            <Link to="/leaderboard" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('leaderboard')}</Link>
+            <Link to="/tournaments" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('tournaments')}</Link>
+            {isModerator ? (
+              <Link to="/speed-racing" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('speedRacing')}</Link>
+            ) : (
+              <span className="mobile-nav-link disabled">{t('speedRacing')} <span className="nav-link-soon">(Soon!)</span></span>
+            )}
+            {isModerator ? (
+              <Link to="/ccg" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>CCG</Link>
+            ) : (
+              <span className="mobile-nav-link disabled">CCG <span className="nav-link-soon">(Soon!)</span></span>
+            )}
+            {isModerator && (
+              <Link to="/moderator" className="mobile-nav-link moderator-link" onClick={() => setShowMobileMenu(false)}>{t('moderator')}</Link>
+            )}
+            {isAdmin && (
+              <Link to="/admin" className="mobile-nav-link admin-link" onClick={() => setShowMobileMenu(false)}>{t('adminPanel') || 'Admin'}</Link>
+            )}
+            <Link to="/help" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('help') || 'Help'}</Link>
+          </div>
+        )}
+      </div>
+
       {/* Mobile Menu Toggle */}
       <div className="mobile-menu-toggle">
         <button className="hamburger">
@@ -349,12 +541,13 @@ const Header = () => {
       </div>
 
       {/* Click outside handlers */}
-      {(showUserMenu || showNotifications) && (
+      {(showUserMenu || showNotifications || showMobileMenu) && (
         <div 
           className="overlay"
           onClick={() => {
             setShowUserMenu(false);
             setShowNotifications(false);
+            setShowMobileMenu(false);
           }}
         ></div>
       )}
@@ -363,3 +556,4 @@ const Header = () => {
 };
 
 export default Header;
+
