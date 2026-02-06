@@ -479,13 +479,13 @@ const resolveFrontendOrigin = (req) => {
   return `${req.protocol}://${host}`;
 };
 
-const buildShareHtml = (meta, redirectUrl) => `
+const buildShareHtml = (meta, redirectUrl, canonicalUrl = redirectUrl) => `
   <!doctype html>
   <html lang="en">
     <head>
       <meta charset="utf-8" />
       ${meta || ''}
-      <link rel="canonical" href="${escapeHtml(redirectUrl)}" />
+      <link rel="canonical" href="${escapeHtml(canonicalUrl)}" />
     </head>
     <body>
       <p>Redirecting to post...</p>
@@ -895,7 +895,7 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
         frontendOrigin
       }
     );
-    const html = buildShareHtml(meta, redirectUrl);
+    const html = buildShareHtml(meta, redirectUrl, postUrl);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
