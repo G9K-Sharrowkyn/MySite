@@ -457,7 +457,7 @@ const Header = () => {
               </button>
 
               {showUserMenu && (
-                <div className="user-dropdown user-dropdown-mobile header-mobile-menu">
+                <div className="header-mobile-menu header-mobile-profile-menu">
                   <Link
                     to={user?.username ? `/profile/${encodeURIComponent(user.username)}` : "/profile/me"}
                     className="mobile-nav-link"
@@ -479,9 +479,8 @@ const Header = () => {
                   >
                     Settings
                   </Link>
-                  <div className="dropdown-divider"></div>
                   <button
-                    className="mobile-nav-link logout-item"
+                    className="mobile-nav-link"
                     onClick={handleLogout}
                   >
                     {t('logout')}

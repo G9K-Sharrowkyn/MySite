@@ -1196,10 +1196,14 @@
     gap: 8px;
     position: relative;
     z-index: 1003;
+    width: 100%;
+    max-width: 100%;
   }
 
   .mobile-nav-link {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 12px 14px;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -1229,24 +1233,8 @@
     z-index: 1004;
   }
 
-  .header-mobile .user-dropdown.user-dropdown-mobile {
-    position: static;
-    transform: none;
-    max-width: 100%;
-    width: 100%;
+  .header-mobile-profile-menu {
     margin-top: 8px;
-    padding: 0;
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    display: grid;
-    gap: 8px;
-  }
-
-  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-divider,
-  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-badge,
-  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-icon {
-    display: none;
   }
 
   .overlay {
