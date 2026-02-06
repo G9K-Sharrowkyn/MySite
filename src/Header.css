@@ -1228,6 +1228,23 @@
     margin-top: 8px;
   }
 
+  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item,
+  .header-mobile .user-dropdown.user-dropdown-mobile .logout-item {
+    border: 2px solid rgba(231, 76, 60, 0.7);
+    background: rgba(20, 24, 34, 0.9);
+    color: #f5f7ff;
+    border-radius: 14px;
+    margin: 6px 0;
+    justify-content: center;
+    font-weight: 700;
+  }
+
+  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item:hover,
+  .header-mobile .user-dropdown.user-dropdown-mobile .logout-item:hover {
+    background: rgba(28, 34, 48, 0.95);
+    border-color: rgba(231, 76, 60, 0.9);
+  }
+
   .overlay {
     z-index: 900;
   }
