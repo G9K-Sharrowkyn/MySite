@@ -323,30 +323,30 @@ const buildShareImageSvg = async (post, db, options = {}) => {
 
   if (isFight) {
     const cardX = 30;
-    const cardY = 20;
+    const cardY = 10;
     const cardWidth = 1140;
-    const cardHeight = 590;
+    const cardHeight = 610;
 
     const panelGap = 180;
     const panelWidth = 320;
-    const panelY = 56;
-    const buttonRowHeight = 52;
-    const buttonRowY = cardY + cardHeight - buttonRowHeight - 18;
-    const panelHeight = buttonRowY - panelY - 14;
+    const panelY = 40;
+    const buttonRowHeight = 46;
+    const buttonRowY = cardY + cardHeight - buttonRowHeight - 12;
+    const panelHeight = buttonRowY - panelY - 10;
     const panelXLeft =
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
-    const nameBoxOffsetX = 22;
-    const nameBoxOffsetY = 12;
+    const nameBoxOffsetX = 20;
+    const nameBoxOffsetY = 10;
     const nameBoxWidth = panelWidth - nameBoxOffsetX * 2;
-    const nameBoxHeight = 60;
+    const nameBoxHeight = 50;
     const nameLineHeight = 18;
-    const nameStartY = panelY + nameBoxOffsetY + 26;
+    const nameStartY = panelY + nameBoxOffsetY + 24;
 
-    const frameGap = 10;
-    const votesHeight = 18;
-    const bottomPadding = 12;
+    const frameGap = 8;
+    const votesHeight = 16;
+    const bottomPadding = 8;
     const frameY = panelY + nameBoxOffsetY + nameBoxHeight + frameGap;
     const panelBottom = panelY + panelHeight;
     const frameHeight = Math.max(
@@ -376,7 +376,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const buttonsWidth = cardWidth - 160;
     const buttonWidth = Math.round((buttonsWidth - buttonGap * 2) / 3);
     const buttonY = buttonRowY;
-    const buttonTextY = buttonY + 34;
+    const buttonTextY = buttonY + 30;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
