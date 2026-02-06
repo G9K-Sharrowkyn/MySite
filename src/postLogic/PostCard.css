@@ -1446,6 +1446,28 @@ body.dark-mode .post-card {
   }
 }
 
+@media (max-width: 900px) {
+  .team-zone {
+    padding: 0.9rem;
+    border-radius: 16px;
+  }
+
+  .character-frame {
+    aspect-ratio: 3 / 4;
+  }
+}
+
+@media (max-width: 600px) {
+  .team-zone {
+    padding: 0.7rem;
+    border-radius: 14px;
+  }
+
+  .character-frame {
+    aspect-ratio: 2 / 3;
+  }
+}
+
 .team-zone {
   background: #23242a;
   border-radius: 20px;
@@ -1781,17 +1803,17 @@ body.dark-mode .post-card {
 
 /* 3-column fight voting layout */
 .fight-vote-row-3col {
-  --team-zone-width: clamp(140px, 28vw, 210px);
+  --team-zone-width: clamp(120px, 26vw, 180px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 140px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 110px) minmax(0, 1fr);
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  gap: clamp(8px, 2vw, 20px);
+  gap: clamp(6px, 1.6vw, 16px);
   justify-content: center;
   align-items: stretch;
   box-sizing: border-box;
-  padding: 0 6px;
+  padding: 0 8px;
 }
 
 .fight-vote-row-3col.has-voted {
@@ -1882,11 +1904,11 @@ body.dark-mode .post-card {
 
 @media (max-width: 900px) {
   .fight-vote-row-3col {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 110px) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 96px) minmax(0, 1fr);
     align-items: stretch;
     gap: 12px;
     justify-content: center;
-    --team-zone-width: clamp(120px, 42vw, 190px);
+    --team-zone-width: clamp(110px, 40vw, 170px);
   }
   .fight-vote-row-3col.has-voted {
     gap: 12px;
@@ -1923,10 +1945,10 @@ body.dark-mode .post-card {
 
 @media (max-width: 600px) {
   .fight-vote-row-3col {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 96px) minmax(0, 1fr);
-    gap: 10px;
-    padding: 0 4px;
-    --team-zone-width: clamp(110px, 44vw, 180px);
+    grid-template-columns: minmax(0, 1fr) minmax(0, 88px) minmax(0, 1fr);
+    gap: 8px;
+    padding: 0 6px;
+    --team-zone-width: clamp(100px, 42vw, 160px);
   }
 }
 
@@ -2082,10 +2104,9 @@ body.dark-mode .post-card {
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
-  overflow-x: hidden;
-  overflow-y: visible;
-  padding-left: 12px;
-  padding-right: 12px;
+  overflow: visible;
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 /* Fight Voting Actions - New frame for fight voting buttons */
