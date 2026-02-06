@@ -1971,6 +1971,65 @@ body.dark-mode .post-card {
   }
 }
 
+/* Mobile fight clamp: hard limit so panels never exceed the post width */
+@media (max-width: 900px) {
+  .voting-section.fight-voting {
+    padding: 12px 10px !important;
+  }
+
+  .voting-section.fight-voting .fight-vote-row-3col {
+    --team-zone-width: clamp(96px, 24vw, 150px) !important;
+    --draw-zone-width: clamp(64px, 14vw, 90px) !important;
+    grid-template-columns: minmax(0, var(--team-zone-width)) minmax(0, var(--draw-zone-width)) minmax(0, var(--team-zone-width)) !important;
+    gap: 6px !important;
+    padding: 0 !important;
+  }
+
+  .voting-section.fight-voting .team-column,
+  .voting-section.fight-voting .team-vote-col,
+  .voting-section.fight-voting .draw-vote-col {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .voting-section.fight-voting .team-zone {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 0.55rem !important;
+    border-radius: 12px !important;
+  }
+
+  .voting-section.fight-voting .character-frame {
+    width: 100% !important;
+    max-width: 100% !important;
+    aspect-ratio: 3 / 4 !important;
+    padding: 5px !important;
+  }
+
+  .voting-section.fight-voting .character-name-simple {
+    font-size: 0.85rem !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .voting-section.fight-voting .fight-vote-row-3col {
+    --team-zone-width: clamp(80px, 30vw, 120px) !important;
+    --draw-zone-width: clamp(56px, 12vw, 78px) !important;
+    grid-template-columns: minmax(0, var(--team-zone-width)) minmax(0, var(--draw-zone-width)) minmax(0, var(--team-zone-width)) !important;
+    gap: 5px !important;
+  }
+
+  .voting-section.fight-voting .team-zone {
+    padding: 0.45rem !important;
+    border-radius: 10px !important;
+  }
+
+  .voting-section.fight-voting .character-frame {
+    aspect-ratio: 4 / 5 !important;
+    padding: 4px !important;
+  }
+}
+
 .fight-vote-row-3col .animated-vote-btn {
   width: 100%;
   min-width: 0;
