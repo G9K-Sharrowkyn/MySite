@@ -1424,6 +1424,7 @@ body.dark-mode .post-card {
   align-items: center;
   width: 100%;
   flex: 1 1 auto;
+  height: 100%;
 }
 
 .fight-teams-symmetrical {
@@ -1454,7 +1455,7 @@ body.dark-mode .post-card {
   align-items: center;
   justify-content: flex-start;
   width: 100%;
-  max-width: 100%;
+  max-width: min(100%, var(--team-zone-width, 200px));
   min-width: 0;
   box-sizing: border-box;
   transition: background 0.4s;
@@ -1624,6 +1625,10 @@ body.dark-mode .post-card {
   gap: 0.25rem;
 }
 
+.fight-vote-row-3col .team-vote-panel {
+  margin-top: auto;
+}
+
 .team-vote-count {
   font-weight: 700;
   font-size: 0.95rem;
@@ -1776,7 +1781,7 @@ body.dark-mode .post-card {
 
 /* 3-column fight voting layout */
 .fight-vote-row-3col {
-  --team-zone-width: clamp(160px, 30vw, 240px);
+  --team-zone-width: clamp(140px, 28vw, 210px);
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 140px) minmax(0, 1fr);
   width: 100%;
@@ -1833,6 +1838,7 @@ body.dark-mode .post-card {
   width: auto;
   max-width: none;
   min-width: 0;
+  height: 100%;
 }
 
 .draw-vote-col {
@@ -1880,7 +1886,7 @@ body.dark-mode .post-card {
     align-items: stretch;
     gap: 12px;
     justify-content: center;
-    --team-zone-width: clamp(140px, 40vw, 210px);
+    --team-zone-width: clamp(120px, 42vw, 190px);
   }
   .fight-vote-row-3col.has-voted {
     gap: 12px;
@@ -1920,7 +1926,7 @@ body.dark-mode .post-card {
     grid-template-columns: minmax(0, 1fr) minmax(0, 96px) minmax(0, 1fr);
     gap: 10px;
     padding: 0 4px;
-    --team-zone-width: clamp(120px, 42vw, 190px);
+    --team-zone-width: clamp(110px, 44vw, 180px);
   }
 }
 
@@ -2076,6 +2082,9 @@ body.dark-mode .post-card {
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
+  overflow: hidden;
+  padding-left: 12px;
+  padding-right: 12px;
 }
 
 /* Fight Voting Actions - New frame for fight voting buttons */
