@@ -2029,6 +2029,19 @@ body.dark-mode .post-card {
   margin-top: 14px;
 }
 
+.fight-draw-count {
+  margin-top: 8px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.fight-draw-count.hidden {
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
 .fight-voting-buttons .animated-vote-btn {
   width: 100%;
   min-width: 0;

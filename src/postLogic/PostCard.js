@@ -643,7 +643,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const renderFightVoting = () => {
     const teamAVotes = post.fight.votes?.teamA || 0;
     const teamBVotes = post.fight.votes?.teamB || 0;
+    const drawVotes = post.fight.votes?.draw || 0;
     const canVote = post.fight.status !== 'locked' && post.fight.status !== 'completed';
+    const votesHidden = Boolean(post.fight?.votesHidden);
 
     const teamAList = (post.fight.teamA || '').split(',').map(n => n.trim()).filter(Boolean);
     const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
@@ -696,6 +698,12 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             </button>
           </div>
         )}
+
+        <div className={`fight-draw-count${votesHidden ? ' hidden' : ''}`}>
+          {votesHidden
+            ? t('votesHiddenUntilEnd') || 'Votes hidden until the end'
+            : `${t('draw') || 'Draw'}: ${drawVotes} ${t('votes') || 'votes'}`}
+        </div>
       </div>
     );
   };
