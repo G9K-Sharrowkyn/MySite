@@ -1252,6 +1252,14 @@
     display: none;
   }
 
+  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item,
+  .header-mobile .user-dropdown.user-dropdown-mobile .logout-item {
+    text-align: center !important;
+    justify-content: center !important;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
   .overlay {
     z-index: 900;
   }
