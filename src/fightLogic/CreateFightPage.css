@@ -400,3 +400,18 @@
     max-width: 300px;
   }
 }
+
+@media (max-width: 1024px) {
+  .create-fight-page {
+    max-width: 100%;
+    padding: 16px 12px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .fighters-selection {
+    grid-template-columns: 1fr;
+  }
+}

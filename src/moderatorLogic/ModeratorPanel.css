@@ -1107,6 +1107,24 @@ body.light-mode .stats-section h3 {
   color: var(--text-secondary);
 }
 
+@media (max-width: 1024px) {
+  .moderator-panel {
+    padding: 16px 12px;
+  }
+
+  .moderator-header,
+  .moderator-tabs,
+  .moderator-actions {
+    flex-wrap: wrap;
+  }
+
+  .moderator-layout,
+  .moderator-content,
+  .moderator-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 .fight-date {
   font-style: italic;
 }

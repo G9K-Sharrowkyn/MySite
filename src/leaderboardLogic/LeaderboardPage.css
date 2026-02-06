@@ -472,3 +472,16 @@
     font-size: 1rem;
   }
 }
+
+@media (max-width: 1024px) {
+  .leaderboard-page {
+    max-width: 100%;
+    padding: 16px 12px;
+  }
+
+  .leaderboard-table,
+  .user-stats-overview,
+  .achievements-grid {
+    width: 100%;
+  }
+}

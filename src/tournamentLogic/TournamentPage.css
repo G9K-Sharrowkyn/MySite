@@ -646,3 +646,16 @@
 .btn-confirm-delete:active {
   transform: translateY(0);
 }
+
+@media (max-width: 1024px) {
+  .tournament-page {
+    max-width: 100%;
+    padding: 16px 12px;
+  }
+
+  .tournament-grid,
+  .tournament-list,
+  .tournament-details {
+    grid-template-columns: 1fr !important;
+  }
+}

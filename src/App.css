@@ -186,6 +186,98 @@ button:disabled {
   }
 }
 
+/* Global mobile redesign (<= 1024px) */
+@media (max-width: 1024px) {
+  html {
+    font-size: 15px;
+  }
+
+  .container,
+  .home-page,
+  .feed-container,
+  .post-page,
+  .profile-page,
+  .messages-page,
+  .messages-container-single,
+  .moderator-panel,
+  .admin-panel,
+  .divisions-page,
+  .leaderboard-page,
+  .tournament-page,
+  .notifications-page,
+  .fight-detail-page,
+  .create-fight-page,
+  .character-selection-page {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 16px 12px !important;
+    margin: 0 auto !important;
+    box-sizing: border-box;
+  }
+
+  .feed-container > .tag-filter-container,
+  .feed-container > .create-post-card,
+  .posts-feed {
+    width: 100% !important;
+  }
+
+  .post-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .post-meta {
+    flex-wrap: wrap;
+  }
+
+  .fight-teams,
+  .fight-teams-symmetrical,
+  .fighters,
+  .fighters-section {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .team-btn,
+  .fighter,
+  .vote-btn {
+    width: 100% !important;
+    max-width: 520px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .profile-picture {
+    width: 110px;
+    height: 110px;
+  }
+
+  .profile-background-banner {
+    height: 180px;
+  }
+
+  .fight-stats-cards,
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .friends-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .messages-container-single {
+    max-height: none;
+    height: auto;
+  }
+}
+
 /* Scroll container for horizontal overflow */
 .scroll-container {
   overflow-x: auto;

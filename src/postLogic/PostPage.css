@@ -471,6 +471,27 @@ body.dark-mode .team-btn.voted {
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .post-page {
+    padding: 16px 12px;
+  }
+
+  .post-container {
+    border-radius: 16px;
+  }
+
+  .fight-teams-symmetrical {
+    flex-direction: column;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .team-zone {
+    max-width: 320px;
+    min-width: 200px;
+  }
+}
+
 @media (max-width: 768px) {
   .post-page {
     padding: 10px;

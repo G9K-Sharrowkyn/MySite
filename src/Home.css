@@ -823,3 +823,14 @@
     max-width: 100%;
   }
 }
+
+@media (max-width: 1024px) {
+  .home-page {
+    padding: 16px 12px;
+  }
+
+  .official-fights-grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}

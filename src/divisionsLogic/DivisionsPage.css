@@ -1133,3 +1133,17 @@ body.dark-mode .view-all-fights-btn:hover {
     font-size: 0.75rem;
   }
 }
+
+@media (max-width: 1024px) {
+  .divisions-page {
+    max-width: 100%;
+    padding: 16px 12px;
+  }
+
+  .division-grid,
+  .division-sections,
+  .division-panels,
+  .divisions-list {
+    grid-template-columns: 1fr !important;
+  }
+}

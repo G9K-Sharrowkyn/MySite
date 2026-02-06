@@ -76,6 +76,26 @@ body:not(.dark-mode) .login-required p {
   flex-direction: column;
 }
 
+@media (max-width: 1024px) {
+  .messages-page {
+    padding: 12px;
+  }
+
+  .messages-container-single {
+    max-width: 100%;
+    max-height: none;
+    height: auto;
+  }
+
+  .messages-header {
+    padding: 16px;
+  }
+
+  .messages-header h1 {
+    font-size: 1.4rem;
+  }
+}
+
 body:not(.dark-mode) .messages-container-single {
   /* No background needed */
 }
