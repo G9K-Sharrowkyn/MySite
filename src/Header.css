@@ -1236,19 +1236,24 @@
   .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item,
   .header-mobile .user-dropdown.user-dropdown-mobile .logout-item {
     width: 100%;
-    border: 2px solid rgba(231, 76, 60, 0.7);
-    background: rgba(20, 24, 34, 0.9);
-    color: #f5f7ff;
-    border-radius: 14px;
-    margin: 6px 0;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(18, 22, 32, 0.9);
+    color: var(--text-light);
+    border-radius: 12px;
+    margin: 8px 0;
     justify-content: center;
     font-weight: 700;
+    text-transform: none;
   }
 
   .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item:hover,
   .header-mobile .user-dropdown.user-dropdown-mobile .logout-item:hover {
     background: rgba(28, 34, 48, 0.95);
-    border-color: rgba(231, 76, 60, 0.9);
+    border-color: rgba(255, 255, 255, 0.35);
+  }
+
+  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-icon {
+    display: none;
   }
 
   .overlay {
