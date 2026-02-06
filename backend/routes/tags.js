@@ -1,6 +1,8 @@
 ﻿import express from 'express';
 import { readDb, withDb } from '../repositories/index.js';
 import { autoTagPost, getBaseTags } from '../utils/tagging.js';
+import { normalizePostForResponse } from '../controllers/postController.js';
+import { optionalAuth } from '../middleware/optionalAuth.js';
 
 const router = express.Router();
 
@@ -199,7 +201,7 @@ router.get('/trending', async (req, res) => {
 });
 
 // POST /api/tags/filter-posts - filter posts by tags
-router.post('/filter-posts', async (req, res) => {
+router.post('/filter-posts', optionalAuth, async (req, res) => {
   try {
     const {
       page = 1,
@@ -209,6 +211,8 @@ router.post('/filter-posts', async (req, res) => {
       ...filters
     } = req.body || {};
     const db = await readDb();
+    const viewerUserId = req.user?.id || null;
+    const now = new Date();
 
     const hasFilters = CATEGORY_KEYS.some(
       (category) => Array.isArray(filters[category]) && filters[category].length > 0
@@ -262,32 +266,11 @@ router.post('/filter-posts', async (req, res) => {
 
     const commentCounts = buildCommentCountByPostId(db.comments || []);
     const formatted = paged.map((post) => {
-      const author = db.users.find(
-        (user) => resolveUserId(user) === post.authorId
-      );
-      const fight = post.fight
-        ? {
-            ...post.fight,
-            teamA: Array.isArray(post.fight.teamA)
-              ? post.fight.teamA.map((entry) => entry?.name || entry).join(', ')
-              : post.fight.teamA,
-            teamB: Array.isArray(post.fight.teamB)
-              ? post.fight.teamB.map((entry) => entry?.name || entry).join(', ')
-              : post.fight.teamB,
-            votes: {
-              teamA: post.fight.votes?.teamA || 0,
-              teamB: post.fight.votes?.teamB || 0,
-              draw: post.fight.votes?.draw || 0,
-              voters: post.fight.votes?.voters || []
-            }
-          }
-        : null;
+      const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
+      const postId = normalized.id;
       return {
-        ...post,
-        id: post.id || post._id,
-        fight,
-        author: buildAuthor(author),
-        commentCount: commentCounts.get(post.id || post._id) || 0,
+        ...normalized,
+        commentCount: commentCounts.get(postId) || 0,
         reactionsSummary: buildReactionSummary(post.reactions || [])
       };
     });

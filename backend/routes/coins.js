@@ -1,6 +1,6 @@
 import express from 'express';
 import { coinTransactionsRepo, usersRepo, withDb } from '../repositories/index.js';
-import { applyDailyBonus, ensureCoinAccount } from '../utils/coinBonus.js';
+import { ensureCoinAccount } from '../utils/coinBonus.js';
 
 const router = express.Router();
 
@@ -24,7 +24,7 @@ router.get('/balance/:userId', async (req, res) => {
         throw error;
       }
 
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
       balance = user.coins.balance || 0;
       return db;
     });
@@ -55,7 +55,7 @@ router.get('/transactions/:userId', async (req, res) => {
         throw error;
       }
 
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
       const all = (await coinTransactionsRepo.filter(
         (entry) => entry.userId === req.params.userId,
         { db }
@@ -93,7 +93,6 @@ router.get('/stats/:userId', async (req, res) => {
         throw error;
       }
 
-      applyDailyBonus(db, user);
       ensureCoinAccount(user);
       const transactions = await coinTransactionsRepo.filter(
         (entry) => entry.userId === req.params.userId,

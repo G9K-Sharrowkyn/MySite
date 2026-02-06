@@ -198,6 +198,9 @@ export const translations = {
     comment: 'Komentarz',
     like: 'Polub',
     share: 'Udostępnij',
+    copyLink: 'Kopiuj link',
+    copied: 'Skopiowano',
+    copyFailed: 'Nie udało się skopiować',
     translate: 'Przetłumacz',
     translated: 'Tłumaczenie:',
     translationFailed: 'Nie udało się przetłumaczyć',
@@ -508,6 +511,12 @@ export const translations = {
     maximumBetAmount: 'Maksymalna kwota zakładu to {amount} {coins}',
     selectAtLeastTwoFights: 'Wybierz co najmniej 2 walki dla zakładu parlay',
     bettingWindowClosed: 'Okno zakładów dla tej walki zostało zamknięte',
+
+    voteVisibility: 'Widoczność głosów',
+    showLiveVotes: 'Pokaż głosy na żywo',
+    hideVotesUntilEnd: 'Ukryj głosy do końca',
+    blindBetting: 'Zakłady w ciemno: głosy są ukryte do końca.',
+    votesHiddenUntilEnd: 'Głosy ukryte do końca',
     
     // Moderator Panel
     moderatorPanel: {
@@ -967,6 +976,9 @@ export const translations = {
     comment: 'Comment',
     like: 'Like',
     share: 'Share',
+    copyLink: 'Copy link',
+    copied: 'Copied',
+    copyFailed: 'Copy failed',
     translate: 'Translate',
     translated: 'Translated:',
     translationFailed: 'Translation failed',
@@ -1273,6 +1285,12 @@ export const translations = {
     maximumBetAmount: 'Maximum bet amount is {amount} {coins}',
     selectAtLeastTwoFights: 'Select at least 2 fights for parlay bet',
     bettingWindowClosed: 'Betting window for this fight is closed',
+
+    voteVisibility: 'Vote visibility',
+    showLiveVotes: 'Show live votes',
+    hideVotesUntilEnd: 'Hide votes until the end',
+    blindBetting: 'Blind betting: votes are hidden until the end.',
+    votesHiddenUntilEnd: 'Votes hidden until the end',
     
     // Moderator Panel
     moderatorPanel: {
@@ -1712,6 +1730,9 @@ export const translations = {
     comment: 'Comentario',
     like: 'Me gusta',
     share: 'Compartir',
+    copyLink: 'Copiar enlace',
+    copied: 'Copiado',
+    copyFailed: 'No se pudo copiar',
     translate: 'Traducir',
     translated: 'Traducido:',
     translationFailed: 'Error en la traducción',
@@ -2018,6 +2039,12 @@ export const translations = {
     maximumBetAmount: 'La cantidad máxima de apuesta es {amount} {coins}',
     selectAtLeastTwoFights: 'Selecciona al menos 2 peleas para apuesta parlay',
     bettingWindowClosed: 'La ventana de apuestas para esta pelea está cerrada',
+
+    voteVisibility: 'Visibilidad de votos',
+    showLiveVotes: 'Mostrar votos en vivo',
+    hideVotesUntilEnd: 'Ocultar votos hasta el final',
+    blindBetting: 'Apuesta a ciegas: los votos están ocultos hasta el final.',
+    votesHiddenUntilEnd: 'Votos ocultos hasta el final',
     
     // Moderator Panel
     moderatorPanel: {
@@ -2144,3 +2171,5 @@ export const translations = {
     myTournaments: 'Mis Torneos'
   }
 };
+
+

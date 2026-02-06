@@ -10,6 +10,7 @@ import ChallengeApproval from './ChallengeApproval';
 import './PostPage.css';
 import { AuthContext } from '../auth/AuthContext';
 import { getUserDisplayName } from '../utils/userDisplay';
+import { useLanguage } from '../i18n/LanguageContext';
 
 const PostPage = () => {
   const { postId } = useParams();
@@ -31,10 +32,13 @@ const PostPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState('');
 
   const currentUserId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
   const canModerate = user?.role === 'admin' || user?.role === 'moderator';
+  const { t } = useLanguage();
   const bettingEligible = (() => {
     if (post?.type !== 'fight' || !post?.fight) return false;
     const lockTimeValue = post.fight.lockTime;
@@ -44,6 +48,56 @@ const PostPage = () => {
     if (post.fight.status && post.fight.status !== 'active') return false;
     return new Date() < lockTime;
   })();
+
+  const buildShareUrl = () => {
+    if (typeof window === 'undefined' || !post?.id) return '';
+    return `${window.location.origin}/post/${post.id}`;
+  };
+
+  const getShareText = () => {
+    if (post?.type === 'fight' && post?.fight) {
+      return `${post.fight.teamA || 'Team A'} vs ${post.fight.teamB || 'Team B'}`;
+    }
+    if (post?.title) return post.title;
+    if (post?.content) return post.content.slice(0, 120);
+    return 'Check this post';
+  };
+
+  const handleShareClick = async () => {
+    const url = buildShareUrl();
+    if (!url) return;
+    const shareData = {
+      title: post?.title || 'Post',
+      text: getShareText(),
+      url
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        console.error('Share canceled or failed:', error);
+      }
+    }
+
+    setShareFeedback('');
+    setShowShareMenu((prev) => !prev);
+  };
+
+  const handleCopyLink = async () => {
+    const url = buildShareUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareFeedback(t('copied') || 'Skopiowano');
+    } catch (error) {
+      console.error('Copy failed:', error);
+      setShareFeedback(t('copyFailed') || 'Nie udało się skopiować');
+    }
+    setShowShareMenu(false);
+    setTimeout(() => setShareFeedback(''), 2000);
+  };
 
   const normalizeVoteTeam = useCallback((team) => {
     if (!team) return null;
@@ -169,7 +223,12 @@ const PostPage = () => {
 
   const fetchPost = useCallback(async () => {
     try {
-      const response = await axios.get(`/api/posts/${postId}`);
+      const response = await axios.get(
+        `/api/posts/${postId}`,
+        token
+          ? { headers: { 'x-auth-token': token } }
+          : undefined
+      );
       const postData = {
         ...response.data,
         author: {
@@ -184,11 +243,8 @@ const PostPage = () => {
           : postData.reactions;
       setReactions(normalizeReactionSummary(reactionSeed));
       
-      if (postData.type === 'fight' && postData.fight?.votes?.voters && currentUserId) {
-        const vote = postData.fight.votes.voters.find(
-          (v) => String(v.userId) === String(currentUserId)
-        );
-        setUserVote(normalizeVoteTeam(vote?.team));
+      if (postData.type === 'fight' && currentUserId) {
+        setUserVote(normalizeVoteTeam(postData.fight?.myVote));
       }
       
       setLoading(false);
@@ -197,7 +253,7 @@ const PostPage = () => {
       setError('Post not found or error loading post.');
       setLoading(false);
     }
-  }, [currentUserId, normalizeVoteTeam, postId]);
+  }, [currentUserId, normalizeVoteTeam, postId, token]);
 
   const fetchComments = useCallback(async () => {
     try {
@@ -586,6 +642,9 @@ const PostPage = () => {
 
           {post.type === 'fight' && post.fight && (post.fight.fightMode !== 'user_vs_user' || post.fight.status === 'active') && (
             <div className="fight-section">
+              {post.fight?.votesHidden && (
+                <div className="votes-hidden-banner">Votes hidden until the end</div>
+              )}
               <div className="fight-teams-symmetrical">
                 <div className="team-column">
                   <div className={`team-zone${userVote === 'A' ? ' sparkly' : ''}`}>
@@ -601,7 +660,9 @@ const PostPage = () => {
                       </div>
                     </div>
                     <div className="team-vote-panel">
-                      <div className="vote-count">{post.fight.votes?.teamA || 0} votes</div>
+                      <div className="vote-count">
+                        {post.fight?.votesHidden ? '—' : `${post.fight.votes?.teamA || 0} votes`}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -620,7 +681,9 @@ const PostPage = () => {
                       </div>
                     </div>
                     <div className="team-vote-panel">
-                      <div className="vote-count">{post.fight.votes?.teamB || 0} votes</div>
+                      <div className="vote-count">
+                        {post.fight?.votesHidden ? '—' : `${post.fight.votes?.teamB || 0} votes`}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -671,6 +734,70 @@ const PostPage = () => {
           )}
 
           
+          <div className="share-wrapper">
+            <button
+              className="action-btn share-btn"
+              onClick={handleShareClick}
+              type="button"
+            >
+              <span className="action-icon">🔗</span>
+              <span className="action-text">{t('share') || 'Udostępnij'}</span>
+            </button>
+
+            {showShareMenu && (
+              <div
+                className="share-menu"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="share-option"
+                  type="button"
+                  onClick={handleCopyLink}
+                >
+                  {t('copyLink') || 'Kopiuj link'}
+                </button>
+                <a
+                  className="share-option"
+                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(buildShareUrl())}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setShowShareMenu(false)}
+                >
+                  Facebook
+                </a>
+                <a
+                  className="share-option"
+                  href={`https://www.reddit.com/submit?url=${encodeURIComponent(buildShareUrl())}&title=${encodeURIComponent(post?.title || '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setShowShareMenu(false)}
+                >
+                  Reddit
+                </a>
+                <a
+                  className="share-option"
+                  href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(buildShareUrl())}&text=${encodeURIComponent(post?.title || '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setShowShareMenu(false)}
+                >
+                  X
+                </a>
+                <a
+                  className="share-option"
+                  href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(buildShareUrl())}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setShowShareMenu(false)}
+                >
+                  LinkedIn
+                </a>
+                {shareFeedback && (
+                  <div className="share-feedback">{shareFeedback}</div>
+                )}
+              </div>
+            )}
+          </div>
 
           {canDelete && (
             <button className="action-btn delete-btn" onClick={handleDelete}>

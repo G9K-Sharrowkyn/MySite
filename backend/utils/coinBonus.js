@@ -10,6 +10,9 @@ const ensureCoinAccount = (user) => {
     totalSpent: 0,
     lastBonusDate: new Date().toISOString()
   };
+  if (!user.coins.dailyActivity || typeof user.coins.dailyActivity !== 'object') {
+    user.coins.dailyActivity = {};
+  }
   if (typeof user.virtualCoins !== 'number') {
     user.virtualCoins = user.coins.balance || 0;
   }
@@ -22,29 +25,43 @@ const getLocalDateKey = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-const resolveLastBonusKey = (lastBonusDate) => {
-  if (!lastBonusDate) return null;
-  const parsed = new Date(lastBonusDate);
-  if (Number.isNaN(parsed.getTime())) return null;
-  return getLocalDateKey(parsed);
+const DAILY_ACTIVITY_REWARDS = {
+  login: 50,
+  post: 100,
+  comment: 50,
+  reaction: 50,
+  message: 50
 };
 
-export const applyDailyBonus = (db, user, amount = 10) => {
-  if (!db || !user) return { applied: false, balance: 0 };
-  const previousBonusDate = user?.coins?.lastBonusDate;
-  ensureCoinAccount(user);
+const normalizeActivity = (activity) =>
+  String(activity || '').trim().toLowerCase();
 
+export const applyDailyActivityBonus = (db, user, activity, amountOverride) => {
+  if (!db || !user) return { applied: false, balance: 0 };
+  const action = normalizeActivity(activity);
+  if (!action) return { applied: false, balance: user?.coins?.balance || 0 };
+
+  ensureCoinAccount(user);
   const now = new Date();
   const todayKey = getLocalDateKey(now);
-  const lastKey = resolveLastBonusKey(previousBonusDate);
+  const lastKey = user.coins.dailyActivity?.[action] || null;
 
   if (lastKey === todayKey) {
     return { applied: false, balance: user.coins.balance || 0 };
   }
 
+  const amount =
+    Number.isFinite(amountOverride) && amountOverride > 0
+      ? amountOverride
+      : DAILY_ACTIVITY_REWARDS[action] || 0;
+
+  if (!amount) {
+    return { applied: false, balance: user.coins.balance || 0 };
+  }
+
   user.coins.balance = (user.coins.balance || 0) + amount;
   user.coins.totalEarned = (user.coins.totalEarned || 0) + amount;
-  user.coins.lastBonusDate = now.toISOString();
+  user.coins.dailyActivity[action] = todayKey;
   user.virtualCoins = user.coins.balance;
 
   db.coinTransactions = Array.isArray(db.coinTransactions) ? db.coinTransactions : [];
@@ -53,13 +70,17 @@ export const applyDailyBonus = (db, user, amount = 10) => {
     _id: uuidv4(),
     userId: resolveUserId(user),
     amount,
-    type: 'daily_bonus',
-    description: 'Daily eurodolary bonus',
+    type: 'daily_activity',
+    description: `Daily ${action} bonus`,
     balance: user.coins.balance,
     createdAt: now.toISOString()
   });
 
-  return { applied: true, balance: user.coins.balance || 0 };
+  return { applied: true, balance: user.coins.balance || 0, amount, action };
 };
+
+// Legacy helper kept for compatibility (defaults to login bonus).
+export const applyDailyBonus = (db, user, amount = DAILY_ACTIVITY_REWARDS.login) =>
+  applyDailyActivityBonus(db, user, 'login', amount);
 
 export { ensureCoinAccount };

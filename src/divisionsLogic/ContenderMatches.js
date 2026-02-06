@@ -12,6 +12,7 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
   const [selectedChallengers, setSelectedChallengers] = useState({ challenger1: '', challenger2: '' });
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
+  const [voteVisibility, setVoteVisibility] = useState('live');
 
   const fetchContenderMatches = useCallback(async () => {
     try {
@@ -66,7 +67,8 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
         {
           challenger1Id: selectedChallengers.challenger1,
           challenger2Id: selectedChallengers.challenger2,
-          description
+          description,
+          voteVisibility
         },
         { headers: { 'x-auth-token': token } }
       );
@@ -199,6 +201,17 @@ const ContenderMatches = ({ divisionId, currentUser }) => {
                         {member.divisions[divisionId]?.losses || 0})
                       </option>
                     ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Vote visibility</label>
+                <select
+                  value={voteVisibility}
+                  onChange={(e) => setVoteVisibility(e.target.value)}
+                >
+                  <option value="live">Show live votes</option>
+                  <option value="final">Hide votes until the end</option>
                 </select>
               </div>
 

@@ -11,6 +11,7 @@ import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
+import { applyDailyActivityBonus } from '../utils/coinBonus.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveCommentId = (comment) => comment?.id || comment?._id;
@@ -229,6 +230,7 @@ export const addPostComment = async (req, res) => {
         20
       );
       author.updatedAt = now;
+      applyDailyActivityBonus(db, author, 'comment', 50);
 
       if (parentComment) {
         const parentAuthor = await usersRepo.findOne(

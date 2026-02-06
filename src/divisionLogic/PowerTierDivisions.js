@@ -12,7 +12,10 @@ const PowerTierDivisions = ({ user, isModerator }) => {
   const [userCoins, setUserCoins] = useState(0);
   const [selectedBets, setSelectedBets] = useState({});
   const [betAmounts, setBetAmounts] = useState({});
+  const [oddsByFight, setOddsByFight] = useState({});
   const [showHistoryDivisionId, setShowHistoryDivisionId] = useState(null);
+  const [divisionVoteVisibility, setDivisionVoteVisibility] = useState('live');
+  const token = localStorage.getItem('token');
 
   // Power-tier division definitions
   const divisionTiers = {
@@ -91,6 +94,37 @@ const PowerTierDivisions = ({ user, isModerator }) => {
     }
   }, [user?.id]);
 
+  const fetchOddsForFights = useCallback(async (fights) => {
+    if (!token || !Array.isArray(fights) || fights.length === 0) {
+      setOddsByFight({});
+      return;
+    }
+
+    try {
+      const responses = await Promise.all(
+        fights.map((fight) =>
+          axios
+            .get(`/api/betting/fight/${fight.id}/odds`, {
+              headers: { 'x-auth-token': token }
+            })
+            .then((res) => res.data)
+            .catch(() => null)
+        )
+      );
+
+      const next = {};
+      fights.forEach((fight, index) => {
+        const payload = responses[index];
+        if (payload) {
+          next[fight.id] = payload;
+        }
+      });
+      setOddsByFight(next);
+    } catch (error) {
+      console.error('Error fetching odds:', error);
+    }
+  }, [token]);
+
   const createOfficialFight = async (team1Id, team2Id, divisionId, isTitle = false, isContender = false) => {
     if (!isModerator) return;
 
@@ -103,7 +137,8 @@ const PowerTierDivisions = ({ user, isModerator }) => {
         isContender,
         bettingPeriod: 24, // 24 hours for betting
         fightDuration: 72, // 72 hours for voting after betting closes
-        createdBy: user.id
+        createdBy: user.id,
+        voteVisibility: divisionVoteVisibility
       });
 
       fetchAllDivisionData();
@@ -114,46 +149,67 @@ const PowerTierDivisions = ({ user, isModerator }) => {
     }
   };
 
-  const placeBet = async (fightId, prediction, amount) => {
-    try {
-      await axios.post('/api/betting/place-bet', {
-        userId: user.id,
-        fightId,
-        prediction, // 'team1' or 'team2'
-        amount
-      });
+  const placeBet = async (fightId, teamKey, amount) => {
+    if (!token) {
+      alert('Please log in to place a bet.');
+      return;
+    }
 
-      setSelectedBets(prev => ({
+    const prediction = teamKey === 'team1' ? 'A' : 'B';
+    const { minBet, maxBet } = getBetLimitsForFight(fightId);
+
+    if (!amount || amount < minBet) {
+      alert(`Minimum bet is ${minBet} coins.`);
+      return;
+    }
+    if (amount > maxBet) {
+      alert(`Maximum bet is ${maxBet} coins.`);
+      return;
+    }
+    if (amount > userCoins) {
+      alert('Insufficient coins.');
+      return;
+    }
+
+    try {
+      await axios.post(
+        `/api/betting/fight/${fightId}`,
+        {
+          predictedWinner: prediction,
+          betAmount: amount
+        },
+        { headers: { 'x-auth-token': token } }
+      );
+
+      setSelectedBets((prev) => ({
         ...prev,
         [fightId]: { prediction, amount }
       }));
 
-      setUserCoins(prev => prev - amount);
+      setUserCoins((prev) => prev - amount);
+      fetchOddsForFights(bettingFights);
       alert(`Bet placed: ${amount} coins on ${prediction}`);
     } catch (error) {
       console.error('Error placing bet:', error);
-      alert('Failed to place bet.');
+      alert(error.response?.data?.message || 'Failed to place bet.');
     }
   };
 
   const calculatePotentialWinnings = (fightId, prediction, amount) => {
-    const fight = bettingFights.find(f => f.id === fightId);
-    if (!fight) return amount;
-
-    const team1Bets = fight.totalBets?.team1 || 1;
-    const team2Bets = fight.totalBets?.team2 || 1;
-    const totalPool = team1Bets + team2Bets;
-
-    if (prediction === 'team1') {
-      return Math.floor((amount * totalPool) / team1Bets);
-    } else {
-      return Math.floor((amount * totalPool) / team2Bets);
-    }
+    if (!amount || amount <= 0) return 0;
+    const odds = prediction === 'A'
+      ? getTeamOdds(fightId, 'team1')
+      : getTeamOdds(fightId, 'team2');
+    return Math.floor(amount * odds);
   };
 
   useEffect(() => {
     fetchAllDivisionData();
   }, [fetchAllDivisionData]);
+
+  useEffect(() => {
+    fetchOddsForFights(bettingFights);
+  }, [bettingFights, fetchOddsForFights]);
 
   const setBetAmount = (fightId, teamKey, amount) => {
     const normalized = Number.isFinite(amount) && amount > 0 ? amount : 0;
@@ -170,28 +226,53 @@ const PowerTierDivisions = ({ user, isModerator }) => {
     return betAmounts[fightId]?.[teamKey] || 0;
   };
 
-  const calculateOdds = (fight, teamKey) => {
-    const team1Bets = Number(fight?.totalBets?.team1 || 0);
-    const team2Bets = Number(fight?.totalBets?.team2 || 0);
-    const base = teamKey === 'team1' ? team1Bets : team2Bets;
-    const other = teamKey === 'team1' ? team2Bets : team1Bets;
-    const ratio = (other + 1) / (base + 1);
-    return Math.max(1, Math.round(ratio * 10) / 10);
+  const getFightOdds = (fightId) => oddsByFight[fightId] || {};
+
+  const getTeamOdds = (fightId, teamKey) => {
+    const odds = getFightOdds(fightId);
+    const value = teamKey === 'team1' ? odds.A : odds.B;
+    return Number(value || 2.0);
+  };
+
+  const getBetLimitsForFight = (fightId) => {
+    const meta = oddsByFight[fightId]?.meta || {};
+    const minBet = Math.max(1, Number(meta.minBet || 1));
+    const maxBet = Math.max(minBet, Number(meta.maxBet || userCoins || 0));
+    return { minBet, maxBet };
+  };
+
+  const isBlindFight = (fightId) => Boolean(oddsByFight[fightId]?.meta?.isBlind);
+
+  const calculateOdds = (fightId, teamKey) => {
+    const value = getTeamOdds(fightId, teamKey);
+    return Math.max(1.01, Math.round(value * 100) / 100);
+  };
+
+  const getPredictionLabel = (fight, prediction) => {
+    if (!fight) return prediction;
+    if (prediction === 'A') {
+      return fight.team1?.owner?.username || fight.team1?.name || 'Team 1';
+    }
+    if (prediction === 'B') {
+      return fight.team2?.owner?.username || fight.team2?.name || 'Team 2';
+    }
+    return prediction;
   };
 
   const calculateParlayMultiplier = () => {
     const entries = Object.entries(selectedBets);
     if (entries.length === 0) return 1;
     const multiplier = entries.reduce((total, [fightId, bet]) => {
-      const fight = bettingFights.find((entry) => entry.id === fightId);
-      if (!fight) return total;
-      return total * calculateOdds(fight, bet.prediction);
+      if (!bet) return total;
+      const odds = bet.prediction === 'A'
+        ? getTeamOdds(fightId, 'team1')
+        : getTeamOdds(fightId, 'team2');
+      return total * odds;
     }, 1);
     return Math.round(multiplier * 100) / 100;
   };
 
   const placeParlayBet = async () => {
-    const token = localStorage.getItem('token');
     if (!token) {
       alert('Please log in to place a parlay bet.');
       return;
@@ -381,100 +462,120 @@ const PowerTierDivisions = ({ user, isModerator }) => {
       </div>
 
       <div className="betting-fights">
-        {bettingFights.map(fight => (
-          <div key={fight.id} className="betting-fight-card">
-            <div className="fight-header">
-              <span className="division-name">{fight.division.name}</span>
-              {fight.isTitle && <span className="title-fight">👑 TITLE FIGHT</span>}
-              {fight.isContender && <span className="contender-fight">🥊 CONTENDER FIGHT</span>}
-              <span className="betting-timer">
-                ⏰ Betting closes in {formatTimeRemaining(fight.bettingCloses)}
-              </span>
-            </div>
-
-            <div className="fight-matchup">
-              <div className="team-side">
-                <div className="team-info">
-                  <div className="team-fighters">
-                    {fight.team1.fighters.map(fighter => (
-                      <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
-                    ))}
-                  </div>
-                  <span className="team-owner">{fight.team1.owner.username}</span>
-                  <span className="team-record">{fight.team1.record}</span>
-                </div>
-                <div className="betting-odds">
-                  <span className="odds">
-                    {calculateOdds(fight, 'team1')}:1
-                  </span>
-                  <div className="bet-controls">
-                    <input
-                      type="number"
-                      min="1"
-                      max={userCoins}
-                      placeholder="Bet amount"
-                      onChange={(e) => setBetAmount(fight.id, 'team1', parseInt(e.target.value))}
-                    />
-                    <button 
-                      onClick={() => placeBet(fight.id, 'team1', getBetAmount(fight.id, 'team1'))}
-                      disabled={!getBetAmount(fight.id, 'team1') || getBetAmount(fight.id, 'team1') > userCoins}
-                    >
-                      Bet
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="vs-section">
-                <span className="vs">VS</span>
-                <div className="fight-pool">
-                  Total Pool: 🪙{fight.totalPool || 0}
-                </div>
-              </div>
-
-              <div className="team-side">
-                <div className="team-info">
-                  <div className="team-fighters">
-                    {fight.team2.fighters.map(fighter => (
-                      <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
-                    ))}
-                  </div>
-                  <span className="team-owner">{fight.team2.owner.username}</span>
-                  <span className="team-record">{fight.team2.record}</span>
-                </div>
-                <div className="betting-odds">
-                  <span className="odds">
-                    {calculateOdds(fight, 'team2')}:1
-                  </span>
-                  <div className="bet-controls">
-                    <input
-                      type="number"
-                      min="1"
-                      max={userCoins}
-                      placeholder="Bet amount"
-                      onChange={(e) => setBetAmount(fight.id, 'team2', parseInt(e.target.value))}
-                    />
-                    <button 
-                      onClick={() => placeBet(fight.id, 'team2', getBetAmount(fight.id, 'team2'))}
-                      disabled={!getBetAmount(fight.id, 'team2') || getBetAmount(fight.id, 'team2') > userCoins}
-                    >
-                      Bet
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {selectedBets[fight.id] && (
-              <div className="user-bet-status">
-                ✅ You bet {selectedBets[fight.id].amount} coins on {selectedBets[fight.id].prediction}
-                <span className="potential-winnings">
-                  Potential winnings: 🪙{calculatePotentialWinnings(fight.id, selectedBets[fight.id].prediction, selectedBets[fight.id].amount)}
+        {bettingFights.map((fight) => {
+          const { minBet, maxBet } = getBetLimitsForFight(fight.id);
+          const maxStake = Math.min(maxBet, userCoins);
+          const blind = isBlindFight(fight.id);
+          const oddsA = calculateOdds(fight.id, 'team1');
+          const oddsB = calculateOdds(fight.id, 'team2');
+          return (
+            <div key={fight.id} className={`betting-fight-card ${blind ? 'blind' : 'live'}`}>
+              <div className="fight-header">
+                <span className="division-name">{fight.division.name}</span>
+                {fight.isTitle && <span className="title-fight">👑 TITLE FIGHT</span>}
+                {fight.isContender && <span className="contender-fight">🥊 CONTENDER FIGHT</span>}
+                {blind && <span className="blind-tag">Blind odds</span>}
+                <span className="betting-timer">
+                  ⏰ Betting closes in {formatTimeRemaining(fight.bettingCloses)}
                 </span>
               </div>
-            )}
-          </div>
-        ))}
+
+              {blind && (
+                <div className="blind-note">
+                  Votes are hidden until the end. Odds are risk-adjusted.
+                </div>
+              )}
+
+              <div className="fight-matchup">
+                <div className="team-side">
+                  <div className="team-info">
+                    <div className="team-fighters">
+                      {fight.team1.fighters.map((fighter) => (
+                        <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
+                      ))}
+                    </div>
+                    <span className="team-owner">{fight.team1.owner.username}</span>
+                    <span className="team-record">{fight.team1.record}</span>
+                  </div>
+                  <div className="betting-odds">
+                    <span className="odds">@{oddsA.toFixed(2)}</span>
+                    <div className="bet-controls">
+                      <input
+                        type="number"
+                        min={minBet}
+                        max={maxStake}
+                        placeholder="Bet amount"
+                        onChange={(e) => setBetAmount(fight.id, 'team1', parseInt(e.target.value, 10))}
+                      />
+                      <button
+                        onClick={() => placeBet(fight.id, 'team1', getBetAmount(fight.id, 'team1'))}
+                        disabled={
+                          !getBetAmount(fight.id, 'team1') ||
+                          getBetAmount(fight.id, 'team1') > maxStake ||
+                          getBetAmount(fight.id, 'team1') < minBet
+                        }
+                      >
+                        Bet
+                      </button>
+                    </div>
+                    <div className="bet-limits">Min {minBet} / Max {maxStake}</div>
+                  </div>
+                </div>
+
+                <div className="vs-section">
+                  <span className="vs">VS</span>
+                  <div className="fight-pool">
+                    Total Pool: 🪙{fight.totalPool || 0}
+                  </div>
+                </div>
+
+                <div className="team-side">
+                  <div className="team-info">
+                    <div className="team-fighters">
+                      {fight.team2.fighters.map((fighter) => (
+                        <img key={fighter.id} {...getOptimizedImageProps(fighter.image, { size: 120 })} alt={fighter.name} />
+                      ))}
+                    </div>
+                    <span className="team-owner">{fight.team2.owner.username}</span>
+                    <span className="team-record">{fight.team2.record}</span>
+                  </div>
+                  <div className="betting-odds">
+                    <span className="odds">@{oddsB.toFixed(2)}</span>
+                    <div className="bet-controls">
+                      <input
+                        type="number"
+                        min={minBet}
+                        max={maxStake}
+                        placeholder="Bet amount"
+                        onChange={(e) => setBetAmount(fight.id, 'team2', parseInt(e.target.value, 10))}
+                      />
+                      <button
+                        onClick={() => placeBet(fight.id, 'team2', getBetAmount(fight.id, 'team2'))}
+                        disabled={
+                          !getBetAmount(fight.id, 'team2') ||
+                          getBetAmount(fight.id, 'team2') > maxStake ||
+                          getBetAmount(fight.id, 'team2') < minBet
+                        }
+                      >
+                        Bet
+                      </button>
+                    </div>
+                    <div className="bet-limits">Min {minBet} / Max {maxStake}</div>
+                  </div>
+                </div>
+              </div>
+
+              {selectedBets[fight.id] && (
+                <div className="user-bet-status">
+                ✅ You bet {selectedBets[fight.id].amount} coins on {getPredictionLabel(fight, selectedBets[fight.id].prediction)}
+                  <span className="potential-winnings">
+                    Potential winnings: 🪙{calculatePotentialWinnings(fight.id, selectedBets[fight.id].prediction, selectedBets[fight.id].amount)}
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <div className="parlay-section">
@@ -646,6 +747,16 @@ const PowerTierDivisions = ({ user, isModerator }) => {
             {isModerator && (
               <div className="moderator-controls">
                 <h4>Moderator Controls</h4>
+                <div className="vote-visibility-control">
+                  <label>Vote visibility</label>
+                  <select
+                    value={divisionVoteVisibility}
+                    onChange={(e) => setDivisionVoteVisibility(e.target.value)}
+                  >
+                    <option value="live">Show live votes</option>
+                    <option value="final">Hide votes until the end</option>
+                  </select>
+                </div>
                 <div className="mod-buttons">
                   <button onClick={() => openFightCreator(division.id)}>
                     Create Fight

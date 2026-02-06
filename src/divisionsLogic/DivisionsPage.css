@@ -1147,3 +1147,8 @@ body.dark-mode .view-all-fights-btn:hover {
     grid-template-columns: 1fr !important;
   }
 }
+
+.fight-votes.hidden {
+  color: rgba(255, 255, 255, 0.65);
+  font-style: italic;
+}

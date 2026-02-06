@@ -45,6 +45,7 @@ const TransactionHistory = ({ userId }) => {
   const getTransactionIcon = (type) => {
     switch (type) {
       case 'earned':
+      case 'daily_activity':
         return '🟢';
       case 'spent':
         return '🔴';
@@ -62,6 +63,7 @@ const TransactionHistory = ({ userId }) => {
   const getTransactionColor = (type) => {
     switch (type) {
       case 'earned':
+      case 'daily_activity':
       case 'bet_won':
         return 'positive';
       case 'spent':
@@ -194,37 +196,37 @@ const TransactionHistory = ({ userId }) => {
           <div className="tip-item">
             <span className="tip-icon">📝</span>
             <div className="tip-content">
-              <strong>Create Posts:</strong> 10 eurodolary per post
+              <strong>First Post of the Day:</strong> 100 eurodolary
             </div>
           </div>
           <div className="tip-item">
             <span className="tip-icon">💬</span>
             <div className="tip-content">
-              <strong>Add Comments:</strong> 2 eurodolary per comment
+              <strong>First Comment of the Day:</strong> 50 eurodolary
             </div>
           </div>
           <div className="tip-item">
-            <span className="tip-icon">🗳️</span>
+            <span className="tip-icon">👍</span>
             <div className="tip-content">
-              <strong>Vote on Fights:</strong> 1 eurodolar per vote
+              <strong>First Reaction of the Day:</strong> 50 eurodolary
             </div>
           </div>
           <div className="tip-item">
-            <span className="tip-icon">🏆</span>
+            <span className="tip-icon">🔑</span>
             <div className="tip-content">
-              <strong>Win Fights:</strong> 50 eurodolary per win
+              <strong>First Login of the Day:</strong> 50 eurodolary
+            </div>
+          </div>
+          <div className="tip-item">
+            <span className="tip-icon">✉️</span>
+            <div className="tip-content">
+              <strong>First Message of the Day:</strong> 50 eurodolary
             </div>
           </div>
           <div className="tip-item">
             <span className="tip-icon">🎯</span>
             <div className="tip-content">
               <strong>Win Bets:</strong> Variable winnings
-            </div>
-          </div>
-          <div className="tip-item">
-            <span className="tip-icon">📅</span>
-            <div className="tip-content">
-              <strong>Daily Bonus:</strong> 10 eurodolary per day
             </div>
           </div>
         </div>
@@ -234,3 +236,4 @@ const TransactionHistory = ({ userId }) => {
 };
 
 export default TransactionHistory; 
+

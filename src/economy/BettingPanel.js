@@ -7,10 +7,11 @@ import './BettingPanel.css';
 const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetPlaced }) => {
   const { t } = useLanguage();
 
-  const MIN_BET = 10;
-  const MAX_BET = 1000;
+  const [minBet, setMinBet] = useState(1);
+  const [maxBet, setMaxBet] = useState(1000);
+  const [isBlind, setIsBlind] = useState(false);
 
-  const [betAmount, setBetAmount] = useState(MIN_BET);
+  const [betAmount, setBetAmount] = useState(1);
   const [prediction, setPrediction] = useState('');
   const [odds, setOdds] = useState({ A: 2.0, B: 2.0, draw: 3.0 });
   const [userBalance, setUserBalance] = useState(0);
@@ -38,7 +39,25 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
         const oddsResponse = await axios.get(`/api/betting/fight/${fightId}/odds`, {
           headers: { 'x-auth-token': token }
         });
-        setOdds(oddsResponse.data);
+        const payload = oddsResponse.data || {};
+        setOdds({
+          A: Number(payload.A || 2.0),
+          B: Number(payload.B || 2.0),
+          draw: Number(payload.draw || 3.0)
+        });
+
+        if (payload.meta) {
+          const nextMin = Math.max(1, Number(payload.meta.minBet || 1));
+          const nextMax = Math.max(nextMin, Number(payload.meta.maxBet || 1000));
+          setMinBet(nextMin);
+          setMaxBet(nextMax);
+          setIsBlind(Boolean(payload.meta.isBlind));
+          setBetAmount((current) => {
+            if (!Number.isFinite(current) || current < nextMin) return nextMin;
+            if (current > nextMax) return nextMax;
+            return current;
+          });
+        }
       } catch (err) {
         console.error('Error fetching betting data:', err);
       }
@@ -106,13 +125,13 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
       return;
     }
 
-    if (betAmount < MIN_BET) {
-      setError(t('minimumBetAmount', { amount: MIN_BET, coins: t('coins') }));
+    if (betAmount < minBet) {
+      setError(t('minimumBetAmount', { amount: minBet, coins: t('coins') }));
       return;
     }
 
-    if (betAmount > MAX_BET) {
-      setError(t('maximumBetAmount', { amount: MAX_BET, coins: t('coins') }));
+    if (betAmount > maxBet) {
+      setError(t('maximumBetAmount', { amount: maxBet, coins: t('coins') }));
       return;
     }
 
@@ -132,7 +151,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
       setUserBalance(response.data.newBalance || userBalance - betAmount);
       
       // Reset form
-      setBetAmount(MIN_BET);
+      setBetAmount(minBet);
       setPrediction('');
       
       if (onBetPlaced) {
@@ -159,7 +178,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
   }
 
   return (
-    <div className="betting-panel">
+    <div className={`betting-panel ${isBlind ? 'blind' : 'live'}`}>
       <div className="betting-header">
         <h3>🎲 {t('placeBet')}</h3>
         <div className="betting-status">
@@ -170,8 +189,20 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
         </div>
       </div>
 
+      {bettingOpen && (
+        <div className={`betting-mode-note ${isBlind ? 'blind' : 'live'}`}>
+          {isBlind
+            ? t('blindBetting') || 'Blind betting: votes are hidden until the end.'
+            : t('showLiveVotes') || 'Live odds: votes are visible.'}
+        </div>
+      )}
+
       <div className="user-balance-section">
         <CoinBalance userId={userId} showLabel={true} className="compact" />
+      </div>
+
+      <div className="betting-limits">
+        Min {minBet} / Max {maxBet}
       </div>
 
       {error && <div className="betting-error">{error}</div>}
@@ -216,8 +247,8 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
             <div className="bet-amount-input">
               <input
                 type="number"
-                min={MIN_BET}
-                max={Math.min(userBalance, MAX_BET)}
+                min={minBet}
+                max={Math.min(userBalance, maxBet)}
                 value={betAmount}
                 onChange={handleBetAmountChange}
                 disabled={loading}
@@ -227,12 +258,14 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
             </div>
             
             <div className="quick-amounts">
-              {[10, 25, 50, 100].map(amount => (
+              {[minBet, 5, 10, 25, 50, 100]
+                .filter((amount, index, arr) => arr.indexOf(amount) === index)
+                .map(amount => (
                 <button
                   key={amount}
                   className={`quick-amount-btn ${betAmount === amount ? 'selected' : ''}`}
                   onClick={() => setBetAmount(amount)}
-                  disabled={amount > userBalance || loading}
+                  disabled={amount > userBalance || amount > maxBet || loading}
                 >
                   {amount}
                 </button>
@@ -255,7 +288,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
           <button
             className="place-bet-btn"
             onClick={handlePlaceBet}
-            disabled={!prediction || betAmount > userBalance || betAmount < MIN_BET || betAmount > MAX_BET || loading}
+            disabled={!prediction || betAmount > userBalance || betAmount < minBet || betAmount > maxBet || loading}
           >
             {loading ? t('placingBet') : t('placeBet')}
           </button>

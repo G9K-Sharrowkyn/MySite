@@ -4,6 +4,7 @@ import {
   createPost,
   getPostById,
   getPostsByUser,
+  normalizePostForResponse,
   updatePost,
   deletePost,
   restorePost,
@@ -20,6 +21,7 @@ import {
   searchUsersForChallenge
 } from '../controllers/postController.js';
 import auth from '../middleware/auth.js';
+import { optionalAuth } from '../middleware/optionalAuth.js';
 import { readDb } from '../repositories/index.js';
 
 const router = express.Router();
@@ -62,12 +64,12 @@ const collectTags = (posts) => {
 // @route   GET api/posts
 // @desc    Get all posts
 // @access  Public
-router.get('/', getAllPosts);
+router.get('/', optionalAuth, getAllPosts);
 
 // @route   GET api/posts/user/:userId
 // @desc    Get posts by user
 // @access  Public
-router.get('/user/:userId', getPostsByUser);
+router.get('/user/:userId', optionalAuth, getPostsByUser);
 
 // @route   POST api/posts
 // @desc    Create a new post
@@ -77,9 +79,10 @@ router.post('/', auth, createPost);
 // @route   GET api/posts/official
 // @desc    Get all official posts
 // @access  Public
-router.get('/official', async (req, res) => {
+router.get('/official', optionalAuth, async (req, res) => {
   try {
     const { limit = 20, page = 1, sortBy = 'createdAt' } = req.query;
+    const viewerUserId = req.user?.id || null;
 
     // Build sort object
     const db = await readDb();
@@ -102,37 +105,9 @@ router.get('/official', async (req, res) => {
       pageNumber * limitNumber
     );
 
-    const formattedPosts = paged.map((post) => {
-      const author = db.users.find(
-        (user) => (user.id || user._id) === post.authorId
-      );
-      const fight = post.fight
-        ? {
-            ...post.fight,
-            teamA: normalizeFightTeam(post.fight.teamA),
-            teamB: normalizeFightTeam(post.fight.teamB),
-            votes: {
-              teamA: post.fight.votes?.teamA || 0,
-              teamB: post.fight.votes?.teamB || 0,
-              draw: post.fight.votes?.draw || 0,
-              voters: post.fight.votes?.voters || []
-            }
-          }
-        : null;
-      return {
-        ...post,
-        id: post.id || post._id,
-        fight,
-        author: author
-          ? {
-              id: author.id || author._id,
-              username: author.username,
-              profilePicture: author.profile?.profilePicture || author.profile?.avatar || '',
-              role: author.role || 'user'
-            }
-          : null
-      };
-    });
+    const formattedPosts = paged.map((post) =>
+      normalizePostForResponse(post, db.users, { viewerUserId })
+    );
 
     res.json({
       fights: formattedPosts,
@@ -207,7 +182,7 @@ router.get('/deleted', auth, getDeletedPosts);
 // @route   GET api/posts/:id
 // @desc    Get post by ID
 // @access  Public
-router.get('/:id', getPostById);
+router.get('/:id', optionalAuth, getPostById);
 
 // @route   POST api/posts/:id/fight-vote
 // @desc    Vote in fight post

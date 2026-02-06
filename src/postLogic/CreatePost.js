@@ -87,6 +87,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     photos: [],
     category: 'discussion',
     voteDuration: '3d',
+    voteVisibility: 'live',
     pollOptions: ['', ''], // For fight posts (mandatory) or other posts (optional)
     teams: [] // For fight posts: array of {name: '', warriors: [{ character, customImage }] }
   });
@@ -134,6 +135,8 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         return '3d';
       };
       let mappedVoteDuration = '3d';
+      const mappedVoteVisibility =
+        initialData.fight?.voteVisibility === 'final' ? 'final' : 'live';
       
       if (initialData.type === 'fight') {
         mappedVoteDuration = resolveVoteDuration(
@@ -175,6 +178,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         photos: initialData.photos ? initialData.photos.map(url => ({ url, type: 'database' })) : [],
         category: initialData.category || 'discussion',
         voteDuration: mappedVoteDuration,
+        voteVisibility: mappedVoteVisibility,
         pollOptions: mappedPollOptions,
         teams: mappedTeams
       });
@@ -379,6 +383,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           photos: [],
           category: 'discussion',
           voteDuration: '3d',
+          voteVisibility: 'live',
           pollOptions: ['', ''],
           teams: []
         });
@@ -406,6 +411,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
 
         submitData.teamA = teamANames.join(', ');
         submitData.teamB = teamBNames.join(', ');
+        submitData.voteVisibility = postData.voteVisibility;
       }
 
       if (initialData && initialData.id) {
@@ -435,6 +441,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           photos: [],
           category: 'discussion',
           voteDuration: '3d',
+          voteVisibility: 'live',
           pollOptions: ['', ''],
           teams: []
         });
@@ -668,6 +675,22 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                     <option value="3d">{t('threeDays') || '3 days'}</option>
                     <option value="7d">{t('oneWeek') || '1 week'}</option>
                     <option value="none">{t('noTimeLimit') || 'No time limit'}</option>
+                  </select>
+                </div>
+
+                <div className="vote-visibility">
+                  <label htmlFor="voteVisibility">
+                    {t('voteVisibility') || 'Vote visibility'}
+                  </label>
+                  <select
+                    id="voteVisibility"
+                    name="voteVisibility"
+                    value={postData.voteVisibility}
+                    onChange={handleInputChange}
+                    className="vote-visibility-select"
+                  >
+                    <option value="live">{t('showLiveVotes') || 'Show live votes'}</option>
+                    <option value="final">{t('hideVotesUntilEnd') || 'Hide votes until the end'}</option>
                   </select>
                 </div>
                 {/* Render first two teams in a horizontal row if present (community mode) */}

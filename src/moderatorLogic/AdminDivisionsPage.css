@@ -1209,6 +1209,11 @@ body.dark-mode .admin-info-card li {
   color: #6c757d;
 }
 
+.admin-fight-votes.hidden {
+  font-style: italic;
+  opacity: 0.75;
+}
+
 .admin-fight-timer {
   font-size: 0.8rem;
   color: #dc3545;

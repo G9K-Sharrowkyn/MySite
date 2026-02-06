@@ -7,6 +7,7 @@ import {
   withDb
 } from '../repositories/index.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
+import { applyDailyActivityBonus } from '../utils/coinBonus.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -109,6 +110,7 @@ export const sendMessage = async (req, res) => {
 
       await messagesRepo.insert(message, { db });
       createdMessage = message;
+      applyDailyActivityBonus(db, sender, 'message', 50);
 
       // Don't create bell notifications for messages - only chat icon counter
       // Messages have their own notification system (unread count on chat icon)

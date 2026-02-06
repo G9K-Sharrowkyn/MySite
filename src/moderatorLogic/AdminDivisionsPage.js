@@ -215,11 +215,12 @@ const AdminDivisionsPage = () => {
   const handleCreateTitleFight = async (divisionId) => {
     const challengerId = prompt('ID pretendenta do walki o tytuł:');
     if (!challengerId) return;
+    const voteVisibility = prompt('Vote visibility (live/final):', 'live') || 'live';
 
     try {
       await axios.post(
         '/api/divisions/moderator/create-title-fight',
-        { divisionId, challengerId },
+        { divisionId, challengerId, voteVisibility },
         { headers: { 'x-auth-token': token } }
       );
       showNotification('Walka o tytuł została stworzona', 'success');
@@ -234,11 +235,12 @@ const AdminDivisionsPage = () => {
     const fighter1Id = prompt('ID zawodnika 1:');
     const fighter2Id = prompt('ID zawodnika 2:');
     if (!fighter1Id || !fighter2Id) return;
+    const voteVisibility = prompt('Vote visibility (live/final):', 'live') || 'live';
 
     try {
       await axios.post(
         '/api/divisions/moderator/create-contender-match',
-        { divisionId, fighter1Id, fighter2Id },
+        { divisionId, fighter1Id, fighter2Id, voteVisibility },
         { headers: { 'x-auth-token': token } }
       );
       showNotification('Walka pretendentów została stworzona', 'success');
@@ -415,7 +417,11 @@ const AdminDivisionsPage = () => {
                                   ? '🥊 Contender Match'
                                   : '⚔️ Official Fight'}
                             </span>
-                            <span className="admin-fight-votes">🗳️ {fight.votes?.length || 0} votes</span>
+                            {fight.votesHidden || fight.fight?.votesHidden ? (
+                              <span className="admin-fight-votes hidden">Votes hidden until the end</span>
+                            ) : (
+                              <span className="admin-fight-votes">🗳️ {fight.votes?.length || 0} votes</span>
+                            )}
                           </div>
                         </div>
                       ))}

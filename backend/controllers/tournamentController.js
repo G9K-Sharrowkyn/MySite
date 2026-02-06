@@ -16,6 +16,35 @@ const findUserById = (users, userId) =>
 const findCharacterById = (characters, characterId) =>
   (characters || []).find((entry) => entry.id === characterId);
 
+const normalizeVoteVisibility = (value) => {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'final' || raw === 'hidden') return 'final';
+  return 'live';
+};
+
+const shouldRevealMatchVotes = (tournament, match) => {
+  const visibility = normalizeVoteVisibility(tournament?.settings?.voteVisibility);
+  if (visibility !== 'final') return true;
+  if (!match) return true;
+  if (match.status === 'completed') return true;
+  if (tournament?.status && tournament.status !== 'active') return true;
+  return false;
+};
+
+const applyTournamentVoteVisibility = (tournament, match) => {
+  if (!match) return match;
+  if (shouldRevealMatchVotes(tournament, match)) {
+    return { ...match, votesHidden: false };
+  }
+
+  return {
+    ...match,
+    votesHidden: true,
+    votes: { player1: 0, player2: 0 },
+    voters: []
+  };
+};
+
 const buildParticipant = (context, participant) => {
   if (!participant) return null;
   const users = context?.users || [];
@@ -244,7 +273,8 @@ export const createTournament = async (req, res) => {
     battleDate,          // ISO date string from user's timezone
     userTimezone,        // User's timezone (e.g., 'America/New_York')
     teamSize,            // 1, 2, 3, or more
-    showOnFeed           // Boolean: show battles on main feed
+    showOnFeed,          // Boolean: show battles on main feed
+    voteVisibility       // 'live' or 'final'
   } = req.body;
 
   try {
@@ -302,6 +332,7 @@ export const createTournament = async (req, res) => {
           userTimezone: userTimezone || 'UTC', // Creator's timezone for reference
           teamSize: teamSize || 1,
           showOnFeed: showOnFeed !== undefined ? showOnFeed : false,
+          voteVisibility: normalizeVoteVisibility(voteVisibility),
           publicJoin: true,
           votingDuration: 24,
           requireApproval: false
@@ -496,6 +527,8 @@ export const voteInTournament = async (req, res) => {
 
   try {
     let matchResult;
+    let safeMatch;
+    let totalVotes = 0;
 
     await withDb(async (db) => {
       const tournament = await tournamentsRepo.findOne(
@@ -555,13 +588,16 @@ export const voteInTournament = async (req, res) => {
       tournament.updatedAt = new Date().toISOString();
 
       matchResult = match;
+      safeMatch = applyTournamentVoteVisibility(tournament, match);
+      totalVotes =
+        (safeMatch?.votes?.player1 || 0) + (safeMatch?.votes?.player2 || 0);
       return db;
     });
 
     res.json({
       msg: 'Vote recorded successfully',
-      match: matchResult,
-      totalVotes: (matchResult.votes?.player1 || 0) + (matchResult.votes?.player2 || 0)
+      match: safeMatch || matchResult,
+      totalVotes
     });
   } catch (err) {
     if (err.code === 'NOT_FOUND') {
@@ -592,14 +628,23 @@ export const getTournamentBrackets = async (req, res) => {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
 
+    const voteVisibility = normalizeVoteVisibility(tournament?.settings?.voteVisibility);
+    const brackets = (tournament.brackets || []).map((round) => ({
+      ...round,
+      matches: (round.matches || []).map((match) =>
+        applyTournamentVoteVisibility(tournament, match)
+      )
+    }));
+
     res.json({
       tournament: {
         id: tournament.id,
         title: tournament.title,
         status: tournament.status,
-        winner: tournament.winner
+        winner: tournament.winner,
+        voteVisibility
       },
-      brackets: tournament.brackets || []
+      brackets
     });
   } catch (err) {
     console.error(err.message);

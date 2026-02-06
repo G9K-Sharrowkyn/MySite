@@ -13,6 +13,7 @@ import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, getRankInfo, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
+import { applyDailyActivityBonus } from '../utils/coinBonus.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveRole = (user) => user?.role || 'user';
@@ -49,21 +50,58 @@ const normalizeFightTeam = (value) => {
   return value ? String(value) : '';
 };
 
-const normalizePostForResponse = (post, users) => {
+const normalizeVoteVisibility = (value) => {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'final' || raw === 'hidden') return 'final';
+  return 'live';
+};
+
+const getFightMyVote = (fight, viewerUserId) => {
+  if (!viewerUserId || !fight?.votes?.voters) return null;
+  const vote = (fight.votes.voters || []).find((entry) => entry.userId === viewerUserId);
+  return vote?.team || null;
+};
+
+const shouldRevealFightVotes = (fight, now = new Date()) => {
+  const visibility = normalizeVoteVisibility(fight?.voteVisibility);
+  if (visibility !== 'final') return true;
+  const lockTimeValue = fight?.lockTime;
+  if (!lockTimeValue) return true; // no lockTime -> don't hide forever
+  const lockTime = new Date(lockTimeValue);
+  if (Number.isNaN(lockTime.getTime())) return true;
+  if (fight?.status && fight.status !== 'active') return true;
+  return now >= lockTime;
+};
+
+export const normalizePostForResponse = (post, users, options = {}) => {
   const author = users.find((user) => resolveUserId(user) === post.authorId);
   const normalized = { ...post };
   const postId = normalized.id || normalized._id;
 
   if (normalized.fight) {
+    const now = options.now instanceof Date ? options.now : new Date();
+    const viewerUserId = options.viewerUserId || null;
+    const voteVisibility = normalizeVoteVisibility(normalized.fight.voteVisibility);
+    const revealVotes = shouldRevealFightVotes(normalized.fight, now);
+    const myVote = getFightMyVote(normalized.fight, viewerUserId);
+    const rawVotes = normalized.fight.votes || {};
+    const teamA = revealVotes ? rawVotes.teamA || 0 : 0;
+    const teamB = revealVotes ? rawVotes.teamB || 0 : 0;
+    const draw = revealVotes ? rawVotes.draw || 0 : 0;
+
     normalized.fight = {
       ...normalized.fight,
       teamA: normalizeFightTeam(normalized.fight.teamA),
       teamB: normalizeFightTeam(normalized.fight.teamB),
+      voteVisibility,
+      votesHidden: !revealVotes && voteVisibility === 'final',
+      myVote,
       votes: {
-        teamA: normalized.fight.votes?.teamA || 0,
-        teamB: normalized.fight.votes?.teamB || 0,
-        draw: normalized.fight.votes?.draw || 0,
-        voters: normalized.fight.votes?.voters || []
+        teamA,
+        teamB,
+        draw,
+        // Never ship the voters list to the client (privacy + payload size).
+        voters: []
       }
     };
   }
@@ -153,6 +191,8 @@ export const getAllPosts = async (req, res) => {
   const { page = 1, limit = 10, sortBy = 'createdAt', category } = req.query;
   try {
     const db = await readDb();
+    const viewerUserId = req.user?.id || null;
+    const now = new Date();
     const normalizedCategory = String(category || '').toLowerCase();
     let filteredPosts = (db.posts || []).filter((post) => !isPostSoftDeleted(post));
     const commentCounts = buildCommentCountByPostId(db.comments || []);
@@ -180,7 +220,7 @@ export const getAllPosts = async (req, res) => {
     );
 
     const postsWithUserInfo = pagedPosts.map((post) => {
-      const normalized = normalizePostForResponse(post, db.users);
+      const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
       const postId = normalized.id;
       return {
         ...normalized,
@@ -207,6 +247,8 @@ export const getPostsByUser = async (req, res) => {
 
   try {
     const db = await readDb();
+    const viewerUserId = req.user?.id || null;
+    const now = new Date();
     let posts = (db.posts || []).filter(
       (post) => post.authorId === userId && !isPostSoftDeleted(post)
     );
@@ -226,7 +268,7 @@ export const getPostsByUser = async (req, res) => {
     const commentCounts = buildCommentCountByPostId(db.comments || []);
 
     const postsWithUserInfo = sorted.map((post) => {
-      const normalized = normalizePostForResponse(post, db.users);
+      const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
       const postId = normalized.id;
       return {
         ...normalized,
@@ -247,13 +289,15 @@ export const getPostById = async (req, res) => {
 
   try {
     const db = await readDb();
+    const viewerUserId = req.user?.id || null;
+    const now = new Date();
     const post = findPostById(db.posts, id);
 
     if (!post || isPostSoftDeleted(post)) {
       return res.status(404).json({ msg: 'Post not found' });
     }
 
-    const normalized = normalizePostForResponse(post, db.users);
+    const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
     const commentCount = (db.comments || []).filter((comment) => {
       const isPostComment = comment?.type === 'post' || !comment?.type;
       return isPostComment && comment.postId === normalized.id;
@@ -280,6 +324,7 @@ export const createPost = async (req, res) => {
     photos,
     pollOptions,
     voteDuration,
+    voteVisibility,
     isOfficial,
     moderatorCreated,
     category
@@ -362,6 +407,7 @@ export const createPost = async (req, res) => {
 
       if (postType === 'fight') {
         const lockTime = resolveLockTime(voteDuration);
+        const normalizedVisibility = normalizeVoteVisibility(voteVisibility);
         postData.fight = {
           teamA: teamA || '',
           teamB: teamB || '',
@@ -373,6 +419,7 @@ export const createPost = async (req, res) => {
           },
           status: 'active',
           isOfficial: Boolean(isOfficial),
+          voteVisibility: normalizedVisibility,
           lockTime: lockTime ? lockTime.toISOString() : null,
           winner: null,
           winnerTeam: null
@@ -442,6 +489,7 @@ export const createPost = async (req, res) => {
         
         addRankPoints(author, RANK_POINT_VALUES.post);
         author.updatedAt = now.toISOString();
+        applyDailyActivityBonus(db, author, 'post', 100);
 
       createdPost = postData;
       return db;
@@ -836,12 +884,14 @@ export const getOfficialFights = async (req, res) => {
 
   try {
     const db = await readDb();
+    const viewerUserId = req.user?.id || null;
+    const now = new Date();
     const fights = db.posts.filter(
       (post) => post.isOfficial && post.type === 'fight' && post.fight?.status === 'active'
     );
     const sorted = sortPosts(fights, 'createdAt').slice(0, Number(limit));
     const fightsWithUserInfo = sorted.map((post) =>
-      normalizePostForResponse(post, db.users)
+      normalizePostForResponse(post, db.users, { viewerUserId, now })
     );
 
     res.json({
@@ -860,6 +910,7 @@ export const voteInFight = async (req, res) => {
 
   try {
     let updatedVotes;
+    let updatedFight;
 
     await withDb(async (db) => {
       const post = await postsRepo.findOne(
@@ -926,13 +977,25 @@ export const voteInFight = async (req, res) => {
       if (team === 'draw') post.fight.votes.draw += 1;
 
       updatedVotes = post.fight.votes;
+      updatedFight = post.fight;
       post.updatedAt = new Date().toISOString();
       return db;
     });
 
+    const now = new Date();
+    const revealVotes = shouldRevealFightVotes(updatedFight, now);
+    const visibility = normalizeVoteVisibility(updatedFight?.voteVisibility);
+    const votesHidden = !revealVotes && visibility === 'final';
+    const sanitizedVotes = {
+      teamA: updatedVotes?.teamA || 0,
+      teamB: updatedVotes?.teamB || 0,
+      draw: updatedVotes?.draw || 0
+    };
+
     res.json({
       msg: 'Vote recorded successfully',
-      votes: updatedVotes
+      votes: votesHidden ? { teamA: 0, teamB: 0, draw: 0 } : sanitizedVotes,
+      votesHidden
     });
   } catch (err) {
     if (err.code === 'POST_NOT_FOUND') {
@@ -994,12 +1057,12 @@ export const addReaction = async (req, res) => {
 
       post.updatedAt = new Date().toISOString();
 
-      if (isNewReaction) {
-        const reactingUser = await usersRepo.findOne(
-          (user) => resolveUserId(user) === req.user.id,
-          { db }
-        );
-        if (reactingUser) {
+      const reactingUser = await usersRepo.findOne(
+        (user) => resolveUserId(user) === req.user.id,
+        { db }
+      );
+      if (reactingUser) {
+        if (isNewReaction) {
           reactingUser.activity = reactingUser.activity || {
             postsCreated: 0,
             commentsPosted: 0,
@@ -1019,6 +1082,7 @@ export const addReaction = async (req, res) => {
           );
           reactingUser.updatedAt = new Date().toISOString();
         }
+        applyDailyActivityBonus(db, reactingUser, 'reaction', 50);
       }
       return db;
     });
@@ -1274,6 +1338,7 @@ export const createUserChallenge = async (req, res) => {
         );
         addRankPoints(challenger, RANK_POINT_VALUES.post);
         challenger.updatedAt = now.toISOString();
+        applyDailyActivityBonus(db, challenger, 'post', 100);
 
       createdPost = postData;
       return db;

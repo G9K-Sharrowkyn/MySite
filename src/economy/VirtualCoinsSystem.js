@@ -70,17 +70,14 @@ const VirtualCoinsSystem = ({ user }) => {
 
   // Ways to earn coins
   const coinEarningMethods = [
-    { action: 'Daily Bonus', amount: 10, icon: '📅' },
-    { action: 'Cast Vote in Fight', amount: 10, icon: '🗳️' },
-    { action: 'Comment on Fight', amount: 5, icon: '💬' },
-    { action: 'Share Fight', amount: 15, icon: '📤' },
-    { action: 'Win Official Fight', amount: 100, icon: '🏆' },
-    { action: 'Win Title Fight', amount: 500, icon: '👑' },
+    { action: 'First Login of the Day', amount: 50, icon: '🔑' },
+    { action: 'First Post of the Day', amount: 100, icon: '📝' },
+    { action: 'First Comment of the Day', amount: 50, icon: '💬' },
+    { action: 'First Reaction of the Day', amount: 50, icon: '👍' },
+    { action: 'First Message of the Day', amount: 50, icon: '✉️' },
     { action: 'Successful Bet', amount: 'Variable', icon: '💰' },
     { action: 'Daily Challenge Complete', amount: 75, icon: '🎯' },
-    { action: 'Weekly Challenge Complete', amount: 200, icon: '⭐' },
-    { action: 'Profile Comment Received', amount: 2, icon: '💭' },
-    { action: 'Friend Referral', amount: 100, icon: '👥' }
+    { action: 'Weekly Challenge Complete', amount: 200, icon: '⭐' }
   ];
 
   const fetchEconomyData = useCallback(async () => {
@@ -371,7 +368,7 @@ const VirtualCoinsSystem = ({ user }) => {
         {coinHistory.slice(0, 50).map(transaction => (
           <div key={transaction.id} className={`history-item ${transaction.type}`}>
             <div className="transaction-icon">
-              {transaction.type === 'earned' ? '💰' : '💸'}
+              {Number(transaction.amount || 0) >= 0 ? '💰' : '💸'}
             </div>
             <div className="transaction-info">
               <span className="transaction-description">{transaction.description}</span>
@@ -380,7 +377,7 @@ const VirtualCoinsSystem = ({ user }) => {
               </span>
             </div>
             <div className={`transaction-amount ${transaction.type}`}>
-              {transaction.type === 'earned' ? '+' : '-'}🪙 {transaction.amount}
+              {Number(transaction.amount || 0) >= 0 ? '+' : '-'}🪙 {Math.abs(transaction.amount || 0)}
             </div>
           </div>
         ))}

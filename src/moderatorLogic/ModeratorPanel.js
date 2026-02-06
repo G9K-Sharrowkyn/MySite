@@ -68,6 +68,7 @@ const ModeratorPanel = () => {
   const [restoreConfirmText, setRestoreConfirmText] = useState('');
   const [suspendConfirmText, setSuspendConfirmText] = useState('');
   const [unsuspendConfirmText, setUnsuspendConfirmText] = useState('');
+  const [divisionVoteVisibility, setDivisionVoteVisibility] = useState('live');
   
   // Fight creation state
   const [newFight, setNewFight] = useState({
@@ -76,7 +77,8 @@ const ModeratorPanel = () => {
     character1: null,
     character2: null,
     category: 'Main Event',
-    featured: false
+    featured: false,
+    voteVisibility: 'live'
   });
 
   const navigate = useNavigate();
@@ -314,7 +316,8 @@ const ModeratorPanel = () => {
         featured: newFight.featured,
         category: newFight.category,
         isOfficial: true,
-        moderatorCreated: true
+        moderatorCreated: true,
+        voteVisibility: newFight.voteVisibility
       };
 
       await axios.post('/api/posts', fightData, {
@@ -328,7 +331,8 @@ const ModeratorPanel = () => {
         character1: null,
         character2: null,
         category: 'Main Event',
-        featured: false
+        featured: false,
+        voteVisibility: 'live'
       });
       
       fetchData();
@@ -641,7 +645,7 @@ const ModeratorPanel = () => {
   const handleCreateTitleFight = async (divisionId, challengerId) => {
     try {
       await axios.post(`/api/divisions/${divisionId}/title-fight`,
-        { challengerId },
+        { challengerId, voteVisibility: divisionVoteVisibility },
         { headers: { 'x-auth-token': token } }
       );
       
@@ -656,7 +660,7 @@ const ModeratorPanel = () => {
   const handleCreateContenderMatch = async (divisionId, fighter1Id, fighter2Id) => {
     try {
       await axios.post(`/api/divisions/${divisionId}/contender-match`,
-        { fighter1Id, fighter2Id },
+        { fighter1Id, fighter2Id, voteVisibility: divisionVoteVisibility },
         { headers: { 'x-auth-token': token } }
       );
       
@@ -773,6 +777,16 @@ const ModeratorPanel = () => {
                       <option value="Co-Main Event">{t('moderatorPanel.coMainEvent')}</option>
                       <option value="Featured Fight">{t('moderatorPanel.featuredFight')}</option>
                       <option value="Special Event">{t('moderatorPanel.specialEvent')}</option>
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>{t('voteVisibility') || 'Vote visibility'}</label>
+                    <select
+                      value={newFight.voteVisibility}
+                      onChange={(e) => setNewFight({ ...newFight, voteVisibility: e.target.value })}
+                    >
+                      <option value="live">{t('showLiveVotes') || 'Show live votes'}</option>
+                      <option value="final">{t('hideVotesUntilEnd') || 'Hide votes until the end'}</option>
                     </select>
                   </div>
                 </div>
@@ -1121,7 +1135,11 @@ const ModeratorPanel = () => {
                                fight.fightType === 'contender' ? ' Contender Match' :
                                ' Official Fight'}
                             </span>
-                            <span className="fight-votes-mod"> {fight.votes?.length || 0} votes</span>
+                            {fight.votesHidden || fight.fight?.votesHidden ? (
+                              <span className="fight-votes-mod hidden">{t('votesHiddenUntilEnd') || 'Votes hidden until the end'}</span>
+                            ) : (
+                              <span className="fight-votes-mod"> {fight.votes?.length || 0} votes</span>
+                            )}
                             {fight.endTime && (
                               <span className="fight-timer-mod"> {new Date(fight.endTime).toLocaleDateString()}</span>
                             )}
@@ -1133,6 +1151,16 @@ const ModeratorPanel = () => {
                 )}
 
                 {/* Moderator Actions for Division */}
+                <div className="division-vote-visibility">
+                  <label>{t('voteVisibility') || 'Vote visibility'}</label>
+                  <select
+                    value={divisionVoteVisibility}
+                    onChange={(e) => setDivisionVoteVisibility(e.target.value)}
+                  >
+                    <option value="live">{t('showLiveVotes') || 'Show live votes'}</option>
+                    <option value="final">{t('hideVotesUntilEnd') || 'Hide votes until the end'}</option>
+                  </select>
+                </div>
                 <div className="division-management-actions">
                   <button
                     onClick={() => {

@@ -6,7 +6,7 @@ import {
   usersRepo,
   withDb
 } from '../repositories/index.js';
-import { applyDailyBonus } from '../utils/coinBonus.js';
+import { ensureCoinAccount } from '../utils/coinBonus.js';
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ router.post('/purchase', async (req, res) => {
         throw error;
       }
 
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
 
       const itemCost = Number(cost || 0);
       if (user.coins.balance < itemCost) {

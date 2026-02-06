@@ -9,7 +9,7 @@ import {
   usersRepo,
   withDb
 } from '../repositories/index.js';
-import { applyDailyBonus } from '../utils/coinBonus.js';
+import { applyDailyActivityBonus } from '../utils/coinBonus.js';
 import {
   sendEmailVerificationEmail,
   sendPasswordResetEmail,
@@ -534,7 +534,7 @@ export const login = async (req, res) => {
           storedUser.id = uuidv4();
         }
         ensurePrimaryAdminRole(storedUser);
-        applyDailyBonus(db, storedUser);
+        applyDailyActivityBonus(db, storedUser, 'login', 50);
         storedUser.profile = storedUser.profile || {};
         storedUser.profile.lastActive = now;
         storedUser.updatedAt = now;
@@ -651,7 +651,7 @@ export const loginWithGoogle = async (req, res) => {
           throw error;
         }
 
-        applyDailyBonus(db, user);
+        applyDailyActivityBonus(db, user, 'login', 50);
         user.profile.lastActive = now;
         user.updatedAt = now;
         responseUser = user;
@@ -1030,7 +1030,7 @@ export const verifyLoginTwoFactor = async (req, res) => {
           fallbackUser.profile = fallbackUser.profile || {};
           fallbackUser.profile.lastActive = new Date().toISOString();
           fallbackUser.updatedAt = new Date().toISOString();
-          applyDailyBonus(db, fallbackUser);
+          applyDailyActivityBonus(db, fallbackUser, 'login', 50);
           authenticatedUser = fallbackUser;
           return db;
         }
@@ -1097,7 +1097,7 @@ export const verifyLoginTwoFactor = async (req, res) => {
       user.profile = user.profile || {};
       user.profile.lastActive = new Date().toISOString();
       user.updatedAt = new Date().toISOString();
-      applyDailyBonus(db, user);
+      applyDailyActivityBonus(db, user, 'login', 50);
       authenticatedUser = user;
       return db;
     });

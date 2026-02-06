@@ -77,8 +77,12 @@ const TournamentBracket = ({ tournamentId, status }) => {
         </div>
         
         <div className="participant-actions">
-          {match.votes && (
-            <span className="vote-count">{match.votes[participant.userId] || 0} votes</span>
+          {match.votesHidden ? (
+            <span className="vote-count hidden">Votes hidden until the end</span>
+          ) : (
+            match.votes && (
+              <span className="vote-count">{match.votes[participant.userId] || 0} votes</span>
+            )
           )}
           
           {canVote && !match.winner && (

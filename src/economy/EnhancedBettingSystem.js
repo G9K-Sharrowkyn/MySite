@@ -135,9 +135,9 @@ const EnhancedBettingSystem = ({ user }) => {
     
     return parlayBets.reduce((total, bet) => {
       const fight = bet.fight;
-      const odds = bet.prediction === 'team1' ? 
-        (fight.totalBets?.team2 || 1) / (fight.totalBets?.team1 || 1) :
-        (fight.totalBets?.team1 || 1) / (fight.totalBets?.team2 || 1);
+      const odds = bet.prediction === 'team1'
+        ? Number(fight.odds?.team1 || 1.1)
+        : Number(fight.odds?.team2 || 1.1);
       return total * Math.max(odds, 1.1); // Minimum 1.1 odds
     }, 1);
   };
@@ -535,7 +535,7 @@ const EnhancedBettingSystem = ({ user }) => {
                 <div className="bet-option">
                   <div className="odds-display">
                     <span className="odds">
-                      {fight.totalBets?.team2 || 1}:{fight.totalBets?.team1 || 1}
+                      @{Number(fight.odds?.team1 || 2).toFixed(2)}
                     </span>
                     <span className="team-label">{fight.team1.name}</span>
                   </div>
@@ -543,8 +543,8 @@ const EnhancedBettingSystem = ({ user }) => {
                   <div className="bet-controls">
                     <input
                       type="number"
-                      min="1"
-                      max={userCoins}
+                      min={fight.bettingMeta?.minBet || 1}
+                      max={Math.min(fight.bettingMeta?.maxBet || userCoins, userCoins)}
                       placeholder="Bet amount"
                       onChange={(e) => {
                         const amount = parseInt(e.target.value) || 0;
@@ -580,7 +580,7 @@ const EnhancedBettingSystem = ({ user }) => {
                 <div className="bet-option">
                   <div className="odds-display">
                     <span className="odds">
-                      {fight.totalBets?.team1 || 1}:{fight.totalBets?.team2 || 1}
+                      @{Number(fight.odds?.team2 || 2).toFixed(2)}
                     </span>
                     <span className="team-label">{fight.team2.name}</span>
                   </div>
@@ -588,8 +588,8 @@ const EnhancedBettingSystem = ({ user }) => {
                   <div className="bet-controls">
                     <input
                       type="number"
-                      min="1"
-                      max={userCoins}
+                      min={fight.bettingMeta?.minBet || 1}
+                      max={Math.min(fight.bettingMeta?.maxBet || userCoins, userCoins)}
                       placeholder="Bet amount"
                       onChange={(e) => {
                         const amount = parseInt(e.target.value) || 0;

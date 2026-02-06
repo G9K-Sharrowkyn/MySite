@@ -346,6 +346,68 @@ const normalizeVoteTeam = (value) => {
   return null;
 };
 
+const normalizeVoteVisibility = (value) => {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === 'final' || raw === 'hidden') return 'final';
+  return 'live';
+};
+
+const getDivisionFightVisibility = (fight) =>
+  normalizeVoteVisibility(fight?.fight?.voteVisibility || fight?.voteVisibility);
+
+const getDivisionFightLockTime = (fight) =>
+  fight?.fight?.lockTime || fight?.endTime || null;
+
+const shouldRevealDivisionVotes = (fight, now = new Date()) => {
+  const visibility = getDivisionFightVisibility(fight);
+  if (visibility !== 'final') return true;
+  const lockTimeValue = getDivisionFightLockTime(fight);
+  if (!lockTimeValue) return true;
+  const lockTime = new Date(lockTimeValue);
+  if (Number.isNaN(lockTime.getTime())) return true;
+  if (fight?.status && fight.status !== 'active') return true;
+  return now >= lockTime;
+};
+
+const applyDivisionVoteVisibility = (fight, now = new Date()) => {
+  if (!fight) return fight;
+  const visibility = getDivisionFightVisibility(fight);
+  const revealVotes = shouldRevealDivisionVotes(fight, now);
+  if (revealVotes) {
+    if (fight.fight) {
+      return {
+        ...fight,
+        votesHidden: false,
+        fight: { ...fight.fight, voteVisibility: visibility, votesHidden: false }
+      };
+    }
+    return { ...fight, votesHidden: false };
+  }
+
+  const masked = {
+    ...fight,
+    votesHidden: true
+  };
+
+  if (Array.isArray(masked.votes)) {
+    masked.votes = [];
+  }
+  if (typeof masked.team1Votes === 'number') masked.team1Votes = 0;
+  if (typeof masked.team2Votes === 'number') masked.team2Votes = 0;
+  if (typeof masked.drawVotes === 'number') masked.drawVotes = 0;
+
+  if (masked.fight) {
+    masked.fight = {
+      ...masked.fight,
+      voteVisibility: visibility,
+      votesHidden: true,
+      votes: { teamA: 0, teamB: 0, draw: 0, voters: [] }
+    };
+  }
+
+  return masked;
+};
+
 const buildTeamName = (team) =>
   [team?.mainCharacter?.name, team?.secondaryCharacter?.name]
     .filter(Boolean)
@@ -402,7 +464,8 @@ const buildDivisionFight = ({
   description,
   createdBy,
   durationHours = 72,
-  bettingPeriodHours
+  bettingPeriodHours,
+  voteVisibility
 }) => {
   const id = uuidv4();
   const now = new Date();
@@ -459,6 +522,7 @@ const buildDivisionFight = ({
       teamB: teamBName,
       votes: { teamA: 0, teamB: 0, draw: 0, voters: [] },
       status: 'active',
+      voteVisibility: String(voteVisibility || '').toLowerCase() === 'final' ? 'final' : 'live',
       lockTime: endTime,
       isOfficial: true,
       winner: null,
@@ -860,10 +924,11 @@ router.get('/user-teams/:userId', async (req, res) => {
 router.get('/active-fights', async (_req, res) => {
   try {
     const db = await readDb();
+    const now = new Date();
     const fights = (db.divisionFights || []).filter(
       (fight) => fight.status === 'active'
     );
-    res.json(fights);
+    res.json(fights.map((fight) => applyDivisionVoteVisibility(fight, now)));
   } catch (error) {
     console.error('Error getting active fights:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -927,14 +992,19 @@ router.post('/vote', auth, async (req, res) => {
       return db;
     });
 
+    const safeFight = applyDivisionVoteVisibility(updatedFight, new Date());
+    const votesHidden = Boolean(safeFight?.votesHidden || safeFight?.fight?.votesHidden);
+
     res.json({
       msg: 'Vote recorded',
-      fight: updatedFight,
-      votes: {
-        team1: updatedFight.team1Votes || 0,
-        team2: updatedFight.team2Votes || 0,
-        draw: updatedFight.drawVotes || 0
-      }
+      fight: safeFight,
+      votes: votesHidden
+        ? { team1: 0, team2: 0, draw: 0 }
+        : {
+            team1: updatedFight.team1Votes || 0,
+            team2: updatedFight.team2Votes || 0,
+            draw: updatedFight.drawVotes || 0
+          }
     });
   } catch (error) {
     if (error.code === 'NOT_FOUND') {
@@ -949,10 +1019,11 @@ router.post('/vote', auth, async (req, res) => {
 router.get('/betting-fights', async (_req, res) => {
   try {
     const db = await readDb();
+    const now = new Date();
     const fights = (db.divisionFights || []).filter(
       (fight) => fight.bettingCloses
     );
-    res.json(fights);
+    res.json(fights.map((fight) => applyDivisionVoteVisibility(fight, now)));
   } catch (error) {
     console.error('Error getting betting fights:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -1211,6 +1282,7 @@ router.get('/:divisionId/championship-history', async (req, res) => {
 router.get('/overview', async (_req, res) => {
   try {
     const db = await readDb();
+    const now = new Date();
     const stats = {};
     const champions = {};
     const titleFights = {};
@@ -1225,16 +1297,20 @@ router.get('/overview', async (_req, res) => {
     divisions.forEach((division) => {
       stats[division.id] = buildDivisionStats(division.id, db);
       champions[division.id] = buildChampion(division.id, db);
-      titleFights[division.id] = fights.filter(
-        (fight) =>
-          fight.divisionId === division.id &&
-          fight.fightType === 'title' &&
-          fight.status === 'active'
-      );
-      activeFights[division.id] = fights.filter(
-        (fight) =>
-          fight.divisionId === division.id && fight.status === 'active'
-      );
+      titleFights[division.id] = fights
+        .filter(
+          (fight) =>
+            fight.divisionId === division.id &&
+            fight.fightType === 'title' &&
+            fight.status === 'active'
+        )
+        .map((fight) => applyDivisionVoteVisibility(fight, now));
+      activeFights[division.id] = fights
+        .filter(
+          (fight) =>
+            fight.divisionId === division.id && fight.status === 'active'
+        )
+        .map((fight) => applyDivisionVoteVisibility(fight, now));
       championshipHistory[division.id] = buildChampionshipHistory(division.id, db);
     });
 
@@ -1254,13 +1330,17 @@ router.get('/overview', async (_req, res) => {
 // Title fights for division
 router.get('/:divisionId/title-fights', async (req, res) => {
   try {
-    const fights = (await readDb()).divisionFights || [];
-    const titleFights = fights.filter(
+    const db = await readDb();
+    const now = new Date();
+    const fights = db.divisionFights || [];
+    const titleFights = fights
+      .filter(
       (fight) =>
         fight.divisionId === req.params.divisionId &&
         fight.fightType === 'title' &&
         fight.status === 'active'
-    );
+      )
+      .map((fight) => applyDivisionVoteVisibility(fight, now));
     res.json({ titleFights });
   } catch (error) {
     console.error('Error getting title fights:', error);
@@ -1271,11 +1351,15 @@ router.get('/:divisionId/title-fights', async (req, res) => {
 // Active fights for division
 router.get('/:divisionId/active-fights', async (req, res) => {
   try {
-    const fights = (await readDb()).divisionFights || [];
-    const activeFights = fights.filter(
+    const db = await readDb();
+    const now = new Date();
+    const fights = db.divisionFights || [];
+    const activeFights = fights
+      .filter(
       (fight) =>
         fight.divisionId === req.params.divisionId && fight.status === 'active'
-    );
+      )
+      .map((fight) => applyDivisionVoteVisibility(fight, now));
     res.json({ activeFights });
   } catch (error) {
     console.error('Error getting active fights:', error);
@@ -1287,6 +1371,7 @@ router.get('/:divisionId/active-fights', async (req, res) => {
 router.get('/:divisionId/contender-matches', async (req, res) => {
   try {
     const db = await readDb();
+    const now = new Date();
     const fights = (db.divisionFights || []).filter(
       (fight) =>
         fight.divisionId === req.params.divisionId &&
@@ -1300,11 +1385,11 @@ router.get('/:divisionId/contender-matches', async (req, res) => {
       const challenger2 = fight.team2?.userId
         ? findUserById(db, fight.team2.userId)
         : null;
-      return {
+      return applyDivisionVoteVisibility({
         ...fight,
         challenger1: buildChallenger(challenger1, req.params.divisionId),
         challenger2: buildChallenger(challenger2, req.params.divisionId)
-      };
+      }, now);
     });
 
     res.json(withChallengers);
@@ -1383,7 +1468,8 @@ router.post('/:divisionId/title-fight', [auth, moderatorAuth], async (req, res) 
         team1,
         team2,
         description,
-        createdBy: author
+        createdBy: author,
+        voteVisibility: req.body.voteVisibility
       });
 
       db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
@@ -1457,7 +1543,8 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
         team1,
         team2,
         description,
-        createdBy: author
+        createdBy: author,
+        voteVisibility: req.body.voteVisibility
       });
 
       db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
@@ -1566,7 +1653,8 @@ router.post('/create-fight', async (req, res) => {
         team2: normalizedTeam2,
         description: req.body.description,
         createdBy: null,
-        durationHours: duration
+        durationHours: duration,
+        voteVisibility: req.body.voteVisibility
       });
 
       db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
@@ -1633,7 +1721,8 @@ router.post('/create-official-fight', async (req, res) => {
         description: req.body.description,
         createdBy: null,
         durationHours: fightDuration,
-        bettingPeriodHours: bettingPeriod
+        bettingPeriodHours: bettingPeriod,
+        voteVisibility: req.body.voteVisibility
       });
 
       db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];

@@ -178,6 +178,12 @@
   font-size: 13px;
 }
 
+.vote-count.hidden {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-style: italic;
+}
+
 .vote-btn {
   padding: 5px 15px;
   background: #ff6b00;

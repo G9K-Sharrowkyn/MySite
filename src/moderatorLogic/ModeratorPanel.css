@@ -4217,6 +4217,11 @@ body.light-mode .fight-timer-mod {
   color: #64748b;
 }
 
+.fight-votes-mod.hidden {
+  font-style: italic;
+  opacity: 0.75;
+}
+
 /* Division Management Actions */
 .division-management-actions {
   display: flex;
@@ -4772,6 +4777,27 @@ body.light-mode .compact-division-stats span {
 /* Tournament Management Section */
 .tournaments-management {
   padding: 20px;
+}
+
+.division-vote-visibility {
+  margin: 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #e2e8f0;
+}
+
+.division-vote-visibility label {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.division-vote-visibility select {
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  color: #f8fafc;
+  padding: 6px 10px;
+  border-radius: 8px;
 }
 
 .tournaments-management h2 {

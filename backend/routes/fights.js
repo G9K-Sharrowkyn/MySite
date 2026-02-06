@@ -3,6 +3,7 @@ import { createFight, getFights, getFight, updateFight, deleteFight, endFight, g
 import auth from '../middleware/auth.js';
 import { readDb, withDb } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
+import { applyDailyActivityBonus } from '../utils/coinBonus.js';
 
 const router = express.Router();
 
@@ -232,6 +233,9 @@ router.post('/:id/comments', async (req, res) => {
 
       db.comments = Array.isArray(db.comments) ? db.comments : [];
       db.comments.push(created);
+      if (author) {
+        applyDailyActivityBonus(db, author, 'comment', 50);
+      }
       return db;
     });
 

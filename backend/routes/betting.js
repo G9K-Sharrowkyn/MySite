@@ -3,17 +3,232 @@ import auth from '../middleware/auth.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
 import { readDb, withDb } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import { applyDailyBonus } from '../utils/coinBonus.js';
 
 const router = express.Router();
 
 const resolveUserId = (user) => user?.id || user?._id;
+
+const normalizeOutcome = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (!normalized) return null;
+
+  if (['a', 'teama', 'team a', 'team1', 'team 1', 'fighter1', 'fighter 1'].includes(normalized)) {
+    return 'A';
+  }
+  if (['b', 'teamb', 'team b', 'team2', 'team 2', 'fighter2', 'fighter 2'].includes(normalized)) {
+    return 'B';
+  }
+  if (['draw', 'tie'].includes(normalized)) {
+    return 'draw';
+  }
+
+  // Keep backwards-compat for any legacy values already stored.
+  if (normalized === 'team1') return 'A';
+  if (normalized === 'team2') return 'B';
+
+  return null;
+};
 
 const findUserById = (db, userId) =>
   (db.users || []).find((entry) => resolveUserId(entry) === userId);
 
 const findFightById = (db, fightId) =>
   (db.fights || []).find((entry) => entry.id === fightId);
+
+const resolveFightContext = (db, fightId) => {
+  const id = String(fightId || '');
+  if (!id) return null;
+
+  const postFight = (db.posts || []).find(
+    (post) => (post.id || post._id) === id && post.type === 'fight' && post.fight
+  );
+  if (postFight) {
+    return {
+      source: 'post',
+      id: postFight.id || postFight._id,
+      container: postFight,
+      fight: postFight.fight
+    };
+  }
+
+  const divisionFight = (db.divisionFights || []).find(
+    (entry) => (entry.id || entry._id) === id && entry.fight
+  );
+  if (divisionFight) {
+    return {
+      source: 'division',
+      id: divisionFight.id || divisionFight._id,
+      container: divisionFight,
+      fight: divisionFight.fight
+    };
+  }
+
+  const standalone = findFightById(db, id);
+  if (standalone) {
+    return {
+      source: 'fight',
+      id: standalone.id || standalone._id,
+      container: standalone,
+      // Some legacy fights store the payload at the top-level; keep it flexible.
+      fight: standalone.fight || standalone
+    };
+  }
+
+  return null;
+};
+
+const buildContextFromFight = (fight) => {
+  if (!fight) return null;
+  const id = fight.id || fight._id;
+  if (!id) return null;
+  return {
+    source: 'fight',
+    id,
+    container: fight,
+    // Some legacy fights store the payload at the top-level; keep it flexible.
+    fight: fight.fight || fight
+  };
+};
+
+const getVoteVisibilitySetting = (fight) => {
+  const raw = String(fight?.voteVisibility || 'live').trim().toLowerCase();
+  if (raw === 'final' || raw === 'hidden') return 'final';
+  return 'live';
+};
+
+const getFightLockTime = (context) => {
+  if (!context) return null;
+  const bettingCloses = context.container?.bettingCloses || context.fight?.bettingCloses;
+  if (bettingCloses) return bettingCloses;
+  const bettingWindowClose =
+    context.container?.betting?.bettingWindow?.closeTime ||
+    context.fight?.betting?.bettingWindow?.closeTime;
+  if (bettingWindowClose) return bettingWindowClose;
+  const fromFight = context.fight?.lockTime || null;
+  if (fromFight) return fromFight;
+
+  // Fallback for legacy fight types.
+  if (context.container?.endDate) return context.container.endDate;
+  if (context.container?.timer?.endTime) return context.container.timer.endTime;
+  return null;
+};
+
+const getVoteRevealTime = (context) => {
+  if (!context) return null;
+  const fromFight = context.fight?.lockTime || null;
+  if (fromFight) return fromFight;
+  if (context.container?.endTime) return context.container.endTime;
+  if (context.container?.endDate) return context.container.endDate;
+  if (context.container?.timer?.endTime) return context.container.timer.endTime;
+  return null;
+};
+
+const getFightVoteCounts = (context) => {
+  const votes = context?.fight?.votes || context?.container?.votes || {};
+  const teamA = Number(votes.teamA || context?.container?.votesA || 0) || 0;
+  const teamB = Number(votes.teamB || context?.container?.votesB || 0) || 0;
+  const draw = Number(votes.draw || 0) || 0;
+  return { A: teamA, B: teamB, draw };
+};
+
+const getFightBetStats = (db, fightId) => {
+  const stats = {
+    A: { count: 0, amount: 0 },
+    B: { count: 0, amount: 0 },
+    draw: { count: 0, amount: 0 },
+    totalCount: 0,
+    totalAmount: 0
+  };
+
+  (db.bets || [])
+    .filter((bet) => bet?.fightId === fightId && (bet.status || 'pending') === 'pending')
+    .forEach((bet) => {
+      const prediction = normalizeOutcome(bet.prediction || bet.predictedWinner || bet.selectedTeam);
+      if (!prediction) return;
+      const amount = Number(bet.amount || 0) || 0;
+      if (amount <= 0) return;
+
+      stats[prediction].count += 1;
+      stats[prediction].amount += amount;
+      stats.totalCount += 1;
+      stats.totalAmount += amount;
+    });
+
+  return stats;
+};
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const computeDynamicOdds = ({ votes, bets, isBlind }) => {
+  // Tunable knobs (all in "virtual stake" units).
+  const PRIOR = 100; // stabilizes odds when there are few bets
+  const BET_COUNT_WEIGHT = 5; // 1 bet ~= +5 virtual stake
+  const VOTE_WEIGHT = 10; // 1 vote ~= +10 virtual stake (live-votes mode only)
+
+  // House edge: keep blind mode a bit more rewarding (closer to "3.00" baseline).
+  const HOUSE_EDGE = isBlind ? 0.0 : 0.08;
+
+  const impliedA = PRIOR + bets.A.amount + BET_COUNT_WEIGHT * bets.A.count + (isBlind ? 0 : VOTE_WEIGHT * votes.A);
+  const impliedB = PRIOR + bets.B.amount + BET_COUNT_WEIGHT * bets.B.count + (isBlind ? 0 : VOTE_WEIGHT * votes.B);
+  const impliedD = PRIOR + bets.draw.amount + BET_COUNT_WEIGHT * bets.draw.count + (isBlind ? 0 : VOTE_WEIGHT * votes.draw);
+  const totalPool = impliedA + impliedB + impliedD;
+
+  const rawA = (totalPool * (1 - HOUSE_EDGE)) / Math.max(1, impliedA);
+  const rawB = (totalPool * (1 - HOUSE_EDGE)) / Math.max(1, impliedB);
+  const rawD = (totalPool * (1 - HOUSE_EDGE)) / Math.max(1, impliedD);
+
+  // Keep odds sane and UI-friendly.
+  const MAX_ODDS = 50;
+  const MIN_ODDS = 1.01;
+
+  return {
+    A: clamp(rawA, MIN_ODDS, MAX_ODDS),
+    B: clamp(rawB, MIN_ODDS, MAX_ODDS),
+    draw: clamp(rawD, MIN_ODDS, MAX_ODDS)
+  };
+};
+
+const getBetLimits = (isBlind) => {
+  // User requirement: visible-votes betting should have ~1/5 the staking power of blind betting.
+  const minBet = 1;
+  const maxBetBlind = 1000;
+  const maxBetLive = Math.max(minBet, Math.floor(maxBetBlind / 5));
+  return {
+    minBet,
+    maxBet: isBlind ? maxBetBlind : maxBetLive
+  };
+};
+
+const buildOddsPayload = (db, context, now = new Date()) => {
+  const fight = context?.fight || {};
+  const lockTimeValue = getVoteRevealTime(context);
+  const lockTime = lockTimeValue ? new Date(lockTimeValue) : null;
+  const voteVisibility = getVoteVisibilitySetting(fight);
+  const hasLock = lockTime && Number.isFinite(lockTime.getTime());
+  const shouldRevealVotes =
+    voteVisibility !== 'final' ||
+    !hasLock ||
+    (fight.status && fight.status !== 'active') ||
+    now >= lockTime;
+
+  const isBlind = voteVisibility === 'final' && !shouldRevealVotes;
+  const votes = getFightVoteCounts(context);
+  const bets = getFightBetStats(db, context.id);
+  const odds = computeDynamicOdds({ votes, bets, isBlind });
+  const limits = getBetLimits(isBlind);
+
+  return {
+    ...odds,
+    meta: {
+      voteVisibility,
+      isBlind,
+      minBet: limits.minBet,
+      maxBet: limits.maxBet,
+      // Helpful for UI decisions if needed later.
+      lockTime: hasLock ? lockTime.toISOString() : null
+    }
+  };
+};
 
 const ensureCoinAccount = (user) => {
   if (!user) return;
@@ -23,6 +238,9 @@ const ensureCoinAccount = (user) => {
     totalSpent: 0,
     lastBonusDate: new Date().toISOString()
   };
+  if (!user.coins.dailyActivity || typeof user.coins.dailyActivity !== 'object') {
+    user.coins.dailyActivity = {};
+  }
   if (typeof user.virtualCoins !== 'number') {
     user.virtualCoins = user.coins.balance || 0;
   }
@@ -75,11 +293,16 @@ const getFightBettingTotals = (db, fightId) => {
   return { totalBetsA, totalBetsB, totalAmount };
 };
 
-const buildBettingFight = (db, fight) => {
+const buildBettingFight = (db, fight, now = new Date()) => {
   const bettingWindow = getBettingWindow(fight);
   const totals = getFightBettingTotals(db, fight.id);
-  const oddsA = fight?.betting?.oddsA || 2.0;
-  const oddsB = fight?.betting?.oddsB || 2.0;
+  const context = buildContextFromFight(fight) || resolveFightContext(db, fight.id);
+  const oddsPayload = context ? buildOddsPayload(db, context, now) : null;
+  const oddsA = Number(oddsPayload?.A || fight?.betting?.oddsA || 2.0);
+  const oddsB = Number(oddsPayload?.B || fight?.betting?.oddsB || 2.0);
+  const oddsDraw = Number(oddsPayload?.draw || fight?.betting?.oddsDraw || 3.0);
+  const isBlind = Boolean(oddsPayload?.meta?.isBlind);
+  const votes = context ? getFightVoteCounts(context) : { A: fight.votesA || 0, B: fight.votesB || 0, draw: 0 };
 
   return {
     ...fight,
@@ -88,16 +311,19 @@ const buildBettingFight = (db, fight) => {
       enabled: true,
       oddsA,
       oddsB,
+      oddsDraw,
       bettingWindow,
       totalBetsA: totals.totalBetsA,
-      totalBetsB: totals.totalBetsB
+      totalBetsB: totals.totalBetsB,
+      meta: oddsPayload?.meta || {}
     },
-    votesA: fight.votesA || 0,
-    votesB: fight.votesB || 0
+    votesA: isBlind ? 0 : votes.A || 0,
+    votesB: isBlind ? 0 : votes.B || 0,
+    votesHidden: isBlind
   };
 };
 
-const buildAvailableFight = (db, fight) => {
+const buildAvailableFight = (db, fight, now = new Date()) => {
   const totals = getFightBettingTotals(db, fight.id);
   const teamAName = fight.fighter1 || fight.teamA?.[0]?.characterName || fight.teamA?.[0]?.name || '';
   const teamBName = fight.fighter2 || fight.teamB?.[0]?.characterName || fight.teamB?.[0]?.name || '';
@@ -111,6 +337,8 @@ const buildAvailableFight = (db, fight) => {
     name: fighter.characterName || fighter.name || '',
     image: fighter.characterImage || fighter.image || ''
   }));
+  const context = buildContextFromFight(fight) || resolveFightContext(db, fight.id);
+  const oddsPayload = context ? buildOddsPayload(db, context, now) : null;
 
   return {
     id: fight.id,
@@ -130,6 +358,13 @@ const buildAvailableFight = (db, fight) => {
       team2: totals.totalBetsB
     },
     totalPool: totals.totalAmount,
+    odds: {
+      team1: Number(oddsPayload?.A || 2.0),
+      team2: Number(oddsPayload?.B || 2.0),
+      draw: Number(oddsPayload?.draw || 3.0)
+    },
+    bettingMeta: oddsPayload?.meta || {},
+    votesHidden: Boolean(oddsPayload?.meta?.isBlind),
     bettingEndTime: getBettingWindow(fight).closeTime
   };
 };
@@ -138,9 +373,10 @@ const buildAvailableFight = (db, fight) => {
 router.get('/fights', auth, async (_req, res) => {
   try {
     const db = await readDb();
+    const now = new Date();
     const fights = (db.fights || [])
       .filter((fight) => fight.status === 'active')
-      .map((fight) => buildBettingFight(db, fight));
+      .map((fight) => buildBettingFight(db, fight, now));
 
     res.json({ success: true, fights, count: fights.length });
   } catch (error) {
@@ -153,9 +389,10 @@ router.get('/fights', auth, async (_req, res) => {
 router.get('/available-fights', async (_req, res) => {
   try {
     const db = await readDb();
+    const now = new Date();
     const fights = (db.fights || [])
       .filter((fight) => fight.status === 'active')
-      .map((fight) => buildAvailableFight(db, fight));
+      .map((fight) => buildAvailableFight(db, fight, now));
     res.json(fights);
   } catch (error) {
     console.error('Error fetching available fights:', error);
@@ -198,16 +435,12 @@ router.get('/fight/:fightId', auth, async (req, res) => {
 router.get('/fight/:fightId/odds', auth, async (req, res) => {
   try {
     const db = await readDb();
-    const fight = findFightById(db, req.params.fightId);
-    if (!fight) {
+    const context = resolveFightContext(db, req.params.fightId);
+    if (!context) {
       return res.status(404).json({ error: 'Fight not found' });
     }
 
-    const oddsA = fight?.betting?.oddsA || 2.0;
-    const oddsB = fight?.betting?.oddsB || 2.0;
-    const oddsDraw = fight?.betting?.oddsDraw || 3.0;
-
-    res.json({ A: oddsA, B: oddsB, draw: oddsDraw });
+    res.json(buildOddsPayload(db, context));
   } catch (error) {
     console.error('Error fetching odds:', error);
     res.status(500).json({ error: 'Server error' });
@@ -218,7 +451,7 @@ router.get('/fight/:fightId/odds', auth, async (req, res) => {
 router.post('/fight/:fightId', auth, async (req, res) => {
   try {
     const { predictedWinner, betAmount } = req.body;
-    const prediction = predictedWinner;
+    const prediction = normalizeOutcome(predictedWinner);
     const amount = Number(betAmount);
 
     if (!prediction || !amount || amount < 1) {
@@ -236,35 +469,61 @@ router.post('/fight/:fightId', auth, async (req, res) => {
         throw error;
       }
 
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
       if (user.coins.balance < amount) {
         const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
 
-      const fight = findFightById(db, req.params.fightId);
-      if (!fight) {
+      const context = resolveFightContext(db, req.params.fightId);
+      if (!context) {
         const error = new Error('Fight not found');
         error.code = 'FIGHT_NOT_FOUND';
         throw error;
       }
 
-      const odds = prediction === 'A' ? 2.0 : prediction === 'B' ? 2.0 : 3.0;
-      const now = new Date().toISOString();
+      const now = new Date();
+      const lockTimeValue = getFightLockTime(context);
+      if (lockTimeValue) {
+        const lockTime = new Date(lockTimeValue);
+        if (Number.isFinite(lockTime.getTime()) && now >= lockTime) {
+          const error = new Error('Betting window is closed');
+          error.code = 'BETTING_CLOSED';
+          throw error;
+        }
+      }
+
+      const oddsPayload = buildOddsPayload(db, context, now);
+      const isBlind = Boolean(oddsPayload?.meta?.isBlind);
+      const limits = getBetLimits(isBlind);
+
+      if (amount < limits.minBet) {
+        const error = new Error(`Minimum bet is ${limits.minBet}`);
+        error.code = 'BET_TOO_SMALL';
+        throw error;
+      }
+      if (amount > limits.maxBet) {
+        const error = new Error(`Maximum bet is ${limits.maxBet}`);
+        error.code = 'BET_TOO_LARGE';
+        throw error;
+      }
+
+      const odds = oddsPayload[prediction] || 2.0;
+      const nowIso = new Date().toISOString();
       betRecord = {
         id: uuidv4(),
         _id: uuidv4(),
         userId: req.user.id,
-        fightId: fight.id,
+        fightId: context.id,
         prediction,
         selectedTeam: prediction,
         amount,
         odds,
         potentialWinnings: Math.floor(amount * odds),
         status: 'pending',
-        placedAt: now,
-        createdAt: now
+        placedAt: nowIso,
+        createdAt: nowIso
       };
 
       db.bets = Array.isArray(db.bets) ? db.bets : [];
@@ -285,6 +544,12 @@ router.post('/fight/:fightId', auth, async (req, res) => {
     if (error.code === 'FIGHT_NOT_FOUND') {
       return res.status(404).json({ message: 'Fight not found' });
     }
+    if (error.code === 'BETTING_CLOSED') {
+      return res.status(400).json({ message: 'Betting window is closed' });
+    }
+    if (error.code === 'BET_TOO_SMALL' || error.code === 'BET_TOO_LARGE') {
+      return res.status(400).json({ message: error.message });
+    }
     console.error('Error placing bet:', error);
     res.status(500).json({ message: 'Server error' });
   }
@@ -295,8 +560,9 @@ router.post('/place/:fightId', auth, async (req, res) => {
   try {
     const { prediction, amount, insurance = false } = req.body;
     const betAmount = Number(amount);
+    const normalizedPrediction = normalizeOutcome(prediction);
 
-    if (!['A', 'B'].includes(prediction)) {
+    if (!['A', 'B', 'draw'].includes(normalizedPrediction)) {
       return res.status(400).json({ error: 'Invalid prediction' });
     }
     if (!betAmount || betAmount < 1) {
@@ -313,16 +579,43 @@ router.post('/place/:fightId', auth, async (req, res) => {
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
 
-      const fight = findFightById(db, req.params.fightId);
-      if (!fight) {
+      const context = resolveFightContext(db, req.params.fightId);
+      if (!context) {
         const error = new Error('Fight not found');
         error.code = 'FIGHT_NOT_FOUND';
         throw error;
       }
 
-      const odds = prediction === 'A' ? 2.0 : 2.0;
+      const now = new Date();
+      const lockTimeValue = getFightLockTime(context);
+      if (lockTimeValue) {
+        const lockTime = new Date(lockTimeValue);
+        if (Number.isFinite(lockTime.getTime()) && now >= lockTime) {
+          const error = new Error('Betting window is closed');
+          error.code = 'BETTING_CLOSED';
+          throw error;
+        }
+      }
+
+      const oddsPayload = buildOddsPayload(db, context, now);
+      const isBlind = Boolean(oddsPayload?.meta?.isBlind);
+      const limits = getBetLimits(isBlind);
+
+      if (betAmount < limits.minBet) {
+        const error = new Error(`Minimum bet is ${limits.minBet}`);
+        error.code = 'BET_TOO_SMALL';
+        throw error;
+      }
+      if (betAmount > limits.maxBet) {
+        const error = new Error(`Maximum bet is ${limits.maxBet}`);
+        error.code = 'BET_TOO_LARGE';
+        throw error;
+      }
+
+      const odds = oddsPayload?.[normalizedPrediction] || 2.0;
+      const nowIso = new Date().toISOString();
       const insuranceCost = insurance ? Math.ceil(betAmount * 0.1) : 0;
       const totalCost = betAmount + insuranceCost;
 
@@ -332,20 +625,19 @@ router.post('/place/:fightId', auth, async (req, res) => {
         throw error;
       }
 
-      const now = new Date().toISOString();
       betRecord = {
         id: uuidv4(),
         _id: uuidv4(),
         userId: req.user.id,
-        fightId: fight.id,
-        prediction,
-        selectedTeam: prediction,
+        fightId: context.id,
+        prediction: normalizedPrediction,
+        selectedTeam: normalizedPrediction,
         amount: betAmount,
         odds,
         potentialWinnings: Math.floor(betAmount * odds),
         status: 'pending',
-        placedAt: now,
-        createdAt: now,
+        placedAt: nowIso,
+        createdAt: nowIso,
         insurance: insurance
           ? { enabled: true, refundPercentage: 50, cost: insuranceCost }
           : { enabled: false }
@@ -366,6 +658,12 @@ router.post('/place/:fightId', auth, async (req, res) => {
     if (error.code === 'FIGHT_NOT_FOUND') {
       return res.status(404).json({ error: 'Fight not found' });
     }
+    if (error.code === 'BETTING_CLOSED') {
+      return res.status(400).json({ error: 'Betting window is closed' });
+    }
+    if (error.code === 'BET_TOO_SMALL' || error.code === 'BET_TOO_LARGE') {
+      return res.status(400).json({ error: error.message });
+    }
     if (error.code === 'INSUFFICIENT_COINS') {
       return res.status(400).json({ error: 'Insufficient eurodolary' });
     }
@@ -379,9 +677,13 @@ router.post('/place-bet', async (req, res) => {
   try {
     const { userId, fightId, prediction, amount } = req.body;
     const betAmount = Number(amount);
+    const normalizedPrediction = normalizeOutcome(prediction);
 
     if (!userId || !fightId || !prediction) {
       return res.status(400).json({ error: 'Missing bet data' });
+    }
+    if (!normalizedPrediction) {
+      return res.status(400).json({ error: 'Invalid prediction' });
     }
     if (!betAmount || betAmount < 1) {
       return res.status(400).json({ error: 'Invalid amount' });
@@ -391,34 +693,61 @@ router.post('/place-bet', async (req, res) => {
 
     await withDb((db) => {
       const user = findUserById(db, userId);
-      const fight = findFightById(db, fightId);
-      if (!user || !fight) {
+      const context = resolveFightContext(db, fightId);
+      if (!user || !context) {
         const error = new Error('User or fight not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
 
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
       if (user.coins.balance < betAmount) {
         const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';
         throw error;
       }
 
-      const odds = prediction === 'team1' ? 2.0 : 2.0;
-      const now = new Date().toISOString();
+      const now = new Date();
+      const lockTimeValue = getFightLockTime(context);
+      if (lockTimeValue) {
+        const lockTime = new Date(lockTimeValue);
+        if (Number.isFinite(lockTime.getTime()) && now >= lockTime) {
+          const error = new Error('Betting window is closed');
+          error.code = 'BETTING_CLOSED';
+          throw error;
+        }
+      }
+
+      const oddsPayload = buildOddsPayload(db, context, now);
+      const isBlind = Boolean(oddsPayload?.meta?.isBlind);
+      const limits = getBetLimits(isBlind);
+
+      if (betAmount < limits.minBet) {
+        const error = new Error(`Minimum bet is ${limits.minBet}`);
+        error.code = 'BET_TOO_SMALL';
+        throw error;
+      }
+      if (betAmount > limits.maxBet) {
+        const error = new Error(`Maximum bet is ${limits.maxBet}`);
+        error.code = 'BET_TOO_LARGE';
+        throw error;
+      }
+
+      const odds = oddsPayload?.[normalizedPrediction] || 2.0;
+      const nowIso = new Date().toISOString();
       betRecord = {
         id: uuidv4(),
         _id: uuidv4(),
         userId,
-        fightId: fight.id,
+        fightId: context.id,
         prediction,
+        selectedTeam: normalizedPrediction,
         amount: betAmount,
         odds,
         potentialWinnings: Math.floor(betAmount * odds),
         status: 'pending',
-        placedAt: now,
-        createdAt: now
+        placedAt: nowIso,
+        createdAt: nowIso
       };
 
       db.bets = Array.isArray(db.bets) ? db.bets : [];
@@ -431,6 +760,12 @@ router.post('/place-bet', async (req, res) => {
   } catch (error) {
     if (error.code === 'NOT_FOUND') {
       return res.status(404).json({ error: 'User or fight not found' });
+    }
+    if (error.code === 'BETTING_CLOSED') {
+      return res.status(400).json({ error: 'Betting window is closed' });
+    }
+    if (error.code === 'BET_TOO_SMALL' || error.code === 'BET_TOO_LARGE') {
+      return res.status(400).json({ error: error.message });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
       return res.status(400).json({ error: 'Insufficient eurodolary' });
@@ -462,7 +797,7 @@ router.post('/parlay', auth, async (req, res) => {
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
 
       const insuranceCost = insurance ? Math.ceil(betAmount * 0.15) : 0;
       const totalCost = betAmount + insuranceCost;
@@ -472,15 +807,56 @@ router.post('/parlay', auth, async (req, res) => {
         throw error;
       }
 
-      const parlayBets = bets.map((bet) => ({
-        fightId: bet.fightId,
-        prediction: bet.prediction,
-        odds: 2.0,
-        fightTitle: bet.fightTitle || 'Fight'
-      }));
+      const now = new Date();
+      const parlayBets = bets.map((bet) => {
+        const context = resolveFightContext(db, bet.fightId);
+        if (!context) {
+          const error = new Error('Fight not found');
+          error.code = 'FIGHT_NOT_FOUND';
+          throw error;
+        }
+        const lockTimeValue = getFightLockTime(context);
+        if (lockTimeValue) {
+          const lockTime = new Date(lockTimeValue);
+          if (Number.isFinite(lockTime.getTime()) && now >= lockTime) {
+            const error = new Error('Betting window is closed');
+            error.code = 'BETTING_CLOSED';
+            throw error;
+          }
+        }
+        const normalizedPrediction = normalizeOutcome(bet.prediction);
+        if (!normalizedPrediction) {
+          const error = new Error('Invalid prediction');
+          error.code = 'INVALID_PREDICTION';
+          throw error;
+        }
+        const oddsPayload = buildOddsPayload(db, context, now);
+        const odds = oddsPayload?.[normalizedPrediction] || 2.0;
+        return {
+          fightId: context.id,
+          prediction: bet.prediction,
+          normalizedPrediction,
+          odds,
+          isBlind: Boolean(oddsPayload?.meta?.isBlind),
+          fightTitle: bet.fightTitle || context.fight?.title || 'Fight'
+        };
+      });
+
+      const parlayIsBlind = parlayBets.every((bet) => bet.isBlind);
+      const limits = getBetLimits(parlayIsBlind);
+      if (betAmount < limits.minBet) {
+        const error = new Error(`Minimum bet is ${limits.minBet}`);
+        error.code = 'BET_TOO_SMALL';
+        throw error;
+      }
+      if (betAmount > limits.maxBet) {
+        const error = new Error(`Maximum bet is ${limits.maxBet}`);
+        error.code = 'BET_TOO_LARGE';
+        throw error;
+      }
 
       const totalOdds = parlayBets.reduce((total, bet) => total * bet.odds, 1);
-      const now = new Date().toISOString();
+      const nowIso = new Date().toISOString();
       parlayBet = {
         id: uuidv4(),
         _id: uuidv4(),
@@ -491,8 +867,8 @@ router.post('/parlay', auth, async (req, res) => {
         totalOdds,
         potentialWinnings: Math.floor(betAmount * totalOdds * 1.2),
         status: 'pending',
-        placedAt: now,
-        createdAt: now,
+        placedAt: nowIso,
+        createdAt: nowIso,
         insurance: insurance
           ? { enabled: true, refundPercentage: 25, cost: insuranceCost }
           : { enabled: false }
@@ -514,6 +890,18 @@ router.post('/parlay', auth, async (req, res) => {
   } catch (error) {
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ error: 'User not found' });
+    }
+    if (error.code === 'FIGHT_NOT_FOUND') {
+      return res.status(404).json({ error: 'Fight not found' });
+    }
+    if (error.code === 'INVALID_PREDICTION') {
+      return res.status(400).json({ error: 'Invalid prediction' });
+    }
+    if (error.code === 'BETTING_CLOSED') {
+      return res.status(400).json({ error: 'Betting window is closed' });
+    }
+    if (error.code === 'BET_TOO_SMALL' || error.code === 'BET_TOO_LARGE') {
+      return res.status(400).json({ error: error.message });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
       return res.status(400).json({ error: 'Insufficient eurodolary' });
@@ -545,7 +933,7 @@ router.post('/place-parlay', async (req, res) => {
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
-      applyDailyBonus(db, user);
+      ensureCoinAccount(user);
 
       if (user.coins.balance < betAmount) {
         const error = new Error('Insufficient eurodolary');
@@ -553,15 +941,56 @@ router.post('/place-parlay', async (req, res) => {
         throw error;
       }
 
-      const parlayBets = bets.map((bet) => ({
-        fightId: bet.fightId,
-        prediction: bet.prediction,
-        odds: 2.0,
-        fightTitle: bet.fight?.title || 'Fight'
-      }));
+      const now = new Date();
+      const parlayBets = bets.map((bet) => {
+        const context = resolveFightContext(db, bet.fightId);
+        if (!context) {
+          const error = new Error('Fight not found');
+          error.code = 'FIGHT_NOT_FOUND';
+          throw error;
+        }
+        const lockTimeValue = getFightLockTime(context);
+        if (lockTimeValue) {
+          const lockTime = new Date(lockTimeValue);
+          if (Number.isFinite(lockTime.getTime()) && now >= lockTime) {
+            const error = new Error('Betting window is closed');
+            error.code = 'BETTING_CLOSED';
+            throw error;
+          }
+        }
+        const normalizedPrediction = normalizeOutcome(bet.prediction);
+        if (!normalizedPrediction) {
+          const error = new Error('Invalid prediction');
+          error.code = 'INVALID_PREDICTION';
+          throw error;
+        }
+        const oddsPayload = buildOddsPayload(db, context, now);
+        const odds = oddsPayload?.[normalizedPrediction] || 2.0;
+        return {
+          fightId: context.id,
+          prediction: bet.prediction,
+          normalizedPrediction,
+          odds,
+          isBlind: Boolean(oddsPayload?.meta?.isBlind),
+          fightTitle: bet.fight?.title || context.fight?.title || 'Fight'
+        };
+      });
+
+      const parlayIsBlind = parlayBets.every((bet) => bet.isBlind);
+      const limits = getBetLimits(parlayIsBlind);
+      if (betAmount < limits.minBet) {
+        const error = new Error(`Minimum bet is ${limits.minBet}`);
+        error.code = 'BET_TOO_SMALL';
+        throw error;
+      }
+      if (betAmount > limits.maxBet) {
+        const error = new Error(`Maximum bet is ${limits.maxBet}`);
+        error.code = 'BET_TOO_LARGE';
+        throw error;
+      }
 
       const totalOdds = parlayBets.reduce((total, bet) => total * bet.odds, 1);
-      const now = new Date().toISOString();
+      const nowIso = new Date().toISOString();
       parlayBet = {
         id: uuidv4(),
         _id: uuidv4(),
@@ -572,8 +1001,8 @@ router.post('/place-parlay', async (req, res) => {
         totalOdds,
         potentialWinnings: Math.floor(betAmount * totalOdds),
         status: 'pending',
-        placedAt: now,
-        createdAt: now
+        placedAt: nowIso,
+        createdAt: nowIso
       };
 
       db.bets = Array.isArray(db.bets) ? db.bets : [];
@@ -586,6 +1015,18 @@ router.post('/place-parlay', async (req, res) => {
   } catch (error) {
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ error: 'User not found' });
+    }
+    if (error.code === 'FIGHT_NOT_FOUND') {
+      return res.status(404).json({ error: 'Fight not found' });
+    }
+    if (error.code === 'INVALID_PREDICTION') {
+      return res.status(400).json({ error: 'Invalid prediction' });
+    }
+    if (error.code === 'BETTING_CLOSED') {
+      return res.status(400).json({ error: 'Betting window is closed' });
+    }
+    if (error.code === 'BET_TOO_SMALL' || error.code === 'BET_TOO_LARGE') {
+      return res.status(400).json({ error: error.message });
     }
     if (error.code === 'INSUFFICIENT_COINS') {
       return res.status(400).json({ error: 'Insufficient eurodolary' });

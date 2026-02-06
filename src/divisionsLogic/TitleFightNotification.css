@@ -122,6 +122,11 @@
   min-width: 0;
 }
 
+.vote-count.hidden {
+  color: rgba(0, 0, 0, 0.65);
+  font-style: italic;
+}
+
 .team-owner {
   display: block;
   font-weight: bold;

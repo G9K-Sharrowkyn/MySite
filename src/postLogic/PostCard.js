@@ -77,6 +77,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [showComments, setShowComments] = useState(false);
   const [hasLoadedComments, setHasLoadedComments] = useState(false);
   const [showBetting, setShowBetting] = useState(false);
+  const [showShareMenu, setShowShareMenu] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState('');
   const [expandedThreads, setExpandedThreads] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -117,6 +119,56 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return new Date() < lockTime;
   })();
 
+  const buildShareUrl = () => {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/post/${post.id}`;
+  };
+
+  const getShareText = () => {
+    if (post.type === 'fight' && post.fight) {
+      return `${post.fight.teamA || 'Team A'} vs ${post.fight.teamB || 'Team B'}`;
+    }
+    if (post.title) return post.title;
+    if (post.content) return post.content.slice(0, 120);
+    return 'Check this post';
+  };
+
+  const handleShareClick = async () => {
+    const url = buildShareUrl();
+    if (!url) return;
+    const shareData = {
+      title: post.title || 'Post',
+      text: getShareText(),
+      url
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        console.error('Share canceled or failed:', error);
+      }
+    }
+
+    setShareFeedback('');
+    setShowShareMenu((prev) => !prev);
+  };
+
+  const handleCopyLink = async () => {
+    const url = buildShareUrl();
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareFeedback(t('copied') || 'Skopiowano');
+    } catch (error) {
+      console.error('Copy failed:', error);
+      setShareFeedback(t('copyFailed') || 'Nie udało się skopiować');
+    }
+    setShowShareMenu(false);
+    setTimeout(() => setShareFeedback(''), 2000);
+  };
+
   const normalizeVoteTeam = (team) => {
     if (!team) return null;
     const value = String(team).toLowerCase();
@@ -128,9 +180,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   useEffect(() => {
     // Check if user voted in fight
-    if (post.type === 'fight' && post.fight?.votes?.voters && currentUserId) {
-      const vote = post.fight.votes.voters.find(v => v.userId === currentUserId);
-      setUserVote(normalizeVoteTeam(vote?.team));
+    if (post.type === 'fight' && currentUserId) {
+      setUserVote(normalizeVoteTeam(post.fight?.myVote));
     }
   }, [post, currentUserId]);
 
@@ -401,7 +452,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
       setUserVote(normalizeVoteTeam(team));
       // Refresh post data
       if (onUpdate) {
-        const updatedPost = await axios.get(`/api/posts/${post.id}`);
+        const updatedPost = await axios.get(`/api/posts/${post.id}`, {
+          headers: { 'x-auth-token': token }
+        });
         onUpdate(updatedPost.data);
       }
     } catch (error) {
@@ -437,7 +490,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const getTotalVotes = () => {
     if (post.type === 'fight' && post.fight?.votes) {
-      return (post.fight.votes.teamA || 0) + (post.fight.votes.teamB || 0);
+      if (post.fight?.votesHidden) return 0;
+      return (post.fight.votes.teamA || 0) + (post.fight.votes.teamB || 0) + (post.fight.votes.draw || 0);
     }
     if (post.poll?.votes?.voters) {
       return post.poll.votes.voters.length;
@@ -459,8 +513,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey) => {
     const isVoted = userVote === teamKey;
-    const totalVotes = getTotalVotes();
-    const votePercentage = getVotePercentage(votes, totalVotes);
+    const votesHidden = Boolean(post.fight?.votesHidden);
+    const totalVotes = votesHidden ? 0 : getTotalVotes();
+    const votePercentage = votesHidden ? 0 : getVotePercentage(votes, totalVotes);
     // New: multiline layout for 3 or 4 characters
     const multiline = teamList.length === 3 || teamList.length === 4;
     let rows = [];
@@ -553,8 +608,14 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         </div>
 
         <div className="team-vote-panel">
-          <div className="team-vote-count">{votes} {t('votes') || 'votes'}</div>
-          <div className="team-vote-percent">{votePercentage}%</div>
+          {votesHidden ? (
+            <div className="team-vote-hidden">{t('votesHiddenUntilEnd') || 'Votes hidden until the end'}</div>
+          ) : (
+            <>
+              <div className="team-vote-count">{votes} {t('votes') || 'votes'}</div>
+              <div className="team-vote-percent">{votePercentage}%</div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -1012,6 +1073,70 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           </button>
         )}
         
+        <div className="share-wrapper">
+          <button
+            className="action-btn share-btn"
+            onClick={handleShareClick}
+            type="button"
+          >
+            <span className="action-icon">🔗</span>
+            <span className="action-text">{t('share') || 'Udostępnij'}</span>
+          </button>
+
+          {showShareMenu && (
+            <div
+              className="share-menu"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                className="share-option"
+                type="button"
+                onClick={handleCopyLink}
+              >
+                {t('copyLink') || 'Kopiuj link'}
+              </button>
+              <a
+                className="share-option"
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(buildShareUrl())}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setShowShareMenu(false)}
+              >
+                Facebook
+              </a>
+              <a
+                className="share-option"
+                href={`https://www.reddit.com/submit?url=${encodeURIComponent(buildShareUrl())}&title=${encodeURIComponent(post.title || '')}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setShowShareMenu(false)}
+              >
+                Reddit
+              </a>
+              <a
+                className="share-option"
+                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(buildShareUrl())}&text=${encodeURIComponent(post.title || '')}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setShowShareMenu(false)}
+              >
+                X
+              </a>
+              <a
+                className="share-option"
+                href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(buildShareUrl())}`}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setShowShareMenu(false)}
+              >
+                LinkedIn
+              </a>
+              {shareFeedback && (
+                <div className="share-feedback">{shareFeedback}</div>
+              )}
+            </div>
+          )}
+        </div>
 
         {currentUserId === post.author?.id && (
           <button className="action-btn edit-btn" onClick={handleEditToggle}>

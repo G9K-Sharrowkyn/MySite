@@ -14,6 +14,7 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
     battleDate: '',
     teamSize: 1,
     showOnFeed: false,
+    voteVisibility: 'live',
     allowedTiers: [],
     excludedCharacters: []
   });
@@ -262,6 +263,14 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
                 {formData.battleDate && `UTC: ${new Date(formData.battleDate).toUTCString()}`}
               </small>
             </div>
+          </div>
+
+          <div className="form-group">
+            <label>Vote visibility</label>
+            <select name="voteVisibility" value={formData.voteVisibility} onChange={handleChange}>
+              <option value="live">Show live votes</option>
+              <option value="final">Hide votes until the end</option>
+            </select>
           </div>
 
           <div className="form-group">

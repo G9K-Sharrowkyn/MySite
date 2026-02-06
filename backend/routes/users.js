@@ -1,7 +1,6 @@
 ﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, withDb } from '../repositories/index.js';
-import { applyDailyBonus } from '../utils/coinBonus.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const router = express.Router();
@@ -19,6 +18,9 @@ const ensureCoinAccount = (user) => {
     totalSpent: 0,
     lastBonusDate: new Date().toISOString()
   };
+  if (!user.coins.dailyActivity || typeof user.coins.dailyActivity !== 'object') {
+    user.coins.dailyActivity = {};
+  }
   if (typeof user.virtualCoins !== 'number') {
     user.virtualCoins = user.coins.balance || 0;
   }
@@ -259,7 +261,6 @@ router.get('/:userId/coins', async (req, res) => {
         throw error;
       }
 
-      applyDailyBonus(db, user);
       ensureCoinAccount(user);
       coins = user.coins.balance || 0;
       return db;

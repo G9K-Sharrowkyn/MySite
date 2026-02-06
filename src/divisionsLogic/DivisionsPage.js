@@ -451,7 +451,11 @@ const DivisionsPage = () => {
                                   ? '🥊 Contender Match'
                                   : '⚔️ Official Fight'}
                             </span>
+                          {fight.votesHidden || fight.fight?.votesHidden ? (
+                            <span className="fight-votes hidden">{t('votesHiddenUntilEnd') || 'Votes hidden until the end'}</span>
+                          ) : (
                             <span className="fight-votes">🗳️ {fight.votes?.length || 0} votes</span>
+                          )}
                           </div>
                           <div className="fight-timer">⏰ {fight.endTime ? new Date(fight.endTime).toLocaleDateString() : ''}</div>
                         </div>

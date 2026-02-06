@@ -132,7 +132,11 @@ const TitleFightNotification = ({ titleFights, divisionName, currentUser }) => {
 
             <div className="fight-status">
               <div className="fight-stats">
-                <span className="vote-count">🗳️ {fight.votes?.length || 0} {t('votes') || 'votes'}</span>
+                {fight.votesHidden || fight.fight?.votesHidden ? (
+                  <span className="vote-count hidden">{t('votesHiddenUntilEnd') || 'Votes hidden until the end'}</span>
+                ) : (
+                  <span className="vote-count">🗳️ {fight.votes?.length || 0} {t('votes') || 'votes'}</span>
+                )}
                 <span className="time-remaining">⏰ {getTimeRemaining(fight.endTime)}</span>
               </div>
               

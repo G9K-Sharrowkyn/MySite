@@ -31,6 +31,8 @@ const Feed = () => {
   ) => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
+      const authConfig = token ? { headers: { 'x-auth-token': token } } : undefined;
       
       // Sprawdź czy są aktywne filtry
       const hasActiveFilters = Object.keys(currentFilters).length > 0 &&
@@ -46,7 +48,7 @@ const Feed = () => {
           sortBy: sort,
           page: pageNum,
           limit: 10
-        });
+        }, authConfig);
         
         // Dostosuj format odpowiedzi do oczekiwanego
         response.data = {
@@ -64,7 +66,7 @@ const Feed = () => {
         if (normalizedCategory) {
           params.set('category', normalizedCategory);
         }
-        response = await axios.get(`/api/posts?${params.toString()}`);
+        response = await axios.get(`/api/posts?${params.toString()}`, authConfig);
       }
       
       const newPosts = response.data.posts.map(post => ({
