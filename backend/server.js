@@ -869,9 +869,12 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
       null;
     const frontendOrigin = resolveFrontendOrigin(req);
     const apiOrigin = `${req.protocol}://${req.get('host')}`;
-    const postUrl = `${frontendOrigin}/post/${postId}`;
-    const versionToken = post?.updatedAt || post?.createdAt || 'v3';
-    const imageUrl = `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(versionToken)}`;
+    const versionParam = String(req.query.v || req.query.t || '').trim();
+    const cacheToken =
+      versionParam || post?.updatedAt || post?.createdAt || String(Date.now());
+    const postUrl = `${frontendOrigin}/post/${postId}?v=${encodeURIComponent(cacheToken)}`;
+    const redirectUrl = `${frontendOrigin}/post/${postId}`;
+    const imageUrl = `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(cacheToken)}`;
     const meta = await buildShareMetaTags(
       req,
       post || { id: postId, title: 'Post', content: '' },
@@ -884,7 +887,7 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
         frontendOrigin
       }
     );
-    const html = buildShareHtml(meta, postUrl);
+    const html = buildShareHtml(meta, redirectUrl);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');

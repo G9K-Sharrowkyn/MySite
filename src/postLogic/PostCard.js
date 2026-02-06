@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
@@ -79,6 +79,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [showBetting, setShowBetting] = useState(false);
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [shareFeedback, setShareFeedback] = useState('');
+  const shareVersionRef = useRef(null);
   const [expandedThreads, setExpandedThreads] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -119,6 +120,17 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return new Date() < lockTime;
   })();
 
+  useEffect(() => {
+    shareVersionRef.current = null;
+  }, [post?.id]);
+
+  const getShareVersion = () => {
+    if (!shareVersionRef.current) {
+      shareVersionRef.current = String(Date.now());
+    }
+    return shareVersionRef.current;
+  };
+
   const buildPostUrl = () => {
     if (typeof window === 'undefined') return '';
     return `${window.location.origin}/post/${post.id}`;
@@ -127,7 +139,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const buildShareUrl = () => {
     if (!post?.id) return '';
     if (typeof window === 'undefined') return '';
-    const versionToken = post?.updatedAt || post?.createdAt || 'v3';
+    const versionToken = getShareVersion();
     return `${window.location.origin}/post/${post.id}?v=${encodeURIComponent(versionToken)}`;
   };
 
