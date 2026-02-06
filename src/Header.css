@@ -1075,7 +1075,7 @@
 
 @media (max-width: 900px) {
   .header-body {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 
   .header .nav-link,
@@ -1086,10 +1086,10 @@
   .header .language-button,
   .header .auth-buttons .btn,
   .header .header-controls {
-    min-height: 48px !important;
+    min-height: 56px !important;
     padding: 10px 12px !important;
     white-space: normal !important;
-    line-height: 1.2 !important;
+    line-height: 1.15 !important;
     text-align: center !important;
     justify-content: center !important;
     word-break: normal;
@@ -1102,5 +1102,11 @@
     display: block;
     margin: 2px 0 0;
     font-size: 0.72rem;
+  }
+}
+
+@media (max-width: 540px) {
+  .header-body {
+    grid-template-columns: 1fr !important;
   }
 }
