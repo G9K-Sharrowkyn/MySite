@@ -283,6 +283,14 @@ const buildShareImageSvg = async (post, db, options = {}) => {
   const subtitle = truncateText(post?.content || '', 120);
 
   if (isFight) {
+    const imageHeight = 480;
+    const imageWidth = Math.round(imageHeight * 9 / 16);
+    const imageY = 90;
+    const imageXLeft = 140;
+    const imageXRight = width - imageXLeft - imageWidth;
+    const imageBottom = imageY + imageHeight;
+    const nameY = imageBottom + 32;
+    const titleY = nameY + 26;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
@@ -291,30 +299,30 @@ const buildShareImageSvg = async (post, db, options = {}) => {
             <stop offset="100%" stop-color="#111827" />
           </linearGradient>
           <clipPath id="leftClip">
-            <rect x="60" y="120" width="430" height="430" rx="28" ry="28" />
+            <rect x="${imageXLeft}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" rx="28" ry="28" />
           </clipPath>
           <clipPath id="rightClip">
-            <rect x="710" y="120" width="430" height="430" rx="28" ry="28" />
+            <rect x="${imageXRight}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" rx="28" ry="28" />
           </clipPath>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bg)" />
         <text x="60" y="70" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#e2e8f0">
           ${escapeHtml(siteLabel)}
         </text>
-        <image href="${leftData}" x="60" y="120" width="430" height="430" preserveAspectRatio="xMidYMid slice" clip-path="url(#leftClip)" />
-        <image href="${rightData}" x="710" y="120" width="430" height="430" preserveAspectRatio="xMidYMid slice" clip-path="url(#rightClip)" />
-        <circle cx="600" cy="335" r="72" fill="#0f172a" stroke="#f8fafc" stroke-width="4" />
-        <text x="600" y="350" font-family="Arial, Helvetica, sans-serif" font-size="48" fill="#f8fafc" text-anchor="middle">
+        <image href="${leftData}" x="${imageXLeft}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" preserveAspectRatio="xMidYMid slice" clip-path="url(#leftClip)" />
+        <image href="${rightData}" x="${imageXRight}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" preserveAspectRatio="xMidYMid slice" clip-path="url(#rightClip)" />
+        <circle cx="600" cy="${imageY + Math.round(imageHeight / 2)}" r="72" fill="#0f172a" stroke="#f8fafc" stroke-width="4" />
+        <text x="600" y="${imageY + Math.round(imageHeight / 2) + 15}" font-family="Arial, Helvetica, sans-serif" font-size="48" fill="#f8fafc" text-anchor="middle">
           VS
         </text>
-        <text x="60" y="580" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc">
+        <text x="${imageXLeft}" y="${nameY}" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#f8fafc">
           ${escapeHtml(truncateText(leftName, 28))}
         </text>
-        <text x="1140" y="580" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc" text-anchor="end">
+        <text x="${imageXRight + imageWidth}" y="${nameY}" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#f8fafc" text-anchor="end">
           ${escapeHtml(truncateText(rightName, 28))}
         </text>
         ${title ? `
-          <text x="600" y="610" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
+          <text x="600" y="${titleY}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
             ${escapeHtml(truncateText(title, 80))}
           </text>` : ''}
       </svg>
