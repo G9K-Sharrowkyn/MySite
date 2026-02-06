@@ -2082,7 +2082,8 @@ body.dark-mode .post-card {
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   padding-left: 12px;
   padding-right: 12px;
 }
