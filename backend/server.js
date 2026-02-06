@@ -122,8 +122,25 @@ const findCharacterImage = (name, characters = []) => {
   return match?.image || match?.characterImage || '';
 };
 
-const resolvePostImage = async (post, db, baseUrl) => {
+const normalizeBaseUrl = (value) => String(value || '').replace(/\/$/, '');
+
+const buildAbsoluteUrl = (baseUrl, rawPath) => {
+  const normalizedBase = normalizeBaseUrl(baseUrl);
+  if (!normalizedBase) return rawPath;
+  const normalizedPath = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
+  return `${normalizedBase}${normalizedPath}`;
+};
+
+const resolvePostImage = async (post, db, baseUrlOrOptions) => {
   if (!post) return '';
+  const options =
+    typeof baseUrlOrOptions === 'object' && baseUrlOrOptions !== null
+      ? baseUrlOrOptions
+      : { baseUrl: baseUrlOrOptions };
+  const imageBaseUrl = normalizeBaseUrl(options.imageBaseUrl || options.baseUrl);
+  const apiBaseUrl = normalizeBaseUrl(
+    options.apiBaseUrl || options.baseUrl || imageBaseUrl
+  );
   const photos = Array.isArray(post.photos) ? post.photos : [];
   const photoEntry = photos.find(Boolean);
   const photoUrl =
@@ -152,13 +169,24 @@ const resolvePostImage = async (post, db, baseUrl) => {
   const fallback = '/logo512.png';
   const raw = photoUrl || characterImage || fallback;
   if (!raw) return '';
-  if (/^https?:\/\//i.test(raw)) return raw;
-  return `${baseUrl}${raw.startsWith('/') ? '' : '/'}${raw}`;
+  if (/^data:/i.test(raw)) return raw;
+  if (/^https?:\/\//i.test(raw)) return encodeURI(raw);
+
+  const normalizedRaw = raw.startsWith('/') ? raw : `/${raw}`;
+  const prefersApi =
+    normalizedRaw.startsWith('/uploads/') || normalizedRaw.startsWith('/api/uploads/');
+  const baseForRelative = prefersApi ? apiBaseUrl : imageBaseUrl;
+  const resolved = buildAbsoluteUrl(baseForRelative || apiBaseUrl, normalizedRaw);
+  return encodeURI(resolved);
 };
 
 const buildShareMetaTags = async (req, post, db, options = {}) => {
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const url = options.url || `${baseUrl}/post/${post?.id || post?._id || ''}`;
+  const apiBaseUrl = normalizeBaseUrl(options.apiBaseUrl || `${req.protocol}://${req.get('host')}`);
+  const frontendOrigin = normalizeBaseUrl(
+    options.frontendOrigin || resolveFrontendOrigin(req)
+  );
+  const url =
+    options.url || `${frontendOrigin}/post/${post?.id || post?._id || ''}`;
   const title = normalizeMetaText(
     post?.title ||
       (post?.fight?.teamA && post?.fight?.teamB
@@ -174,7 +202,10 @@ const buildShareMetaTags = async (req, post, db, options = {}) => {
     160
   );
   const resolvedDb = db || (await readDb().catch(() => null));
-  const image = await resolvePostImage(post, resolvedDb, baseUrl);
+  const image = await resolvePostImage(post, resolvedDb, {
+    imageBaseUrl: options.imageBaseUrl || frontendOrigin,
+    apiBaseUrl
+  });
 
   return `
     <title>${escapeHtml(title)}</title>
@@ -567,12 +598,18 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
       (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
       null;
     const frontendOrigin = resolveFrontendOrigin(req);
+    const apiOrigin = `${req.protocol}://${req.get('host')}`;
     const postUrl = `${frontendOrigin}/post/${postId}`;
     const meta = await buildShareMetaTags(
       req,
       post || { id: postId, title: 'Post', content: '' },
       db,
-      { url: postUrl }
+      {
+        url: postUrl,
+        imageBaseUrl: frontendOrigin,
+        apiBaseUrl: apiOrigin,
+        frontendOrigin
+      }
     );
     const html = buildShareHtml(meta, postUrl);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -661,7 +698,16 @@ if (process.env.NODE_ENV === 'production') {
       );
 
       const html = await getIndexHtml();
-      const meta = post ? await buildShareMetaTags(req, post, db) : '';
+      const frontendOrigin = resolveFrontendOrigin(req);
+      const apiOrigin = `${req.protocol}://${req.get('host')}`;
+      const meta = post
+        ? await buildShareMetaTags(req, post, db, {
+            url: `${frontendOrigin}/post/${postId}`,
+            imageBaseUrl: frontendOrigin,
+            apiBaseUrl: apiOrigin,
+            frontendOrigin
+          })
+        : '';
       const withMeta = meta
         ? html.replace('</head>', `${meta}\n</head>`)
         : html;
