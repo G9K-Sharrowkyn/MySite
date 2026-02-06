@@ -119,9 +119,18 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return new Date() < lockTime;
   })();
 
-  const buildShareUrl = () => {
+  const buildPostUrl = () => {
     if (typeof window === 'undefined') return '';
     return `${window.location.origin}/post/${post.id}`;
+  };
+
+  const buildShareUrl = () => {
+    const apiBase = String(process.env.REACT_APP_API_URL || '').trim();
+    if (apiBase && /^https?:\/\//i.test(apiBase)) {
+      return `${apiBase.replace(/\/$/, '')}/share/post/${post.id}`;
+    }
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/share/post/${post.id}`;
   };
 
   const getShareText = () => {
@@ -156,7 +165,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const handleCopyLink = async () => {
-    const url = buildShareUrl();
+    const url = buildPostUrl();
     if (!url) return;
     try {
       await navigator.clipboard.writeText(url);

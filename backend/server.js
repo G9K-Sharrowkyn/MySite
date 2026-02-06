@@ -156,9 +156,9 @@ const resolvePostImage = async (post, db, baseUrl) => {
   return `${baseUrl}${raw.startsWith('/') ? '' : '/'}${raw}`;
 };
 
-const buildShareMetaTags = async (req, post, db) => {
+const buildShareMetaTags = async (req, post, db, options = {}) => {
   const baseUrl = `${req.protocol}://${req.get('host')}`;
-  const url = `${baseUrl}/post/${post?.id || post?._id || ''}`;
+  const url = options.url || `${baseUrl}/post/${post?.id || post?._id || ''}`;
   const title = normalizeMetaText(
     post?.title ||
       (post?.fight?.teamA && post?.fight?.teamB
@@ -183,12 +183,44 @@ const buildShareMetaTags = async (req, post, db) => {
     <meta property="og:type" content="article" />
     <meta property="og:url" content="${escapeHtml(url)}" />
     <meta property="og:image" content="${escapeHtml(image)}" />
+    <meta property="og:image:secure_url" content="${escapeHtml(image)}" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="${escapeHtml(image)}" />
   `;
 };
+
+const resolveFrontendOrigin = (req) => {
+  const explicit = String(process.env.FRONTEND_ORIGIN || '').trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+  const host = req.get('host');
+  if (!host) {
+    return `${req.protocol}://localhost`;
+  }
+  if (host.startsWith('api.')) {
+    return `${req.protocol}://${host.replace(/^api\./, '')}`;
+  }
+  return `${req.protocol}://${host}`;
+};
+
+const buildShareHtml = (meta, redirectUrl) => `
+  <!doctype html>
+  <html lang="en">
+    <head>
+      <meta charset="utf-8" />
+      ${meta || ''}
+      <link rel="canonical" href="${escapeHtml(redirectUrl)}" />
+    </head>
+    <body>
+      <p>Redirecting to post...</p>
+      <p><a href="${escapeHtml(redirectUrl)}">Open post</a></p>
+      <script>
+        window.location.replace(${JSON.stringify(redirectUrl)});
+      </script>
+    </body>
+  </html>
+`;
 
 // Create HTTP server
 const server = http.createServer(app);
@@ -525,6 +557,33 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/moderation', moderationRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
+
+// Share preview endpoint for social cards
+app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
+  try {
+    const db = await readDb();
+    const postId = req.params.id;
+    const post =
+      (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
+      null;
+    const frontendOrigin = resolveFrontendOrigin(req);
+    const postUrl = `${frontendOrigin}/post/${postId}`;
+    const meta = await buildShareMetaTags(
+      req,
+      post || { id: postId, title: 'Post', content: '' },
+      db,
+      { url: postUrl }
+    );
+    const html = buildShareHtml(meta, postUrl);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    return res.send(html);
+  } catch (error) {
+    console.error('Share meta error:', error?.message || error);
+    return res.status(500).send('Unable to render share preview.');
+  }
+});
 
 // Lightweight health endpoints for uptime checks
 app.get(['/healthz', '/api/health'], (req, res) => {
