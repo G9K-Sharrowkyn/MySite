@@ -125,12 +125,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const buildShareUrl = () => {
-    const apiBase = String(process.env.REACT_APP_API_URL || '').trim();
-    if (apiBase && /^https?:\/\//i.test(apiBase)) {
-      return `${apiBase.replace(/\/$/, '')}/share/post/${post.id}`;
-    }
+    if (!post?.id) return '';
     if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/share/post/${post.id}`;
+    const versionToken = post?.updatedAt || post?.createdAt || 'v3';
+    return `${window.location.origin}/post/${post.id}?v=${encodeURIComponent(versionToken)}`;
   };
 
   const getShareText = () => {

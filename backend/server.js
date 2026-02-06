@@ -826,7 +826,12 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-app.get(['/share/post/:id/image', '/api/share/post/:id/image'], async (req, res) => {
+app.get([
+  '/share/post/:id/image',
+  '/share/post/:id/image.png',
+  '/api/share/post/:id/image',
+  '/api/share/post/:id/image.png'
+], async (req, res) => {
   try {
     const db = await readDb();
     const postId = req.params.id;
@@ -865,7 +870,8 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
     const frontendOrigin = resolveFrontendOrigin(req);
     const apiOrigin = `${req.protocol}://${req.get('host')}`;
     const postUrl = `${frontendOrigin}/post/${postId}`;
-    const imageUrl = `${apiOrigin}/share/post/${postId}/image`;
+    const versionToken = post?.updatedAt || post?.createdAt || 'v3';
+    const imageUrl = `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(versionToken)}`;
     const meta = await buildShareMetaTags(
       req,
       post || { id: postId, title: 'Post', content: '' },
@@ -970,7 +976,9 @@ if (process.env.NODE_ENV === 'production') {
       const meta = post
         ? await buildShareMetaTags(req, post, db, {
             url: `${frontendOrigin}/post/${postId}`,
-            imageUrl: `${apiOrigin}/share/post/${postId}/image`,
+            imageUrl: `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(
+              post?.updatedAt || post?.createdAt || 'v3'
+            )}`,
             imageBaseUrl: frontendOrigin,
             apiBaseUrl: apiOrigin,
             frontendOrigin
