@@ -272,6 +272,8 @@ const resolveCharacterImageByName = async (name, db) => {
 const buildShareImageSvg = async (post, db, options = {}) => {
   const width = 1200;
   const height = 1200;
+  const safeHeight = 675; // 16:9 safe area for Twitter preview crop
+  const safeTop = Math.round((height - safeHeight) / 2);
   const imageBaseUrl = options.imageBaseUrl || options.frontendOrigin || '';
   const apiBaseUrl = options.apiBaseUrl || '';
   const isFight = post?.type === 'fight' || post?.fight?.teamA || post?.fight?.teamB;
@@ -322,41 +324,41 @@ const buildShareImageSvg = async (post, db, options = {}) => {
   const subtitleLines = splitTextLines(subtitle, 58, 2);
 
   if (isFight) {
-    const cardX = 40;
-    const cardY = 40;
-    const cardWidth = 1120;
-    const cardHeight = 1120;
+    const cardWidth = 1080;
+    const cardHeight = 640;
+    const cardX = Math.round((width - cardWidth) / 2);
+    const cardY = safeTop + Math.round((safeHeight - cardHeight) / 2);
 
     const panelGap = 120;
-    const panelWidth = 440;
-    const panelY = 120;
-    const buttonRowHeight = 64;
-    const buttonRowY = cardY + cardHeight - buttonRowHeight - 24;
-    const panelHeight = buttonRowY - panelY - 24;
+    const panelWidth = 320;
+    const panelY = cardY + 36;
+    const buttonRowHeight = 44;
+    const buttonRowY = cardY + cardHeight - buttonRowHeight - 14;
+    const panelHeight = buttonRowY - panelY - 12;
     const panelXLeft =
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
-    const nameBoxOffsetX = 24;
-    const nameBoxOffsetY = 14;
+    const nameBoxOffsetX = 20;
+    const nameBoxOffsetY = 10;
     const nameBoxWidth = panelWidth - nameBoxOffsetX * 2;
-    const nameBoxHeight = 62;
-    const nameLineHeight = 20;
-    const nameStartY = panelY + nameBoxOffsetY + 30;
+    const nameBoxHeight = 46;
+    const nameLineHeight = 18;
+    const nameStartY = panelY + nameBoxOffsetY + 24;
 
-    const frameGap = 12;
-    const votesHeight = 22;
-    const bottomPadding = 16;
+    const frameGap = 8;
+    const votesHeight = 16;
+    const bottomPadding = 8;
     const frameY = panelY + nameBoxOffsetY + nameBoxHeight + frameGap;
     const panelBottom = panelY + panelHeight;
     const availableHeight = Math.max(
-      240,
+      220,
       panelBottom - frameY - votesHeight - bottomPadding
     );
-    const maxFrameWidth = panelWidth - 80;
-    const frameWidth = Math.max(
-      180,
-      Math.min(maxFrameWidth, Math.round(availableHeight * 9 / 16))
+    const maxFrameWidth = panelWidth - 70;
+    const frameWidth = Math.min(
+      maxFrameWidth,
+      Math.round(availableHeight * 9 / 16)
     );
     const frameHeight = Math.round(frameWidth * 16 / 9);
     const frameXLeft =
@@ -376,12 +378,12 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const leftVotesLabel = votesHidden ? 'Votes hidden' : `${teamAVotes} votes`;
     const rightVotesLabel = votesHidden ? 'Votes hidden' : `${teamBVotes} votes`;
 
-    const buttonGap = 30;
-    const buttonsX = cardX + 90;
-    const buttonsWidth = cardWidth - 180;
+    const buttonGap = 24;
+    const buttonsX = cardX + 70;
+    const buttonsWidth = cardWidth - 140;
     const buttonWidth = Math.round((buttonsWidth - buttonGap * 2) / 3);
     const buttonY = buttonRowY;
-    const buttonTextY = buttonY + 38;
+    const buttonTextY = buttonY + 28;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
@@ -477,17 +479,17 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     `;
   }
 
-  const cardX = 60;
-  const cardY = 60;
   const cardWidth = 1080;
-  const cardHeight = 1080;
-  const imageX = cardX + 80;
-  const imageY = cardY + 180;
-  const imageWidth = cardWidth - 160;
-  const imageHeight = 640;
-  const titleY = cardY + 110;
-  const subtitleY = titleY + 30;
-  const textX = cardX + 80;
+  const cardHeight = 640;
+  const cardX = Math.round((width - cardWidth) / 2);
+  const cardY = safeTop + Math.round((safeHeight - cardHeight) / 2);
+  const imageX = cardX + 60;
+  const imageY = cardY + 170;
+  const imageWidth = cardWidth - 120;
+  const imageHeight = 360;
+  const titleY = cardY + 100;
+  const subtitleY = titleY + 28;
+  const textX = cardX + 60;
 
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
@@ -514,7 +516,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
       ${titleLines
         .map(
           (line, index) => `
-      <text x="${textX}" y="${titleY + index * 26}" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#f8fafc">
+      <text x="${textX}" y="${titleY + index * 24}" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#f8fafc">
         ${escapeHtml(line)}
       </text>`
         )
@@ -522,7 +524,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
       ${subtitleLines
         .map(
           (line, index) => `
-      <text x="${textX}" y="${subtitleY + index * 22}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#94a3b8">
+      <text x="${textX}" y="${subtitleY + index * 20}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#94a3b8">
         ${escapeHtml(line)}
       </text>`
         )
