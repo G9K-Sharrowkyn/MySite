@@ -1,0 +1,12 @@
+RewriteEngine On
+
+# Send social preview bots to backend share endpoint with OG tags
+RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|whatsapp|discordbot|telegrambot|pinterest|embedly|quora\ link\ preview|skypeuripreview|vkshare|googlebot|bingbot|yandexbot|duckduckbot) [NC]
+RewriteRule ^post/([A-Za-z0-9-]+)$ https://api.versusversevault.com/share/post/$1 [L,R=302]
+
+# Optional: direct share link on frontend domain
+RewriteRule ^share/post/([A-Za-z0-9-]+)$ https://api.versusversevault.com/share/post/$1 [L,R=302]
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]
