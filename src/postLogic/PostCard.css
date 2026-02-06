@@ -1955,6 +1955,14 @@ body.dark-mode .post-card {
 
 .fight-voting-panels .character-name-simple {
   min-width: 0;
+  /* Allow 2-line titles on mobile instead of truncating to a single line */
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  line-height: 1.15;
+  min-height: calc(2 * 1.15em);
 }
 
 .fight-voting-panels .character-frame {
