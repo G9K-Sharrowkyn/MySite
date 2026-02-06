@@ -322,83 +322,151 @@ const buildShareImageSvg = async (post, db, options = {}) => {
   const subtitleLines = splitTextLines(subtitle, 58, 2);
 
   if (isFight) {
-    const cardX = 40;
-    const cardY = 30;
-    const cardWidth = 1120;
-    const cardHeight = 570;
-    const headerX = cardX + 40;
-    const headerY = cardY + 48;
-    const textX = cardX + 40;
-    const titleY = cardY + 92;
-    const subtitleY = titleY + 30;
+    const cardX = 30;
+    const cardY = 20;
+    const cardWidth = 1140;
+    const cardHeight = 590;
 
-    const frameHeight = 390;
-    const frameWidth = Math.round(frameHeight * 9 / 16);
-    const frameY = cardY + 145;
-    const frameXLeft = cardX + 120;
-    const frameXRight = cardX + cardWidth - 120 - frameWidth;
-    const frameCenterY = frameY + Math.round(frameHeight / 2);
-    const nameY = frameY + frameHeight + 30;
+    const panelGap = 180;
+    const panelWidth = 320;
+    const panelY = 70;
+    const buttonRowHeight = 56;
+    const buttonRowY = cardY + cardHeight - buttonRowHeight - 24;
+    const panelHeight = buttonRowY - panelY - 16;
+    const panelXLeft =
+      cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
+    const panelXRight = panelXLeft + panelWidth + panelGap;
+
+    const nameBoxOffsetX = 24;
+    const nameBoxOffsetY = 18;
+    const nameBoxWidth = panelWidth - nameBoxOffsetX * 2;
+    const nameBoxHeight = 62;
+    const nameLineHeight = 22;
+    const nameStartY = panelY + nameBoxOffsetY + 30;
+
+    const frameGap = 14;
+    const votesHeight = 24;
+    const bottomPadding = 18;
+    const frameY = panelY + nameBoxOffsetY + nameBoxHeight + frameGap;
+    const panelBottom = panelY + panelHeight;
+    const frameHeight = Math.max(
+      200,
+      panelBottom - frameY - votesHeight - bottomPadding
+    );
+    const frameWidth = Math.max(120, Math.round(frameHeight * 9 / 16));
+    const frameXLeft =
+      panelXLeft + Math.round((panelWidth - frameWidth) / 2);
+    const frameXRight =
+      panelXRight + Math.round((panelWidth - frameWidth) / 2);
+    const votesY = panelBottom - bottomPadding;
+
+    const leftNameLines = splitTextLines(leftName, 14, 3);
+    const rightNameLines = splitTextLines(rightName, 14, 3);
+    const leftNameX = panelXLeft + nameBoxOffsetX + 16;
+    const rightNameX = panelXRight + nameBoxOffsetX + 16;
+
+    const teamAVotes = post?.fight?.votes?.teamA || 0;
+    const teamBVotes = post?.fight?.votes?.teamB || 0;
+    const votesHidden = post?.fight?.voteVisibility === 'final';
+    const leftVotesLabel = votesHidden ? 'Votes hidden' : `${teamAVotes} votes`;
+    const rightVotesLabel = votesHidden ? 'Votes hidden' : `${teamBVotes} votes`;
+
+    const buttonGap = 30;
+    const buttonsX = cardX + 80;
+    const buttonsWidth = cardWidth - 160;
+    const buttonWidth = Math.round((buttonsWidth - buttonGap * 2) / 3);
+    const buttonY = buttonRowY;
+    const buttonTextY = buttonY + 36;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
           <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#05070d" />
-            <stop offset="100%" stop-color="#0b0f1a" />
+            <stop offset="0%" stop-color="#0b0f16" />
+            <stop offset="100%" stop-color="#0f1218" />
           </linearGradient>
           <linearGradient id="cardBg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#0b1220" />
-            <stop offset="50%" stop-color="#0f172a" />
-            <stop offset="100%" stop-color="#111827" />
+            <stop offset="0%" stop-color="#1b1f27" />
+            <stop offset="50%" stop-color="#1e232c" />
+            <stop offset="100%" stop-color="#1a1e27" />
+          </linearGradient>
+          <linearGradient id="panelBg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#262a33" />
+            <stop offset="100%" stop-color="#1f232b" />
+          </linearGradient>
+          <linearGradient id="nameBg" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3d3922" />
+            <stop offset="100%" stop-color="#2f2b19" />
           </linearGradient>
           <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000" flood-opacity="0.45" />
           </filter>
+          <filter id="panelShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity="0.35" />
+          </filter>
           <filter id="frameShadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000" flood-opacity="0.35" />
           </filter>
+          <filter id="buttonShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity="0.35" />
+          </filter>
           <clipPath id="leftClip">
-            <rect x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="26" ry="26" />
+            <rect x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="22" ry="22" />
           </clipPath>
           <clipPath id="rightClip">
-            <rect x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="26" ry="26" />
+            <rect x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="22" ry="22" />
           </clipPath>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bg)" />
         <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" ry="32" fill="url(#cardBg)" filter="url(#cardShadow)" />
-        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" ry="32" fill="none" stroke="#1f2a44" stroke-width="1.5" />
-        <text x="${headerX}" y="${headerY}" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#e2e8f0">
-          ${escapeHtml(siteLabel)}
-        </text>
-        ${titleLines
+        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" ry="32" fill="none" stroke="#2c313d" stroke-width="1.5" />
+
+        <rect x="${panelXLeft}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="26" ry="26" fill="url(#panelBg)" stroke="#2f3542" stroke-width="1.5" filter="url(#panelShadow)" />
+        <rect x="${panelXRight}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="26" ry="26" fill="url(#panelBg)" stroke="#2f3542" stroke-width="1.5" filter="url(#panelShadow)" />
+
+        <rect x="${panelXLeft + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="16" ry="16" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
+        <rect x="${panelXRight + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="16" ry="16" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
+
+        ${leftNameLines
           .map(
             (line, index) => `
-        <text x="${textX}" y="${titleY + index * 24}" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#f8fafc">
+        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
           .join('')}
-        ${subtitleLines
+        ${rightNameLines
           .map(
             (line, index) => `
-        <text x="${textX}" y="${subtitleY + index * 20}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#94a3b8">
+        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
           .join('')}
-        <rect x="${frameXLeft - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="30" ry="30" fill="#0a1222" stroke="#1f2a44" stroke-width="2" filter="url(#frameShadow)" />
-        <rect x="${frameXRight - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="30" ry="30" fill="#0a1222" stroke="#1f2a44" stroke-width="2" filter="url(#frameShadow)" />
+
+        <rect x="${frameXLeft - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="26" ry="26" fill="#2b2f36" stroke="#3b3f46" stroke-width="3" filter="url(#frameShadow)" />
+        <rect x="${frameXRight - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="26" ry="26" fill="#2b2f36" stroke="#3b3f46" stroke-width="3" filter="url(#frameShadow)" />
         <image href="${leftData}" x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#leftClip)" />
         <image href="${rightData}" x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#rightClip)" />
-        <circle cx="600" cy="${frameCenterY}" r="68" fill="#0b1020" stroke="#f8fafc" stroke-width="3" />
-        <text x="600" y="${frameCenterY + 14}" font-family="Arial, Helvetica, sans-serif" font-size="44" fill="#f8fafc" text-anchor="middle">
-          VS
+
+        <text x="${panelXLeft + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#cbd5f5" text-anchor="middle">
+          ${escapeHtml(leftVotesLabel)}
         </text>
-        <text x="${frameXLeft}" y="${nameY}" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc">
-          ${escapeHtml(truncateText(leftName, 28))}
+        <text x="${panelXRight + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#cbd5f5" text-anchor="middle">
+          ${escapeHtml(rightVotesLabel)}
         </text>
-        <text x="${frameXRight + frameWidth}" y="${nameY}" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc" text-anchor="end">
-          ${escapeHtml(truncateText(rightName, 28))}
+
+        <rect x="${buttonsX}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="14" ry="14" fill="#e74c3c" filter="url(#buttonShadow)" />
+        <rect x="${buttonsX + buttonWidth + buttonGap}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="14" ry="14" fill="#f39c12" filter="url(#buttonShadow)" />
+        <rect x="${buttonsX + (buttonWidth + buttonGap) * 2}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="14" ry="14" fill="#3498db" filter="url(#buttonShadow)" />
+
+        <text x="${buttonsX + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc" text-anchor="middle">
+          VOTE!
+        </text>
+        <text x="${buttonsX + buttonWidth + buttonGap + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc" text-anchor="middle">
+          DRAW
+        </text>
+        <text x="${buttonsX + (buttonWidth + buttonGap) * 2 + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc" text-anchor="middle">
+          VOTE!
         </text>
       </svg>
     `;
