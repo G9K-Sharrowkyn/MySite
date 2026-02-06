@@ -94,6 +94,28 @@ const Header = () => {
     setShowNotifications(!showNotifications);
   };
 
+  const toggleUserMenu = () => {
+    setShowUserMenu(prev => {
+      const next = !prev;
+      if (next) {
+        setShowMobileMenu(false);
+        setShowNotifications(false);
+      }
+      return next;
+    });
+  };
+
+  const toggleMobileMenu = () => {
+    setShowMobileMenu(prev => {
+      const next = !prev;
+      if (next) {
+        setShowUserMenu(false);
+        setShowNotifications(false);
+      }
+      return next;
+    });
+  };
+
   const markNotificationAsRead = async (notificationId) => {
     if (!token) return;
 
@@ -191,7 +213,7 @@ const Header = () => {
                 <div className="user-menu-container after-ccg after-ccg-user">
                   <button 
                     className="user-button"
-                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    onClick={toggleUserMenu}
                   >
                     <img 
                       {...getOptimizedImageProps(
@@ -348,7 +370,7 @@ const Header = () => {
           <button
             type="button"
             className="mobile-menu-button"
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
+            onClick={toggleMobileMenu}
           >
             {showMobileMenu ? (t('close') || 'Close') : (t('menu') || 'Menu')}
           </button>
@@ -442,7 +464,7 @@ const Header = () => {
             <div className="user-menu-container mobile-action">
               <button
                 className="user-button"
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                onClick={toggleUserMenu}
               >
                 <img
                   {...getOptimizedImageProps(
