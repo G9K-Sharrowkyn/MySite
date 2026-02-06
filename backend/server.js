@@ -339,17 +339,15 @@ const buildShareImageSvg = async (post, db, options = {}) => {
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
-    const nameBoxOffsetX = 20;
-    const nameBoxOffsetY = 10;
-    const nameBoxWidth = panelWidth - nameBoxOffsetX * 2;
-    const nameBoxHeight = 46;
-    const nameLineHeight = 18;
-    const nameStartY = panelY + nameBoxOffsetY + 24;
+    const nameTextPaddingX = 12;
+    const nameTextTop = panelY + 12;
+    const nameLineHeight = 22;
+    const nameStartY = nameTextTop + 24;
 
-    const frameGap = 8;
+    const frameGap = 12;
     const votesHeight = 16;
     const bottomPadding = 8;
-    const frameY = panelY + nameBoxOffsetY + nameBoxHeight + frameGap;
+    const frameY = nameStartY + nameLineHeight * 2 + frameGap;
     const panelBottom = panelY + panelHeight;
     const availableHeight = Math.max(
       220,
@@ -367,10 +365,10 @@ const buildShareImageSvg = async (post, db, options = {}) => {
       panelXRight + Math.round((panelWidth - frameWidth) / 2);
     const votesY = panelBottom - bottomPadding;
 
-    const leftNameLines = splitTextLines(leftName, 14, 3);
-    const rightNameLines = splitTextLines(rightName, 14, 3);
-    const leftNameX = panelXLeft + nameBoxOffsetX + 16;
-    const rightNameX = panelXRight + nameBoxOffsetX + 16;
+    const leftNameLines = splitTextLines(leftName, 16, 2);
+    const rightNameLines = splitTextLines(rightName, 16, 2);
+    const leftNameX = panelXLeft + nameTextPaddingX;
+    const rightNameX = panelXRight + nameTextPaddingX;
 
     const teamAVotes = post?.fight?.votes?.teamA || 0;
     const teamBVotes = post?.fight?.votes?.teamB || 0;
@@ -430,13 +428,10 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         <rect x="${panelXLeft}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="26" ry="26" fill="url(#panelBg)" stroke="#2f3542" stroke-width="1.5" filter="url(#panelShadow)" />
         <rect x="${panelXRight}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="26" ry="26" fill="url(#panelBg)" stroke="#2f3542" stroke-width="1.5" filter="url(#panelShadow)" />
 
-        <rect x="${panelXLeft + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="18" ry="18" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
-        <rect x="${panelXRight + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="18" ry="18" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
-
         ${leftNameLines
           .map(
             (line, index) => `
-        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
+        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
@@ -444,7 +439,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${rightNameLines
           .map(
             (line, index) => `
-        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
+        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
