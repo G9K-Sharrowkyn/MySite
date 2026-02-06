@@ -1220,6 +1220,14 @@
     z-index: 1004;
   }
 
+  .header-mobile .user-dropdown.user-dropdown-mobile {
+    position: static;
+    transform: none;
+    max-width: 100%;
+    width: 100%;
+    margin-top: 8px;
+  }
+
   .overlay {
     z-index: 900;
   }

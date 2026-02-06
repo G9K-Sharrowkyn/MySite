@@ -457,7 +457,7 @@ const Header = () => {
               </button>
 
               {showUserMenu && (
-                <div className="user-dropdown">
+                <div className="user-dropdown user-dropdown-mobile">
                   <Link
                     to={user?.username ? `/profile/${encodeURIComponent(user.username)}` : "/profile/me"}
                     className="dropdown-item"
@@ -556,4 +556,3 @@ const Header = () => {
 };
 
 export default Header;
-

@@ -71,6 +71,29 @@
   flex-wrap: wrap;
 }
 
+@media (max-width: 1024px) {
+  .tournaments-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .create-tournament-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .filter-tabs {
+    justify-content: center;
+  }
+
+  .filter-tabs button {
+    flex: 1 1 140px;
+    min-width: 120px;
+    text-align: center;
+  }
+}
+
 .filter-tabs button {
   padding: 10px 20px;
   background: #1a1a1a;
