@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CoinBalance from './CoinBalance';
+import { useLanguage } from '../i18n/LanguageContext';
 import './BettingPanel.css';
 
 const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetPlaced }) => {
-  const [betAmount, setBetAmount] = useState(10);
+  const { t } = useLanguage();
+
+  const MIN_BET = 10;
+  const MAX_BET = 1000;
+
+  const [betAmount, setBetAmount] = useState(MIN_BET);
   const [prediction, setPrediction] = useState('');
   const [odds, setOdds] = useState({ A: 2.0, B: 2.0, draw: 3.0 });
   const [userBalance, setUserBalance] = useState(0);
@@ -44,14 +50,14 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
   useEffect(() => {
     if (!bettingEndsAt) {
       setBettingOpen(false);
-      setTimeRemaining('Betting closed');
+      setTimeRemaining(t('bettingClosed'));
       return undefined;
     }
 
     const closeTime = new Date(bettingEndsAt);
     if (Number.isNaN(closeTime.getTime())) {
       setBettingOpen(false);
-      setTimeRemaining('Betting closed');
+      setTimeRemaining(t('bettingClosed'));
       return undefined;
     }
 
@@ -59,7 +65,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
       const now = new Date();
       if (now >= closeTime) {
         setBettingOpen(false);
-        setTimeRemaining('Betting closed');
+        setTimeRemaining(t('bettingClosed'));
         return;
       }
       const remaining = closeTime - now;
@@ -72,13 +78,12 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
     checkBettingStatus();
     const interval = setInterval(checkBettingStatus, 60000);
     return () => clearInterval(interval);
-  }, [bettingEndsAt]);
+  }, [bettingEndsAt, t]);
 
   const handleBetAmountChange = (e) => {
-    const amount = parseInt(e.target.value);
-    if (amount > 0 && amount <= userBalance) {
-      setBetAmount(amount);
-    }
+    const amount = Number.parseInt(e.target.value, 10);
+    if (Number.isNaN(amount)) return;
+    setBetAmount(amount);
   };
 
   const handlePredictionChange = (pred) => {
@@ -92,17 +97,22 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
 
   const handlePlaceBet = async () => {
     if (!prediction) {
-      setError('Please select a prediction');
+      setError(t('selectPrediction'));
       return;
     }
 
     if (betAmount > userBalance) {
-      setError('Insufficient eurodolary');
+      setError(t('insufficientFunds'));
       return;
     }
 
-    if (betAmount < 1) {
-      setError('Minimum bet is 1 eurodolar');
+    if (betAmount < MIN_BET) {
+      setError(t('minimumBetAmount', { amount: MIN_BET, coins: t('coins') }));
+      return;
+    }
+
+    if (betAmount > MAX_BET) {
+      setError(t('maximumBetAmount', { amount: MAX_BET, coins: t('coins') }));
       return;
     }
 
@@ -118,11 +128,11 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
         headers: { 'x-auth-token': token }
       });
 
-      setSuccess('Bet placed successfully!');
+      setSuccess(t('betPlacedSuccessfully'));
       setUserBalance(response.data.newBalance || userBalance - betAmount);
       
       // Reset form
-      setBetAmount(10);
+      setBetAmount(MIN_BET);
       setPrediction('');
       
       if (onBetPlaced) {
@@ -132,7 +142,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to place bet');
+      setError(err.response?.data?.message || t('failedToPlaceBet'));
     } finally {
       setLoading(false);
     }
@@ -142,7 +152,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
     return (
       <div className="betting-panel">
         <div className="betting-login-required">
-          <p>Please log in to place bets</p>
+          <p>{t('loginToBet')}</p>
         </div>
       </div>
     );
@@ -151,10 +161,10 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
   return (
     <div className="betting-panel">
       <div className="betting-header">
-        <h3>🎲 Place Your Bet</h3>
+        <h3>🎲 {t('placeBet')}</h3>
         <div className="betting-status">
           <span className={`status-indicator ${bettingOpen ? 'open' : 'closed'}`}>
-            {bettingOpen ? '🟢 Open' : '🔴 Closed'}
+            {bettingOpen ? `🟢 ${t('open')}` : `🔴 ${t('closed')}`}
           </span>
           <span className="time-remaining">{timeRemaining}</span>
         </div>
@@ -170,7 +180,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
       {bettingOpen ? (
         <div className="betting-form">
           <div className="prediction-section">
-            <h4>Predict the Winner:</h4>
+            <h4>{t('predictWinner')}</h4>
             <div className="prediction-options">
               <button
                 className={`prediction-btn ${prediction === 'A' ? 'selected' : ''}`}
@@ -186,7 +196,7 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
                 onClick={() => handlePredictionChange('draw')}
                 disabled={loading}
               >
-                <span className="team-name">Draw</span>
+                <span className="team-name">{t('draw')}</span>
                 <span className="odds">@{odds.draw.toFixed(2)}</span>
               </button>
 
@@ -202,18 +212,18 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
           </div>
 
           <div className="bet-amount-section">
-            <h4>Bet Amount:</h4>
+            <h4>{t('betAmount')}:</h4>
             <div className="bet-amount-input">
               <input
                 type="number"
-                min="1"
-                max={userBalance}
+                min={MIN_BET}
+                max={Math.min(userBalance, MAX_BET)}
                 value={betAmount}
                 onChange={handleBetAmountChange}
                 disabled={loading}
                 className="amount-input"
               />
-              <span className="coins-label">eurodolary</span>
+              <span className="coins-label">{t('coins')}</span>
             </div>
             
             <div className="quick-amounts">
@@ -232,12 +242,12 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
 
           {prediction && (
             <div className="potential-winnings">
-              <h4>Potential Winnings:</h4>
+              <h4>{t('potentialWinnings')}:</h4>
               <div className="winnings-display">
                 <span className="winnings-amount">
                   🪙 {calculatePotentialWinnings().toLocaleString()}
                 </span>
-                <span className="winnings-label">eurodolary</span>
+                <span className="winnings-label">{t('coins')}</span>
               </div>
             </div>
           )}
@@ -245,14 +255,14 @@ const BettingPanel = ({ fightId, fightTitle, teamA, teamB, bettingEndsAt, onBetP
           <button
             className="place-bet-btn"
             onClick={handlePlaceBet}
-            disabled={!prediction || betAmount > userBalance || betAmount < 1 || loading}
+            disabled={!prediction || betAmount > userBalance || betAmount < MIN_BET || betAmount > MAX_BET || loading}
           >
-            {loading ? 'Placing Bet...' : 'Place Bet'}
+            {loading ? t('placingBet') : t('placeBet')}
           </button>
         </div>
       ) : (
         <div className="betting-closed">
-          <p>Betting is closed for this fight</p>
+          <p>{t('bettingWindowClosed')}</p>
         </div>
       )}
     </div>

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useLanguage } from '../i18n/LanguageContext';
 import './CoinBalance.css';
 
 const CoinBalance = ({ userId, showLabel = true, className = '' }) => {
+  const { t } = useLanguage();
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -19,10 +21,10 @@ const CoinBalance = ({ userId, showLabel = true, className = '' }) => {
         });
         
         setBalance(response.data.balance || 0);
-        setError(null);
+        setHasError(false);
       } catch (err) {
         console.error('Error fetching coin balance:', err);
-        setError('Failed to load balance');
+        setHasError(true);
       } finally {
         setLoading(false);
       }
@@ -40,11 +42,11 @@ const CoinBalance = ({ userId, showLabel = true, className = '' }) => {
     );
   }
 
-  if (error) {
+  if (hasError) {
     return (
       <div className={`coin-balance error ${className}`}>
         <span className="coin-icon">🪙</span>
-        <span className="balance-text">Error</span>
+        <span className="balance-text">{t('error')}</span>
       </div>
     );
   }
@@ -52,7 +54,7 @@ const CoinBalance = ({ userId, showLabel = true, className = '' }) => {
   return (
     <div className={`coin-balance ${className}`}>
       <span className="coin-icon">🪙</span>
-      {showLabel && <span className="balance-label">Eurodolary:</span>}
+      {showLabel && <span className="balance-label">{t('coins')}:</span>}
       <span className="balance-amount">{balance.toLocaleString()}</span>
     </div>
   );
