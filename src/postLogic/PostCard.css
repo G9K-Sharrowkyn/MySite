@@ -1561,6 +1561,25 @@ body.dark-mode .post-card {
   flex: 0 0 auto;
 }
 
+@media (max-width: 900px) {
+  .character-frame {
+    max-width: var(--team-zone-width, 170px);
+  }
+}
+
+@media (max-width: 600px) {
+  .character-frame {
+    max-width: var(--team-zone-width, 140px);
+    aspect-ratio: 2 / 3;
+  }
+}
+
+@media (max-width: 420px) {
+  .character-frame {
+    max-width: var(--team-zone-width, 120px);
+  }
+}
+
 @property --α {
   syntax: '<angle>';
   initial-value: 0deg;
