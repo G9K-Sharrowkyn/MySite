@@ -334,17 +334,19 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const panelY = cardY + 36;
     const buttonRowHeight = 44;
     const buttonRowY = cardY + cardHeight - buttonRowHeight - 14;
-    const panelHeight = buttonRowY - panelY - 12;
+    const panelBottomGap = 24;
+    const panelHeight = buttonRowY - panelY - panelBottomGap;
     const panelXLeft =
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
     const nameTextPaddingX = 12;
-    const nameTextTop = panelY + 10;
-    const nameLineHeight = 22;
-    const nameStartY = nameTextTop + 22;
+    const nameTextTop = panelY + 6;
+    const nameFontSize = 24;
+    const nameLineHeight = 24;
+    const nameStartY = nameTextTop + nameFontSize;
 
-    const frameGap = 10;
+    const frameGap = 6;
     const votesHeight = 16;
     const bottomPadding = 8;
     const frameY = nameStartY + nameLineHeight * 2 + frameGap;
@@ -353,7 +355,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
       220,
       panelBottom - frameY - votesHeight - bottomPadding
     );
-    const maxFrameWidth = panelWidth - 70;
+    const maxFrameWidth = panelWidth - 60;
     const frameWidth = Math.min(
       maxFrameWidth,
       Math.round(availableHeight * 9 / 16)
@@ -364,9 +366,11 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const frameXRight =
       panelXRight + Math.round((panelWidth - frameWidth) / 2);
     const votesY = panelBottom - bottomPadding;
+    const frameRadius = 20;
+    const frameBorderPad = 4;
 
-    const leftNameLines = splitTextLines(leftName, 16, 2);
-    const rightNameLines = splitTextLines(rightName, 16, 2);
+    const leftNameLines = splitTextLines(leftName, 15, 2);
+    const rightNameLines = splitTextLines(rightName, 15, 2);
     const leftNameX = panelXLeft + nameTextPaddingX;
     const rightNameX = panelXRight + nameTextPaddingX;
 
@@ -415,10 +419,10 @@ const buildShareImageSvg = async (post, db, options = {}) => {
             <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity="0.35" />
           </filter>
           <clipPath id="leftClip">
-            <rect x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="22" ry="22" />
+            <rect x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="${frameRadius}" ry="${frameRadius}" />
           </clipPath>
           <clipPath id="rightClip">
-            <rect x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="22" ry="22" />
+            <rect x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="${frameRadius}" ry="${frameRadius}" />
           </clipPath>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bg)" />
@@ -431,7 +435,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${leftNameLines
           .map(
             (line, index) => `
-        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc">
+        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
@@ -439,14 +443,14 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${rightNameLines
           .map(
             (line, index) => `
-        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc">
+        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
           .join('')}
 
-        <rect x="${frameXLeft - 6}" y="${frameY - 6}" width="${frameWidth + 12}" height="${frameHeight + 12}" rx="22" ry="22" fill="#2b2f36" stroke="#3b3f46" stroke-width="2" filter="url(#frameShadow)" />
-        <rect x="${frameXRight - 6}" y="${frameY - 6}" width="${frameWidth + 12}" height="${frameHeight + 12}" rx="22" ry="22" fill="#2b2f36" stroke="#3b3f46" stroke-width="2" filter="url(#frameShadow)" />
+        <rect x="${frameXLeft - frameBorderPad}" y="${frameY - frameBorderPad}" width="${frameWidth + frameBorderPad * 2}" height="${frameHeight + frameBorderPad * 2}" rx="${frameRadius}" ry="${frameRadius}" fill="#2b2f36" stroke="#3b3f46" stroke-width="1.5" filter="url(#frameShadow)" />
+        <rect x="${frameXRight - frameBorderPad}" y="${frameY - frameBorderPad}" width="${frameWidth + frameBorderPad * 2}" height="${frameHeight + frameBorderPad * 2}" rx="${frameRadius}" ry="${frameRadius}" fill="#2b2f36" stroke="#3b3f46" stroke-width="1.5" filter="url(#frameShadow)" />
         <image href="${leftData}" x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#leftClip)" />
         <image href="${rightData}" x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#rightClip)" />
 
