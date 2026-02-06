@@ -1717,10 +1717,10 @@ body.dark-mode .post-card {
     gap: 1rem;
   }
   .team-zone, .team-panel {
-    max-width: var(--team-zone-width, 220px);
+    max-width: min(100%, var(--team-zone-width, 160px));
     min-width: 0;
     width: 100%;
-    padding: 0.7rem 0.7rem 1rem 0.7rem;
+    padding: 0.6rem 0.6rem 0.9rem 0.6rem;
   }
   
   .voting-buttons-row {
@@ -1822,17 +1822,17 @@ body.dark-mode .post-card {
 
 /* 3-column fight voting layout */
 .fight-vote-row-3col {
-  --team-zone-width: clamp(120px, 26vw, 180px);
+  --team-zone-width: clamp(100px, 24vw, 160px);
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 110px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 90px) minmax(0, 1fr);
   width: 100%;
   max-width: 100%;
   margin: 0 auto;
-  gap: clamp(6px, 1.6vw, 16px);
+  gap: clamp(6px, 1.4vw, 12px);
   justify-content: center;
   align-items: stretch;
   box-sizing: border-box;
-  padding: 0 8px;
+  padding: 0 6px;
 }
 
 .fight-vote-row-3col.has-voted {
@@ -2175,6 +2175,62 @@ body.dark-mode .post-card {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
+}
+
+/* Force fight panels to fit inside post on small screens */
+@media (max-width: 900px) {
+  .voting-section.fight-voting {
+    padding: 12px;
+  }
+
+  .fight-vote-row-3col {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 80px) minmax(0, 1fr);
+    gap: 8px;
+    padding: 0;
+    --team-zone-width: clamp(92px, 30vw, 140px);
+  }
+
+  .fight-vote-row-3col .team-column,
+  .fight-vote-row-3col .team-vote-col {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .fight-vote-row-3col .team-zone {
+    width: 100%;
+    max-width: 100%;
+    padding: 0.6rem;
+    border-radius: 14px;
+  }
+
+  .fight-vote-row-3col .character-frame {
+    width: 100%;
+    max-width: 100%;
+    aspect-ratio: 4 / 5;
+    padding: 6px;
+  }
+
+  .fight-vote-row-3col .character-name-simple {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .fight-vote-row-3col {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 68px) minmax(0, 1fr);
+    gap: 6px;
+    --team-zone-width: clamp(80px, 34vw, 120px);
+  }
+
+  .fight-vote-row-3col .team-zone {
+    padding: 0.5rem;
+    border-radius: 12px;
+  }
+
+  .fight-vote-row-3col .character-frame {
+    aspect-ratio: 3 / 4;
+    padding: 5px;
+  }
 }
 
 .fight-result-header {
