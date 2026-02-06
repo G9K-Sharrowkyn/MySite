@@ -166,6 +166,43 @@ const truncateText = (value, maxLength) => {
   return `${cleaned.slice(0, maxLength - 3)}...`;
 };
 
+const splitTextLines = (value, maxCharsPerLine, maxLines = 2) => {
+  const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!cleaned) return [];
+  const words = cleaned.split(' ');
+  const lines = [];
+  let current = '';
+  let index = 0;
+
+  while (index < words.length && lines.length < maxLines) {
+    const word = words[index];
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length <= maxCharsPerLine) {
+      current = candidate;
+      index += 1;
+      continue;
+    }
+    if (current) {
+      lines.push(current);
+      current = '';
+      continue;
+    }
+    lines.push(word.slice(0, maxCharsPerLine));
+    index += 1;
+  }
+
+  if (lines.length < maxLines && current) {
+    lines.push(current);
+  }
+
+  const usedLength = lines.join(' ').length;
+  if (usedLength < cleaned.length && lines.length) {
+    lines[lines.length - 1] = truncateText(lines[lines.length - 1], maxCharsPerLine);
+  }
+
+  return lines;
+};
+
 const resolveAssetUrl = (raw, options = {}) => {
   if (!raw) return '';
   if (/^data:/i.test(raw)) return raw;
@@ -281,38 +318,80 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     70
   );
   const subtitle = truncateText(post?.content || '', 120);
+  const titleLines = splitTextLines(title, 36, 2);
+  const subtitleLines = splitTextLines(subtitle, 58, 2);
 
   if (isFight) {
-    const frameHeight = 470;
+    const cardX = 40;
+    const cardY = 30;
+    const cardWidth = 1120;
+    const cardHeight = 570;
+    const headerX = cardX + 40;
+    const headerY = cardY + 48;
+    const textX = cardX + 40;
+    const titleY = cardY + 92;
+    const subtitleY = titleY + 30;
+
+    const frameHeight = 390;
     const frameWidth = Math.round(frameHeight * 9 / 16);
-    const frameY = 100;
-    const frameXLeft = 160;
-    const frameXRight = width - frameXLeft - frameWidth;
+    const frameY = cardY + 145;
+    const frameXLeft = cardX + 120;
+    const frameXRight = cardX + cardWidth - 120 - frameWidth;
     const frameCenterY = frameY + Math.round(frameHeight / 2);
     const nameY = frameY + frameHeight + 30;
-    const titleY = nameY + 26;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
           <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stop-color="#0b1020" />
+            <stop offset="0%" stop-color="#05070d" />
+            <stop offset="100%" stop-color="#0b0f1a" />
+          </linearGradient>
+          <linearGradient id="cardBg" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#0b1220" />
+            <stop offset="50%" stop-color="#0f172a" />
             <stop offset="100%" stop-color="#111827" />
           </linearGradient>
+          <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000" flood-opacity="0.45" />
+          </filter>
+          <filter id="frameShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#000" flood-opacity="0.35" />
+          </filter>
           <clipPath id="leftClip">
-            <rect x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="28" ry="28" />
+            <rect x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="26" ry="26" />
           </clipPath>
           <clipPath id="rightClip">
-            <rect x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="28" ry="28" />
+            <rect x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="26" ry="26" />
           </clipPath>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bg)" />
-        <text x="60" y="70" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#e2e8f0">
+        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" ry="32" fill="url(#cardBg)" filter="url(#cardShadow)" />
+        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" ry="32" fill="none" stroke="#1f2a44" stroke-width="1.5" />
+        <text x="${headerX}" y="${headerY}" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="#e2e8f0">
           ${escapeHtml(siteLabel)}
         </text>
+        ${titleLines
+          .map(
+            (line, index) => `
+        <text x="${textX}" y="${titleY + index * 24}" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#f8fafc">
+          ${escapeHtml(line)}
+        </text>`
+          )
+          .join('')}
+        ${subtitleLines
+          .map(
+            (line, index) => `
+        <text x="${textX}" y="${subtitleY + index * 20}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#94a3b8">
+          ${escapeHtml(line)}
+        </text>`
+          )
+          .join('')}
+        <rect x="${frameXLeft - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="30" ry="30" fill="#0a1222" stroke="#1f2a44" stroke-width="2" filter="url(#frameShadow)" />
+        <rect x="${frameXRight - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="30" ry="30" fill="#0a1222" stroke="#1f2a44" stroke-width="2" filter="url(#frameShadow)" />
         <image href="${leftData}" x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#leftClip)" />
         <image href="${rightData}" x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#rightClip)" />
-        <circle cx="600" cy="${frameCenterY}" r="72" fill="#0f172a" stroke="#f8fafc" stroke-width="4" />
-        <text x="600" y="${frameCenterY + 15}" font-family="Arial, Helvetica, sans-serif" font-size="48" fill="#f8fafc" text-anchor="middle">
+        <circle cx="600" cy="${frameCenterY}" r="68" fill="#0b1020" stroke="#f8fafc" stroke-width="3" />
+        <text x="600" y="${frameCenterY + 14}" font-family="Arial, Helvetica, sans-serif" font-size="44" fill="#f8fafc" text-anchor="middle">
           VS
         </text>
         <text x="${frameXLeft}" y="${nameY}" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc">
@@ -321,10 +400,6 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         <text x="${frameXRight + frameWidth}" y="${nameY}" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#f8fafc" text-anchor="end">
           ${escapeHtml(truncateText(rightName, 28))}
         </text>
-        ${title ? `
-          <text x="600" y="${titleY}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
-            ${escapeHtml(truncateText(title, 80))}
-          </text>` : ''}
       </svg>
     `;
   }
