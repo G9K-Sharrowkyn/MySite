@@ -1254,10 +1254,25 @@
 
   .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item,
   .header-mobile .user-dropdown.user-dropdown-mobile .logout-item {
-    text-align: center !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
-    padding-left: 14px;
-    padding-right: 14px;
+    width: 100% !important;
+    padding: 12px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    background: rgba(18, 22, 32, 0.9) !important;
+    color: var(--text-light) !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    text-decoration: none !important;
+    gap: 0 !important;
+  }
+
+  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item:hover,
+  .header-mobile .user-dropdown.user-dropdown-mobile .logout-item:hover {
+    background: rgba(28, 34, 48, 0.95) !important;
+    border-color: rgba(255, 255, 255, 0.35) !important;
   }
 
   .overlay {
