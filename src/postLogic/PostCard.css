@@ -2187,23 +2187,125 @@ body.dark-mode .post-card {
   padding-right: 16px;
 }
 
-/* Fight Voting Actions - New frame for fight voting buttons */
-.fight-voting-actions {
-  display: flex;
-  justify-content: space-around;
-  padding: 15px 25px;
-  border-top: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+/* Feed fight layout: 2 panels row + 3-button row (Vote/Draw/Vote) */
+.fight-voting-panels {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  align-items: start;
+  justify-content: center;
 }
 
-.fight-voting-actions .animated-vote-btn {
-  margin: 0;
+.fight-voting-panel-col {
+  min-width: 0;
+  width: 100%;
 }
 
-/* Stop pulsing animation when any vote is cast */
-.fight-voting-actions.has-voted .animated-vote-btn::after {
+.fight-voting-panels .team-column {
+  width: 100%;
+  height: auto;
+}
+
+.fight-voting-panels .team-zone {
+  width: 100%;
+  max-width: 100%;
+}
+
+.fight-voting-panels .character-frame {
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 3 / 4;
+}
+
+.fight-voting-buttons {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(80px, 0.75fr) minmax(0, 1fr);
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+}
+
+.fight-voting-buttons .animated-vote-btn {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 0;
+  padding: 10px 14px;
+  font-size: 1rem;
+  letter-spacing: 0.6px;
+}
+
+.fight-voting-buttons.has-voted .animated-vote-btn::after {
   display: none !important;
   animation: none !important;
+}
+
+@media (max-width: 900px) {
+  .voting-section.fight-voting {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .fight-voting-panels {
+    gap: 8px;
+  }
+
+  .fight-voting-panels .team-zone {
+    padding: 0.65rem;
+    border-radius: 14px;
+  }
+
+  .fight-voting-panels .character-frame {
+    padding: 6px;
+    border-radius: 12px;
+    aspect-ratio: 4 / 5;
+  }
+
+  .fight-voting-buttons {
+    grid-template-columns: minmax(0, 1fr) minmax(64px, 0.65fr) minmax(0, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .fight-voting-buttons .animated-vote-btn {
+    min-height: 44px;
+    padding: 9px 12px;
+    font-size: 0.95rem;
+  }
+
+  /* Keep mobile tight + prevent button aura from causing perceived overflow */
+  .fight-voting-buttons .animated-vote-btn::before {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .fight-voting-panels {
+    gap: 6px;
+  }
+
+  .fight-voting-panels .team-zone {
+    padding: 0.55rem;
+    border-radius: 12px;
+  }
+
+  .fight-voting-panels .character-frame {
+    padding: 5px;
+    aspect-ratio: 1 / 1;
+  }
+
+  .fight-voting-buttons {
+    grid-template-columns: minmax(0, 1fr) minmax(56px, 0.6fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .fight-voting-buttons .animated-vote-btn {
+    min-height: 42px;
+    padding: 9px 10px;
+    font-size: 0.9rem;
+  }
 }
 
 .team-zone-multiline {

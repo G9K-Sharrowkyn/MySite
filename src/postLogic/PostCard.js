@@ -457,7 +457,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   // Helper to get character object by name
 
-  const renderTeamPanel = (teamList, teamLabel, isSelected, onVote, votes, teamKey, showVoteButton) => {
+  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey) => {
     const isVoted = userVote === teamKey;
     const totalVotes = getTotalVotes();
     const votePercentage = getVotePercentage(votes, totalVotes);
@@ -556,14 +556,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           <div className="team-vote-count">{votes} {t('votes') || 'votes'}</div>
           <div className="team-vote-percent">{votePercentage}%</div>
         </div>
-        {showVoteButton && (
-          <button
-            className={`animated-vote-btn ${teamKey === 'A' ? 'team-a' : 'team-b'}${isVoted ? ' voted' : ''}`}
-            onClick={onVote}
-          >
-            {isVoted ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-          </button>
-        )}
       </div>
     );
   };
@@ -577,46 +569,53 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
 
     return (
-      <div className="voting-section fight-voting">
-        <div className={`fight-vote-row-3col${userVote ? ' has-voted' : ''}`}>
-          {/* Team A column */}
-          <div className="team-vote-col">
+      <div className="voting-section fight-voting" onClick={e => e.stopPropagation()}>
+        <div className="fight-voting-panels">
+          <div className="fight-voting-panel-col">
             {renderTeamPanel(
               teamAList,
               post.fight.teamA || 'Team A',
               userVote === 'A',
-              () => handleVote('A'),
               teamAVotes,
-              'A',
-              canVote
+              'A'
             )}
           </div>
 
-          {/* Draw column */}
-          <div className="draw-vote-col">
-            {canVote && (
-              <button
-                className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
-                onClick={() => handleVote('draw')}
-              >
-                {t('draw')}
-              </button>
-            )}
-          </div>
-
-          {/* Team B column */}
-          <div className="team-vote-col">
+          <div className="fight-voting-panel-col">
             {renderTeamPanel(
               teamBList,
               post.fight.teamB || 'Team B',
               userVote === 'B',
-              () => handleVote('B'),
               teamBVotes,
-              'B',
-              canVote
+              'B'
             )}
           </div>
         </div>
+
+        {canVote && (
+          <div className={`fight-voting-buttons${userVote ? ' has-voted' : ''}`}>
+            <button
+              className={`animated-vote-btn team-a${userVote === 'A' ? ' voted' : ''}`}
+              onClick={() => handleVote('A')}
+            >
+              {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+            </button>
+
+            <button
+              className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
+              onClick={() => handleVote('draw')}
+            >
+              {t('draw')}
+            </button>
+
+            <button
+              className={`animated-vote-btn team-b${userVote === 'B' ? ' voted' : ''}`}
+              onClick={() => handleVote('B')}
+            >
+              {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+            </button>
+          </div>
+        )}
       </div>
     );
   };
