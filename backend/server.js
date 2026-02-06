@@ -74,6 +74,122 @@ if (shouldTrustProxy) {
   app.set('trust proxy', 1);
 }
 
+const escapeHtml = (value) =>
+  String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const normalizeMetaText = (value, maxLength) => {
+  const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!maxLength || cleaned.length <= maxLength) return cleaned;
+  return `${cleaned.slice(0, maxLength - 1)}…`;
+};
+
+const normalizeCharacterKey = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '')
+    .trim();
+
+let cachedIndexHtml = null;
+let cachedStaticCharacters = null;
+
+const loadStaticCharacters = async () => {
+  if (Array.isArray(cachedStaticCharacters)) return cachedStaticCharacters;
+  try {
+    const filePath = path.join(__dirname, 'scripts', 'characters.json');
+    const raw = await readFile(filePath, 'utf-8');
+    const parsed = JSON.parse(raw);
+    cachedStaticCharacters = Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    console.warn('Failed to load static characters:', error?.message || error);
+    cachedStaticCharacters = [];
+  }
+  return cachedStaticCharacters;
+};
+
+const findCharacterImage = (name, characters = []) => {
+  if (!name) return '';
+  const key = normalizeCharacterKey(name);
+  if (!key) return '';
+  const match = characters.find((entry) => {
+    const candidates = [entry?.name, entry?.baseName, entry?.characterName];
+    return candidates.some((candidate) => normalizeCharacterKey(candidate) === key);
+  });
+  return match?.image || match?.characterImage || '';
+};
+
+const resolvePostImage = async (post, db, baseUrl) => {
+  if (!post) return '';
+  const photos = Array.isArray(post.photos) ? post.photos : [];
+  const photoEntry = photos.find(Boolean);
+  const photoUrl =
+    typeof photoEntry === 'string'
+      ? photoEntry
+      : photoEntry?.url || photoEntry?.src || photoEntry?.image || '';
+
+  const teams =
+    post.fight?.teamA || post.fight?.teamB
+      ? [
+          ...(String(post.fight?.teamA || '').split(',').map((t) => t.trim())),
+          ...(String(post.fight?.teamB || '').split(',').map((t) => t.trim()))
+        ].filter(Boolean)
+      : [];
+
+  let characterImage = '';
+  if (teams.length) {
+    const dbCharacters = Array.isArray(db?.characters) ? db.characters : [];
+    characterImage = findCharacterImage(teams[0], dbCharacters);
+    if (!characterImage) {
+      const staticCharacters = await loadStaticCharacters();
+      characterImage = findCharacterImage(teams[0], staticCharacters);
+    }
+  }
+
+  const fallback = '/logo512.png';
+  const raw = photoUrl || characterImage || fallback;
+  if (!raw) return '';
+  if (/^https?:\/\//i.test(raw)) return raw;
+  return `${baseUrl}${raw.startsWith('/') ? '' : '/'}${raw}`;
+};
+
+const buildShareMetaTags = async (req, post, db) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  const url = `${baseUrl}/post/${post?.id || post?._id || ''}`;
+  const title = normalizeMetaText(
+    post?.title ||
+      (post?.fight?.teamA && post?.fight?.teamB
+        ? `${post.fight.teamA} vs ${post.fight.teamB}`
+        : 'Post'),
+    80
+  );
+  const description = normalizeMetaText(
+    post?.content ||
+      (post?.fight?.teamA && post?.fight?.teamB
+        ? `Who wins? ${post.fight.teamA} vs ${post.fight.teamB}`
+        : 'Check this post'),
+    160
+  );
+  const resolvedDb = db || (await readDb().catch(() => null));
+  const image = await resolvePostImage(post, resolvedDb, baseUrl);
+
+  return `
+    <title>${escapeHtml(title)}</title>
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="${escapeHtml(url)}" />
+    <meta property="og:image" content="${escapeHtml(image)}" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
+    <meta name="twitter:image" content="${escapeHtml(image)}" />
+  `;
+};
+
 // Create HTTP server
 const server = http.createServer(app);
 
@@ -447,6 +563,12 @@ startDivisionScheduler();
 // Basic route or static frontend for production
 if (process.env.NODE_ENV === 'production') {
   const buildPath = path.join(__dirname, '..', 'build');
+  const getIndexHtml = async () => {
+    if (cachedIndexHtml) return cachedIndexHtml;
+    const html = await readFile(path.join(buildPath, 'index.html'), 'utf-8');
+    cachedIndexHtml = html;
+    return cachedIndexHtml;
+  };
 
   // Serve static files with proper cache control
   app.use(express.static(buildPath, {
@@ -470,6 +592,30 @@ if (process.env.NODE_ENV === 'production') {
       }
     }
   }));
+
+  app.get('/post/:id', async (req, res) => {
+    try {
+      const db = await readDb();
+      const postId = req.params.id;
+      const post = (db.posts || []).find(
+        (entry) => (entry.id || entry._id) === postId
+      );
+
+      const html = await getIndexHtml();
+      const meta = post ? await buildShareMetaTags(req, post, db) : '';
+      const withMeta = meta
+        ? html.replace('</head>', `${meta}\n</head>`)
+        : html;
+
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      return res.send(withMeta);
+    } catch (error) {
+      console.error('Failed to render share meta:', error?.message || error);
+      return res.sendFile(path.join(buildPath, 'index.html'));
+    }
+  });
 
   app.get('/*splat', (req, res) => {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
