@@ -131,6 +131,20 @@ const buildAbsoluteUrl = (baseUrl, rawPath) => {
   return `${normalizedBase}${normalizedPath}`;
 };
 
+const normalizeCharacterAssetPath = (value) => {
+  if (!value) return value;
+  let decoded = String(value);
+  try {
+    decoded = decodeURIComponent(decoded);
+  } catch (_error) {
+    decoded = String(value);
+  }
+  if (decoded.startsWith('/characters/') && decoded.includes('(SW)')) {
+    decoded = decoded.replace(/\(SW\)/g, '(Star Wars)');
+  }
+  return decoded;
+};
+
 const resolvePostImage = async (post, db, baseUrlOrOptions) => {
   if (!post) return '';
   const options =
@@ -167,7 +181,7 @@ const resolvePostImage = async (post, db, baseUrlOrOptions) => {
   }
 
   const fallback = '/logo512.png';
-  const raw = photoUrl || characterImage || fallback;
+  const raw = photoUrl || normalizeCharacterAssetPath(characterImage) || fallback;
   if (!raw) return '';
   if (/^data:/i.test(raw)) return raw;
   if (/^https?:\/\//i.test(raw)) return encodeURI(raw);
