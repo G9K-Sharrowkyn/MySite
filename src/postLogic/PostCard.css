@@ -1884,17 +1884,14 @@ body.dark-mode .post-card {
 
 .animated-vote-btn::before {
   content: '';
-  border-radius: 1000px;
-  min-width: calc(180px + 12px);
-  min-height: calc(48px + 12px);
-  border: 4px solid #00FFCB;
+  border-radius: inherit;
+  inset: -6px;
+  border: 3px solid #00FFCB;
   box-shadow: 0 0 60px rgba(0,255,203,.24);
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   opacity: 0;
   transition: all .3s ease-in-out 0s;
+  pointer-events: none;
 }
 
 .animated-vote-btn:hover, 
