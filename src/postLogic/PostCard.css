@@ -1885,9 +1885,9 @@ body.dark-mode .post-card {
 .animated-vote-btn::before {
   content: '';
   border-radius: inherit;
-  inset: -6px;
-  border: 3px solid #00FFCB;
-  box-shadow: 0 0 60px rgba(0,255,203,.24);
+  inset: 0;
+  border: 2px solid #00FFCB;
+  box-shadow: 0 0 24px rgba(0,255,203,.24);
   position: absolute;
   opacity: 0;
   transition: all .3s ease-in-out 0s;

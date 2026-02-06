@@ -340,11 +340,11 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
     const nameTextPaddingX = 12;
-    const nameTextTop = panelY + 12;
+    const nameTextTop = panelY + 10;
     const nameLineHeight = 22;
-    const nameStartY = nameTextTop + 24;
+    const nameStartY = nameTextTop + 22;
 
-    const frameGap = 12;
+    const frameGap = 10;
     const votesHeight = 16;
     const bottomPadding = 8;
     const frameY = nameStartY + nameLineHeight * 2 + frameGap;
@@ -445,8 +445,8 @@ const buildShareImageSvg = async (post, db, options = {}) => {
           )
           .join('')}
 
-        <rect x="${frameXLeft - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="26" ry="26" fill="#2b2f36" stroke="#3b3f46" stroke-width="3" filter="url(#frameShadow)" />
-        <rect x="${frameXRight - 10}" y="${frameY - 10}" width="${frameWidth + 20}" height="${frameHeight + 20}" rx="26" ry="26" fill="#2b2f36" stroke="#3b3f46" stroke-width="3" filter="url(#frameShadow)" />
+        <rect x="${frameXLeft - 6}" y="${frameY - 6}" width="${frameWidth + 12}" height="${frameHeight + 12}" rx="22" ry="22" fill="#2b2f36" stroke="#3b3f46" stroke-width="2" filter="url(#frameShadow)" />
+        <rect x="${frameXRight - 6}" y="${frameY - 6}" width="${frameWidth + 12}" height="${frameHeight + 12}" rx="22" ry="22" fill="#2b2f36" stroke="#3b3f46" stroke-width="2" filter="url(#frameShadow)" />
         <image href="${leftData}" x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#leftClip)" />
         <image href="${rightData}" x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#rightClip)" />
 
