@@ -1217,6 +1217,13 @@
     box-sizing: border-box;
   }
 
+  .header-mobile-menu button.mobile-nav-link {
+    appearance: none;
+    -webkit-appearance: none;
+    font: inherit;
+    line-height: inherit;
+  }
+
   .mobile-nav-link.disabled {
     opacity: 0.5;
   }
