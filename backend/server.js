@@ -329,24 +329,24 @@ const buildShareImageSvg = async (post, db, options = {}) => {
 
     const panelGap = 180;
     const panelWidth = 320;
-    const panelY = 70;
-    const buttonRowHeight = 56;
-    const buttonRowY = cardY + cardHeight - buttonRowHeight - 24;
-    const panelHeight = buttonRowY - panelY - 16;
+    const panelY = 56;
+    const buttonRowHeight = 52;
+    const buttonRowY = cardY + cardHeight - buttonRowHeight - 18;
+    const panelHeight = buttonRowY - panelY - 14;
     const panelXLeft =
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
-    const nameBoxOffsetX = 24;
-    const nameBoxOffsetY = 18;
+    const nameBoxOffsetX = 22;
+    const nameBoxOffsetY = 12;
     const nameBoxWidth = panelWidth - nameBoxOffsetX * 2;
-    const nameBoxHeight = 62;
-    const nameLineHeight = 22;
-    const nameStartY = panelY + nameBoxOffsetY + 30;
+    const nameBoxHeight = 60;
+    const nameLineHeight = 18;
+    const nameStartY = panelY + nameBoxOffsetY + 26;
 
-    const frameGap = 14;
-    const votesHeight = 24;
-    const bottomPadding = 18;
+    const frameGap = 10;
+    const votesHeight = 18;
+    const bottomPadding = 12;
     const frameY = panelY + nameBoxOffsetY + nameBoxHeight + frameGap;
     const panelBottom = panelY + panelHeight;
     const frameHeight = Math.max(
@@ -376,7 +376,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const buttonsWidth = cardWidth - 160;
     const buttonWidth = Math.round((buttonsWidth - buttonGap * 2) / 3);
     const buttonY = buttonRowY;
-    const buttonTextY = buttonY + 36;
+    const buttonTextY = buttonY + 34;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
@@ -429,7 +429,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${leftNameLines
           .map(
             (line, index) => `
-        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
+        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
@@ -437,7 +437,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${rightNameLines
           .map(
             (line, index) => `
-        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
+        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
