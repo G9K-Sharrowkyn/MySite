@@ -224,7 +224,7 @@ const Header = () => {
                       className="user-avatar"
                     />
                     <span className="user-name">{userDisplayName}</span>
-                    <span className="dropdown-arrow">â–Ľ</span>
+                    <span className="dropdown-arrow">{'\u25BC'}</span>
                   </button>
 
                   {showUserMenu && (
@@ -234,7 +234,7 @@ const Header = () => {
                         className="dropdown-item"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <span className="dropdown-icon">đź‘¤</span>
+                        <span className="dropdown-icon">{'\u{1F464}'}</span>
                         {t('profile')}
                       </Link>
                       <Link 
@@ -242,7 +242,7 @@ const Header = () => {
                         className="dropdown-item"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <span className="dropdown-icon">đź’¬</span>
+                        <span className="dropdown-icon">{'\u{1F4AC}'}</span>
                         {t('messages')}
                         {unreadMessages > 0 && (
                           <span className="dropdown-badge">{unreadMessages}</span>
@@ -253,7 +253,7 @@ const Header = () => {
                         className="dropdown-item"
                         onClick={() => setShowUserMenu(false)}
                       >
-                        <span className="dropdown-icon">âš™ď¸Ź</span>
+                        <span className="dropdown-icon">{'\u2699\uFE0F'}</span>
                         Settings
                       </Link>
                       <div className="dropdown-divider"></div>
@@ -261,7 +261,7 @@ const Header = () => {
                         className="dropdown-item logout-item"
                         onClick={handleLogout}
                       >
-                        <span className="dropdown-icon">đźšŞ</span>
+                        <span className="dropdown-icon">{'\u{1F6AA}'}</span>
                         {t('logout')}
                       </button>
                     </div>
@@ -278,7 +278,7 @@ const Header = () => {
             {isLoggedIn && (
               <div className="tools-row tools-row-bottom">
                 <Link to="/messages" className="icon-button after-ccg after-ccg-priority">
-                  <span className="icon">đź’¬</span>
+                  <span className="icon">{'\u{1F4AC}'}</span>
                   {unreadMessages > 0 && (
                     <span className="badge">{unreadMessages}</span>
                   )}
@@ -289,7 +289,7 @@ const Header = () => {
                     className="icon-button"
                     onClick={toggleNotifications}
                   >
-                    <span className="icon">đź””</span>
+                    <span className="icon">{'\u{1F514}'}</span>
                     {unreadNotifications > 0 && (
                       <span className="badge">{unreadNotifications}</span>
                     )}
