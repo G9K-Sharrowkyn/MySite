@@ -1126,6 +1126,8 @@
     flex-direction: column;
     gap: 12px;
     padding: 12px;
+    position: relative;
+    z-index: 1002;
   }
 
   .header-mobile-top {
@@ -1170,14 +1172,25 @@
   }
 
   .header-mobile-actions .user-button {
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .header-mobile-actions .user-button .user-name {
+    font-size: 0.9rem;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .header-mobile-menu {
     display: grid;
     grid-template-columns: 1fr;
     gap: 8px;
+    position: relative;
+    z-index: 1003;
   }
 
   .mobile-nav-link {
@@ -1193,5 +1206,21 @@
 
   .mobile-nav-link.disabled {
     opacity: 0.5;
+  }
+
+  .header-mobile .user-dropdown,
+  .header-mobile .notifications-dropdown {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    top: 90px;
+    transform: translateX(-50%);
+    max-width: min(92vw, 360px);
+    width: min(92vw, 360px);
+    z-index: 1004;
+  }
+
+  .overlay {
+    z-index: 900;
   }
 }
