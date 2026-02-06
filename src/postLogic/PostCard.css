@@ -1960,7 +1960,8 @@ body.dark-mode .post-card {
 .fight-voting-panels .character-frame {
   width: 100%;
   max-width: 100%;
-  aspect-ratio: 3 / 4;
+  /* Match the "normal" portrait framing used across the site */
+  aspect-ratio: 9 / 16;
   min-width: 0;
   box-sizing: border-box;
 }
@@ -2008,7 +2009,7 @@ body.dark-mode .post-card {
   .fight-voting-panels .character-frame {
     padding: 6px;
     border-radius: 12px;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 9 / 16;
   }
 
   .fight-voting-buttons {
@@ -2041,7 +2042,7 @@ body.dark-mode .post-card {
 
   .fight-voting-panels .character-frame {
     padding: 5px;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 9 / 16;
   }
 
   .fight-voting-buttons {
