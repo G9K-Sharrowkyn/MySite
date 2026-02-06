@@ -1242,6 +1242,22 @@
   .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item,
   .header-mobile .user-dropdown.user-dropdown-mobile .logout-item {
     margin: 0;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(18, 22, 32, 0.9);
+    color: var(--text-light);
+    font-weight: 700;
+    text-align: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-item:hover,
+  .header-mobile .user-dropdown.user-dropdown-mobile .logout-item:hover {
+    background: rgba(28, 34, 48, 0.95);
+    border-color: rgba(255, 255, 255, 0.35);
   }
 
   .header-mobile .user-dropdown.user-dropdown-mobile .dropdown-icon {
