@@ -271,7 +271,7 @@ const resolveCharacterImageByName = async (name, db) => {
 
 const buildShareImageSvg = async (post, db, options = {}) => {
   const width = 1200;
-  const height = 630;
+  const height = 1200;
   const imageBaseUrl = options.imageBaseUrl || options.frontendOrigin || '';
   const apiBaseUrl = options.apiBaseUrl || '';
   const isFight = post?.type === 'fight' || post?.fight?.teamA || post?.fight?.teamB;
@@ -322,38 +322,43 @@ const buildShareImageSvg = async (post, db, options = {}) => {
   const subtitleLines = splitTextLines(subtitle, 58, 2);
 
   if (isFight) {
-    const cardX = 30;
-    const cardY = 10;
-    const cardWidth = 1140;
-    const cardHeight = 610;
+    const cardX = 40;
+    const cardY = 40;
+    const cardWidth = 1120;
+    const cardHeight = 1120;
 
-    const panelGap = 180;
-    const panelWidth = 320;
-    const panelY = 40;
-    const buttonRowHeight = 46;
-    const buttonRowY = cardY + cardHeight - buttonRowHeight - 12;
-    const panelHeight = buttonRowY - panelY - 10;
+    const panelGap = 120;
+    const panelWidth = 440;
+    const panelY = 120;
+    const buttonRowHeight = 64;
+    const buttonRowY = cardY + cardHeight - buttonRowHeight - 24;
+    const panelHeight = buttonRowY - panelY - 24;
     const panelXLeft =
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
-    const nameBoxOffsetX = 20;
-    const nameBoxOffsetY = 10;
+    const nameBoxOffsetX = 24;
+    const nameBoxOffsetY = 14;
     const nameBoxWidth = panelWidth - nameBoxOffsetX * 2;
-    const nameBoxHeight = 50;
-    const nameLineHeight = 18;
-    const nameStartY = panelY + nameBoxOffsetY + 24;
+    const nameBoxHeight = 62;
+    const nameLineHeight = 20;
+    const nameStartY = panelY + nameBoxOffsetY + 30;
 
-    const frameGap = 8;
-    const votesHeight = 16;
-    const bottomPadding = 8;
+    const frameGap = 12;
+    const votesHeight = 22;
+    const bottomPadding = 16;
     const frameY = panelY + nameBoxOffsetY + nameBoxHeight + frameGap;
     const panelBottom = panelY + panelHeight;
-    const frameHeight = Math.max(
-      200,
+    const availableHeight = Math.max(
+      240,
       panelBottom - frameY - votesHeight - bottomPadding
     );
-    const frameWidth = Math.max(120, Math.round(frameHeight * 9 / 16));
+    const maxFrameWidth = panelWidth - 80;
+    const frameWidth = Math.max(
+      180,
+      Math.min(maxFrameWidth, Math.round(availableHeight * 9 / 16))
+    );
+    const frameHeight = Math.round(frameWidth * 16 / 9);
     const frameXLeft =
       panelXLeft + Math.round((panelWidth - frameWidth) / 2);
     const frameXRight =
@@ -372,17 +377,17 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const rightVotesLabel = votesHidden ? 'Votes hidden' : `${teamBVotes} votes`;
 
     const buttonGap = 30;
-    const buttonsX = cardX + 80;
-    const buttonsWidth = cardWidth - 160;
+    const buttonsX = cardX + 90;
+    const buttonsWidth = cardWidth - 180;
     const buttonWidth = Math.round((buttonsWidth - buttonGap * 2) / 3);
     const buttonY = buttonRowY;
-    const buttonTextY = buttonY + 30;
+    const buttonTextY = buttonY + 38;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
           <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#0b0f16" />
-            <stop offset="100%" stop-color="#0f1218" />
+            <stop offset="100%" stop-color="#0b0f16" />
           </linearGradient>
           <linearGradient id="cardBg" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stop-color="#1b1f27" />
@@ -417,19 +422,19 @@ const buildShareImageSvg = async (post, db, options = {}) => {
           </clipPath>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bg)" />
-        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" ry="32" fill="url(#cardBg)" filter="url(#cardShadow)" />
-        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="32" ry="32" fill="none" stroke="#2c313d" stroke-width="1.5" />
+        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="36" ry="36" fill="url(#cardBg)" filter="url(#cardShadow)" />
+        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="36" ry="36" fill="none" stroke="#2c313d" stroke-width="1.5" />
 
         <rect x="${panelXLeft}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="26" ry="26" fill="url(#panelBg)" stroke="#2f3542" stroke-width="1.5" filter="url(#panelShadow)" />
         <rect x="${panelXRight}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="26" ry="26" fill="url(#panelBg)" stroke="#2f3542" stroke-width="1.5" filter="url(#panelShadow)" />
 
-        <rect x="${panelXLeft + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="16" ry="16" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
-        <rect x="${panelXRight + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="16" ry="16" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
+        <rect x="${panelXLeft + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="18" ry="18" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
+        <rect x="${panelXRight + nameBoxOffsetX}" y="${panelY + nameBoxOffsetY}" width="${nameBoxWidth}" height="${nameBoxHeight}" rx="18" ry="18" fill="url(#nameBg)" stroke="#bfa243" stroke-width="1.4" />
 
         ${leftNameLines
           .map(
             (line, index) => `
-        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#f8fafc">
+        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
@@ -437,7 +442,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${rightNameLines
           .map(
             (line, index) => `
-        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#f8fafc">
+        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
           )
@@ -448,16 +453,16 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         <image href="${leftData}" x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#leftClip)" />
         <image href="${rightData}" x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#rightClip)" />
 
-        <text x="${panelXLeft + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#cbd5f5" text-anchor="middle">
+        <text x="${panelXLeft + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
           ${escapeHtml(leftVotesLabel)}
         </text>
-        <text x="${panelXRight + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#cbd5f5" text-anchor="middle">
+        <text x="${panelXRight + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
           ${escapeHtml(rightVotesLabel)}
         </text>
 
-        <rect x="${buttonsX}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="14" ry="14" fill="#e74c3c" filter="url(#buttonShadow)" />
-        <rect x="${buttonsX + buttonWidth + buttonGap}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="14" ry="14" fill="#f39c12" filter="url(#buttonShadow)" />
-        <rect x="${buttonsX + (buttonWidth + buttonGap) * 2}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="14" ry="14" fill="#3498db" filter="url(#buttonShadow)" />
+        <rect x="${buttonsX}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="16" ry="16" fill="#e74c3c" filter="url(#buttonShadow)" />
+        <rect x="${buttonsX + buttonWidth + buttonGap}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="16" ry="16" fill="#f39c12" filter="url(#buttonShadow)" />
+        <rect x="${buttonsX + (buttonWidth + buttonGap) * 2}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="16" ry="16" fill="#3498db" filter="url(#buttonShadow)" />
 
         <text x="${buttonsX + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc" text-anchor="middle">
           VOTE!
@@ -472,29 +477,57 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     `;
   }
 
+  const cardX = 60;
+  const cardY = 60;
+  const cardWidth = 1080;
+  const cardHeight = 1080;
+  const imageX = cardX + 80;
+  const imageY = cardY + 180;
+  const imageWidth = cardWidth - 160;
+  const imageHeight = 640;
+  const titleY = cardY + 110;
+  const subtitleY = titleY + 30;
+  const textX = cardX + 80;
+
   return `
     <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
       <defs>
         <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="#0b1020" />
-          <stop offset="100%" stop-color="#111827" />
+          <stop offset="0%" stop-color="#0b0f16" />
+          <stop offset="100%" stop-color="#0b0f16" />
         </linearGradient>
+        <linearGradient id="cardBg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#1b1f27" />
+          <stop offset="50%" stop-color="#1e232c" />
+          <stop offset="100%" stop-color="#1a1e27" />
+        </linearGradient>
+        <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="20" stdDeviation="18" flood-color="#000" flood-opacity="0.45" />
+        </filter>
         <clipPath id="singleClip">
-          <rect x="120" y="120" width="960" height="360" rx="32" ry="32" />
+          <rect x="${imageX}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" rx="32" ry="32" />
         </clipPath>
       </defs>
       <rect width="${width}" height="${height}" fill="url(#bg)" />
-      <text x="60" y="70" font-family="Arial, Helvetica, sans-serif" font-size="32" fill="#e2e8f0">
-        ${escapeHtml(siteLabel)}
-      </text>
-      <image href="${leftData}" x="120" y="120" width="960" height="360" preserveAspectRatio="xMidYMid slice" clip-path="url(#singleClip)" />
-      <text x="120" y="540" font-family="Arial, Helvetica, sans-serif" font-size="40" fill="#f8fafc">
-        ${escapeHtml(truncateText(title, 60))}
-      </text>
-      ${subtitle ? `
-        <text x="120" y="580" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#cbd5f5">
-          ${escapeHtml(truncateText(subtitle, 90))}
-        </text>` : ''}
+      <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="36" ry="36" fill="url(#cardBg)" filter="url(#cardShadow)" />
+      <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="36" ry="36" fill="none" stroke="#2c313d" stroke-width="1.5" />
+      ${titleLines
+        .map(
+          (line, index) => `
+      <text x="${textX}" y="${titleY + index * 26}" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#f8fafc">
+        ${escapeHtml(line)}
+      </text>`
+        )
+        .join('')}
+      ${subtitleLines
+        .map(
+          (line, index) => `
+      <text x="${textX}" y="${subtitleY + index * 22}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#94a3b8">
+        ${escapeHtml(line)}
+      </text>`
+        )
+        .join('')}
+      <image href="${leftData}" x="${imageX}" y="${imageY}" width="${imageWidth}" height="${imageHeight}" preserveAspectRatio="xMidYMid slice" clip-path="url(#singleClip)" />
     </svg>
   `;
 };
@@ -1033,6 +1066,8 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
       {
         url: postUrl,
         imageUrl,
+        imageWidth: 1200,
+        imageHeight: 1200,
         imageBaseUrl: frontendOrigin,
         apiBaseUrl: apiOrigin,
         frontendOrigin
@@ -1133,6 +1168,8 @@ if (process.env.NODE_ENV === 'production') {
             imageUrl: `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(
               post?.updatedAt || post?.createdAt || 'v3'
             )}`,
+            imageWidth: 1200,
+            imageHeight: 1200,
             imageBaseUrl: frontendOrigin,
             apiBaseUrl: apiOrigin,
             frontendOrigin
