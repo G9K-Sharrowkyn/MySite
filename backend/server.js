@@ -402,6 +402,13 @@ const buildShareMetaTags = async (req, post, db, options = {}) => {
   const frontendOrigin = normalizeBaseUrl(
     options.frontendOrigin || resolveFrontendOrigin(req)
   );
+  const frontendHost = (() => {
+    try {
+      return new URL(frontendOrigin).host;
+    } catch (_error) {
+      return '';
+    }
+  })();
   const url =
     options.url || `${frontendOrigin}/post/${post?.id || post?._id || ''}`;
   const title = normalizeMetaText(
@@ -425,19 +432,29 @@ const buildShareMetaTags = async (req, post, db, options = {}) => {
       imageBaseUrl: options.imageBaseUrl || frontendOrigin,
       apiBaseUrl
     }));
+  const imageWidth = options.imageWidth || 1200;
+  const imageHeight = options.imageHeight || 630;
+  const imageType = options.imageType || 'image/png';
 
   return `
     <title>${escapeHtml(title)}</title>
+    <meta property="og:site_name" content="VersusVerseVault" />
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:type" content="article" />
     <meta property="og:url" content="${escapeHtml(url)}" />
     <meta property="og:image" content="${escapeHtml(image)}" />
     <meta property="og:image:secure_url" content="${escapeHtml(image)}" />
+    <meta property="og:image:width" content="${escapeHtml(imageWidth)}" />
+    <meta property="og:image:height" content="${escapeHtml(imageHeight)}" />
+    <meta property="og:image:type" content="${escapeHtml(imageType)}" />
     <meta name="twitter:card" content="summary_large_image" />
+    ${frontendHost ? `<meta name="twitter:domain" content="${escapeHtml(frontendHost)}" />` : ''}
+    <meta name="twitter:url" content="${escapeHtml(url)}" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="${escapeHtml(image)}" />
+    <meta name="twitter:image:alt" content="${escapeHtml(title)}" />
   `;
 };
 
