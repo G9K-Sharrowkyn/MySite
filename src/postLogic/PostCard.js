@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import {
@@ -1221,16 +1222,21 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
       )}
 
       {showDeleteModal && (
-        <div className="modal-overlay" onClick={handleDeleteCancel}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <h3>{t('confirmDelete')}</h3>
-            <p>{t('confirmDeletePost')}</p>
-            <div className="modal-actions">
-              <button className="btn btn-cancel" onClick={handleDeleteCancel}>{t('cancel')}</button>
-              <button className="btn btn-delete" onClick={handleDeleteConfirm}>{t('delete')}</button>
-            </div>
-          </div>
-        </div>
+        (typeof document !== 'undefined'
+          ? createPortal(
+              <div className="modal-overlay" onClick={handleDeleteCancel}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                  <h3>{t('confirmDelete')}</h3>
+                  <p>{t('confirmDeletePost')}</p>
+                  <div className="modal-actions">
+                    <button className="btn btn-cancel" onClick={handleDeleteCancel}>{t('cancel')}</button>
+                    <button className="btn btn-delete" onClick={handleDeleteConfirm}>{t('delete')}</button>
+                  </div>
+                </div>
+              </div>,
+              document.body
+            )
+          : null)
       )}
 
       {/* Reactions Display */}
