@@ -728,6 +728,13 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return (
       <div className="voting-section fight-voting" onClick={e => e.stopPropagation()}>
         <div className="fight-voting-panels">
+          <img
+            className="fight-vs-icon"
+            src={`${process.env.PUBLIC_URL}/VS.png`}
+            alt=""
+            aria-hidden="true"
+            draggable="false"
+          />
           <div className="fight-voting-panel-col">
             {renderTeamPanel(
               teamAList,
