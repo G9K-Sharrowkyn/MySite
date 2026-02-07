@@ -426,8 +426,10 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const nameStartY = nameTextTop + nameFontSize;
 
     const frameGap = 8;
-    const votesHeight = 16;
-    const bottomPadding = 8;
+    const votesFontSize = 24;
+    // SVG text uses a baseline for `y`, so reserve a bit extra space above the baseline.
+    const votesHeight = votesFontSize + 10;
+    const bottomPadding = 10;
 
     const leftNameLines = splitTextLines(normalizeCharacterNameForShare(leftName), 18, 4);
     const rightNameLines = splitTextLines(normalizeCharacterNameForShare(rightName), 18, 4);
@@ -567,10 +569,10 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         <image href="${leftData}" x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#leftClip)" />
         <image href="${rightData}" x="${frameXRight}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" preserveAspectRatio="xMidYMin slice" clip-path="url(#rightClip)" />
 
-        <text x="${panelXLeft + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
+        <text x="${panelXLeft + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="${votesFontSize}" fill="#cbd5f5" text-anchor="middle">
           ${escapeHtml(leftVotesLabel)}
         </text>
-        <text x="${panelXRight + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="20" fill="#cbd5f5" text-anchor="middle">
+        <text x="${panelXRight + panelWidth / 2}" y="${votesY}" font-family="Arial, Helvetica, sans-serif" font-size="${votesFontSize}" fill="#cbd5f5" text-anchor="middle">
           ${escapeHtml(rightVotesLabel)}
         </text>
 
@@ -1124,7 +1126,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-7';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-8';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
