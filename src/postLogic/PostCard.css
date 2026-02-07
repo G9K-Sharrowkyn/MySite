@@ -116,6 +116,14 @@ body.dark-mode .post-card {
   font-size: 0.9rem;
 }
 
+.post-meta-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 0.9rem;
+}
+
 .post-type {
   font-size: 1.2rem;
 }
@@ -149,6 +157,34 @@ body.dark-mode .post-card {
 .post-title-link:hover {
   text-decoration: none;
   color: inherit;
+}
+
+/* Clickable hover cues (profile links + post title) */
+.author-link .username-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.author-link:hover .username-display,
+.author-link:focus-visible .username-display {
+  background: rgba(0, 255, 136, 0.08);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.95), 0 0 16px rgba(0, 255, 136, 0.45);
+}
+
+.post-title-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.post-title-link:hover .post-title-label,
+.post-title-link:focus-visible .post-title-label {
+  background: rgba(0, 255, 136, 0.07);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.9), 0 0 16px rgba(0, 255, 136, 0.4);
 }
 
 .post-text {
@@ -541,6 +577,19 @@ body.dark-mode .post-card {
 .comment-author strong {
   color: var(--text-light);
   font-weight: 600;
+}
+
+.comment-author .comment-author-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
+.comment-author:hover .comment-author-label,
+.comment-author:focus-visible .comment-author-label {
+  background: rgba(0, 255, 136, 0.07);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.9), 0 0 16px rgba(0, 255, 136, 0.4);
 }
 
 .comment-text {

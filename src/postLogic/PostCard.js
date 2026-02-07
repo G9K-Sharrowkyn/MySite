@@ -1026,9 +1026,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             )}
           </div>
         </Link>
-        <div className="post-meta">
+        <div className="post-meta-right">
           <span className="post-type">{getPostTypeIcon(post.type)}</span>
-          <span className="post-time">{formatTimeAgo(post.createdAt)}</span>
           {post.type === 'fight' && post.fight && (
             <FightTimer 
               lockTime={post.fight.lockTime} 
@@ -1040,7 +1039,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
       <div className="post-content" style={{ cursor: 'pointer' }}>
         <Link to={`/post/${post.id}`} className="post-title-link">
-          <h3 className="post-title">{post.title}</h3>
+          <h3 className="post-title">
+            <span className="post-title-label">{post.title}</span>
+          </h3>
         </Link>
         <p className="post-text">{post.content}</p>
         {needsTranslation() && (
@@ -1300,7 +1301,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                           alt={getUserDisplayName(root)}
                           className="comment-avatar"
                         />
-                        <strong>{getUserDisplayName(root)}</strong>
+                        <strong className="comment-author-label">{getUserDisplayName(root)}</strong>
                       </Link>
                       <span className="comment-time">{formatTimeAgo(root.createdAt)}</span>
                     </div>
@@ -1396,7 +1397,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                                 alt={getUserDisplayName(reply)}
                                 className="comment-avatar"
                               />
-                              <strong>{getUserDisplayName(reply)}</strong>
+                              <strong className="comment-author-label">{getUserDisplayName(reply)}</strong>
                             </Link>
                             <span className="comment-time">
                               {formatTimeAgo(reply.createdAt)}
