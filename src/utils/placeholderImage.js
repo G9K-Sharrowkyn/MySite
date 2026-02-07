@@ -113,7 +113,7 @@ const buildCharacterThumbUrl = (url) => {
   if (!filename) return null;
   const base = filename.replace(/\.[^.]+$/, '');
   if (!base) return null;
-  return normalizeAssetUrl(`/characters/thumbs/${base}.webp`);
+  return normalizeAssetUrl(`/characters/thumbs/${base}.jpg`);
 };
 
 export const getCharacterImageSources = (url) => {
