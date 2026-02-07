@@ -180,9 +180,13 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
         const containerRect = liveContainer.getBoundingClientRect();
         const cols = (fightPanelColsRef.current || [])
-          .map((el, index) =>
-            el ? { index, rect: el.getBoundingClientRect() } : null
-          )
+          .map((el, index) => {
+            if (!el) return null;
+            const rect = el.getBoundingClientRect();
+            const zoneEl = el.querySelector('.team-zone');
+            const zoneRect = zoneEl ? zoneEl.getBoundingClientRect() : rect;
+            return { index, rect, zoneRect };
+          })
           .filter(Boolean);
 
         if (cols.length < 2) {
@@ -211,8 +215,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           if (row.items.length < 2) return;
 
           const items = row.items.slice().sort((a, b) => a.rect.left - b.rect.left);
-          const rowTop = Math.min(...items.map((x) => x.rect.top));
-          const rowBottom = Math.max(...items.map((x) => x.rect.bottom));
+          // Use the team-zone box (excluding vote panel) so the VS aligns with the character stack,
+          // not the extra vote/footer height.
+          const rowTop = Math.min(...items.map((x) => x.zoneRect.top));
+          const rowBottom = Math.max(...items.map((x) => x.zoneRect.bottom));
           const centerY = rowTop + (rowBottom - rowTop) * 0.52;
 
           for (let i = 0; i < items.length - 1; i += 1) {

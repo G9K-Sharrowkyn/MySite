@@ -991,9 +991,10 @@
     "name": "Nate Grey (Uncanny X-Men)",
     "baseName": "Nate Grey",
     "tags": [
-      "Uncanny X-Men"
+      "Marvel",
+      "X-Men"
     ],
-    "universe": "Uncanny X-Men",
+    "universe": "Marvel",
     "image": "/characters/Nate Grey (Uncanny X-Men).jpg"
   },
   {

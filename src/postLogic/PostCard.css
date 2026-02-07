@@ -2057,7 +2057,7 @@ body.dark-mode .post-card {
 .fight-voting-panels .fight-vs-icon {
   position: absolute;
   left: 50%;
-  top: 52%;
+  top: 38%;
   transform: translate(-50%, -50%);
   width: 58px;
   height: auto;
