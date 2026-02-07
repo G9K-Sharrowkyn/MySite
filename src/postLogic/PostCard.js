@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useContext, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
@@ -84,6 +84,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [shareFeedback, setShareFeedback] = useState('');
   const shareVersionRef = useRef(null);
+  const fightPanelsRef = useRef(null);
+  const fightPanelColsRef = useRef([]);
+  const [fightVsBetweenPositions, setFightVsBetweenPositions] = useState([]);
   const [expandedThreads, setExpandedThreads] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
@@ -134,9 +137,120 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return new Date() < lockTime;
   })();
 
+  const fightTeamsForLayout = (() => {
+    if (post?.type !== 'fight' || !post?.fight) return [];
+
+    const rawTeams =
+      Array.isArray(post.fight?.teams) && post.fight.teams.length
+        ? post.fight.teams
+        : [post.fight.teamA || '', post.fight.teamB || ''];
+
+    const cleanedTeams = rawTeams
+      .map((entry) => String(entry || '').trim())
+      .filter(Boolean);
+
+    return cleanedTeams.length >= 2
+      ? cleanedTeams
+      : [cleanedTeams[0] || '', ''];
+  })();
+  const isMultiTeamFight = fightTeamsForLayout.length > 2;
+  const fightTeamsLayoutKey = isMultiTeamFight ? fightTeamsForLayout.join('||') : '';
+
   useEffect(() => {
     shareVersionRef.current = null;
   }, [post?.id]);
+
+  useLayoutEffect(() => {
+    if (!isMultiTeamFight) {
+      setFightVsBetweenPositions([]);
+      return;
+    }
+
+    const container = fightPanelsRef.current;
+    if (!container) return;
+
+    let rafId = null;
+    const measure = () => {
+      if (!fightPanelsRef.current) return;
+      if (rafId) cancelAnimationFrame(rafId);
+
+      rafId = requestAnimationFrame(() => {
+        const liveContainer = fightPanelsRef.current;
+        if (!liveContainer) return;
+
+        const containerRect = liveContainer.getBoundingClientRect();
+        const cols = (fightPanelColsRef.current || [])
+          .map((el, index) =>
+            el ? { index, rect: el.getBoundingClientRect() } : null
+          )
+          .filter(Boolean);
+
+        if (cols.length < 2) {
+          setFightVsBetweenPositions([]);
+          return;
+        }
+
+        const sorted = cols.slice().sort((a, b) => a.rect.top - b.rect.top);
+        const rows = [];
+        const rowThreshold = 28; // px tolerance for grouping panels into the same grid row
+
+        sorted.forEach((item) => {
+          const row = rows.find(
+            (candidate) => Math.abs(candidate.top - item.rect.top) < rowThreshold
+          );
+          if (row) {
+            row.items.push(item);
+            row.top = Math.min(row.top, item.rect.top);
+          } else {
+            rows.push({ top: item.rect.top, items: [item] });
+          }
+        });
+
+        const positions = [];
+        rows.forEach((row) => {
+          if (row.items.length < 2) return;
+
+          const items = row.items.slice().sort((a, b) => a.rect.left - b.rect.left);
+          const rowTop = Math.min(...items.map((x) => x.rect.top));
+          const rowBottom = Math.max(...items.map((x) => x.rect.bottom));
+          const centerY = rowTop + (rowBottom - rowTop) * 0.52;
+
+          for (let i = 0; i < items.length - 1; i += 1) {
+            const leftRect = items[i].rect;
+            const rightRect = items[i + 1].rect;
+            const centerX = (leftRect.right + rightRect.left) / 2;
+
+            positions.push({
+              left: Math.round(centerX - containerRect.left),
+              top: Math.round(centerY - containerRect.top)
+            });
+          }
+        });
+
+        setFightVsBetweenPositions(positions);
+      });
+    };
+
+    measure();
+
+    const onResize = () => measure();
+    window.addEventListener('resize', onResize);
+
+    let observer = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => measure());
+      observer.observe(container);
+      (fightPanelColsRef.current || []).forEach((el) => {
+        if (el) observer.observe(el);
+      });
+    }
+
+    return () => {
+      window.removeEventListener('resize', onResize);
+      if (observer) observer.disconnect();
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [post?.id, isMultiTeamFight, fightTeamsLayoutKey]);
 
   const getShareVersion = () => {
     if (!shareVersionRef.current) {
@@ -727,18 +841,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     const canVote = post.fight.status !== 'locked' && post.fight.status !== 'completed';
     const votesHidden = Boolean(post.fight?.votesHidden);
 
-    const rawTeams =
-      Array.isArray(post.fight?.teams) && post.fight.teams.length
-        ? post.fight.teams
-        : [post.fight.teamA || '', post.fight.teamB || ''];
-
-    const cleanedTeams = rawTeams
-      .map((entry) => String(entry || '').trim())
-      .filter(Boolean);
-
-    // Always render at least 2 columns for the classic 1v1 layout.
-    const teams =
-      cleanedTeams.length >= 2 ? cleanedTeams : [cleanedTeams[0] || '', ''];
+    const teams = Array.isArray(fightTeamsForLayout) && fightTeamsForLayout.length
+      ? fightTeamsForLayout
+      : [post.fight.teamA || '', post.fight.teamB || ''];
     const teamCount = teams.length;
     const isMultiTeam = teamCount > 2;
 
@@ -756,7 +861,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
     return (
       <div className="voting-section fight-voting" onClick={e => e.stopPropagation()}>
-        <div className={`fight-voting-panels${isMultiTeam ? ' multi-team-strip' : ''}`}>
+        <div className="fight-voting-panels" ref={fightPanelsRef}>
           {teamCount === 2 && teams[0] && teams[1] && (
             <img
               className="fight-vs-icon"
@@ -767,50 +872,43 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             />
           )}
 
-          {isMultiTeam
-            ? teams.map((teamValue, index) => {
-                const list = splitFightTeamMembers(teamValue);
-                const key = String(index);
-                return (
-                  <React.Fragment key={key}>
-                    <div className="fight-voting-panel-col">
-                      {renderTeamPanel(
-                        list,
-                        teamValue,
-                        userVote === key,
-                        teamVotes[index] || 0,
-                        key
-                      )}
-                    </div>
-                    {index < teams.length - 1 && (
-                      <div className="fight-vs-between" aria-hidden="true">
-                        <img
-                          className="fight-vs-between-icon"
-                          src={`${process.env.PUBLIC_URL}/VS.png`}
-                          alt=""
-                          aria-hidden="true"
-                          draggable="false"
-                        />
-                      </div>
-                    )}
-                  </React.Fragment>
-                );
-              })
-            : teams.map((teamValue, index) => {
-                const list = splitFightTeamMembers(teamValue);
-                const key = String(index);
-                return (
-                  <div key={key} className="fight-voting-panel-col">
-                    {renderTeamPanel(
-                      list,
-                      teamValue,
-                      userVote === key,
-                      teamVotes[index] || 0,
-                      key
-                    )}
-                  </div>
-                );
-              })}
+          {isMultiTeam && fightVsBetweenPositions.length > 0 &&
+            fightVsBetweenPositions.map((pos, index) => (
+              <img
+                key={`vs-between-${index}`}
+                className="fight-vs-between-overlay"
+                src={`${process.env.PUBLIC_URL}/VS.png`}
+                alt=""
+                aria-hidden="true"
+                draggable="false"
+                style={{
+                  left: `${pos.left}px`,
+                  top: `${pos.top}px`
+                }}
+              />
+            ))}
+
+          {teams.map((teamValue, index) => {
+            const list = splitFightTeamMembers(teamValue);
+            const key = String(index);
+            return (
+              <div
+                key={key}
+                className="fight-voting-panel-col"
+                ref={(el) => {
+                  fightPanelColsRef.current[index] = el;
+                }}
+              >
+                {renderTeamPanel(
+                  list,
+                  teamValue,
+                  userVote === key,
+                  teamVotes[index] || 0,
+                  key
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {canVote && teamCount === 2 && (

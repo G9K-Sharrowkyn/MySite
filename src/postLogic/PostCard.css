@@ -2067,6 +2067,17 @@ body.dark-mode .post-card {
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
 }
 
+.fight-voting-panels .fight-vs-between-overlay {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: clamp(18px, 2.6vw, 30px);
+  height: auto;
+  opacity: 0.92;
+  pointer-events: none;
+  z-index: 3;
+  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+}
+
 .fight-voting-panels.multi-team-strip {
   display: flex;
   flex-direction: row;
