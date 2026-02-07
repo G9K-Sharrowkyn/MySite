@@ -206,26 +206,28 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return 'Check this post';
   };
 
-  const handleSaveFightSnapshot = async () => {
+  const handleSaveFightSnapshot = () => {
     if (!canModerate) return;
     if (post?.type !== 'fight' || !post?.fight || !post?.id) return;
 
     try {
-      const cacheBust = String(Date.now());
-      const url = `/api/share/post/${encodeURIComponent(post.id)}/image.jpg?v=${encodeURIComponent(cacheBust)}`;
-      const resp = await fetch(url, { cache: 'no-store' });
-      if (!resp.ok) {
-        throw new Error(`Snapshot failed: ${resp.status}`);
-      }
-      const blob = await resp.blob();
-      const objectUrl = URL.createObjectURL(blob);
+      const apiOrigin = getShareApiOrigin();
+      const versionToken = getPostShareToken();
+      const buildVersion = String(BUILD_INFO?.version || BUILD_INFO?.sha || '').trim();
+      const extra = buildVersion ? `&bv=${encodeURIComponent(buildVersion)}` : '';
+
+      const base = apiOrigin
+        ? `${apiOrigin}/share/post/${encodeURIComponent(post.id)}/snapshot.jpg`
+        : `/api/share/post/${encodeURIComponent(post.id)}/snapshot.jpg`;
+      const url = `${base}?v=${encodeURIComponent(versionToken)}${extra}&dl=1`;
+
       const a = document.createElement('a');
-      a.href = objectUrl;
+      a.href = url;
       a.download = `post-${post.id}.jpg`;
+      a.rel = 'noopener';
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(objectUrl);
     } catch (error) {
       console.error('Save snapshot failed:', error);
     }

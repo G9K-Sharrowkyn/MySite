@@ -336,8 +336,14 @@ const SHARE_IMAGE_WIDTH = 1200;
 const SHARE_IMAGE_HEIGHT = 675; // 1200x675 = 16:9
 
 const buildShareImageSvg = async (post, db, options = {}) => {
-  const width = SHARE_IMAGE_WIDTH;
-  const height = SHARE_IMAGE_HEIGHT;
+  const variant = String(options.variant || 'share').toLowerCase();
+  const isSnapshot = variant === 'snapshot';
+  const width = Number.isFinite(Number(options.width))
+    ? Math.max(1, Math.round(Number(options.width)))
+    : SHARE_IMAGE_WIDTH;
+  const height = Number.isFinite(Number(options.height))
+    ? Math.max(1, Math.round(Number(options.height)))
+    : (isSnapshot ? 1200 : SHARE_IMAGE_HEIGHT);
   const safeHeight = height;
   const safeTop = 0;
   const imageBaseUrl = options.imageBaseUrl || options.frontendOrigin || '';
@@ -405,31 +411,31 @@ const buildShareImageSvg = async (post, db, options = {}) => {
 
   if (isFight) {
     const cardWidth = 1080;
-    const cardHeight = 640;
+    const cardHeight = isSnapshot ? 1080 : 640;
     const cardX = Math.round((width - cardWidth) / 2);
     const cardY = safeTop + Math.round((safeHeight - cardHeight) / 2);
 
-    const panelGap = 120;
-    const panelWidth = 320;
-    const panelY = cardY + 36;
-    const buttonRowHeight = 44;
-    const buttonRowY = cardY + cardHeight - buttonRowHeight - 14;
-    const panelBottomGap = 24;
+    const panelGap = isSnapshot ? 80 : 120;
+    const panelWidth = isSnapshot ? 420 : 320;
+    const panelY = cardY + (isSnapshot ? 56 : 36);
+    const buttonRowHeight = isSnapshot ? 56 : 44;
+    const buttonRowY = cardY + cardHeight - buttonRowHeight - (isSnapshot ? 24 : 14);
+    const panelBottomGap = isSnapshot ? 30 : 24;
     const panelHeight = buttonRowY - panelY - panelBottomGap;
     const panelXLeft =
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
     const nameTextTop = panelY + 6;
-    const nameFontSize = 28;
-    const nameLineHeight = 32;
+    const nameFontSize = isSnapshot ? 34 : 28;
+    const nameLineHeight = isSnapshot ? 38 : 32;
     const nameStartY = nameTextTop + nameFontSize;
 
-    const frameGap = 8;
-    const votesFontSize = 24;
+    const frameGap = isSnapshot ? 10 : 8;
+    const votesFontSize = isSnapshot ? 28 : 24;
     // SVG text uses a baseline for `y`, so reserve a bit extra space above the baseline.
-    const votesHeight = votesFontSize + 10;
-    const bottomPadding = 10;
+    const votesHeight = votesFontSize + (isSnapshot ? 12 : 10);
+    const bottomPadding = isSnapshot ? 18 : 10;
 
     const leftNameLines = splitTextLines(normalizeCharacterNameForShare(leftName), 18, 4);
     const rightNameLines = splitTextLines(normalizeCharacterNameForShare(rightName), 18, 4);
@@ -445,7 +451,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
       220,
       panelBottom - frameY - votesHeight - bottomPadding
     );
-    const maxFrameWidth = panelWidth - 60;
+    const maxFrameWidth = panelWidth - (isSnapshot ? 70 : 60);
     const frameWidth = Math.min(
       maxFrameWidth,
       Math.round(availableHeight * 9 / 16)
@@ -473,7 +479,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const buttonsWidth = cardWidth - 140;
     const buttonWidth = Math.round((buttonsWidth - buttonGap * 2) / 3);
     const buttonY = buttonRowY;
-    const buttonTextY = buttonY + 28;
+    const buttonTextY = buttonY + (isSnapshot ? 36 : 28);
 
     const badgeHeight = 26;
     const badgeRadius = 13;
@@ -580,13 +586,13 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         <rect x="${buttonsX + buttonWidth + buttonGap}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="16" ry="16" fill="#f39c12" filter="url(#buttonShadow)" />
         <rect x="${buttonsX + (buttonWidth + buttonGap) * 2}" y="${buttonY}" width="${buttonWidth}" height="${buttonRowHeight}" rx="16" ry="16" fill="#3498db" filter="url(#buttonShadow)" />
 
-        <text x="${buttonsX + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc" text-anchor="middle">
+        <text x="${buttonsX + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="${isSnapshot ? 24 : 22}" fill="#f8fafc" text-anchor="middle">
           VOTE!
         </text>
-        <text x="${buttonsX + buttonWidth + buttonGap + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc" text-anchor="middle">
+        <text x="${buttonsX + buttonWidth + buttonGap + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="${isSnapshot ? 24 : 22}" fill="#f8fafc" text-anchor="middle">
           DRAW
         </text>
-        <text x="${buttonsX + (buttonWidth + buttonGap) * 2 + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="22" fill="#f8fafc" text-anchor="middle">
+        <text x="${buttonsX + (buttonWidth + buttonGap) * 2 + buttonWidth / 2}" y="${buttonTextY}" font-family="Arial, Helvetica, sans-serif" font-size="${isSnapshot ? 24 : 22}" fill="#f8fafc" text-anchor="middle">
           VOTE!
         </text>
       </svg>
@@ -1199,6 +1205,62 @@ app.get([
   } catch (error) {
     console.error('Share image error:', error?.message || error);
     return res.status(500).send('Unable to render share image.');
+  }
+});
+
+// Downloadable snapshot for moderators/admins (feed-like proportions, not 16:9).
+app.get(['/share/post/:id/snapshot.jpg', '/api/share/post/:id/snapshot.jpg'], async (req, res) => {
+  try {
+    const db = await readDb();
+    const postId = req.params.id;
+    const post =
+      (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
+      null;
+
+    const cacheToken = String(req.query.v || req.query.t || post?.updatedAt || post?.createdAt || '').trim();
+    const cacheKey = `${postId}:${cacheToken}:snapshot:jpg:${SHARE_IMAGE_RENDER_VERSION}`;
+    const cached = getShareImageCache(cacheKey);
+    if (cached) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Cache-Control', 'no-store');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      if (String(req.query.dl || req.query.download || '') === '1') {
+        res.setHeader('Content-Disposition', `attachment; filename=\"post-${postId}.jpg\"`);
+      }
+      return res.send(cached);
+    }
+
+    const frontendOrigin = resolveFrontendOrigin(req);
+    const apiOrigin = `${req.protocol}://${req.get('host')}`;
+    const svg = await buildShareImageSvg(
+      post || { id: postId, title: 'Post', content: '' },
+      db,
+      {
+        variant: 'snapshot',
+        width: 1200,
+        height: 1200,
+        imageBaseUrl: frontendOrigin,
+        apiBaseUrl: apiOrigin,
+        frontendOrigin
+      }
+    );
+
+    const buffer = await sharp(Buffer.from(svg))
+      .flatten({ background: '#0b0f16' })
+      .jpeg({ quality: 86, mozjpeg: true })
+      .toBuffer();
+
+    setShareImageCache(cacheKey, buffer);
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    if (String(req.query.dl || req.query.download || '') === '1') {
+      res.setHeader('Content-Disposition', `attachment; filename=\"post-${postId}.jpg\"`);
+    }
+    return res.send(buffer);
+  } catch (error) {
+    console.error('Share snapshot error:', error?.message || error);
+    return res.status(500).send('Unable to render snapshot.');
   }
 });
 
