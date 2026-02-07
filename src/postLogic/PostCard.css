@@ -332,7 +332,7 @@ body.dark-mode .post-card {
   color: #e74c3c;
 }
 
-.action-btn.delete-btn {
+.action-btn.post-delete-btn {
   min-width: 130px;
   padding: 12px 26px;
   justify-content: center;
@@ -340,7 +340,7 @@ body.dark-mode .post-card {
   text-align: center;
 }
 
-.action-btn.delete-btn .action-text {
+.action-btn.post-delete-btn .action-text {
   white-space: normal;
   text-align: center;
   line-height: 1.1;
@@ -726,7 +726,7 @@ body.dark-mode .post-card {
     font-size: 0.9rem;
   }
 
-  .action-btn.delete-btn {
+  .action-btn.post-delete-btn {
     min-width: 120px;
     padding: 10px 20px;
   }

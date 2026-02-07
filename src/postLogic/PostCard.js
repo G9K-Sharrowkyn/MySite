@@ -1204,7 +1204,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           </button>
         )}
         {(currentUserId === post.author?.id || canModerate) && (
-          <button className="action-btn delete-btn" onClick={handleDelete}>
+          <button className="action-btn post-delete-btn" onClick={handleDelete}>
             <span className="action-text">{t('delete')}</span>
           </button>
         )}
