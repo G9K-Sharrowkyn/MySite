@@ -330,11 +330,16 @@ const toCharacterThumbPath = (assetPath) => {
   return `/characters/thumbs/${filename}`;
 };
 
+const SHARE_IMAGE_WIDTH = 1200;
+// X/Twitter cards are effectively displayed in a wide aspect ratio; a true 16:9 image avoids
+// the platform cropping a square and cutting off important text.
+const SHARE_IMAGE_HEIGHT = 675; // 1200x675 = 16:9
+
 const buildShareImageSvg = async (post, db, options = {}) => {
-  const width = 1200;
-  const height = 1200;
-  const safeHeight = 675; // 16:9 safe area for Twitter preview crop
-  const safeTop = Math.round((height - safeHeight) / 2);
+  const width = SHARE_IMAGE_WIDTH;
+  const height = SHARE_IMAGE_HEIGHT;
+  const safeHeight = height;
+  const safeTop = 0;
   const imageBaseUrl = options.imageBaseUrl || options.frontendOrigin || '';
   const apiBaseUrl = options.apiBaseUrl || '';
   const isFight = post?.type === 'fight' || post?.fight?.teamA || post?.fight?.teamB;
@@ -1119,7 +1124,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-6';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-7';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
@@ -1219,8 +1224,8 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
       {
         url: postUrl,
         imageUrl,
-        imageWidth: 1200,
-        imageHeight: 1200,
+        imageWidth: SHARE_IMAGE_WIDTH,
+        imageHeight: SHARE_IMAGE_HEIGHT,
         imageBaseUrl: frontendOrigin,
         apiBaseUrl: apiOrigin,
         frontendOrigin,
@@ -1322,8 +1327,8 @@ if (process.env.NODE_ENV === 'production') {
             imageUrl: `${apiOrigin}/share/post/${postId}/image.jpg?v=${encodeURIComponent(
               post?.updatedAt || post?.createdAt || 'v3'
             )}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`,
-            imageWidth: 1200,
-            imageHeight: 1200,
+            imageWidth: SHARE_IMAGE_WIDTH,
+            imageHeight: SHARE_IMAGE_HEIGHT,
             imageBaseUrl: frontendOrigin,
             apiBaseUrl: apiOrigin,
             frontendOrigin,
