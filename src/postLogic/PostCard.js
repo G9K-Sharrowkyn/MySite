@@ -17,6 +17,7 @@ import BettingPanel from '../economy/BettingPanel';
 import { getUserDisplayName } from '../utils/userDisplay';
 import { splitFightTeamMembers } from '../utils/fightTeams';
 import { formatCharacterDisplayName } from '../utils/formatCharacterDisplayName';
+import { BUILD_INFO } from '../buildInfo.generated';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import FightTimer from './FightTimer';
@@ -182,7 +183,11 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     const apiOrigin = getShareApiOrigin();
     if (!apiOrigin) return '';
     const versionToken = getPostShareToken();
-    return `${apiOrigin}/share/post/${post.id}?v=${encodeURIComponent(versionToken)}`;
+    const buildVersion = String(BUILD_INFO?.version || BUILD_INFO?.sha || '').trim();
+    // X/Twitter aggressively caches cards per-URL. Include the deployed build version so each deployment
+    // yields a new URL and forces X to refetch updated meta and images.
+    const extra = buildVersion ? `&bv=${encodeURIComponent(buildVersion)}` : '';
+    return `${apiOrigin}/share/post/${post.id}?v=${encodeURIComponent(versionToken)}${extra}`;
   };
 
   const buildShareUrl = () => {
