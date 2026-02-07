@@ -173,6 +173,53 @@
   white-space: nowrap;
 }
 
+.header-groups-row {
+  max-width: 980px;
+  margin: 10px auto 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.header-groups-label {
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.header-groups-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.header-group-btn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 10, 14, 0.55);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 900;
+  font-size: 0.85rem;
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.header-group-btn:hover {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.55);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.35);
+}
+
+.header-group-btn.active {
+  background: rgba(0, 255, 136, 0.12);
+  border-color: rgba(0, 255, 136, 0.85);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.65), 0 0 18px rgba(0, 255, 136, 0.25);
+}
+
 .header-body {
   grid-column: 2;
   grid-row: 1 / span 2;

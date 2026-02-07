@@ -20,6 +20,7 @@ const Feed = () => {
   const [filters, setFilters] = useState({});
   const [showFilters, setShowFilters] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [groupFilter, setGroupFilter] = useState('');
   const [visibleIndexes, setVisibleIndexes] = useState(new Set());
   const observerRef = useRef(null);
   const postNodesRef = useRef(new Map());
@@ -28,6 +29,9 @@ const Feed = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search || '');
     const character = params.get('character');
+    const group = params.get('group');
+
+    setGroupFilter(group ? String(group) : '');
 
     if (character) {
       urlDrivenFiltersRef.current = true;
@@ -44,7 +48,7 @@ const Feed = () => {
     }
   }, [location.search]);
 
-  const fetchPosts = async (
+  const fetchPosts = useCallback(async (
     pageNum = 1,
     sort = 'createdAt',
     reset = false,
@@ -67,6 +71,7 @@ const Feed = () => {
         response = await axios.post('/api/tags/filter-posts', {
           ...currentFilters,
           postCategory: normalizedCategory || 'all',
+          group: groupFilter || null,
           sortBy: sort,
           page: pageNum,
           limit: 10
@@ -87,6 +92,9 @@ const Feed = () => {
         });
         if (normalizedCategory) {
           params.set('category', normalizedCategory);
+        }
+        if (groupFilter) {
+          params.set('group', groupFilter);
         }
         response = await axios.get(`/api/posts?${params.toString()}`, authConfig);
       }
@@ -112,12 +120,12 @@ const Feed = () => {
       console.error('Error fetching posts:', error);
       setLoading(false);
     }
-  };
+  }, [groupFilter]);
 
   useEffect(() => {
     fetchPosts(1, sortBy, true, filters, categoryFilter);
     setPage(1);
-  }, [sortBy, filters, categoryFilter]);
+  }, [fetchPosts, sortBy, filters, categoryFilter]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(

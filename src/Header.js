@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './i18n/LanguageContext';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from './utils/placeholderImage';
@@ -17,6 +17,7 @@ const Header = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useLanguage();
   const isLoggedIn = !!user;
   const isModerator = user?.role === 'moderator' || user?.role === 'admin';
@@ -29,6 +30,14 @@ const Header = () => {
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
   const [globalSearchLoading, setGlobalSearchLoading] = useState(false);
   const globalSearchRef = useRef(null);
+  const activeGroup = new URLSearchParams(location.search || '').get('group') || '';
+
+  const GROUPS = [
+    { id: 'dragon_ball', label: 'Dragon Ball' },
+    { id: 'star_wars', label: 'Star Wars' },
+    { id: 'marvel', label: 'Marvel' },
+    { id: 'dc', label: 'DC' }
+  ];
 
   const handleLogout = useCallback(() => {
     logout();
@@ -547,6 +556,25 @@ const Header = () => {
               )}
             </div>
           )}
+        </div>
+
+        <div className="header-groups-row" aria-label={t('groupsLabel') || 'Groups'}>
+          <div className="header-groups-label">{t('groupsLabel') || 'Groups'}:</div>
+          <div className="header-groups-buttons">
+            {GROUPS.map((group) => (
+              <button
+                key={group.id}
+                type="button"
+                className={`header-group-btn${activeGroup === group.id ? ' active' : ''}`}
+                onClick={() => {
+                  const next = activeGroup === group.id ? '' : group.id;
+                  navigate(next ? `/feed?group=${encodeURIComponent(next)}` : '/feed');
+                }}
+              >
+                {group.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

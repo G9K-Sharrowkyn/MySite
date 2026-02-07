@@ -555,6 +555,53 @@
   outline: none;
 }
 
+.post-groups {
+  padding: 0 30px 8px;
+}
+
+.post-groups-label {
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.78);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+
+.post-groups-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.post-group-btn {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 10, 14, 0.55);
+  color: rgba(255, 255, 255, 0.88);
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.post-group-btn:hover {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.55);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.4);
+}
+
+.post-group-btn.active {
+  background: rgba(0, 255, 136, 0.12);
+  border-color: rgba(0, 255, 136, 0.85);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.65), 0 0 18px rgba(0, 255, 136, 0.25);
+}
+
+.post-groups-hint {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.62);
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
 .fight-section h4 {
   margin: 0 0 1rem 0;
   color: var(--text-primary);

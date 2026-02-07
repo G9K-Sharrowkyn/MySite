@@ -82,6 +82,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     type: 'discussion', // discussion, fight, other
     photos: [],
     category: 'discussion',
+    group: '',
     voteDuration: '3d',
     voteVisibility: 'live',
     pollOptions: ['', ''], // For fight posts (mandatory) or other posts (optional)
@@ -173,6 +174,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         type: initialData.type || 'discussion',
         photos: initialData.photos ? initialData.photos.map(url => ({ url, type: 'database' })) : [],
         category: initialData.category || 'discussion',
+        group: initialData.group || '',
         voteDuration: mappedVoteDuration,
         voteVisibility: mappedVoteVisibility,
         pollOptions: mappedPollOptions,
@@ -428,6 +430,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           opponentId: selectedOpponent.id,
           challengerTeam: teamANames.join(', '),
           voteDuration: postData.voteDuration,
+          group: postData.group || null,
           photos: postData.photos.map(p => p.url)
         }, {
           headers: { 'x-auth-token': token }
@@ -444,6 +447,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           type: 'discussion',
           photos: [],
           category: 'discussion',
+          group: '',
           voteDuration: '3d',
           voteVisibility: 'live',
           pollOptions: ['', ''],
@@ -463,7 +467,8 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         photos: postData.photos.map(p => p.url),
         pollOptions: postData.pollOptions.filter(opt => opt.trim()),
         voteDuration: postData.voteDuration,
-        category: postData.type === 'fight' ? null : postData.category
+        category: postData.type === 'fight' ? null : postData.category,
+        group: postData.group || null
       };
 
       if (postData.type === 'fight') {
@@ -502,6 +507,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           type: 'discussion',
           photos: [],
           category: 'discussion',
+          group: '',
           voteDuration: '3d',
           voteVisibility: 'live',
           pollOptions: ['', ''],
@@ -956,6 +962,39 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           </div>
 
           {/* Form Actions */}
+          <div className="post-groups">
+            <div className="post-groups-label">
+              {lang === 'pl' ? 'Grupy (opcjonalnie)' : 'Groups (optional)'}
+            </div>
+            <div className="post-groups-buttons">
+              {[
+                { id: 'dragon_ball', label: 'Dragon Ball' },
+                { id: 'star_wars', label: 'Star Wars' },
+                { id: 'marvel', label: 'Marvel' },
+                { id: 'dc', label: 'DC' }
+              ].map((group) => (
+                <button
+                  key={group.id}
+                  type="button"
+                  className={`post-group-btn${postData.group === group.id ? ' active' : ''}`}
+                  onClick={() =>
+                    setPostData((prev) => ({
+                      ...prev,
+                      group: prev.group === group.id ? '' : group.id
+                    }))
+                  }
+                >
+                  {group.label}
+                </button>
+              ))}
+            </div>
+            <div className="post-groups-hint">
+              {lang === 'pl'
+                ? 'Posty z grupy widoczne są na głównym feedzie oraz w wybranej grupie.'
+                : 'Grouped posts appear on the main feed and inside the selected group.'}
+            </div>
+          </div>
+
           <div className="form-actions">
             <button 
               type="button" 

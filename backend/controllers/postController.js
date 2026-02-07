@@ -56,6 +56,15 @@ const normalizeVoteVisibility = (value) => {
   return 'live';
 };
 
+const POST_GROUP_IDS = new Set(['dragon_ball', 'star_wars', 'marvel', 'dc']);
+
+const normalizePostGroup = (value) => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (!raw) return null;
+  if (raw === 'none' || raw === 'all') return null;
+  return POST_GROUP_IDS.has(raw) ? raw : null;
+};
+
 const getFightMyVote = (fight, viewerUserId) => {
   if (!viewerUserId || !fight?.votes?.voters) return null;
   const vote = (fight.votes.voters || []).find((entry) => entry.userId === viewerUserId);
@@ -188,14 +197,21 @@ const notifyAdminsForProfanity = async (db, payload) => {
 };
 
 export const getAllPosts = async (req, res) => {
-  const { page = 1, limit = 10, sortBy = 'createdAt', category } = req.query;
+  const { page = 1, limit = 10, sortBy = 'createdAt', category, group } = req.query;
   try {
     const db = await readDb();
     const viewerUserId = req.user?.id || null;
     const now = new Date();
     const normalizedCategory = String(category || '').toLowerCase();
+    const normalizedGroup = normalizePostGroup(group);
     let filteredPosts = (db.posts || []).filter((post) => !isPostSoftDeleted(post));
     const commentCounts = buildCommentCountByPostId(db.comments || []);
+
+    if (normalizedGroup) {
+      filteredPosts = filteredPosts.filter(
+        (post) => normalizePostGroup(post?.group) === normalizedGroup
+      );
+    }
 
     if (normalizedCategory && normalizedCategory !== 'all') {
       if (normalizedCategory === 'fight') {
@@ -327,7 +343,8 @@ export const createPost = async (req, res) => {
     voteVisibility,
     isOfficial,
     moderatorCreated,
-    category
+    category,
+    group
   } = req.body;
 
   if (!title || !content) {
@@ -359,6 +376,7 @@ export const createPost = async (req, res) => {
     let createdPost;
     let author;
     const resolvedCategory = postType === 'fight' ? null : (category || 'discussion');
+    const resolvedGroup = normalizePostGroup(group);
 
     await withDb(async (db) => {
       author = await usersRepo.findOne(
@@ -395,6 +413,7 @@ export const createPost = async (req, res) => {
         isOfficial: Boolean(isOfficial),
         moderatorCreated: Boolean(moderatorCreated),
         category: resolvedCategory,
+        group: resolvedGroup,
         featured: false,
         tags: [],
         autoTags: {
@@ -575,6 +594,9 @@ export const updatePost = async (req, res) => {
       if (typeof updates?.content === 'string') post.content = updates.content;
       if (typeof updates?.type === 'string') post.type = updates.type;
       if (Array.isArray(updates?.photos)) post.photos = updates.photos;
+      if (Object.prototype.hasOwnProperty.call(updates || {}, 'group')) {
+        post.group = normalizePostGroup(updates.group);
+      }
 
       // Keep schema consistent: fight posts have no category.
       if (post.type === 'fight') {
@@ -1274,7 +1296,8 @@ export const createUserChallenge = async (req, res) => {
     opponentId,
     challengerTeam,
     voteDuration,
-    photos
+    photos,
+    group
   } = req.body;
 
   if (!title || !content) {
@@ -1295,6 +1318,7 @@ export const createUserChallenge = async (req, res) => {
     let createdPost;
     let challenger;
     let opponent;
+    const resolvedGroup = normalizePostGroup(group);
 
     await withDb(async (db) => {
       challenger = await usersRepo.findOne(
@@ -1337,6 +1361,7 @@ export const createUserChallenge = async (req, res) => {
         photos: Array.isArray(photos) ? photos : [],
         poll: null,
         reactions: [],
+        group: resolvedGroup,
         isOfficial: false,
         moderatorCreated: false,
         category: null,

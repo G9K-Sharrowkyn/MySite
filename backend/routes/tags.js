@@ -208,6 +208,7 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
       limit = 10,
       sortBy = 'createdAt',
       postCategory,
+      group,
       ...filters
     } = req.body || {};
     const db = await readDb();
@@ -232,6 +233,13 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
         ).toLowerCase();
         return postCategory === normalizedCategory;
       });
+    }
+
+    const normalizedGroup = String(group || '').trim().toLowerCase();
+    if (normalizedGroup && normalizedGroup !== 'all' && normalizedGroup !== 'none') {
+      posts = posts.filter(
+        (post) => String(post?.group || '').trim().toLowerCase() === normalizedGroup
+      );
     }
 
     if (hasFilters) {
