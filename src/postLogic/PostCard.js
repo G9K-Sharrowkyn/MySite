@@ -137,6 +137,31 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return `${window.location.origin}/post/${post.id}`;
   };
 
+  const getShareApiOrigin = () => {
+    const envUrl = process.env.REACT_APP_API_URL;
+    if (envUrl && /^https?:\/\//i.test(envUrl)) {
+      return envUrl.replace(/\/$/, '');
+    }
+    if (typeof window === 'undefined' || !window.location?.hostname) return '';
+    const { protocol, hostname, origin } = window.location;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return '';
+    }
+    if (hostname.startsWith('api.')) {
+      return origin;
+    }
+    return `${protocol}//api.${hostname}`;
+  };
+
+  const buildShareBotUrl = () => {
+    if (!post?.id) return '';
+    if (typeof window === 'undefined') return '';
+    const apiOrigin = getShareApiOrigin();
+    if (!apiOrigin) return '';
+    const versionToken = getShareVersion();
+    return `${apiOrigin}/share/post/${post.id}?v=${encodeURIComponent(versionToken)}`;
+  };
+
   const buildShareUrl = () => {
     if (!post?.id) return '';
     if (typeof window === 'undefined') return '';
@@ -1137,7 +1162,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               </a>
               <a
                 className="share-option"
-                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(buildShareUrl())}&text=${encodeURIComponent(post.title || '')}`}
+                href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(buildShareBotUrl() || buildShareUrl())}&text=${encodeURIComponent(post.title || '')}`}
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => setShowShareMenu(false)}

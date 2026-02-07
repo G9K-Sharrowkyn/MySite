@@ -280,15 +280,17 @@ const fetchImageDataUri = async (url) => {
     if (!buffer.length) return null;
     const mime = guessImageType(url, contentType);
 
-    // Social preview image is rendered by converting an SVG to PNG via sharp. Not all SVG rasterizers
-    // reliably support embedded WebP/AVIF images, so normalize embedded images to PNG data URIs.
-    try {
-      const png = await sharp(buffer).png().toBuffer();
-      if (png?.length) {
-        return `data:image/png;base64,${png.toString('base64')}`;
+    // Social preview image is rendered by converting an SVG to PNG via sharp. Some SVG rasterizers
+    // are unreliable with embedded WebP/AVIF. Only normalize those formats to PNG to keep rendering fast.
+    if (mime === 'image/webp' || mime === 'image/avif') {
+      try {
+        const png = await sharp(buffer).png().toBuffer();
+        if (png?.length) {
+          return `data:image/png;base64,${png.toString('base64')}`;
+        }
+      } catch (_error) {
+        // Fall back to original bytes below.
       }
-    } catch (_error) {
-      // Fall back to the original bytes below.
     }
 
     return `data:${mime};base64,${buffer.toString('base64')}`;
