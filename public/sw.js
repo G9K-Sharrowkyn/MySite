@@ -1,5 +1,7 @@
 // Service Worker for PWA
-const CACHE_NAME = 'fight-site-v3';
+// Bump this when we ship UI changes that must be reflected immediately.
+// Keeping a hard version here avoids users being stuck on stale cached assets in PWA mode.
+const CACHE_NAME = 'fight-site-v4';
 const urlsToCache = [
   '/',
   '/logo192.png',
