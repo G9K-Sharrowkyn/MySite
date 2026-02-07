@@ -416,18 +416,18 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
     const nameTextTop = panelY + 6;
-    const nameFontSize = 20;
-    const nameLineHeight = 24;
+    const nameFontSize = 28;
+    const nameLineHeight = 32;
     const nameStartY = nameTextTop + nameFontSize;
 
     const frameGap = 8;
     const votesHeight = 16;
     const bottomPadding = 8;
 
-    const leftNameLines = splitTextLines(normalizeCharacterNameForShare(leftName), 22, 4);
-    const rightNameLines = splitTextLines(normalizeCharacterNameForShare(rightName), 22, 4);
+    const leftNameLines = splitTextLines(normalizeCharacterNameForShare(leftName), 18, 4);
+    const rightNameLines = splitTextLines(normalizeCharacterNameForShare(rightName), 18, 4);
     const nameLinesUsed = Math.max(
-      2,
+      1,
       leftNameLines.length || 0,
       rightNameLines.length || 0
     );
@@ -452,8 +452,8 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const frameRadius = 20;
     const frameBorderPad = 4;
 
-    const leftNameX = panelXLeft + panelWidth / 2;
-    const rightNameX = panelXRight + panelWidth / 2;
+    const leftNameX = Math.round(panelXLeft + panelWidth / 2);
+    const rightNameX = Math.round(panelXRight + panelWidth / 2);
 
     const teamAVotes = post?.fight?.votes?.teamA || 0;
     const teamBVotes = post?.fight?.votes?.teamB || 0;
@@ -512,6 +512,9 @@ const buildShareImageSvg = async (post, db, options = {}) => {
           <filter id="buttonShadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="0" dy="10" stdDeviation="8" flood-color="#000" flood-opacity="0.35" />
           </filter>
+          <filter id="nameShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#000" flood-opacity="0.65" />
+          </filter>
           <clipPath id="leftClip">
             <rect x="${frameXLeft}" y="${frameY}" width="${frameWidth}" height="${frameHeight}" rx="${frameRadius}" ry="${frameRadius}" />
           </clipPath>
@@ -529,17 +532,13 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${leftNameLines
            .map(
              (line, index) => `
-        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc" text-anchor="middle">
-          ${escapeHtml(line)}
-        </text>`
+        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc" text-anchor="middle" font-weight="800" filter="url(#nameShadow)" stroke="#0b0f16" stroke-width="4" paint-order="stroke">${escapeHtml(line)}</text>`
            )
            .join('')}
         ${rightNameLines
            .map(
              (line, index) => `
-        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc" text-anchor="middle">
-          ${escapeHtml(line)}
-        </text>`
+        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial Black, Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc" text-anchor="middle" font-weight="800" filter="url(#nameShadow)" stroke="#0b0f16" stroke-width="4" paint-order="stroke">${escapeHtml(line)}</text>`
            )
            .join('')}
 
@@ -1120,7 +1119,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-4';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-5';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
