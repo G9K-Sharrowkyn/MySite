@@ -1104,7 +1104,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-webp-png-1';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-1';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
@@ -1133,8 +1133,10 @@ const setShareImageCache = (key, buffer) => {
 app.get([
   '/share/post/:id/image',
   '/share/post/:id/image.png',
+  '/share/post/:id/image.jpg',
   '/api/share/post/:id/image',
-  '/api/share/post/:id/image.png'
+  '/api/share/post/:id/image.png',
+  '/api/share/post/:id/image.jpg'
 ], async (req, res) => {
   try {
     const db = await readDb();
@@ -1142,11 +1144,12 @@ app.get([
     const post =
       (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
       null;
+    const wantsJpeg = /\.jpg(\?|$)/i.test(String(req.originalUrl || req.url || ''));
     const cacheToken = String(req.query.v || req.query.t || post?.updatedAt || post?.createdAt || '').trim();
-    const cacheKey = `${postId}:${cacheToken}:${SHARE_IMAGE_RENDER_VERSION}`;
+    const cacheKey = `${postId}:${cacheToken}:${wantsJpeg ? 'jpg' : 'png'}:${SHARE_IMAGE_RENDER_VERSION}`;
     const cached = getShareImageCache(cacheKey);
     if (cached) {
-      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Type', wantsJpeg ? 'image/jpeg' : 'image/png');
       res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
       res.setHeader('X-Content-Type-Options', 'nosniff');
       return res.send(cached);
@@ -1162,9 +1165,12 @@ app.get([
         frontendOrigin
       }
     );
-    const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
+    const rendered = sharp(Buffer.from(svg));
+    const buffer = wantsJpeg
+      ? await rendered.flatten({ background: '#0b0f16' }).jpeg({ quality: 86, mozjpeg: true }).toBuffer()
+      : await rendered.png().toBuffer();
     setShareImageCache(cacheKey, buffer);
-    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Type', wantsJpeg ? 'image/jpeg' : 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.send(buffer);
@@ -1188,7 +1194,7 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
       versionParam || post?.updatedAt || post?.createdAt || String(Date.now());
     const postUrl = `${frontendOrigin}/post/${postId}?v=${encodeURIComponent(cacheToken)}`;
     const redirectUrl = `${frontendOrigin}/post/${postId}`;
-    const imageUrl = `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(cacheToken)}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`;
+    const imageUrl = `${apiOrigin}/share/post/${postId}/image.jpg?v=${encodeURIComponent(cacheToken)}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`;
     const meta = await buildShareMetaTags(
       req,
       post || { id: postId, title: 'Post', content: '' },
@@ -1200,7 +1206,8 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
         imageHeight: 1200,
         imageBaseUrl: frontendOrigin,
         apiBaseUrl: apiOrigin,
-        frontendOrigin
+        frontendOrigin,
+        imageType: 'image/jpeg'
       }
     );
     const html = buildShareHtml(meta, redirectUrl);
@@ -1295,14 +1302,15 @@ if (process.env.NODE_ENV === 'production') {
       const meta = post
         ? await buildShareMetaTags(req, post, db, {
             url: `${frontendOrigin}/post/${postId}`,
-            imageUrl: `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(
+            imageUrl: `${apiOrigin}/share/post/${postId}/image.jpg?v=${encodeURIComponent(
               post?.updatedAt || post?.createdAt || 'v3'
             )}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`,
             imageWidth: 1200,
             imageHeight: 1200,
             imageBaseUrl: frontendOrigin,
             apiBaseUrl: apiOrigin,
-            frontendOrigin
+            frontendOrigin,
+            imageType: 'image/jpeg'
           })
         : '';
       const withMeta = meta
