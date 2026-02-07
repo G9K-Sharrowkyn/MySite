@@ -9,6 +9,22 @@
   z-index: 1001;
 }
 
+/* Mobile "cover everything" mode: hide other floating UI when chat is open */
+body.chat-open .scroll-top-button,
+body.chat-open .feedback-button,
+body.chat-open .feedback-panel,
+body.chat-open .build-version {
+  display: none !important;
+}
+
+body.chat-open .chat-toggle-wrapper {
+  display: none !important;
+}
+
+.chat-close-btn {
+  display: none;
+}
+
 .scroll-top-button {
   position: fixed;
   right: 10px;
@@ -772,6 +788,32 @@
 
 /* Mobile responsiveness */
 @media (max-width: 768px) {
+  body.chat-open .global-chat-container {
+    z-index: 20000;
+  }
+
+  .chat-close-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin-left: 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(0, 0, 0, 0.25);
+    color: #e2e8f0;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  }
+
+  .chat-close-btn:hover {
+    border-color: rgba(0, 255, 203, 0.55);
+    box-shadow: 0 0 0 2px rgba(0, 255, 203, 0.18), 0 10px 20px rgba(0, 0, 0, 0.4);
+  }
+
   .scroll-top-button {
     bottom: 82px;
     width: 48px;

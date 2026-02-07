@@ -564,6 +564,24 @@ const GlobalChatSystem = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const shouldCover = Boolean(isMobile && isChatOpen && !isMinimized);
+
+    document.body.classList.toggle('chat-open', shouldCover);
+
+    const prevOverflow = document.body.style.overflow;
+    if (shouldCover) {
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.body.classList.remove('chat-open');
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [isChatOpen, isMinimized]);
+
   if (!user || !token) {
     return null;
   }
@@ -680,6 +698,18 @@ const GlobalChatSystem = () => {
             }}
           >
             {showUsers ? 'Hide users' : 'Users'}
+          </button>
+          <button
+            type="button"
+            className="chat-close-btn"
+            onClick={(event) => {
+              event.stopPropagation();
+              toggleChat();
+            }}
+            aria-label="Close chat"
+            title="Close"
+          >
+            ×
           </button>
         </div>
       </div>
