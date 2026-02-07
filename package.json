@@ -19,6 +19,9 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "prestart": "node scripts/gen-build-info.cjs",
+    "prebuild": "node scripts/gen-build-info.cjs",
+    "pretest": "node scripts/gen-build-info.cjs",
     "start": "react-scripts start",
     "build": "REACT_APP_BUILD_TIME=$(date +%s) react-scripts build || react-scripts build",
     "test": "react-scripts test",

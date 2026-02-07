@@ -31,6 +31,7 @@ import SpeedRacingPage from './speedRacing/SpeedRacingPage';
 import CookieConsent from './legal/CookieConsent';
 import LegalPolicyPage from './legal/LegalPolicyPage';
 import HelpPage from './legal/HelpPage';
+import BuildVersion from './BuildVersion';
 import './App.css';
 
 const ModeratorRoute = ({ children }) => {
@@ -167,6 +168,7 @@ function AppContent() {
       {/* Feedback Button - always visible */}
       <FeedbackButton />
       <CookieConsent />
+      <BuildVersion />
     </div>
   );
 }

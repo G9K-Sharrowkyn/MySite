@@ -26,6 +26,7 @@
 /backend/.env
 build.zip
 backend.zip
+src/buildInfo.generated.js
 
 # local subtitle/translation scratch
 *.srt
