@@ -105,15 +105,15 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [characters, setCharacters] = useState(cachedCharacters || []);
   const [pollVote, setPollVote] = useState(null);
 
-  const getGroupBadge = (groupId) => {
+  const getGroupLabel = (groupId) => {
     const key = String(groupId || '').trim().toLowerCase();
-    if (key === 'dragon_ball') return { label: 'Dragon Ball', src: '/logos/Dragon Ball.png' };
-    if (key === 'star_wars') return { label: 'Star Wars', src: '/logos/Star Wars.png' };
-    if (key === 'marvel') return { label: 'Marvel', src: '/logos/Marvel.png' };
-    if (key === 'dc') return { label: 'DC', src: '/logos/DC.png' };
+    if (key === 'dragon_ball') return 'Dragon Ball';
+    if (key === 'star_wars') return 'Star Wars';
+    if (key === 'marvel') return 'Marvel';
+    if (key === 'dc') return 'DC';
     return null;
   };
-  const groupBadge = getGroupBadge(post?.group);
+  const groupLabel = getGroupLabel(post?.group);
 
   const { user } = useContext(AuthContext);
   const currentUserId = localStorage.getItem('userId');
@@ -1040,9 +1040,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           {getPostTypeIcon(post.type) && (
             <span className="post-type">{getPostTypeIcon(post.type)}</span>
           )}
-          {groupBadge && (
-            <span className="post-group-badge" title={groupBadge.label} aria-label={groupBadge.label}>
-              <img src={groupBadge.src} alt={groupBadge.label} />
+          {groupLabel && (
+            <span className="post-group-title" title={groupLabel} aria-label={groupLabel}>
+              {groupLabel}
             </span>
           )}
           {post.type === 'fight' && post.fight && (

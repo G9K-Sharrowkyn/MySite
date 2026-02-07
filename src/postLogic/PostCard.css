@@ -124,22 +124,21 @@ body.dark-mode .post-card {
   font-size: 0.9rem;
 }
 
-.post-group-badge {
+.post-group-title {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 22px;
-  padding: 2px 8px;
+  height: 28px;
+  padding: 2px 14px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(8, 10, 14, 0.45);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
-}
-
-.post-group-badge img {
-  height: 16px;
-  width: auto;
-  display: block;
+  border: 1px solid rgba(0, 255, 136, 0.45);
+  background: rgba(0, 255, 136, 0.08);
+  box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.25), 0 10px 22px rgba(0, 0, 0, 0.25);
+  color: rgba(240, 255, 248, 0.95);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 0.9rem;
 }
 
 .post-type {
