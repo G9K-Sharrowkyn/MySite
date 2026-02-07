@@ -306,17 +306,25 @@ const buildShareImageSvg = async (post, db, options = {}) => {
   const isFight = post?.type === 'fight' || post?.fight?.teamA || post?.fight?.teamB;
   const siteLabel = 'VersusVerseVault';
 
+  const teamAMembers = splitFightTeamMembers(post?.fight?.teamA);
+  const teamBMembers = splitFightTeamMembers(post?.fight?.teamB);
   const teamALabel = normalizeTeamLabel(post?.fight?.teamA);
   const teamBLabel = normalizeTeamLabel(post?.fight?.teamB);
-  const leftName = isFight ? (teamALabel || 'Team A') : (post?.title || 'Post');
-  const rightName = isFight ? (teamBLabel || 'Team B') : '';
+  // For multi-member fights (2v2 etc), show only the primary character per side in the share image.
+  // This prevents missing/blank slots and keeps the layout readable in social previews.
+  const leftPrimaryName = teamAMembers[0] || '';
+  const rightPrimaryName = teamBMembers[0] || '';
+  const leftExtraCount = Math.max(0, teamAMembers.length - 1);
+  const rightExtraCount = Math.max(0, teamBMembers.length - 1);
+  const leftName = isFight ? (leftPrimaryName || teamALabel || 'Team A') : (post?.title || 'Post');
+  const rightName = isFight ? (rightPrimaryName || teamBLabel || 'Team B') : '';
 
   let leftImageUrl = '';
   let rightImageUrl = '';
 
   if (isFight) {
-    const leftCharacter = pickPrimaryTeamName(teamALabel);
-    const rightCharacter = pickPrimaryTeamName(teamBLabel);
+    const leftCharacter = leftPrimaryName || pickPrimaryTeamName(teamALabel);
+    const rightCharacter = rightPrimaryName || pickPrimaryTeamName(teamBLabel);
     const leftImage = await resolveCharacterImageByName(leftCharacter, db);
     const rightImage = await resolveCharacterImageByName(rightCharacter, db);
     leftImageUrl = resolveAssetUrl(leftImage, { imageBaseUrl, apiBaseUrl });
@@ -413,6 +421,19 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const buttonWidth = Math.round((buttonsWidth - buttonGap * 2) / 3);
     const buttonY = buttonRowY;
     const buttonTextY = buttonY + 28;
+
+    const badgeHeight = 26;
+    const badgeRadius = 13;
+    const badgePaddingX = 12;
+    const badgeY = panelY + 12;
+    const leftBadgeText = leftExtraCount ? `+${leftExtraCount}` : '';
+    const rightBadgeText = rightExtraCount ? `+${rightExtraCount}` : '';
+    const badgeWidthFor = (text) => (text ? Math.max(36, 18 + text.length * 12) : 0);
+    const leftBadgeWidth = badgeWidthFor(leftBadgeText);
+    const rightBadgeWidth = badgeWidthFor(rightBadgeText);
+    const leftBadgeX = panelXLeft + panelWidth - badgePaddingX - leftBadgeWidth;
+    const rightBadgeX = panelXRight + panelWidth - badgePaddingX - rightBadgeWidth;
+    const badgeTextY = badgeY + 19;
     return `
       <svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
         <defs>
@@ -475,6 +496,21 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         </text>`
           )
           .join('')}
+
+        ${leftBadgeText
+          ? `
+        <rect x="${leftBadgeX}" y="${badgeY}" width="${leftBadgeWidth}" height="${badgeHeight}" rx="${badgeRadius}" ry="${badgeRadius}" fill="#111827" opacity="0.78" stroke="#334155" stroke-width="1" />
+        <text x="${leftBadgeX + leftBadgeWidth / 2}" y="${badgeTextY}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#f8fafc" text-anchor="middle">
+          ${escapeHtml(leftBadgeText)}
+        </text>`
+          : ''}
+        ${rightBadgeText
+          ? `
+        <rect x="${rightBadgeX}" y="${badgeY}" width="${rightBadgeWidth}" height="${badgeHeight}" rx="${badgeRadius}" ry="${badgeRadius}" fill="#111827" opacity="0.78" stroke="#334155" stroke-width="1" />
+        <text x="${rightBadgeX + rightBadgeWidth / 2}" y="${badgeTextY}" font-family="Arial, Helvetica, sans-serif" font-size="18" fill="#f8fafc" text-anchor="middle">
+          ${escapeHtml(rightBadgeText)}
+        </text>`
+          : ''}
 
         <rect x="${frameXLeft - frameBorderPad}" y="${frameY - frameBorderPad}" width="${frameWidth + frameBorderPad * 2}" height="${frameHeight + frameBorderPad * 2}" rx="${frameRadius}" ry="${frameRadius}" fill="#2b2f36" stroke="#3b3f46" stroke-width="1.5" filter="url(#frameShadow)" />
         <rect x="${frameXRight - frameBorderPad}" y="${frameY - frameBorderPad}" width="${frameWidth + frameBorderPad * 2}" height="${frameHeight + frameBorderPad * 2}" rx="${frameRadius}" ry="${frameRadius}" fill="#2b2f36" stroke="#3b3f46" stroke-width="1.5" filter="url(#frameShadow)" />
