@@ -34,6 +34,7 @@ const GlobalChatSystem = () => {
   const [privateMessageInput, setPrivateMessageInput] = useState('');
   const [privateView, setPrivateView] = useState('conversations'); // 'search', 'conversations', 'chat'
   const [showNewMessageNotification, setShowNewMessageNotification] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -547,12 +548,39 @@ const GlobalChatSystem = () => {
     setPrivateMessages([]);
   };
 
+  useEffect(() => {
+    const onScroll = () => {
+      if (typeof window === 'undefined') return;
+      setShowScrollTop(window.scrollY > 420);
+    };
+
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   if (!user || !token) {
     return null;
   }
 
   return (
     <>
+      {showScrollTop && (
+        <button
+          type="button"
+          className="scroll-top-button"
+          onClick={scrollToTop}
+          aria-label="Scroll to top"
+          title="Up"
+        >
+          ↑
+        </button>
+      )}
       <div className="chat-toggle-wrapper">
         <span className="chat-toggle-label">Chat</span>
         <label className="chat-toggle-switch">

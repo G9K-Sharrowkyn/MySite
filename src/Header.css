@@ -789,6 +789,12 @@
 }
 
 @media (max-width: 768px) {
+  /* On mobile the header is tall (search + groups). Keep it scrollable instead of sticky. */
+  .header {
+    position: relative;
+    top: auto;
+  }
+
   .header-container {
     padding: 10px 15px;
     gap: 10px 12px;
