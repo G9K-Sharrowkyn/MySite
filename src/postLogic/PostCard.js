@@ -732,9 +732,15 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         ? post.fight.teams
         : [post.fight.teamA || '', post.fight.teamB || ''];
 
+    const cleanedTeams = rawTeams
+      .map((entry) => String(entry || '').trim())
+      .filter(Boolean);
+
     // Always render at least 2 columns for the classic 1v1 layout.
-    const teams = rawTeams.length >= 2 ? rawTeams : [rawTeams[0] || '', ''];
+    const teams =
+      cleanedTeams.length >= 2 ? cleanedTeams : [cleanedTeams[0] || '', ''];
     const teamCount = teams.length;
+    const isMultiTeam = teamCount > 2;
 
     const rawVotesTeams = Array.isArray(post.fight?.votes?.teams)
       ? post.fight.votes.teams
@@ -750,7 +756,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
     return (
       <div className="voting-section fight-voting" onClick={e => e.stopPropagation()}>
-        <div className="fight-voting-panels">
+        <div className={`fight-voting-panels${isMultiTeam ? ' multi-team-strip' : ''}`}>
           {teamCount === 2 && teams[0] && teams[1] && (
             <img
               className="fight-vs-icon"
@@ -761,15 +767,50 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             />
           )}
 
-          {teams.map((teamValue, index) => {
-            const list = splitFightTeamMembers(teamValue);
-            const key = String(index);
-            return (
-              <div key={key} className="fight-voting-panel-col">
-                {renderTeamPanel(list, teamValue, userVote === key, teamVotes[index] || 0, key)}
-              </div>
-            );
-          })}
+          {isMultiTeam
+            ? teams.map((teamValue, index) => {
+                const list = splitFightTeamMembers(teamValue);
+                const key = String(index);
+                return (
+                  <React.Fragment key={key}>
+                    <div className="fight-voting-panel-col">
+                      {renderTeamPanel(
+                        list,
+                        teamValue,
+                        userVote === key,
+                        teamVotes[index] || 0,
+                        key
+                      )}
+                    </div>
+                    {index < teams.length - 1 && (
+                      <div className="fight-vs-between" aria-hidden="true">
+                        <img
+                          className="fight-vs-between-icon"
+                          src={`${process.env.PUBLIC_URL}/VS.png`}
+                          alt=""
+                          aria-hidden="true"
+                          draggable="false"
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
+                );
+              })
+            : teams.map((teamValue, index) => {
+                const list = splitFightTeamMembers(teamValue);
+                const key = String(index);
+                return (
+                  <div key={key} className="fight-voting-panel-col">
+                    {renderTeamPanel(
+                      list,
+                      teamValue,
+                      userVote === key,
+                      teamVotes[index] || 0,
+                      key
+                    )}
+                  </div>
+                );
+              })}
         </div>
 
         {canVote && teamCount === 2 && (
