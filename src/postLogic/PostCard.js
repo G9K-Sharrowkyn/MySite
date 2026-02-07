@@ -272,9 +272,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const normalizeVoteTeam = (team) => {
     if (!team) return null;
     const value = String(team).toLowerCase();
-    if (['a', 'teama', 'team a', 'fighter1', 'fighterone'].includes(value)) return 'A';
-    if (['b', 'teamb', 'team b', 'fighter2', 'fightertwo'].includes(value)) return 'B';
+    if (['a', 'teama', 'team a', 'fighter1', 'fighterone'].includes(value)) return '0';
+    if (['b', 'teamb', 'team b', 'fighter2', 'fightertwo'].includes(value)) return '1';
     if (['draw', 'tie'].includes(value)) return 'draw';
+    if (/^\\d+$/.test(value)) return String(Number(value));
     return team;
   };
 
@@ -358,9 +359,12 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     }
 
     if (post.type === 'fight' && characters.length) {
-      const teamAList = splitFightTeamMembers(post.fight?.teamA);
-      const teamBList = splitFightTeamMembers(post.fight?.teamB);
-      [...teamAList, ...teamBList].forEach((name) => {
+      const rawTeams =
+        Array.isArray(post.fight?.teams) && post.fight.teams.length
+          ? post.fight.teams
+          : [post.fight?.teamA, post.fight?.teamB].filter(Boolean);
+      const allNames = rawTeams.flatMap((team) => splitFightTeamMembers(team));
+      allNames.forEach((name) => {
         const character = getCharacterByName(name);
         if (character?.image) {
           preloadCharacterImage(character.image);
@@ -585,7 +589,11 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const getTotalVotes = () => {
     if (post.type === 'fight' && post.fight?.votes) {
       if (post.fight?.votesHidden) return 0;
-      return (post.fight.votes.teamA || 0) + (post.fight.votes.teamB || 0) + (post.fight.votes.draw || 0);
+      const drawVotes = Number(post.fight.votes.draw || 0) || 0;
+      const teamVotes = Array.isArray(post.fight.votes.teams)
+        ? post.fight.votes.teams.reduce((sum, value) => sum + (Number(value || 0) || 0), 0)
+        : (Number(post.fight.votes.teamA || 0) || 0) + (Number(post.fight.votes.teamB || 0) || 0);
+      return teamVotes + drawVotes;
     }
     if (post.poll?.votes?.voters) {
       return post.poll.votes.voters.length;
@@ -648,7 +656,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                   );
                 })}
               </div>
-              <div className="team-row team-row-bottom{teamList.length === 3 ? ' team-row-single' : ''}">
+              <div className={`team-row team-row-bottom${teamList.length === 3 ? ' team-row-single' : ''}`}>
                 {rows[1].map((name, idx) => {
                   const char = getCharacterByName(name);
                   return (
@@ -716,53 +724,61 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const renderFightVoting = () => {
-    const teamAVotes = post.fight.votes?.teamA || 0;
-    const teamBVotes = post.fight.votes?.teamB || 0;
-    const drawVotes = post.fight.votes?.draw || 0;
     const canVote = post.fight.status !== 'locked' && post.fight.status !== 'completed';
     const votesHidden = Boolean(post.fight?.votesHidden);
 
-    const teamAList = splitFightTeamMembers(post.fight.teamA);
-    const teamBList = splitFightTeamMembers(post.fight.teamB);
+    const rawTeams =
+      Array.isArray(post.fight?.teams) && post.fight.teams.length
+        ? post.fight.teams
+        : [post.fight.teamA || '', post.fight.teamB || ''];
+
+    // Always render at least 2 columns for the classic 1v1 layout.
+    const teams = rawTeams.length >= 2 ? rawTeams : [rawTeams[0] || '', ''];
+    const teamCount = teams.length;
+
+    const rawVotesTeams = Array.isArray(post.fight?.votes?.teams)
+      ? post.fight.votes.teams
+      : null;
+    const fallbackVotes = [
+      post.fight?.votes?.teamA || 0,
+      post.fight?.votes?.teamB || 0
+    ];
+    const teamVotes = teams.map((_, index) =>
+      rawVotesTeams ? (rawVotesTeams[index] || 0) : (fallbackVotes[index] || 0)
+    );
+    const drawVotes = post.fight.votes?.draw || 0;
 
     return (
       <div className="voting-section fight-voting" onClick={e => e.stopPropagation()}>
         <div className="fight-voting-panels">
-          <img
-            className="fight-vs-icon"
-            src={`${process.env.PUBLIC_URL}/VS.png`}
-            alt=""
-            aria-hidden="true"
-            draggable="false"
-          />
-          <div className="fight-voting-panel-col">
-            {renderTeamPanel(
-              teamAList,
-              post.fight.teamA || 'Team A',
-              userVote === 'A',
-              teamAVotes,
-              'A'
-            )}
-          </div>
+          {teamCount === 2 && teams[0] && teams[1] && (
+            <img
+              className="fight-vs-icon"
+              src={`${process.env.PUBLIC_URL}/VS.png`}
+              alt=""
+              aria-hidden="true"
+              draggable="false"
+            />
+          )}
 
-          <div className="fight-voting-panel-col">
-            {renderTeamPanel(
-              teamBList,
-              post.fight.teamB || 'Team B',
-              userVote === 'B',
-              teamBVotes,
-              'B'
-            )}
-          </div>
+          {teams.map((teamValue, index) => {
+            const list = splitFightTeamMembers(teamValue);
+            const key = String(index);
+            return (
+              <div key={key} className="fight-voting-panel-col">
+                {renderTeamPanel(list, teamValue, userVote === key, teamVotes[index] || 0, key)}
+              </div>
+            );
+          })}
         </div>
 
-        {canVote && (
+        {canVote && teamCount === 2 && (
           <div className={`fight-voting-buttons${userVote ? ' has-voted' : ''}`}>
             <button
-              className={`animated-vote-btn team-a${userVote === 'A' ? ' voted' : ''}`}
-              onClick={() => handleVote('A')}
+              className={`animated-vote-btn team-a${userVote === '0' ? ' voted' : ''}`}
+              onClick={() => handleVote('0')}
             >
-              {userVote === 'A' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+              {userVote === '0' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
             </button>
 
             <button
@@ -773,12 +789,39 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             </button>
 
             <button
-              className={`animated-vote-btn team-b${userVote === 'B' ? ' voted' : ''}`}
-              onClick={() => handleVote('B')}
+              className={`animated-vote-btn team-b${userVote === '1' ? ' voted' : ''}`}
+              onClick={() => handleVote('1')}
             >
-              {userVote === 'B' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+              {userVote === '1' ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
             </button>
           </div>
+        )}
+
+        {canVote && teamCount > 2 && (
+          <>
+            <div className={`fight-voting-buttons multi-team${userVote ? ' has-voted' : ''}`}>
+              {teams.map((_, index) => {
+                const key = String(index);
+                return (
+                  <button
+                    key={key}
+                    className={`animated-vote-btn team-multi${userVote === key ? ' voted' : ''}`}
+                    onClick={() => handleVote(key)}
+                  >
+                    {userVote === key ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="fight-voting-buttons draw-row">
+              <button
+                className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
+                onClick={() => handleVote('draw')}
+              >
+                {t('draw')}
+              </button>
+            </div>
+          </>
         )}
 
         <div className={`fight-draw-count${votesHidden ? ' hidden' : ''}`}>

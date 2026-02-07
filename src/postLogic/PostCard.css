@@ -2047,7 +2047,7 @@ body.dark-mode .post-card {
 .fight-voting-panels {
   width: 100%;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 10px;
   align-items: start;
   justify-content: center;
@@ -2121,6 +2121,21 @@ body.dark-mode .post-card {
   gap: 10px;
   align-items: end;
   margin-top: 14px;
+}
+
+.fight-voting-buttons.multi-team {
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  align-items: stretch;
+}
+
+.fight-voting-buttons.draw-row {
+  grid-template-columns: 1fr;
+  justify-items: center;
+  margin-top: 10px;
+}
+
+.fight-voting-buttons.draw-row .animated-vote-btn {
+  width: min(360px, 100%);
 }
 
 .fight-draw-count {

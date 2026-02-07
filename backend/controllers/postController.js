@@ -50,6 +50,75 @@ const normalizeFightTeam = (value) => {
   return value ? String(value) : '';
 };
 
+const normalizeFightTeams = (value) => {
+  const list = Array.isArray(value) ? value : [];
+  return list
+    .map(normalizeFightTeam)
+    .map((team) => String(team || '').trim())
+    .filter(Boolean);
+};
+
+const getFightTeamsFromFight = (fight) => {
+  const fromArray = normalizeFightTeams(fight?.teams);
+  if (fromArray.length) return fromArray;
+  const out = [];
+  const teamA = String(normalizeFightTeam(fight?.teamA) || '').trim();
+  const teamB = String(normalizeFightTeam(fight?.teamB) || '').trim();
+  if (teamA) out.push(teamA);
+  if (teamB) out.push(teamB);
+  return out;
+};
+
+const getFightTeamsFromRequest = (body = {}, fallbackFight = null) => {
+  const fromArray = normalizeFightTeams(body?.fightTeams || body?.fight?.teams);
+  if (fromArray.length) return fromArray;
+  const out = [];
+  const teamA = String(normalizeFightTeam(body?.teamA ?? fallbackFight?.teamA) || '').trim();
+  const teamB = String(normalizeFightTeam(body?.teamB ?? fallbackFight?.teamB) || '').trim();
+  if (teamA) out.push(teamA);
+  if (teamB) out.push(teamB);
+  return out;
+};
+
+const normalizeFightVoteTeamKey = (value) => {
+  if (value === null || value === undefined) return null;
+  const raw = String(value).trim().toLowerCase();
+  if (!raw) return null;
+  if (raw === 'draw' || raw === 'tie') return 'draw';
+  if (['a', 'teama', 'team a', 'fighter1', 'fighterone'].includes(raw)) return '0';
+  if (['b', 'teamb', 'team b', 'fighter2', 'fightertwo'].includes(raw)) return '1';
+  if (/^\d+$/.test(raw)) return String(Number(raw));
+  return null;
+};
+
+const ensureFightVotesShape = (fight, teamCount) => {
+  if (!fight) return { teams: [], draw: 0, voters: [] };
+  fight.votes = fight.votes || {};
+  fight.votes.voters = Array.isArray(fight.votes.voters) ? fight.votes.voters : [];
+  fight.votes.draw = Number(fight.votes.draw || 0) || 0;
+
+  const legacyA = Number(fight.votes.teamA || 0) || 0;
+  const legacyB = Number(fight.votes.teamB || 0) || 0;
+
+  let teams = Array.isArray(fight.votes.teams) ? [...fight.votes.teams] : [];
+  if (!teams.length && teamCount) {
+    teams = new Array(teamCount).fill(0);
+    if (teamCount > 0) teams[0] = legacyA;
+    if (teamCount > 1) teams[1] = legacyB;
+  }
+
+  const size = Math.max(0, Number(teamCount) || 0);
+  for (let i = 0; i < size; i += 1) {
+    teams[i] = Number(teams[i] || 0) || 0;
+  }
+  fight.votes.teams = teams.slice(0, size);
+
+  // Keep legacy fields in sync (used by older UI paths + other systems like betting/share).
+  fight.votes.teamA = fight.votes.teams[0] || 0;
+  fight.votes.teamB = fight.votes.teams[1] || 0;
+  return fight.votes;
+};
+
 const normalizeVoteVisibility = (value) => {
   const raw = String(value || '').trim().toLowerCase();
   if (raw === 'final' || raw === 'hidden') return 'final';
@@ -68,7 +137,7 @@ const normalizePostGroup = (value) => {
 const getFightMyVote = (fight, viewerUserId) => {
   if (!viewerUserId || !fight?.votes?.voters) return null;
   const vote = (fight.votes.voters || []).find((entry) => entry.userId === viewerUserId);
-  return vote?.team || null;
+  return normalizeFightVoteTeamKey(vote?.team) || null;
 };
 
 const shouldRevealFightVotes = (fight, now = new Date()) => {
@@ -93,19 +162,23 @@ export const normalizePostForResponse = (post, users, options = {}) => {
     const voteVisibility = normalizeVoteVisibility(normalized.fight.voteVisibility);
     const revealVotes = shouldRevealFightVotes(normalized.fight, now);
     const myVote = getFightMyVote(normalized.fight, viewerUserId);
-    const rawVotes = normalized.fight.votes || {};
-    const teamA = revealVotes ? rawVotes.teamA || 0 : 0;
-    const teamB = revealVotes ? rawVotes.teamB || 0 : 0;
+    const teams = getFightTeamsFromFight(normalized.fight);
+    const rawVotes = ensureFightVotesShape(normalized.fight, teams.length);
+    const teamsVotes = revealVotes ? (rawVotes.teams || []) : new Array(teams.length).fill(0);
     const draw = revealVotes ? rawVotes.draw || 0 : 0;
+    const teamA = teamsVotes[0] || 0;
+    const teamB = teamsVotes[1] || 0;
 
     normalized.fight = {
       ...normalized.fight,
-      teamA: normalizeFightTeam(normalized.fight.teamA),
-      teamB: normalizeFightTeam(normalized.fight.teamB),
+      teams,
+      teamA: normalizeFightTeam(normalized.fight.teamA || teams[0] || ''),
+      teamB: normalizeFightTeam(normalized.fight.teamB || teams[1] || ''),
       voteVisibility,
       votesHidden: !revealVotes && voteVisibility === 'final',
       myVote,
       votes: {
+        teams: teamsVotes,
         teamA,
         teamB,
         draw,
@@ -427,10 +500,16 @@ export const createPost = async (req, res) => {
       if (postType === 'fight') {
         const lockTime = resolveLockTime(voteDuration);
         const normalizedVisibility = normalizeVoteVisibility(voteVisibility);
+        const fightTeams = getFightTeamsFromRequest(req.body);
+        const resolvedTeamA = fightTeams[0] || String(teamA || '').trim();
+        const resolvedTeamB = fightTeams[1] || String(teamB || '').trim();
+        const resolvedTeams = fightTeams.length ? fightTeams : [resolvedTeamA, resolvedTeamB].filter(Boolean);
         postData.fight = {
-          teamA: teamA || '',
-          teamB: teamB || '',
+          teams: resolvedTeams,
+          teamA: resolvedTeamA || '',
+          teamB: resolvedTeamB || '',
           votes: {
+            teams: new Array(resolvedTeams.length).fill(0),
             teamA: 0,
             teamB: 0,
             draw: 0,
@@ -444,7 +523,7 @@ export const createPost = async (req, res) => {
           winnerTeam: null
         };
         postData.poll = {
-          options: [teamA || '', teamB || ''],
+          options: [resolvedTeamA || '', resolvedTeamB || ''],
           votes: { voters: [] }
         };
       } else if (
@@ -463,6 +542,7 @@ export const createPost = async (req, res) => {
         content,
         teamA: postData.fight?.teamA || teamA,
         teamB: postData.fight?.teamB || teamB,
+        fightTeams: postData.fight?.teams || [],
         fight: postData.fight
       });
       postData.tags = autoTagPayload.tags;
@@ -610,6 +690,8 @@ export const updatePost = async (req, res) => {
         String(updates?.type || '').toLowerCase() === 'fight' ||
         typeof updates?.teamA === 'string' ||
         typeof updates?.teamB === 'string' ||
+        Array.isArray(updates?.fightTeams) ||
+        Array.isArray(updates?.fight?.teams) ||
         typeof updates?.voteVisibility === 'string' ||
         typeof updates?.voteDuration === 'string';
 
@@ -617,17 +699,38 @@ export const updatePost = async (req, res) => {
         post.type = 'fight';
         post.category = null;
         post.fight = post.fight || {};
-        post.fight.votes = post.fight.votes || {
-          teamA: 0,
-          teamB: 0,
-          draw: 0,
-          voters: []
-        };
         post.fight.status = post.fight.status || 'active';
-        post.fight.teamA =
-          typeof updates?.teamA === 'string' ? updates.teamA : (post.fight.teamA || '');
-        post.fight.teamB =
-          typeof updates?.teamB === 'string' ? updates.teamB : (post.fight.teamB || '');
+
+        const hasTeamsUpdate =
+          Array.isArray(updates?.fightTeams) || Array.isArray(updates?.fight?.teams);
+
+        if (hasTeamsUpdate) {
+          const nextTeams = getFightTeamsFromRequest(updates, post.fight);
+          post.fight.teams = nextTeams;
+          post.fight.teamA = nextTeams[0] || '';
+          post.fight.teamB = nextTeams[1] || '';
+        } else {
+          // Keep any existing multi-team configuration unless explicitly updated.
+          const existingTeams = getFightTeamsFromFight(post.fight);
+          post.fight.teams = existingTeams;
+          post.fight.teamA =
+            typeof updates?.teamA === 'string' ? updates.teamA : (post.fight.teamA || existingTeams[0] || '');
+          post.fight.teamB =
+            typeof updates?.teamB === 'string' ? updates.teamB : (post.fight.teamB || existingTeams[1] || '');
+
+          if (Array.isArray(post.fight.teams) && post.fight.teams.length) {
+            const synced = [...post.fight.teams];
+            if (post.fight.teamA) synced[0] = post.fight.teamA;
+            if (post.fight.teamB) {
+              synced[1] = post.fight.teamB;
+            }
+            post.fight.teams = normalizeFightTeams(synced);
+          } else {
+            post.fight.teams = normalizeFightTeams([post.fight.teamA, post.fight.teamB]);
+          }
+        }
+
+        ensureFightVotesShape(post.fight, post.fight.teams?.length || 0);
         if (typeof updates?.voteVisibility === 'string') {
           post.fight.voteVisibility = normalizeVoteVisibility(updates.voteVisibility);
         } else {
@@ -663,6 +766,7 @@ export const updatePost = async (req, res) => {
         content: post.content,
         teamA: post.fight?.teamA || '',
         teamB: post.fight?.teamB || '',
+        fightTeams: post.fight?.teams || [],
         fight: post.fight
       });
       post.tags = autoTagPayload.tags;
@@ -1069,42 +1173,64 @@ export const voteInFight = async (req, res) => {
         throw error;
       }
 
-      if (!['A', 'B', 'draw'].includes(team)) {
+      const fightTeams = getFightTeamsFromFight(post.fight);
+      const teamCount = Math.max(2, fightTeams.length);
+      const nextTeamKey = normalizeFightVoteTeamKey(team);
+      const nextTeamIndex =
+        nextTeamKey && nextTeamKey !== 'draw' ? Number(nextTeamKey) : null;
+      if (
+        !nextTeamKey ||
+        (nextTeamKey !== 'draw' &&
+          (!Number.isFinite(nextTeamIndex) ||
+            nextTeamIndex < 0 ||
+            nextTeamIndex >= teamCount))
+      ) {
         const error = new Error('Invalid team choice');
         error.code = 'INVALID_TEAM';
         throw error;
       }
 
-      post.fight.votes = post.fight.votes || { teamA: 0, teamB: 0, draw: 0, voters: [] };
-      post.fight.votes.teamA = post.fight.votes.teamA || 0;
-      post.fight.votes.teamB = post.fight.votes.teamB || 0;
-      post.fight.votes.draw = post.fight.votes.draw || 0;
-      post.fight.votes.voters = post.fight.votes.voters || [];
+      const votes = ensureFightVotesShape(post.fight, teamCount);
 
-      const existingVoteIndex = post.fight.votes.voters.findIndex(
+      const existingVoteIndex = votes.voters.findIndex(
         (vote) => vote.userId === req.user.id
       );
 
       if (existingVoteIndex > -1) {
-        const prevTeam = post.fight.votes.voters[existingVoteIndex].team;
-        if (prevTeam === 'A') post.fight.votes.teamA = Math.max(0, post.fight.votes.teamA - 1);
-        if (prevTeam === 'B') post.fight.votes.teamB = Math.max(0, post.fight.votes.teamB - 1);
-        if (prevTeam === 'draw') post.fight.votes.draw = Math.max(0, post.fight.votes.draw - 1);
-        post.fight.votes.voters[existingVoteIndex].team = team;
-        post.fight.votes.voters[existingVoteIndex].votedAt = new Date().toISOString();
+        const prevTeamRaw = votes.voters[existingVoteIndex].team;
+        const prevKey = normalizeFightVoteTeamKey(prevTeamRaw);
+        if (prevKey === 'draw') {
+          votes.draw = Math.max(0, (votes.draw || 0) - 1);
+        } else if (prevKey !== null) {
+          const prevIndex = Number(prevKey);
+          if (Number.isFinite(prevIndex) && prevIndex >= 0 && prevIndex < votes.teams.length) {
+            votes.teams[prevIndex] = Math.max(0, (votes.teams[prevIndex] || 0) - 1);
+          }
+        }
+        votes.voters[existingVoteIndex].team = nextTeamKey;
+        votes.voters[existingVoteIndex].votedAt = new Date().toISOString();
       } else {
-        post.fight.votes.voters.push({
+        votes.voters.push({
           userId: req.user.id,
-          team,
+          team: nextTeamKey,
           votedAt: new Date().toISOString()
         });
       }
 
-      if (team === 'A') post.fight.votes.teamA += 1;
-      if (team === 'B') post.fight.votes.teamB += 1;
-      if (team === 'draw') post.fight.votes.draw += 1;
+      if (nextTeamKey === 'draw') {
+        votes.draw = (votes.draw || 0) + 1;
+      } else {
+        const nextIndex = Number(nextTeamKey);
+        if (Number.isFinite(nextIndex) && nextIndex >= 0 && nextIndex < votes.teams.length) {
+          votes.teams[nextIndex] = (votes.teams[nextIndex] || 0) + 1;
+        }
+      }
 
-      updatedVotes = post.fight.votes;
+      // Keep legacy fields in sync for compatibility.
+      votes.teamA = votes.teams[0] || 0;
+      votes.teamB = votes.teams[1] || 0;
+
+      updatedVotes = votes;
       updatedFight = post.fight;
       post.updatedAt = new Date().toISOString();
       return db;
@@ -1114,15 +1240,20 @@ export const voteInFight = async (req, res) => {
     const revealVotes = shouldRevealFightVotes(updatedFight, now);
     const visibility = normalizeVoteVisibility(updatedFight?.voteVisibility);
     const votesHidden = !revealVotes && visibility === 'final';
+    const teamCount = Math.max(2, Array.isArray(updatedVotes?.teams) ? updatedVotes.teams.length : 2);
+    const safeTeams = Array.isArray(updatedVotes?.teams) ? updatedVotes.teams : [];
     const sanitizedVotes = {
-      teamA: updatedVotes?.teamA || 0,
-      teamB: updatedVotes?.teamB || 0,
+      teams: new Array(teamCount).fill(0).map((_, index) => (safeTeams[index] || 0)),
+      teamA: safeTeams[0] || 0,
+      teamB: safeTeams[1] || 0,
       draw: updatedVotes?.draw || 0
     };
 
     res.json({
       msg: 'Vote recorded successfully',
-      votes: votesHidden ? { teamA: 0, teamB: 0, draw: 0 } : sanitizedVotes,
+      votes: votesHidden
+        ? { teams: new Array(teamCount).fill(0), teamA: 0, teamB: 0, draw: 0 }
+        : sanitizedVotes,
       votesHidden
     });
   } catch (err) {

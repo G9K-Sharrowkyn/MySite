@@ -273,11 +273,16 @@ export const autoTagPost = (db = {}, postData = {}) => {
     ...collectNames(postData.teamB)
   ];
 
+  const fightTeamsInput = Array.isArray(postData.fightTeams) ? postData.fightTeams : [];
+  fightTeamsInput.forEach((team) => fightNames.push(...collectNames(team)));
+
   if (postData.fight) {
     fightNames.push(...collectNames(postData.fight.teamA));
     fightNames.push(...collectNames(postData.fight.teamB));
     fightNames.push(...collectNames(postData.fight.fighter1));
     fightNames.push(...collectNames(postData.fight.fighter2));
+    const fightTeams = Array.isArray(postData.fight.teams) ? postData.fight.teams : [];
+    fightTeams.forEach((team) => fightNames.push(...collectNames(team)));
   }
 
   fightNames.forEach((name) => {

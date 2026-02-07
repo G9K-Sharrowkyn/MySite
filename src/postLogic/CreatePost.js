@@ -140,28 +140,25 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           initialData.fight?.lockTime,
           initialData.createdAt
         );
-        // Convert teamA/teamB structure to teams array
+        // Convert backend fight structure to teams array (supports N teams).
         if (initialData.fight) {
-          if (initialData.fight.teamA) {
+          const rawTeams =
+            Array.isArray(initialData.fight.teams) && initialData.fight.teams.length
+              ? initialData.fight.teams
+              : [initialData.fight.teamA, initialData.fight.teamB].filter(Boolean);
+
+          rawTeams.forEach((teamValue, index) => {
+            const label = index === 0 ? 'Team A' : index === 1 ? 'Team B' : `Team ${index + 1}`;
             mappedTeams.push({
-              name: 'Team A',
-              warriors: splitFightTeamMembers(initialData.fight.teamA).map(name => ({
+              name: label,
+              warriors: splitFightTeamMembers(teamValue).map((name) => ({
                 character: { name: name.trim() },
                 customImage: null
               }))
             });
-            mappedPollOptions[0] = initialData.fight.teamA;
-          }
-          if (initialData.fight.teamB) {
-            mappedTeams.push({
-              name: 'Team B', 
-              warriors: splitFightTeamMembers(initialData.fight.teamB).map(name => ({
-                character: { name: name.trim() },
-                customImage: null
-              }))
-            });
-            mappedPollOptions[1] = initialData.fight.teamB;
-          }
+            if (index === 0) mappedPollOptions[0] = teamValue;
+            if (index === 1) mappedPollOptions[1] = teamValue;
+          });
         }
       } else if (initialData.poll && initialData.poll.options) {
         // For other post types with polls
@@ -472,12 +469,22 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
       };
 
       if (postData.type === 'fight') {
-        // For fight posts, create teamA and teamB from teams
-        const teamANames = postData.teams[0]?.warriors.map(w => w.character?.name).filter(Boolean) || [];
-        const teamBNames = postData.teams[1]?.warriors.map(w => w.character?.name).filter(Boolean) || [];
+        // For fight posts, persist ALL teams (not just Team A / Team B).
+        // Each team is stored as a comma-separated list of character names (same format as legacy teamA/teamB).
+        const fightTeams = (postData.teams || [])
+          .map((team) =>
+            (team?.warriors || [])
+              .map((w) => w.character?.name)
+              .filter(Boolean)
+              .join(', ')
+              .trim()
+          )
+          .filter(Boolean);
 
-        submitData.teamA = teamANames.join(', ');
-        submitData.teamB = teamBNames.join(', ');
+        submitData.fightTeams = fightTeams;
+        // Backward-compatible fields (still used by parts of the app + share/betting).
+        submitData.teamA = fightTeams[0] || '';
+        submitData.teamB = fightTeams[1] || '';
         submitData.voteVisibility = postData.voteVisibility;
       }
 
