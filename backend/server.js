@@ -764,13 +764,13 @@ const resolveFrontendOrigin = (req) => {
   return `${req.protocol}://${host}`;
 };
 
-const buildShareHtml = (meta, redirectUrl) => `
+const buildShareHtml = (meta, redirectUrl, canonicalUrl) => `
   <!doctype html>
   <html lang="en">
     <head>
       <meta charset="utf-8" />
       ${meta || ''}
-      <link rel="canonical" href="${escapeHtml(redirectUrl)}" />
+      <link rel="canonical" href="${escapeHtml(canonicalUrl || redirectUrl)}" />
     </head>
     <body>
       <p>Redirecting to post...</p>
@@ -1119,7 +1119,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-5';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-6';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
@@ -1227,7 +1227,7 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
         imageType: 'image/jpeg'
       }
     );
-    const html = buildShareHtml(meta, redirectUrl);
+    const html = buildShareHtml(meta, redirectUrl, postUrl);
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
