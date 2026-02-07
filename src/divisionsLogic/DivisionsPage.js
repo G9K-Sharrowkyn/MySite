@@ -9,6 +9,7 @@ import ChampionshipHistory from './ChampionshipHistory';
 import ContenderMatches from './ContenderMatches';
 import TitleFightNotification from './TitleFightNotification';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
+import { sortDivisionSeasons } from '../utils/divisionOrder';
 import './DivisionsPage.css';
 
 const DEFAULT_ENGLISH_DIVISION_NAMES = {
@@ -141,6 +142,8 @@ const DivisionsPage = () => {
       };
     });
   }, [seasons, fallbackSeasons]);
+
+  const orderedSeasons = useMemo(() => sortDivisionSeasons(mergedSeasons), [mergedSeasons]);
 
   const fetchSeasons = useCallback(async () => {
     try {
@@ -320,7 +323,7 @@ const DivisionsPage = () => {
       {!selectedSeason && (
         <>
           <div className="division-categories">
-            {mergedSeasons.map((season) => (
+            {orderedSeasons.map((season) => (
               <button
                 key={season.id}
                 type="button"

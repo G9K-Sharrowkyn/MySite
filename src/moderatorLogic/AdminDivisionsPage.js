@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
+import { sortDivisionSeasons } from '../utils/divisionOrder';
 import './AdminDivisionsPage.css';
 
 const DEFAULT_ENGLISH_DIVISION_NAMES = {
@@ -126,6 +127,8 @@ const AdminDivisionsPage = () => {
       };
     });
   }, [seasons, fallbackSeasons]);
+
+  const orderedSeasons = useMemo(() => sortDivisionSeasons(mergedSeasons), [mergedSeasons]);
 
   const showNotification = useCallback((message, type) => {
     setNotification({ message, type });
@@ -286,7 +289,7 @@ const AdminDivisionsPage = () => {
       {!selectedSeason && (
         <>
           <div className="admin-division-categories">
-            {mergedSeasons.map((season) => (
+            {orderedSeasons.map((season) => (
               <button
                 key={season.id}
                 type="button"

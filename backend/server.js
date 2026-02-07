@@ -415,7 +415,6 @@ const buildShareImageSvg = async (post, db, options = {}) => {
       cardX + Math.round((cardWidth - (panelWidth * 2 + panelGap)) / 2);
     const panelXRight = panelXLeft + panelWidth + panelGap;
 
-    const nameTextPaddingX = 12;
     const nameTextTop = panelY + 6;
     const nameFontSize = 20;
     const nameLineHeight = 24;
@@ -453,8 +452,8 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const frameRadius = 20;
     const frameBorderPad = 4;
 
-    const leftNameX = panelXLeft + nameTextPaddingX;
-    const rightNameX = panelXRight + nameTextPaddingX;
+    const leftNameX = panelXLeft + panelWidth / 2;
+    const rightNameX = panelXRight + panelWidth / 2;
 
     const teamAVotes = post?.fight?.votes?.teamA || 0;
     const teamBVotes = post?.fight?.votes?.teamB || 0;
@@ -530,7 +529,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${leftNameLines
            .map(
              (line, index) => `
-        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc">
+        <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc" text-anchor="middle">
           ${escapeHtml(line)}
         </text>`
            )
@@ -538,7 +537,7 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         ${rightNameLines
            .map(
              (line, index) => `
-        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc">
+        <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc" text-anchor="middle">
           ${escapeHtml(line)}
         </text>`
            )
@@ -1121,7 +1120,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-3';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-4';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }

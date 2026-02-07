@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../i18n/LanguageContext';
 import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
+import { sortDivisionSeasons } from '../utils/divisionOrder';
 import CharacterSelector from '../feedLogic/CharacterSelector';
 import Modal from '../Modal/Modal';
 import './ModeratorPanel.css';
@@ -179,6 +180,8 @@ const ModeratorPanel = () => {
       };
     });
   }, [seasonConfigs, fallbackSeasons]);
+
+  const orderedSeasons = useMemo(() => sortDivisionSeasons(mergedSeasons), [mergedSeasons]);
 
   const showNotification = useCallback((message, type) => {
     setNotification({ message, type });
@@ -905,7 +908,7 @@ const ModeratorPanel = () => {
             {/* Full DivisionsPage Categories View - with Schedule Management Overlay */}
             <div className="divisions-page-embed">
               <div className="division-categories">
-                {mergedSeasons.map((season) => (
+                {orderedSeasons.map((season) => (
                   <div key={season.id} className="division-banner-wrapper">
                     <button
                       type="button"
