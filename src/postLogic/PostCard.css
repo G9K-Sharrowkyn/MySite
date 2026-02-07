@@ -124,6 +124,24 @@ body.dark-mode .post-card {
   font-size: 0.9rem;
 }
 
+.post-group-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(8, 10, 14, 0.45);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
+}
+
+.post-group-badge img {
+  height: 16px;
+  width: auto;
+  display: block;
+}
+
 .post-type {
   font-size: 1.2rem;
 }
