@@ -200,6 +200,7 @@ const splitTextLines = (value, maxCharsPerLine, maxLines = 2) => {
   const lines = [];
   let current = '';
   let index = 0;
+  let forcedTruncation = false;
 
   while (index < words.length && lines.length < maxLines) {
     const word = words[index];
@@ -214,7 +215,9 @@ const splitTextLines = (value, maxCharsPerLine, maxLines = 2) => {
       current = '';
       continue;
     }
-    lines.push(word.slice(0, maxCharsPerLine));
+    // A single "word" is longer than the line: hard-truncate and mark so we add ellipsis.
+    lines.push(truncateText(word, maxCharsPerLine));
+    forcedTruncation = true;
     index += 1;
   }
 
@@ -223,12 +226,19 @@ const splitTextLines = (value, maxCharsPerLine, maxLines = 2) => {
   }
 
   const usedLength = lines.join(' ').length;
-  if (usedLength < cleaned.length && lines.length) {
+  if ((forcedTruncation || usedLength < cleaned.length) && lines.length) {
     lines[lines.length - 1] = truncateText(lines[lines.length - 1], maxCharsPerLine);
   }
 
   return lines;
 };
+
+const normalizeCharacterNameForShare = (value) =>
+  String(value || '')
+    // Many names are stored like "(Whitebeard)(One Piece)" which becomes one long token. Give it wrap points.
+    .replace(/\)\(/g, ') (')
+    .replace(/\s+/g, ' ')
+    .trim();
 
 const resolveAssetUrl = (raw, options = {}) => {
   if (!raw) return '';
@@ -407,14 +417,23 @@ const buildShareImageSvg = async (post, db, options = {}) => {
 
     const nameTextPaddingX = 12;
     const nameTextTop = panelY + 6;
-    const nameFontSize = 24;
-    const nameLineHeight = 24;
+    const nameFontSize = 22;
+    const nameLineHeight = 26;
     const nameStartY = nameTextTop + nameFontSize;
 
-    const frameGap = 6;
+    const frameGap = 8;
     const votesHeight = 16;
     const bottomPadding = 8;
-    const frameY = nameStartY + nameLineHeight * 2 + frameGap;
+
+    const leftNameLines = splitTextLines(normalizeCharacterNameForShare(leftName), 18, 3);
+    const rightNameLines = splitTextLines(normalizeCharacterNameForShare(rightName), 18, 3);
+    const nameLinesUsed = Math.max(
+      2,
+      leftNameLines.length || 0,
+      rightNameLines.length || 0
+    );
+
+    const frameY = nameStartY + nameLineHeight * nameLinesUsed + frameGap;
     const panelBottom = panelY + panelHeight;
     const availableHeight = Math.max(
       220,
@@ -434,8 +453,6 @@ const buildShareImageSvg = async (post, db, options = {}) => {
     const frameRadius = 20;
     const frameBorderPad = 4;
 
-    const leftNameLines = splitTextLines(leftName, 15, 2);
-    const rightNameLines = splitTextLines(rightName, 15, 2);
     const leftNameX = panelXLeft + nameTextPaddingX;
     const rightNameX = panelXRight + nameTextPaddingX;
 
@@ -511,21 +528,21 @@ const buildShareImageSvg = async (post, db, options = {}) => {
         <rect x="${panelXRight}" y="${panelY}" width="${panelWidth}" height="${panelHeight}" rx="26" ry="26" fill="url(#panelBg)" stroke="#2f3542" stroke-width="1.5" filter="url(#panelShadow)" />
 
         ${leftNameLines
-          .map(
-            (line, index) => `
+           .map(
+             (line, index) => `
         <text x="${leftNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
-          )
-          .join('')}
+           )
+           .join('')}
         ${rightNameLines
-          .map(
-            (line, index) => `
+           .map(
+             (line, index) => `
         <text x="${rightNameX}" y="${nameStartY + index * nameLineHeight}" font-family="Arial, Helvetica, sans-serif" font-size="${nameFontSize}" fill="#f8fafc">
           ${escapeHtml(line)}
         </text>`
-          )
-          .join('')}
+           )
+           .join('')}
 
         ${leftBadgeText
           ? `
@@ -1104,7 +1121,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-1';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-2';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
