@@ -16,6 +16,7 @@ import ReactionMenu from './ReactionMenu';
 import BettingPanel from '../economy/BettingPanel';
 import { getUserDisplayName } from '../utils/userDisplay';
 import { splitFightTeamMembers } from '../utils/fightTeams';
+import { formatCharacterDisplayName } from '../utils/formatCharacterDisplayName';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import FightTimer from './FightTimer';
@@ -595,7 +596,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                   const char = getCharacterByName(name);
                   return (
                     <div key={idx} className="character-panel">
-                      <div className="character-name-simple">{name}</div>
+                      <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
                       <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                         <img
                           {...getOptimizedImageProps(
@@ -620,7 +621,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                   const char = getCharacterByName(name);
                   return (
                     <div key={idx} className="character-panel">
-                      <div className="character-name-simple">{name}</div>
+                      <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
                       <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                         <img
                           {...getOptimizedImageProps(
@@ -646,7 +647,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               const char = getCharacterByName(name);
               return (
                 <div key={idx} className="character-panel">
-                  <div className="character-name-simple">{name}</div>
+                  <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
                   <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                     <img
                       {...getOptimizedImageProps(

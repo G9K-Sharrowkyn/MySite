@@ -1651,6 +1651,7 @@ body.dark-mode .post-card {
 
 .character-name-simple {
   max-width: 100%;
+  width: 100%;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -2067,6 +2068,10 @@ body.dark-mode .post-card {
 
 .fight-voting-panels .character-name-simple {
   min-width: 0;
+  width: 100%;
+  text-align: center;
+  padding-left: 8px;
+  padding-right: 8px;
   /* Allow 2-line titles on mobile instead of truncating to a single line */
   white-space: normal;
   display: -webkit-box;
