@@ -279,6 +279,18 @@ const fetchImageDataUri = async (url) => {
     const buffer = Buffer.from(response.data);
     if (!buffer.length) return null;
     const mime = guessImageType(url, contentType);
+
+    // Social preview image is rendered by converting an SVG to PNG via sharp. Not all SVG rasterizers
+    // reliably support embedded WebP/AVIF images, so normalize embedded images to PNG data URIs.
+    try {
+      const png = await sharp(buffer).png().toBuffer();
+      if (png?.length) {
+        return `data:image/png;base64,${png.toString('base64')}`;
+      }
+    } catch (_error) {
+      // Fall back to the original bytes below.
+    }
+
     return `data:${mime};base64,${buffer.toString('base64')}`;
   } catch (_error) {
     return null;
@@ -1074,6 +1086,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-webp-png-1';
 app.get([
   '/share/post/:id/image',
   '/share/post/:id/image.png',
@@ -1122,7 +1135,7 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
       versionParam || post?.updatedAt || post?.createdAt || String(Date.now());
     const postUrl = `${frontendOrigin}/post/${postId}?v=${encodeURIComponent(cacheToken)}`;
     const redirectUrl = `${frontendOrigin}/post/${postId}`;
-    const imageUrl = `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(cacheToken)}`;
+    const imageUrl = `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(cacheToken)}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`;
     const meta = await buildShareMetaTags(
       req,
       post || { id: postId, title: 'Post', content: '' },
@@ -1231,7 +1244,7 @@ if (process.env.NODE_ENV === 'production') {
             url: `${frontendOrigin}/post/${postId}`,
             imageUrl: `${apiOrigin}/share/post/${postId}/image.png?v=${encodeURIComponent(
               post?.updatedAt || post?.createdAt || 'v3'
-            )}`,
+            )}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`,
             imageWidth: 1200,
             imageHeight: 1200,
             imageBaseUrl: frontendOrigin,
