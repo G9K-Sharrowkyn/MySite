@@ -310,6 +310,16 @@ const resolveCharacterImageByName = async (name, db) => {
   return normalizeCharacterAssetPath(image || '');
 };
 
+const toCharacterThumbPath = (assetPath) => {
+  const raw = String(assetPath || '');
+  if (!raw) return '';
+  if (!raw.startsWith('/characters/')) return raw;
+  if (raw.startsWith('/characters/thumbs/')) return raw;
+  const filename = raw.split('/').pop() || '';
+  if (!filename) return raw;
+  return `/characters/thumbs/${filename}`;
+};
+
 const buildShareImageSvg = async (post, db, options = {}) => {
   const width = 1200;
   const height = 1200;
@@ -335,14 +345,18 @@ const buildShareImageSvg = async (post, db, options = {}) => {
 
   let leftImageUrl = '';
   let rightImageUrl = '';
+  let leftFullImageUrl = '';
+  let rightFullImageUrl = '';
 
   if (isFight) {
     const leftCharacter = leftPrimaryName || pickPrimaryTeamName(teamALabel);
     const rightCharacter = rightPrimaryName || pickPrimaryTeamName(teamBLabel);
     const leftImage = await resolveCharacterImageByName(leftCharacter, db);
     const rightImage = await resolveCharacterImageByName(rightCharacter, db);
-    leftImageUrl = resolveAssetUrl(leftImage, { imageBaseUrl, apiBaseUrl });
-    rightImageUrl = resolveAssetUrl(rightImage, { imageBaseUrl, apiBaseUrl });
+    leftFullImageUrl = resolveAssetUrl(leftImage, { imageBaseUrl, apiBaseUrl });
+    rightFullImageUrl = resolveAssetUrl(rightImage, { imageBaseUrl, apiBaseUrl });
+    leftImageUrl = resolveAssetUrl(toCharacterThumbPath(leftImage), { imageBaseUrl, apiBaseUrl });
+    rightImageUrl = resolveAssetUrl(toCharacterThumbPath(rightImage), { imageBaseUrl, apiBaseUrl });
   } else {
     const primary = await resolvePostImage(post, db, {
       imageBaseUrl,
@@ -354,11 +368,13 @@ const buildShareImageSvg = async (post, db, options = {}) => {
   const fallbackImageUrl = resolveAssetUrl('/logo512.png', { imageBaseUrl, apiBaseUrl });
   const leftData =
     (await fetchImageDataUri(leftImageUrl)) ||
+    (leftFullImageUrl ? await fetchImageDataUri(leftFullImageUrl) : null) ||
     (await fetchImageDataUri(fallbackImageUrl)) ||
     buildFallbackSvgDataUri(leftName);
   const rightData =
     isFight
       ? (await fetchImageDataUri(rightImageUrl)) ||
+        (rightFullImageUrl ? await fetchImageDataUri(rightFullImageUrl) : null) ||
         (await fetchImageDataUri(fallbackImageUrl)) ||
         buildFallbackSvgDataUri(rightName)
       : leftData;
@@ -1089,6 +1105,31 @@ app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
 const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-webp-png-1';
+const SHARE_IMAGE_CACHE_MAX = 25;
+const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
+
+const getShareImageCache = (key) => {
+  const entry = shareImageCache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > SHARE_IMAGE_CACHE_TTL_MS) {
+    shareImageCache.delete(key);
+    return null;
+  }
+  // simple LRU refresh
+  shareImageCache.delete(key);
+  shareImageCache.set(key, entry);
+  return entry.buffer;
+};
+
+const setShareImageCache = (key, buffer) => {
+  if (!buffer || !Buffer.isBuffer(buffer)) return;
+  shareImageCache.set(key, { buffer, ts: Date.now() });
+  while (shareImageCache.size > SHARE_IMAGE_CACHE_MAX) {
+    const oldestKey = shareImageCache.keys().next().value;
+    shareImageCache.delete(oldestKey);
+  }
+};
 app.get([
   '/share/post/:id/image',
   '/share/post/:id/image.png',
@@ -1101,6 +1142,15 @@ app.get([
     const post =
       (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
       null;
+    const cacheToken = String(req.query.v || req.query.t || post?.updatedAt || post?.createdAt || '').trim();
+    const cacheKey = `${postId}:${cacheToken}:${SHARE_IMAGE_RENDER_VERSION}`;
+    const cached = getShareImageCache(cacheKey);
+    if (cached) {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+      return res.send(cached);
+    }
     const frontendOrigin = resolveFrontendOrigin(req);
     const apiOrigin = `${req.protocol}://${req.get('host')}`;
     const svg = await buildShareImageSvg(
@@ -1113,8 +1163,9 @@ app.get([
       }
     );
     const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
+    setShareImageCache(cacheKey, buffer);
     res.setHeader('Content-Type', 'image/png');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     return res.send(buffer);
   } catch (error) {

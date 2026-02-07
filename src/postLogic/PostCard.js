@@ -132,6 +132,17 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return shareVersionRef.current;
   };
 
+  const getPostShareToken = () => {
+    const candidate =
+      post?.updatedAt ||
+      post?.createdAt ||
+      post?.fight?.lockTime ||
+      post?.id ||
+      '';
+    const normalized = String(candidate || '').trim();
+    return normalized || getShareVersion();
+  };
+
   const buildPostUrl = () => {
     if (typeof window === 'undefined') return '';
     return `${window.location.origin}/post/${post.id}`;
@@ -158,14 +169,14 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     if (typeof window === 'undefined') return '';
     const apiOrigin = getShareApiOrigin();
     if (!apiOrigin) return '';
-    const versionToken = getShareVersion();
+    const versionToken = getPostShareToken();
     return `${apiOrigin}/share/post/${post.id}?v=${encodeURIComponent(versionToken)}`;
   };
 
   const buildShareUrl = () => {
     if (!post?.id) return '';
     if (typeof window === 'undefined') return '';
-    const versionToken = getShareVersion();
+    const versionToken = getPostShareToken();
     return `${window.location.origin}/post/${post.id}?v=${encodeURIComponent(versionToken)}`;
   };
 
