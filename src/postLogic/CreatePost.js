@@ -67,6 +67,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
   const [isExpanded, setIsExpanded] = useState(!!initialData);
   const [characters, setCharacters] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const initialFightResolvedRef = React.useRef(null);
 
   // User-vs-user challenge state
   const [fightMode, setFightMode] = useState('community'); // 'community' or 'user_vs_user'
@@ -180,6 +181,72 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
       setIsExpanded(true);
     }
   }, [initialData]);
+
+  useEffect(() => {
+    // When editing an existing fight, the initial mapping only includes `{ name }` so the edit UI
+    // has no `character.image`. Once the character catalog loads, hydrate warriors with full objects.
+    if (!initialData?.id) return;
+    if (postData.type !== 'fight') return;
+    if (!Array.isArray(characters) || characters.length === 0) return;
+
+    if (initialFightResolvedRef.current === initialData.id) {
+      return;
+    }
+
+    const normalizeName = (value) => String(value || '').trim().toLowerCase();
+    const buildNameVariants = (name) => {
+      const raw = String(name || '').trim();
+      const variants = new Set([raw]);
+      if (raw.includes('(SW)')) variants.add(raw.replace(/\(SW\)/g, '(Star Wars)'));
+      if (raw.includes('(Star Wars)')) variants.add(raw.replace(/\(Star Wars\)/g, '(SW)'));
+      return [...variants].filter(Boolean);
+    };
+    const baseFromName = (name) =>
+      String(name || '')
+        .replace(/\s*\([^)]*\)\s*/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+
+    const findCharacterByName = (name) => {
+      if (!name) return null;
+      const variants = buildNameVariants(name);
+      for (const variant of variants) {
+        const key = normalizeName(variant);
+        const exact = characters.find((c) => normalizeName(c?.name) === key);
+        if (exact) return exact;
+      }
+      const base = baseFromName(name);
+      if (!base) return null;
+      const byBase = characters.find((c) => baseFromName(c?.baseName || c?.name) === base);
+      return byBase || null;
+    };
+
+    let changed = false;
+    setPostData((prev) => {
+      if (prev.type !== 'fight' || !Array.isArray(prev.teams)) return prev;
+      const nextTeams = prev.teams.map((team) => {
+        const nextWarriors = (team.warriors || []).map((warrior) => {
+          const name = warrior?.character?.name;
+          if (!name) return warrior;
+          if (warrior?.character?.image) return warrior;
+          const match = findCharacterByName(name);
+          if (!match) return warrior;
+          changed = true;
+          return { ...warrior, character: match };
+        });
+        return { ...team, warriors: nextWarriors };
+      });
+      return changed ? { ...prev, teams: nextTeams } : prev;
+    });
+
+    if (changed) {
+      initialFightResolvedRef.current = initialData.id;
+    } else {
+      // Even if nothing changed, avoid retrying on every render for this initialData.
+      initialFightResolvedRef.current = initialData.id;
+    }
+  }, [initialData?.id, postData.type, characters]);
 
   // When switching to fight type, always initialize with two teams and one empty fighter each
   useEffect(() => {

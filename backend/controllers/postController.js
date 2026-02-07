@@ -518,7 +518,27 @@ export const updatePost = async (req, res) => {
   const updates = req.body;
 
   try {
-    let updatedPost;
+    let responsePayload;
+    const now = new Date();
+
+    const resolveLockTime = (duration) => {
+      if (!duration) {
+        return new Date(now.getTime() + 72 * 60 * 60 * 1000);
+      }
+      const normalized = String(duration).toLowerCase();
+      if (normalized === 'none' || normalized === 'no-limit') return null;
+      const daysMap = {
+        '1d': 1,
+        '2d': 2,
+        '3d': 3,
+        '7d': 7
+      };
+      const days = daysMap[normalized];
+      if (!days) {
+        return new Date(now.getTime() + 72 * 60 * 60 * 1000);
+      }
+      return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+    };
 
     await withDb(async (db) => {
       const post = await postsRepo.findOne(
@@ -551,13 +571,99 @@ export const updatePost = async (req, res) => {
         throw error;
       }
 
-      Object.assign(post, updates);
-      post.updatedAt = new Date().toISOString();
-      updatedPost = post;
+      if (typeof updates?.title === 'string') post.title = updates.title;
+      if (typeof updates?.content === 'string') post.content = updates.content;
+      if (typeof updates?.type === 'string') post.type = updates.type;
+      if (Array.isArray(updates?.photos)) post.photos = updates.photos;
+
+      // Keep schema consistent: fight posts have no category.
+      if (post.type === 'fight') {
+        post.category = null;
+      } else if (typeof updates?.category === 'string' || updates?.category === null) {
+        post.category = updates.category || 'discussion';
+      }
+
+      const looksLikeFightUpdate =
+        post.type === 'fight' ||
+        String(updates?.type || '').toLowerCase() === 'fight' ||
+        typeof updates?.teamA === 'string' ||
+        typeof updates?.teamB === 'string' ||
+        typeof updates?.voteVisibility === 'string' ||
+        typeof updates?.voteDuration === 'string';
+
+      if (looksLikeFightUpdate) {
+        post.type = 'fight';
+        post.category = null;
+        post.fight = post.fight || {};
+        post.fight.votes = post.fight.votes || {
+          teamA: 0,
+          teamB: 0,
+          draw: 0,
+          voters: []
+        };
+        post.fight.status = post.fight.status || 'active';
+        post.fight.teamA =
+          typeof updates?.teamA === 'string' ? updates.teamA : (post.fight.teamA || '');
+        post.fight.teamB =
+          typeof updates?.teamB === 'string' ? updates.teamB : (post.fight.teamB || '');
+        if (typeof updates?.voteVisibility === 'string') {
+          post.fight.voteVisibility = normalizeVoteVisibility(updates.voteVisibility);
+        } else {
+          post.fight.voteVisibility = normalizeVoteVisibility(post.fight.voteVisibility);
+        }
+        if (typeof updates?.voteDuration === 'string') {
+          const lockTime = resolveLockTime(updates.voteDuration);
+          post.fight.lockTime = lockTime ? lockTime.toISOString() : null;
+        }
+
+        post.poll = post.poll || { options: [], votes: { voters: [] } };
+        post.poll.options = [post.fight.teamA || '', post.fight.teamB || ''];
+      } else if (
+        String(post.type || '').toLowerCase() === 'other' &&
+        Array.isArray(updates?.pollOptions)
+      ) {
+        const options = updates.pollOptions
+          .map((opt) => String(opt || '').trim())
+          .filter(Boolean);
+        if (options.length) {
+          post.poll = post.poll || { options: [], votes: { voters: [] } };
+          post.poll.options = options;
+        }
+      }
+
+      // Remove legacy fields that should not exist at the top level.
+      delete post.teamA;
+      delete post.teamB;
+      delete post.voteVisibility;
+
+      const autoTagPayload = autoTagPost(db, {
+        title: post.title,
+        content: post.content,
+        teamA: post.fight?.teamA || '',
+        teamB: post.fight?.teamB || '',
+        fight: post.fight
+      });
+      post.tags = autoTagPayload.tags;
+      post.autoTags = autoTagPayload.autoTags;
+
+      post.updatedAt = now.toISOString();
+
+      const viewerUserId = req.user?.id || null;
+      const normalized = normalizePostForResponse(post, db.users || [], { viewerUserId, now });
+      const commentCount = (db.comments || []).filter((comment) => {
+        const isPostComment = comment?.type === 'post' || !comment?.type;
+        return isPostComment && comment.postId === normalized.id;
+      }).length;
+
+      responsePayload = {
+        ...normalized,
+        commentCount,
+        reactionsSummary: buildReactionSummary(post.reactions || [])
+      };
       return db;
     });
 
-    res.json(updatedPost);
+    res.json(responsePayload);
   } catch (err) {
     if (err.code === 'POST_NOT_FOUND') {
       return res.status(404).json({ msg: 'Post not found' });
