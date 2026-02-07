@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import PostCard from './PostCard';
 import CreatePost from './CreatePost';
@@ -10,6 +11,7 @@ import './Feed.css';
 
 const Feed = () => {
   const { t } = useLanguage();
+  const location = useLocation();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -21,6 +23,26 @@ const Feed = () => {
   const [visibleIndexes, setVisibleIndexes] = useState(new Set());
   const observerRef = useRef(null);
   const postNodesRef = useRef(new Map());
+  const urlDrivenFiltersRef = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search || '');
+    const character = params.get('character');
+
+    if (character) {
+      urlDrivenFiltersRef.current = true;
+      setFilters({ character: [character] });
+      setShowFilters(true);
+      setPage(1);
+      return;
+    }
+
+    if (urlDrivenFiltersRef.current) {
+      urlDrivenFiltersRef.current = false;
+      setFilters({});
+      setPage(1);
+    }
+  }, [location.search]);
 
   const fetchPosts = async (
     pageNum = 1,

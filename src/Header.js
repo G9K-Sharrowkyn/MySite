@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useLanguage } from './i18n/LanguageContext';
@@ -22,6 +22,13 @@ const Header = () => {
   const isModerator = user?.role === 'moderator' || user?.role === 'admin';
   const isAdmin = user?.role === 'admin';
   const userDisplayName = getUserDisplayName(user);
+
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [globalSearchUsers, setGlobalSearchUsers] = useState([]);
+  const [globalSearchCharacters, setGlobalSearchCharacters] = useState([]);
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const [globalSearchLoading, setGlobalSearchLoading] = useState(false);
+  const globalSearchRef = useRef(null);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -73,6 +80,58 @@ const Header = () => {
       return () => clearInterval(interval);
     }
   }, [isLoggedIn, fetchUnreadCounts]);
+
+  useEffect(() => {
+    const q = globalSearchQuery.trim();
+    if (q.length < 2) {
+      setGlobalSearchUsers([]);
+      setGlobalSearchCharacters([]);
+      setGlobalSearchLoading(false);
+      setGlobalSearchOpen(false);
+      return;
+    }
+
+    setGlobalSearchOpen(true);
+    setGlobalSearchLoading(true);
+    let cancelled = false;
+
+    const timer = setTimeout(async () => {
+      try {
+        const [usersRes, charactersRes] = await Promise.all([
+          axios.get(`/api/users/search?q=${encodeURIComponent(q)}`),
+          axios.get(`/api/characters/search?q=${encodeURIComponent(q)}`)
+        ]);
+
+        if (cancelled) return;
+        setGlobalSearchUsers(Array.isArray(usersRes.data) ? usersRes.data : []);
+        setGlobalSearchCharacters(Array.isArray(charactersRes.data) ? charactersRes.data : []);
+      } catch (error) {
+        if (cancelled) return;
+        console.error('Error fetching global search results:', error);
+        setGlobalSearchUsers([]);
+        setGlobalSearchCharacters([]);
+      } finally {
+        if (!cancelled) setGlobalSearchLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [globalSearchQuery]);
+
+  useEffect(() => {
+    const onMouseDown = (event) => {
+      const root = globalSearchRef.current;
+      if (!root) return;
+      if (root.contains(event.target)) return;
+      setGlobalSearchOpen(false);
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
+  }, []);
 
   const fetchNotifications = async () => {
     if (!token) return;
@@ -359,6 +418,135 @@ const Header = () => {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      <div className="header-search-strip">
+        <div className="header-search-inner" ref={globalSearchRef}>
+          <span className="header-search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="text"
+            className="header-search-input"
+            value={globalSearchQuery}
+            onChange={(e) => setGlobalSearchQuery(e.target.value)}
+            onFocus={() => {
+              if (globalSearchQuery.trim().length >= 2) setGlobalSearchOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') {
+                setGlobalSearchOpen(false);
+              }
+            }}
+            placeholder={t('searchUsersOrCharacters') || 'Szukaj użytkownika lub postaci...'}
+            aria-label={t('searchUsersOrCharacters') || 'Szukaj użytkownika lub postaci...'}
+          />
+          {globalSearchQuery && (
+            <button
+              type="button"
+              className="header-search-clear"
+              onClick={() => {
+                setGlobalSearchQuery('');
+                setGlobalSearchOpen(false);
+              }}
+              aria-label={t('clear') || 'Clear'}
+              title={t('clear') || 'Clear'}
+            >
+              ✕
+            </button>
+          )}
+
+          {globalSearchOpen && globalSearchQuery.trim().length >= 2 && (
+            <div className="header-search-dropdown" role="listbox">
+              {globalSearchLoading && (
+                <div className="header-search-status">
+                  {t('loading') || 'Loading'}...
+                </div>
+              )}
+
+              {!globalSearchLoading &&
+                globalSearchUsers.length === 0 &&
+                globalSearchCharacters.length === 0 && (
+                  <div className="header-search-status">
+                    {t('noSearchResults') || 'Brak wyników'}
+                  </div>
+                )}
+
+              {globalSearchUsers.length > 0 && (
+                <div className="header-search-section">
+                  <div className="header-search-section-title">
+                    {t('searchUsersLabel') || 'Użytkownicy'}
+                  </div>
+                  {globalSearchUsers.slice(0, 8).map((foundUser) => (
+                    <button
+                      key={foundUser.id || foundUser.username}
+                      type="button"
+                      className="header-search-item"
+                      onClick={() => {
+                        const target = foundUser.id || foundUser.username;
+                        if (target) navigate(`/profile/${encodeURIComponent(target)}`);
+                        setGlobalSearchQuery('');
+                        setGlobalSearchOpen(false);
+                      }}
+                    >
+                      <img
+                        {...getOptimizedImageProps(
+                          replacePlaceholderUrl(foundUser.avatar) || placeholderImages.userSmall,
+                          { size: 28, lazy: true }
+                        )}
+                        alt=""
+                        className="header-search-avatar"
+                      />
+                      <span className="header-search-text">
+                        <span className="header-search-primary">
+                          {foundUser.displayName || foundUser.username || 'User'}
+                        </span>
+                        {foundUser.username && (
+                          <span className="header-search-secondary">@{foundUser.username}</span>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {globalSearchCharacters.length > 0 && (
+                <div className="header-search-section">
+                  <div className="header-search-section-title">
+                    {t('searchCharactersLabel') || 'Postacie'}
+                  </div>
+                  {globalSearchCharacters.slice(0, 8).map((character) => (
+                    <button
+                      key={character.id || character.name}
+                      type="button"
+                      className="header-search-item"
+                      onClick={() => {
+                        if (character.name) {
+                          navigate(`/feed?character=${encodeURIComponent(character.name)}`);
+                        }
+                        setGlobalSearchQuery('');
+                        setGlobalSearchOpen(false);
+                      }}
+                    >
+                      <img
+                        {...getOptimizedImageProps(
+                          replacePlaceholderUrl(character.image) || '/placeholder-character.png',
+                          { size: 28, lazy: true }
+                        )}
+                        alt=""
+                        className="header-search-avatar"
+                      />
+                      <span className="header-search-text">
+                        <span className="header-search-primary">{character.name}</span>
+                        {character.universe && (
+                          <span className="header-search-secondary">{character.universe}</span>
+                        )}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

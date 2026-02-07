@@ -22,6 +22,14 @@ const loadStaticCharacters = async () => {
   return staticCharactersCache;
 };
 
+const resolveCharacterImage = (character) =>
+  String(
+    character?.image ||
+      character?.images?.primary ||
+      character?.images?.thumbnail ||
+      ''
+  ).trim();
+
 const normalizeTags = (tags) => {
   if (Array.isArray(tags)) {
     return tags.map((t) => String(t || '').trim()).filter(Boolean).slice(0, 30);
@@ -52,48 +60,54 @@ const normalizeCharacterKey = (character) => {
   return `idx:${Math.random().toString(16).slice(2)}`;
 };
 
+const getMergedCharacters = async () => {
+  const dbCharactersRaw = await charactersRepo.getAll();
+  const dbCharacters = Array.isArray(dbCharactersRaw) ? dbCharactersRaw : [];
+
+  // Always keep the large static catalog available, even if the DB contains only
+  // moderator-approved additions. Otherwise a single approved suggestion would
+  // hide the whole catalog in production.
+  const staticCharacters = await loadStaticCharacters();
+
+  let characters = staticCharacters;
+
+  if (dbCharacters.length > 0) {
+    const byName = new Map();
+    const deletedNames = new Set(
+      dbCharacters
+        .filter((entry) => String(entry?.status || '').toLowerCase() === 'deleted')
+        .map((entry) => String(entry?.name || '').trim().toLowerCase())
+        .filter(Boolean)
+    );
+
+    for (const c of staticCharacters) {
+      const lowerName = String(c?.name || '').trim().toLowerCase();
+      if (lowerName && deletedNames.has(lowerName)) {
+        continue;
+      }
+      byName.set(normalizeCharacterKey(c), c);
+    }
+    for (const c of dbCharacters) {
+      byName.set(normalizeCharacterKey(c), c); // DB overrides static if same name.
+    }
+
+    characters = Array.from(byName.values());
+  }
+
+  // Hide hard-deleted entries represented by DB tombstones.
+  characters = characters.filter(
+    (character) => String(character?.status || 'active').toLowerCase() !== 'deleted'
+  );
+
+  return characters;
+};
+
 // @desc    Get all characters
 // @route   GET /api/characters
 // @access  Public
 export const getCharacters = async (req, res) => {
   try {
-    const dbCharactersRaw = await charactersRepo.getAll();
-    const dbCharacters = Array.isArray(dbCharactersRaw) ? dbCharactersRaw : [];
-
-    // Always keep the large static catalog available, even if the DB contains only
-    // moderator-approved additions. Otherwise a single approved suggestion would
-    // hide the whole catalog in production.
-    const staticCharacters = await loadStaticCharacters();
-
-    let characters = staticCharacters;
-
-    if (dbCharacters.length > 0) {
-      const byName = new Map();
-      const deletedNames = new Set(
-        dbCharacters
-          .filter((entry) => String(entry?.status || '').toLowerCase() === 'deleted')
-          .map((entry) => String(entry?.name || '').trim().toLowerCase())
-          .filter(Boolean)
-      );
-
-      for (const c of staticCharacters) {
-        const lowerName = String(c?.name || '').trim().toLowerCase();
-        if (lowerName && deletedNames.has(lowerName)) {
-          continue;
-        }
-        byName.set(normalizeCharacterKey(c), c);
-      }
-      for (const c of dbCharacters) {
-        byName.set(normalizeCharacterKey(c), c); // DB overrides static if same name.
-      }
-
-      characters = Array.from(byName.values());
-    }
-
-    // Hide hard-deleted entries represented by DB tombstones.
-    characters = characters.filter(
-      (character) => String(character?.status || 'active').toLowerCase() !== 'deleted'
-    );
+    const characters = await getMergedCharacters();
 
     // Avoid stale list right after moderation/admin edits.
     if (req.header('x-auth-token')) {
@@ -104,6 +118,48 @@ export const getCharacters = async (req, res) => {
     res.json(characters);
   } catch (error) {
     console.error('Error fetching characters:', error);
+    res.status(500).json({ msg: 'Server error' });
+  }
+};
+
+// @desc    Search characters by name/universe (for global header search)
+// @route   GET /api/characters/search?q=...
+// @access  Public
+export const searchCharacters = async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim().toLowerCase();
+    if (q.length < 2) {
+      return res.json([]);
+    }
+
+    const limitRaw = Number(req.query.limit || 12);
+    const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(30, limitRaw)) : 12;
+
+    const characters = await getMergedCharacters();
+    const results = characters
+      .filter((character) => {
+        const name = String(character?.name || '').toLowerCase();
+        const baseName = String(character?.baseName || '').toLowerCase();
+        const universe = String(character?.universe || '').toLowerCase();
+        return (
+          name.includes(q) ||
+          (baseName && baseName.includes(q)) ||
+          (universe && universe.includes(q))
+        );
+      })
+      .slice(0, limit)
+      .map((character) => ({
+        id: String(character?.id || '').trim() || null,
+        name: String(character?.name || '').trim(),
+        universe: String(character?.universe || 'Other').trim(),
+        image: resolveCharacterImage(character)
+      }))
+      .filter((entry) => entry.name);
+
+    res.set('Cache-Control', 'public, max-age=60, stale-while-revalidate=120');
+    res.json(results);
+  } catch (error) {
+    console.error('Error searching characters:', error);
     res.status(500).json({ msg: 'Server error' });
   }
 };

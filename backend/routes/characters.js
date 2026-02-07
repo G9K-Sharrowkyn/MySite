@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import { fileURLToPath } from 'url';
 import {
   getCharacters,
+  searchCharacters,
   addCharacter,
   updateCharacter,
   suggestCharacter,
@@ -54,6 +55,11 @@ const saveOptimizedImage = async (file, targetDir, { maxWidth, maxHeight, qualit
 // @desc    Get all characters
 // @access  Public
 router.get('/', getCharacters);
+
+// @route   GET api/characters/search?q=...
+// @desc    Search characters by name/universe (public)
+// @access  Public
+router.get('/search', searchCharacters);
 
 // @route   POST api/characters/upload
 // @desc    Upload character image (admin/mod only)
