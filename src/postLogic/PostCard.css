@@ -399,6 +399,15 @@ body.dark-mode .post-card {
   line-height: 1.1;
 }
 
+.action-btn.save-btn {
+  color: rgba(226, 232, 240, 0.85);
+}
+
+.action-btn.save-btn:hover {
+  background: rgba(0, 255, 203, 0.12);
+  color: rgba(0, 255, 203, 0.95);
+}
+
 .share-wrapper {
   position: relative;
   display: flex;

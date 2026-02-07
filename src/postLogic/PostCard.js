@@ -206,6 +206,31 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     return 'Check this post';
   };
 
+  const handleSaveFightSnapshot = async () => {
+    if (!canModerate) return;
+    if (post?.type !== 'fight' || !post?.fight || !post?.id) return;
+
+    try {
+      const cacheBust = String(Date.now());
+      const url = `/api/share/post/${encodeURIComponent(post.id)}/image.jpg?v=${encodeURIComponent(cacheBust)}`;
+      const resp = await fetch(url, { cache: 'no-store' });
+      if (!resp.ok) {
+        throw new Error(`Snapshot failed: ${resp.status}`);
+      }
+      const blob = await resp.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = objectUrl;
+      a.download = `post-${post.id}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error('Save snapshot failed:', error);
+    }
+  };
+
   const handleShareClick = async () => {
     const url = buildShareUrl();
     if (!url) return;
@@ -1225,6 +1250,18 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           <button className="action-btn edit-btn" onClick={handleEditToggle}>
             <span className="action-icon">E</span>
             <span className="action-text">{t('edit')}</span>
+          </button>
+        )}
+
+        {canModerate && post.type === 'fight' && post.fight && (
+          <button
+            className="action-btn save-btn"
+            onClick={handleSaveFightSnapshot}
+            type="button"
+            title={t('save') || 'Save'}
+          >
+            <span className="action-icon">⬇</span>
+            <span className="action-text">{t('save') || 'Save'}</span>
           </button>
         )}
         {(currentUserId === post.author?.id || canModerate) && (
