@@ -417,16 +417,16 @@ const buildShareImageSvg = async (post, db, options = {}) => {
 
     const nameTextPaddingX = 12;
     const nameTextTop = panelY + 6;
-    const nameFontSize = 22;
-    const nameLineHeight = 26;
+    const nameFontSize = 20;
+    const nameLineHeight = 24;
     const nameStartY = nameTextTop + nameFontSize;
 
     const frameGap = 8;
     const votesHeight = 16;
     const bottomPadding = 8;
 
-    const leftNameLines = splitTextLines(normalizeCharacterNameForShare(leftName), 18, 3);
-    const rightNameLines = splitTextLines(normalizeCharacterNameForShare(rightName), 18, 3);
+    const leftNameLines = splitTextLines(normalizeCharacterNameForShare(leftName), 22, 4);
+    const rightNameLines = splitTextLines(normalizeCharacterNameForShare(rightName), 22, 4);
     const nameLinesUsed = Math.max(
       2,
       leftNameLines.length || 0,
@@ -1121,7 +1121,7 @@ app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 
 // Share preview endpoint for social cards
-const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-2';
+const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-3';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
@@ -1207,8 +1207,10 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
     const frontendOrigin = resolveFrontendOrigin(req);
     const apiOrigin = `${req.protocol}://${req.get('host')}`;
     const versionParam = String(req.query.v || req.query.t || '').trim();
-    const cacheToken =
+    const cacheTokenBase =
       versionParam || post?.updatedAt || post?.createdAt || String(Date.now());
+    // Include render version so social platforms treat card meta as changed after deployments.
+    const cacheToken = `${cacheTokenBase}-${SHARE_IMAGE_RENDER_VERSION}`;
     const postUrl = `${frontendOrigin}/post/${postId}?v=${encodeURIComponent(cacheToken)}`;
     const redirectUrl = `${frontendOrigin}/post/${postId}`;
     const imageUrl = `${apiOrigin}/share/post/${postId}/image.jpg?v=${encodeURIComponent(cacheToken)}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`;
