@@ -890,7 +890,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const getPostTypeIcon = (type) => {
     switch (type) {
-      case 'fight': return '⚔️';
+      case 'fight': return null;
       case 'image': return '🖼️';
       case 'poll': return '📊';
       default: return '💬';
@@ -1037,7 +1037,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           </div>
         </Link>
         <div className="post-meta-right">
-          <span className="post-type">{getPostTypeIcon(post.type)}</span>
+          {getPostTypeIcon(post.type) && (
+            <span className="post-type">{getPostTypeIcon(post.type)}</span>
+          )}
           {groupBadge && (
             <span className="post-group-badge" title={groupBadge.label} aria-label={groupBadge.label}>
               <img src={groupBadge.src} alt={groupBadge.label} />
