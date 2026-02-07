@@ -1351,5 +1351,1237 @@
     ],
     "universe": "Star Wars",
     "image": "/characters/Zannah (Legends)(Star Wars).webp"
+  },
+  {
+    "id": "byakuya-kuchiki-bleach",
+    "name": "Byakuya Kuchiki (Bleach)",
+    "baseName": "Byakuya Kuchiki",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Byakuya Kuchiki.png"
+  },
+  {
+    "id": "genryusai-shigekuni-yamamoto-bleach",
+    "name": "Genryusai Shigekuni Yamamoto (Bleach)",
+    "baseName": "Genryusai Shigekuni Yamamoto",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Genryusai Shigekuni Yamamoto.webp"
+  },
+  {
+    "id": "ichigo-kurosaki-bleach",
+    "name": "Ichigo Kurosaki (Bleach)",
+    "baseName": "Ichigo Kurosaki",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Ichigo Kurosaki.webp"
+  },
+  {
+    "id": "jugram-haschwalth-bleach",
+    "name": "Jugram Haschwalth (Bleach)",
+    "baseName": "Jugram Haschwalth",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Jugram Haschwalth.jpg"
+  },
+  {
+    "id": "kenpachi-zaraki-bleach",
+    "name": "Kenpachi Zaraki (Bleach)",
+    "baseName": "Kenpachi Zaraki",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Kenpachi Zaraki.webp"
+  },
+  {
+    "id": "kisuke-urahara-bleach",
+    "name": "Kisuke Urahara (Bleach)",
+    "baseName": "Kisuke Urahara",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Kisuke Urahara.webp"
+  },
+  {
+    "id": "rukia-kuchiki-bankai-bleach",
+    "name": "Rukia Kuchiki (Bankai)(Bleach)",
+    "baseName": "Rukia Kuchiki",
+    "tags": [
+      "Bankai",
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Rukia Kuchiki (Bankai).webp"
+  },
+  {
+    "id": "sosuke-aizen-bleach",
+    "name": "Sosuke Aizen (Bleach)",
+    "baseName": "Sosuke Aizen",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Sosuke Aizen.jpg"
+  },
+  {
+    "id": "uryu-ishida-bleach",
+    "name": "Uryu Ishida (Bleach)",
+    "baseName": "Uryu Ishida",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Uryu Ishida.webp"
+  },
+  {
+    "id": "yhwach-bleach",
+    "name": "Yhwach (Bleach)",
+    "baseName": "Yhwach",
+    "tags": [
+      "Bleach"
+    ],
+    "universe": "Bleach",
+    "image": "/characters/Yhwach.png"
+  },
+  {
+    "id": "cthulhu-cthulhu-mythos",
+    "name": "Cthulhu (Cthulhu Mythos)",
+    "baseName": "Cthulhu",
+    "tags": [
+      "Cthulhu Mythos"
+    ],
+    "universe": "Cthulhu Mythos",
+    "image": "/characters/Cthulhu.jpg"
+  },
+  {
+    "id": "darkseid-dc",
+    "name": "Darkseid (DC)",
+    "baseName": "Darkseid",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Darkseid.webp"
+  },
+  {
+    "id": "darkseid-true-form-dc",
+    "name": "Darkseid True Form (DC)",
+    "baseName": "Darkseid True Form",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Darkseid True Form.jpg"
+  },
+  {
+    "id": "doomsday-hunter-prey-dc",
+    "name": "Doomsday Hunter Prey (DC)",
+    "baseName": "Doomsday Hunter Prey",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Doomsday hunter prey.webp"
+  },
+  {
+    "id": "empty-hand-dc",
+    "name": "Empty Hand (DC)",
+    "baseName": "Empty Hand",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Empty Hand.jpg"
+  },
+  {
+    "id": "green-lantern-hal-jordan-dc",
+    "name": "Green Lantern (Hal Jordan)(DC)",
+    "baseName": "Green Lantern",
+    "tags": [
+      "Hal Jordan",
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Green Lantern (Hal Jordan).webp"
+  },
+  {
+    "id": "green-lantern-kyle-rayner-dc",
+    "name": "Green Lantern (Kyle Rayner)(DC)",
+    "baseName": "Green Lantern",
+    "tags": [
+      "Kyle Rayner",
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/green lantern (kyle rayner).webp"
+  },
+  {
+    "id": "martian-manhunter-jonn-jonzz-dc",
+    "name": "Martian Manhunter (J’onn J’onzz)(DC)",
+    "baseName": "Martian Manhunter",
+    "tags": [
+      "J’onn J’onzz",
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Martian Manhunter (J’onn J’onzz).jpg"
+  },
+  {
+    "id": "shazam-billy-batson-dc",
+    "name": "Shazam (Billy Batson)(DC)",
+    "baseName": "Shazam",
+    "tags": [
+      "Billy Batson",
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Shazam (Billy Batson).webp"
+  },
+  {
+    "id": "shazam-god-of-gods-dc",
+    "name": "Shazam God Of Gods (DC)",
+    "baseName": "Shazam God Of Gods",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Shazam god of gods.webp"
+  },
+  {
+    "id": "the-flash-barry-allen-dc",
+    "name": "The Flash (Barry Allen)(DC)",
+    "baseName": "The Flash",
+    "tags": [
+      "Barry Allen",
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/The Flash (Barry Allen).webp"
+  },
+  {
+    "id": "the-flash-wally-west-dc",
+    "name": "The Flash Wally West (DC)",
+    "baseName": "The Flash Wally West",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/The Flash Wally West.jpg"
+  },
+  {
+    "id": "the-spectre-dc",
+    "name": "The Spectre (DC)",
+    "baseName": "The Spectre",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/The Spectre.webp"
+  },
+  {
+    "id": "white-lantern-kyle-rayner-dc",
+    "name": "White Lantern Kyle Rayner (DC)",
+    "baseName": "White Lantern Kyle Rayner",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/white lantern kyle rayner.webp"
+  },
+  {
+    "id": "wonder-woman-dc",
+    "name": "Wonder Woman (DC)",
+    "baseName": "Wonder Woman",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Wonder Woman.webp"
+  },
+  {
+    "id": "wonder-woman-anti-crisis-dc",
+    "name": "Wonder Woman Anti Crisis (DC)",
+    "baseName": "Wonder Woman Anti Crisis",
+    "tags": [
+      "DC"
+    ],
+    "universe": "DC",
+    "image": "/characters/Wonder Woman Anti Crisis.jpg"
+  },
+  {
+    "id": "beerus-dragon-ball",
+    "name": "Beerus (Dragon Ball)",
+    "baseName": "Beerus",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Beerus.jpg"
+  },
+  {
+    "id": "black-frieza-dragon-ball",
+    "name": "Black Frieza (Dragon Ball)",
+    "baseName": "Black Frieza",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Black frieza.png"
+  },
+  {
+    "id": "buuhan-dragon-ball",
+    "name": "Buuhan (Dragon Ball)",
+    "baseName": "Buuhan",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Buuhan.webp"
+  },
+  {
+    "id": "cell-final-form-dragon-ball",
+    "name": "Cell Final Form (Dragon Ball)",
+    "baseName": "Cell Final Form",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Cell final form.webp"
+  },
+  {
+    "id": "cell-first-form-dragon-ball",
+    "name": "Cell First Form (Dragon Ball)",
+    "baseName": "Cell First Form",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Cell first form.webp"
+  },
+  {
+    "id": "cell-second-form-dragon-ball",
+    "name": "Cell Second Form (Dragon Ball)",
+    "baseName": "Cell Second Form",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Cell second form.png"
+  },
+  {
+    "id": "frieza-1st-form-dragon-ball",
+    "name": "Frieza 1st Form (Dragon Ball)",
+    "baseName": "Frieza 1st Form",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Frieza 1st form.webp"
+  },
+  {
+    "id": "frieza-final-form-dragon-ball",
+    "name": "Frieza Final Form (Dragon Ball)",
+    "baseName": "Frieza Final Form",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Frieza final form.jpg"
+  },
+  {
+    "id": "golden-frieza-dragon-ball",
+    "name": "Golden Frieza (Dragon Ball)",
+    "baseName": "Golden Frieza",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Golden frieza.webp"
+  },
+  {
+    "id": "jiren-dragon-ball",
+    "name": "Jiren (Dragon Ball)",
+    "baseName": "Jiren",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Jiren.webp"
+  },
+  {
+    "id": "jiren-full-power-dragon-ball",
+    "name": "Jiren Full Power (Dragon Ball)",
+    "baseName": "Jiren Full Power",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Jiren Full Power.png"
+  },
+  {
+    "id": "kid-buu-db-legends-dragon-ball",
+    "name": "Kid Buu (DB Legends)(Dragon Ball)",
+    "baseName": "Kid Buu",
+    "tags": [
+      "DB Legends",
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Kid Buu dblegends.jpg"
+  },
+  {
+    "id": "majin-buu-dragon-ball",
+    "name": "Majin Buu (Dragon Ball)",
+    "baseName": "Majin Buu",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Majin Buu.webp"
+  },
+  {
+    "id": "majin-vegeta-dragon-ball",
+    "name": "Majin Vegeta (Dragon Ball)",
+    "baseName": "Majin Vegeta",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Majin Vegeta.jpg"
+  },
+  {
+    "id": "whis-dragon-ball",
+    "name": "Whis (Dragon Ball)",
+    "baseName": "Whis",
+    "tags": [
+      "Dragon Ball"
+    ],
+    "universe": "Dragon Ball",
+    "image": "/characters/Whis.jpg"
+  },
+  {
+    "id": "bellatrix-lestrange-harry-potter",
+    "name": "Bellatrix Lestrange (Harry Potter)",
+    "baseName": "Bellatrix Lestrange",
+    "tags": [
+      "Harry Potter"
+    ],
+    "universe": "Harry Potter",
+    "image": "/characters/Bellatrix Lestrange.webp"
+  },
+  {
+    "id": "dumbledore-harry-potter",
+    "name": "Dumbledore (Harry Potter)",
+    "baseName": "Dumbledore",
+    "tags": [
+      "Harry Potter"
+    ],
+    "universe": "Harry Potter",
+    "image": "/characters/Dumbledore.webp"
+  },
+  {
+    "id": "gellert-grindelwald-harry-potter",
+    "name": "Gellert Grindelwald (Harry Potter)",
+    "baseName": "Gellert Grindelwald",
+    "tags": [
+      "Harry Potter"
+    ],
+    "universe": "Harry Potter",
+    "image": "/characters/Gellert Grindelwald.jpg"
+  },
+  {
+    "id": "harry-potter-harry-potter",
+    "name": "Harry Potter (Harry Potter)",
+    "baseName": "Harry Potter",
+    "tags": [
+      "Harry Potter"
+    ],
+    "universe": "Harry Potter",
+    "image": "/characters/Harry Potter.webp"
+  },
+  {
+    "id": "lord-voldemort-harry-potter",
+    "name": "Lord Voldemort (Harry Potter)",
+    "baseName": "Lord Voldemort",
+    "tags": [
+      "Harry Potter"
+    ],
+    "universe": "Harry Potter",
+    "image": "/characters/Lord Voldemort.webp"
+  },
+  {
+    "id": "severus-snape-harry-potter",
+    "name": "Severus Snape (Harry Potter)",
+    "baseName": "Severus Snape",
+    "tags": [
+      "Harry Potter"
+    ],
+    "universe": "Harry Potter",
+    "image": "/characters/Severus Snape.jpg"
+  },
+  {
+    "id": "dio-brando-jojos-bizarre-adventure",
+    "name": "Dio Brando (JoJo's Bizarre Adventure)",
+    "baseName": "Dio Brando",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Dio Brando.webp"
+  },
+  {
+    "id": "enrico-pucci-jojos-bizarre-adventure",
+    "name": "Enrico Pucci (JoJo's Bizarre Adventure)",
+    "baseName": "Enrico Pucci",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Enrico Pucci.webp"
+  },
+  {
+    "id": "giorno-giovanna-jojos-bizarre-adventure",
+    "name": "Giorno Giovanna (JoJo's Bizarre Adventure)",
+    "baseName": "Giorno Giovanna",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Giorno Giovanna.webp"
+  },
+  {
+    "id": "johnny-joestar-jojos-bizarre-adventure",
+    "name": "Johnny Joestar (JoJo's Bizarre Adventure)",
+    "baseName": "Johnny Joestar",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Johnny Joestar.jpg"
+  },
+  {
+    "id": "joseph-joestar-jojos-bizarre-adventure",
+    "name": "Joseph Joestar (JoJo's Bizarre Adventure)",
+    "baseName": "Joseph Joestar",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Joseph Joestar.jpg"
+  },
+  {
+    "id": "josuke-higashikata-jojos-bizarre-adventure",
+    "name": "Josuke Higashikata (JoJo's Bizarre Adventure)",
+    "baseName": "Josuke Higashikata",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Josuke Higashikata.jpg"
+  },
+  {
+    "id": "jotaro-kujo-jojos-bizarre-adventure",
+    "name": "Jotaro Kujo (JoJo's Bizarre Adventure)",
+    "baseName": "Jotaro Kujo",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Jotaro Kujo.webp"
+  },
+  {
+    "id": "yoshikage-kira-jojos-bizarre-adventure",
+    "name": "Yoshikage Kira (JoJo's Bizarre Adventure)",
+    "baseName": "Yoshikage Kira",
+    "tags": [
+      "JoJo's Bizarre Adventure"
+    ],
+    "universe": "JoJo's Bizarre Adventure",
+    "image": "/characters/Yoshikage Kira.webp"
+  },
+  {
+    "id": "chaos-war-hercules-marvel",
+    "name": "Chaos War Hercules (Marvel)",
+    "baseName": "Chaos War Hercules",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Chaos War Hercules.jpg"
+  },
+  {
+    "id": "doctor-strange-marvel",
+    "name": "Doctor Strange (Marvel)",
+    "baseName": "Doctor Strange",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Doctor Strange.jpg"
+  },
+  {
+    "id": "doctor-strange-black-priest-marvel",
+    "name": "Doctor Strange Black Priest (Marvel)",
+    "baseName": "Doctor Strange Black Priest",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Doctor Strange black priest.jpg"
+  },
+  {
+    "id": "galactus-marvel",
+    "name": "Galactus (Marvel)",
+    "baseName": "Galactus",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Galactus.webp"
+  },
+  {
+    "id": "galactus-life-bringer-marvel",
+    "name": "Galactus Life Bringer (Marvel)",
+    "baseName": "Galactus Life Bringer",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Galactus Life Bringer.webp"
+  },
+  {
+    "id": "hercules-marvel",
+    "name": "Hercules (Marvel)",
+    "baseName": "Hercules",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Hercules.webp"
+  },
+  {
+    "id": "hulk-world-war-hulk-marvel",
+    "name": "Hulk World War Hulk (Marvel)",
+    "baseName": "Hulk World War Hulk",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Hulk world war hulk.jpg"
+  },
+  {
+    "id": "jean-grey-marvel",
+    "name": "Jean Grey (Marvel)",
+    "baseName": "Jean Grey",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Jean Grey.webp"
+  },
+  {
+    "id": "odin-marvel",
+    "name": "Odin (Marvel)",
+    "baseName": "Odin",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Odin.webp"
+  },
+  {
+    "id": "sentry-death-seed-marvel",
+    "name": "Sentry Death Seed (Marvel)",
+    "baseName": "Sentry Death Seed",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Sentry death seed.jpg"
+  },
+  {
+    "id": "sentry-merged-marvel",
+    "name": "Sentry Merged (Marvel)",
+    "baseName": "Sentry Merged",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Sentry merged.webp"
+  },
+  {
+    "id": "thanos-marvel",
+    "name": "Thanos (Marvel)",
+    "baseName": "Thanos",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Thanos.webp"
+  },
+  {
+    "id": "thor-marvel",
+    "name": "Thor (Marvel)",
+    "baseName": "Thor",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Thor.webp"
+  },
+  {
+    "id": "thor-rune-king-thor-marvel",
+    "name": "Thor Rune King Thor (Marvel)",
+    "baseName": "Thor Rune King Thor",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/Thor rune king thor.jpg"
+  },
+  {
+    "id": "white-phoenix-of-the-crown-marvel",
+    "name": "White Phoenix Of The Crown (Marvel)",
+    "baseName": "White Phoenix Of The Crown",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/white phoenix of the crown.webp"
+  },
+  {
+    "id": "world-breaker-hulk-marvel",
+    "name": "World Breaker Hulk (Marvel)",
+    "baseName": "World Breaker Hulk",
+    "tags": [
+      "Marvel"
+    ],
+    "universe": "Marvel",
+    "image": "/characters/World Breaker Hulk.webp"
+  },
+  {
+    "id": "hagoromo-otsutsuki-naruto",
+    "name": "Hagoromo Otsutsuki (Naruto)",
+    "baseName": "Hagoromo Otsutsuki",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Hagoromo Otsutsuki.jpg"
+  },
+  {
+    "id": "hashirama-senju-naruto",
+    "name": "Hashirama Senju (Naruto)",
+    "baseName": "Hashirama Senju",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Hashirama Senju.jpg"
+  },
+  {
+    "id": "itachi-uchiha-naruto",
+    "name": "Itachi Uchiha (Naruto)",
+    "baseName": "Itachi Uchiha",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Itachi Uchiha.jpg"
+  },
+  {
+    "id": "kaguya-otsutsuki-naruto",
+    "name": "Kaguya Otsutsuki (Naruto)",
+    "baseName": "Kaguya Otsutsuki",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Kaguya Otsutsuki.jpg"
+  },
+  {
+    "id": "madara-uchiha-naruto",
+    "name": "Madara Uchiha (Naruto)",
+    "baseName": "Madara Uchiha",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Madara Uchiha.jpg"
+  },
+  {
+    "id": "minato-namikaze-naruto",
+    "name": "Minato Namikaze (Naruto)",
+    "baseName": "Minato Namikaze",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Minato Namikaze.jpg"
+  },
+  {
+    "id": "naruto-uzumaki-naruto",
+    "name": "Naruto Uzumaki (Naruto)",
+    "baseName": "Naruto Uzumaki",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Naruto Uzumaki.jpg"
+  },
+  {
+    "id": "obito-uchiha-naruto",
+    "name": "Obito Uchiha (Naruto)",
+    "baseName": "Obito Uchiha",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Obito Uchiha.jpg"
+  },
+  {
+    "id": "pain-nagato-naruto",
+    "name": "Pain (Nagato)(Naruto)",
+    "baseName": "Pain",
+    "tags": [
+      "Nagato",
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Pain (Nagato).jpg"
+  },
+  {
+    "id": "sasuke-uchiha-naruto",
+    "name": "Sasuke Uchiha (Naruto)",
+    "baseName": "Sasuke Uchiha",
+    "tags": [
+      "Naruto"
+    ],
+    "universe": "Naruto",
+    "image": "/characters/Sasuke Uchiha.jpg"
+  },
+  {
+    "id": "borsalino-kizaru-one-piece",
+    "name": "Borsalino (Kizaru)(One Piece)",
+    "baseName": "Borsalino",
+    "tags": [
+      "Kizaru",
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Borsalino (Kizaru).jpg"
+  },
+  {
+    "id": "charlotte-linlin-big-mom-one-piece",
+    "name": "Charlotte Linlin (Big Mom)(One Piece)",
+    "baseName": "Charlotte Linlin",
+    "tags": [
+      "Big Mom",
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Charlotte Linlin (Big Mom).webp"
+  },
+  {
+    "id": "dracule-mihawk-one-piece",
+    "name": "Dracule Mihawk (One Piece)",
+    "baseName": "Dracule Mihawk",
+    "tags": [
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Dracule Mihawk.webp"
+  },
+  {
+    "id": "edward-newgate-whitebeard-one-piece",
+    "name": "Edward Newgate (Whitebeard)(One Piece)",
+    "baseName": "Edward Newgate",
+    "tags": [
+      "Whitebeard",
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Edward Newgate (Whitebeard).jpg"
+  },
+  {
+    "id": "gol-d-roger-one-piece",
+    "name": "Gol D. Roger (One Piece)",
+    "baseName": "Gol D. Roger",
+    "tags": [
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Gol D. Roger.webp"
+  },
+  {
+    "id": "kaido-one-piece",
+    "name": "Kaido (One Piece)",
+    "baseName": "Kaido",
+    "tags": [
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Kaido.webp"
+  },
+  {
+    "id": "marshall-d-teach-one-piece",
+    "name": "Marshall D. Teach (One Piece)",
+    "baseName": "Marshall D. Teach",
+    "tags": [
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Marshall D. Teach.webp"
+  },
+  {
+    "id": "monkey-d-luffy-one-piece",
+    "name": "Monkey D. Luffy (One Piece)",
+    "baseName": "Monkey D. Luffy",
+    "tags": [
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Monkey D. Luffy.jpg"
+  },
+  {
+    "id": "monkey-d-luffy-gear-5-one-piece",
+    "name": "Monkey D. Luffy Gear 5 (One Piece)",
+    "baseName": "Monkey D. Luffy Gear 5",
+    "tags": [
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Monkey D. Luffy Gear 5.webp"
+  },
+  {
+    "id": "sakazuki-akainu-one-piece",
+    "name": "Sakazuki (Akainu)(One Piece)",
+    "baseName": "Sakazuki",
+    "tags": [
+      "Akainu",
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Sakazuki (Akainu).jpg"
+  },
+  {
+    "id": "shanks-one-piece",
+    "name": "Shanks (One Piece)",
+    "baseName": "Shanks",
+    "tags": [
+      "One Piece"
+    ],
+    "universe": "One Piece",
+    "image": "/characters/Shanks.webp"
+  },
+  {
+    "id": "scp-000-scp-foundation",
+    "name": "SCP-000 (SCP Foundation)",
+    "baseName": "SCP-000",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP-000.webp"
+  },
+  {
+    "id": "scp-2747-scp-foundation",
+    "name": "SCP-2747 (SCP Foundation)",
+    "baseName": "SCP-2747",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP-2747.webp"
+  },
+  {
+    "id": "scp-343-scp-foundation",
+    "name": "SCP-343 (SCP Foundation)",
+    "baseName": "SCP-343",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP-343.webp"
+  },
+  {
+    "id": "scp-3812-scp-foundation",
+    "name": "SCP-3812 (SCP Foundation)",
+    "baseName": "SCP-3812",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP-3812.webp"
+  },
+  {
+    "id": "scp-4100-scp-foundation",
+    "name": "SCP-4100 (SCP Foundation)",
+    "baseName": "SCP-4100",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP-4100.png"
+  },
+  {
+    "id": "scp-049-scp-foundation",
+    "name": "SCP‑049 (SCP Foundation)",
+    "baseName": "SCP‑049",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP‑049.jpg"
+  },
+  {
+    "id": "scp-096-scp-foundation",
+    "name": "SCP‑096 (SCP Foundation)",
+    "baseName": "SCP‑096",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP‑096.webp"
+  },
+  {
+    "id": "scp-106-scp-foundation",
+    "name": "SCP‑106 (SCP Foundation)",
+    "baseName": "SCP‑106",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP‑106.webp"
+  },
+  {
+    "id": "scp-173-scp-foundation",
+    "name": "SCP‑173 (SCP Foundation)",
+    "baseName": "SCP‑173",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP‑173.jpg"
+  },
+  {
+    "id": "scp-239-scp-foundation",
+    "name": "SCP‑239 (SCP Foundation)",
+    "baseName": "SCP‑239",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP‑239.webp"
+  },
+  {
+    "id": "scp-3000-scp-foundation",
+    "name": "SCP‑3000 (SCP Foundation)",
+    "baseName": "SCP‑3000",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP‑3000.webp"
+  },
+  {
+    "id": "scp-682-scp-foundation",
+    "name": "SCP‑682 (SCP Foundation)",
+    "baseName": "SCP‑682",
+    "tags": [
+      "SCP Foundation"
+    ],
+    "universe": "SCP Foundation",
+    "image": "/characters/SCP‑682.webp"
+  },
+  {
+    "id": "q-star-trek-star-trek",
+    "name": "Q (Star Trek)",
+    "baseName": "Q",
+    "tags": [
+      "Star Trek"
+    ],
+    "universe": "Star Trek",
+    "image": "/characters/Q (Star Trek).webp"
+  },
+  {
+    "id": "balrog-tolkien",
+    "name": "Balrog (Tolkien)",
+    "baseName": "Balrog",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Balrog.webp"
+  },
+  {
+    "id": "elrond-tolkien",
+    "name": "Elrond (Tolkien)",
+    "baseName": "Elrond",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Elrond.webp"
+  },
+  {
+    "id": "eru-il-vatar-tolkien",
+    "name": "Eru Ilúvatar (Tolkien)",
+    "baseName": "Eru Ilúvatar",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Eru Ilúvatar.webp"
+  },
+  {
+    "id": "fingolfin-tolkien",
+    "name": "Fingolfin (Tolkien)",
+    "baseName": "Fingolfin",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Fingolfin.webp"
+  },
+  {
+    "id": "f-anor-tolkien",
+    "name": "Fëanor (Tolkien)",
+    "baseName": "Fëanor",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Fëanor.webp"
+  },
+  {
+    "id": "galadriel-tolkien",
+    "name": "Galadriel (Tolkien)",
+    "baseName": "Galadriel",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Galadriel.webp"
+  },
+  {
+    "id": "gandalf-tolkien",
+    "name": "Gandalf (Tolkien)",
+    "baseName": "Gandalf",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Gandalf.jpg"
+  },
+  {
+    "id": "melkor-tolkien",
+    "name": "Melkor (Tolkien)",
+    "baseName": "Melkor",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Melkor.jpg"
+  },
+  {
+    "id": "saruman-tolkien",
+    "name": "Saruman (Tolkien)",
+    "baseName": "Saruman",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Saruman.webp"
+  },
+  {
+    "id": "sauron-tolkien",
+    "name": "Sauron (Tolkien)",
+    "baseName": "Sauron",
+    "tags": [
+      "Tolkien"
+    ],
+    "universe": "Tolkien",
+    "image": "/characters/Sauron.webp"
+  },
+  {
+    "id": "abaddon-the-despoiler-warhammer-40-000",
+    "name": "Abaddon the Despoiler (Warhammer 40,000)",
+    "baseName": "Abaddon the Despoiler",
+    "tags": [
+      "Warhammer 40,000"
+    ],
+    "universe": "Warhammer 40,000",
+    "image": "/characters/Abaddon the Despoiler.webp"
+  },
+  {
+    "id": "ghazghkull-warhammer-40-000",
+    "name": "Ghazghkull (Warhammer 40,000)",
+    "baseName": "Ghazghkull",
+    "tags": [
+      "Warhammer 40,000"
+    ],
+    "universe": "Warhammer 40,000",
+    "image": "/characters/Ghazghkull.webp"
+  },
+  {
+    "id": "god-emperor-of-mankind-warhammer-40-000",
+    "name": "God-Emperor of Mankind (Warhammer 40,000)",
+    "baseName": "God-Emperor of Mankind",
+    "tags": [
+      "Warhammer 40,000"
+    ],
+    "universe": "Warhammer 40,000",
+    "image": "/characters/God-Emperor of Mankind.webp"
+  },
+  {
+    "id": "horus-lupercal-warhammer-40-000",
+    "name": "Horus Lupercal (Warhammer 40,000)",
+    "baseName": "Horus Lupercal",
+    "tags": [
+      "Warhammer 40,000"
+    ],
+    "universe": "Warhammer 40,000",
+    "image": "/characters/Horus Lupercal.webp"
+  },
+  {
+    "id": "kharn-the-betrayer-warhammer-40-000",
+    "name": "Kharn the Betrayer (Warhammer 40,000)",
+    "baseName": "Kharn the Betrayer",
+    "tags": [
+      "Warhammer 40,000"
+    ],
+    "universe": "Warhammer 40,000",
+    "image": "/characters/Kharn the Betrayer.webp"
+  },
+  {
+    "id": "magnus-the-red-warhammer-40-000",
+    "name": "Magnus the Red (Warhammer 40,000)",
+    "baseName": "Magnus the Red",
+    "tags": [
+      "Warhammer 40,000"
+    ],
+    "universe": "Warhammer 40,000",
+    "image": "/characters/Magnus the Red.webp"
+  },
+  {
+    "id": "roboute-guilliman-warhammer-40-000",
+    "name": "Roboute Guilliman (Warhammer 40,000)",
+    "baseName": "Roboute Guilliman",
+    "tags": [
+      "Warhammer 40,000"
+    ],
+    "universe": "Warhammer 40,000",
+    "image": "/characters/Roboute Guilliman.webp"
   }
 ]

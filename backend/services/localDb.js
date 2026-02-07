@@ -57,10 +57,12 @@ const ensureDbFile = async () => {
 export const readDb = async () => {
   await ensureDbFile();
   const raw = await fs.readFile(DB_PATH, 'utf8');
-  if (!raw.trim()) {
+  // PowerShell's Set-Content -Encoding UTF8 writes a BOM; tolerate it.
+  const sanitized = raw.replace(/^\uFEFF/, '');
+  if (!sanitized.trim()) {
     return normalizeDb(DEFAULT_DB);
   }
-  return normalizeDb(JSON.parse(raw));
+  return normalizeDb(JSON.parse(sanitized));
 };
 
 export const writeDb = async (data) => {
