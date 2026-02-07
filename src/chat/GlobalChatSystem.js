@@ -37,6 +37,7 @@ const GlobalChatSystem = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const chatContainerRef = useRef(null);
   const socketRef = useRef(null);
@@ -44,6 +45,19 @@ const GlobalChatSystem = () => {
   const isMinimizedRef = useRef(true);
   const selectedConversationRef = useRef(null);
   const privateMessagesContainerRef = useRef(null);
+
+  const scrollToBottom = useCallback((behavior = 'auto') => {
+    const el = messagesContainerRef.current;
+    if (el) {
+      if (behavior === 'smooth') {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      } else {
+        el.scrollTop = el.scrollHeight;
+      }
+      return;
+    }
+    messagesEndRef.current?.scrollIntoView({ behavior: behavior === 'smooth' ? 'smooth' : 'auto' });
+  }, []);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -68,7 +82,7 @@ const GlobalChatSystem = () => {
     if (isChatOpen && !isMinimized && activeTab === 'global' && messages.length > 0) {
       setTimeout(() => scrollToBottom(), 100);
     }
-  }, [activeTab, isChatOpen, isMinimized, messages.length]);
+  }, [activeTab, isChatOpen, isMinimized, messages.length, scrollToBottom]);
 
   // Fetch unread private messages count
   useEffect(() => {
@@ -337,11 +351,7 @@ const GlobalChatSystem = () => {
         socketRef.current = null;
       }
     };
-  }, [userId, token, username, profilePicture, loadExistingConversations]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, [userId, token, username, profilePicture, loadExistingConversations, scrollToBottom]);
 
   const isNearBottom = () => {
     const container = privateMessagesContainerRef.current;
@@ -719,7 +729,7 @@ const GlobalChatSystem = () => {
           {activeTab === 'global' ? (
             <>
               <div className="chat-body" ref={chatContainerRef}>
-                <div className="messages-container">
+                <div className="messages-container" ref={messagesContainerRef}>
                   {messages.map((message) => {
                     const isOwn = message.userId === user.id;
                     const reactionCounts = getReactionCounts(message.reactions);
