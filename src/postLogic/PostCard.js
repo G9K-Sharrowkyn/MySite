@@ -14,6 +14,7 @@ import CreatePost from './CreatePost';
 import ReactionMenu from './ReactionMenu';
 import BettingPanel from '../economy/BettingPanel';
 import { getUserDisplayName } from '../utils/userDisplay';
+import { splitFightTeamMembers } from '../utils/fightTeams';
 import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import FightTimer from './FightTimer';
@@ -277,14 +278,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     }
 
     if (post.type === 'fight' && characters.length) {
-      const teamAList = (post.fight?.teamA || '')
-        .split(',')
-        .map((n) => n.trim())
-        .filter(Boolean);
-      const teamBList = (post.fight?.teamB || '')
-        .split(',')
-        .map((n) => n.trim())
-        .filter(Boolean);
+      const teamAList = splitFightTeamMembers(post.fight?.teamA);
+      const teamBList = splitFightTeamMembers(post.fight?.teamB);
       [...teamAList, ...teamBList].forEach((name) => {
         const character = getCharacterByName(name);
         if (character?.image) {
@@ -647,8 +642,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     const canVote = post.fight.status !== 'locked' && post.fight.status !== 'completed';
     const votesHidden = Boolean(post.fight?.votesHidden);
 
-    const teamAList = (post.fight.teamA || '').split(',').map(n => n.trim()).filter(Boolean);
-    const teamBList = (post.fight.teamB || '').split(',').map(n => n.trim()).filter(Boolean);
+    const teamAList = splitFightTeamMembers(post.fight.teamA);
+    const teamBList = splitFightTeamMembers(post.fight.teamB);
 
     return (
       <div className="voting-section fight-voting" onClick={e => e.stopPropagation()}>

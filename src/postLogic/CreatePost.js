@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
+import { splitFightTeamMembers } from '../utils/fightTeams';
 import CharacterSelector from '../feedLogic/CharacterSelector';
 import './CreatePost.css';
 
@@ -148,7 +149,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           if (initialData.fight.teamA) {
             mappedTeams.push({
               name: 'Team A',
-              warriors: initialData.fight.teamA.split(',').map(name => ({
+              warriors: splitFightTeamMembers(initialData.fight.teamA).map(name => ({
                 character: { name: name.trim() },
                 customImage: null
               }))
@@ -158,7 +159,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           if (initialData.fight.teamB) {
             mappedTeams.push({
               name: 'Team B', 
-              warriors: initialData.fight.teamB.split(',').map(name => ({
+              warriors: splitFightTeamMembers(initialData.fight.teamB).map(name => ({
                 character: { name: name.trim() },
                 customImage: null
               }))

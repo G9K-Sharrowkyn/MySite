@@ -147,18 +147,45 @@ const normalizeCharacterAssetPath = (value) => {
   return decoded;
 };
 
+const splitFightTeamMembers = (value) => {
+  const raw = String(value || '');
+  if (!raw.trim()) return [];
+
+  const out = [];
+  let current = '';
+  let parenDepth = 0;
+
+  for (let i = 0; i < raw.length; i += 1) {
+    const ch = raw[i];
+    if (ch === '(') {
+      parenDepth += 1;
+      current += ch;
+      continue;
+    }
+    if (ch === ')') {
+      parenDepth = Math.max(0, parenDepth - 1);
+      current += ch;
+      continue;
+    }
+    if (ch === ',' && parenDepth === 0) {
+      const trimmed = current.trim();
+      if (trimmed) out.push(trimmed);
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+
+  const trimmed = current.trim();
+  if (trimmed) out.push(trimmed);
+  return out;
+};
+
 const normalizeTeamLabel = (value) =>
-  String(value || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .join(', ');
+  splitFightTeamMembers(value).join(', ');
 
 const pickPrimaryTeamName = (value) =>
-  String(value || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean)[0] || '';
+  splitFightTeamMembers(value)[0] || '';
 
 const truncateText = (value, maxLength) => {
   const cleaned = String(value || '').replace(/\s+/g, ' ').trim();
@@ -553,8 +580,8 @@ const resolvePostImage = async (post, db, baseUrlOrOptions) => {
   const teams =
     post.fight?.teamA || post.fight?.teamB
       ? [
-          ...(String(post.fight?.teamA || '').split(',').map((t) => t.trim())),
-          ...(String(post.fight?.teamB || '').split(',').map((t) => t.trim()))
+          ...splitFightTeamMembers(post.fight?.teamA),
+          ...splitFightTeamMembers(post.fight?.teamB)
         ].filter(Boolean)
       : [];
 
