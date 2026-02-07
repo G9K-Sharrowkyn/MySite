@@ -33,7 +33,7 @@ const imageUpload = multer({
 });
 
 const saveOptimizedImage = async (file, targetDir, { maxWidth, maxHeight, quality }) => {
-  const filename = `${Date.now()}-${Math.random().toString(16).slice(2)}.webp`;
+  const filename = `${Date.now()}-${Math.random().toString(16).slice(2)}.jpg`;
   const outputPath = path.join(targetDir, filename);
 
   await sharp(file.buffer)
@@ -44,7 +44,7 @@ const saveOptimizedImage = async (file, targetDir, { maxWidth, maxHeight, qualit
       fit: 'inside',
       withoutEnlargement: true
     })
-    .webp({ quality })
+    .jpeg({ quality, mozjpeg: true })
     .toFile(outputPath);
 
   return filename;

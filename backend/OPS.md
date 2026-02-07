@@ -88,6 +88,6 @@ Helper endpoint:
 
 ## Upload Compression
 
-- Avatar uploads are converted to `.webp` (max 640x640).
-- Profile backgrounds are converted to `.webp` (max 1920x1080).
+- Avatar uploads are converted to `.jpg` (max 640x640).
+- Profile backgrounds are converted to `.jpg` (max 1920x1080).
 - Upload size limit is 8 MB.

@@ -40,18 +40,14 @@ const getCharacterPreviewFallbacks = (imageUrl) => {
 
   const hasExt = /\.[a-z0-9]+$/i.test(clean);
   if (!hasExt) {
-    pushUnique(`${clean}.webp`);
     pushUnique(`${clean}.jpg`);
-    pushUnique(`${clean}.png`);
   }
 
   if (clean.includes('(SW)')) {
     const starWarsVariant = clean.replace('(SW)', '(Star Wars)');
     pushUnique(starWarsVariant);
     if (!/\.[a-z0-9]+$/i.test(starWarsVariant)) {
-      pushUnique(`${starWarsVariant}.webp`);
       pushUnique(`${starWarsVariant}.jpg`);
-      pushUnique(`${starWarsVariant}.png`);
     }
   }
 
@@ -59,9 +55,7 @@ const getCharacterPreviewFallbacks = (imageUrl) => {
     const shortVariant = clean.replace('(Star Wars)', '(SW)');
     pushUnique(shortVariant);
     if (!/\.[a-z0-9]+$/i.test(shortVariant)) {
-      pushUnique(`${shortVariant}.webp`);
       pushUnique(`${shortVariant}.jpg`);
-      pushUnique(`${shortVariant}.png`);
     }
   }
 
