@@ -738,95 +738,33 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     const votesHidden = Boolean(post.fight?.votesHidden);
     const totalVotes = votesHidden ? 0 : getTotalVotes();
     const votePercentage = votesHidden ? 0 : getVotePercentage(votes, totalVotes);
-    // New: multiline layout for 3 or 4 characters
-    const multiline = teamList.length === 3 || teamList.length === 4;
-    let rows = [];
-    if (teamList.length === 4) {
-      rows = [teamList.slice(0, 2), teamList.slice(2, 4)];
-    } else if (teamList.length === 3) {
-      rows = [teamList.slice(0, 2), teamList.slice(2)];
-    }
+    
     return (
       <div className="team-column">
-        <div className={`team-zone${isVoted ? ' sparkly' : ''}${multiline ? ' team-zone-multiline' : ''}`}> 
-          {multiline ? (
-            <>
-              <div className="team-row">
-                {rows[0].map((name, idx) => {
-                  const char = getCharacterByName(name);
-                  return (
-                    <div key={idx} className="character-panel">
-                      <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
-                      <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
-                        <img
-                          {...getOptimizedImageProps(
-                            replacePlaceholderUrl(char?.image) || placeholderImages.character,
-                            {
-                              size: 360,
-                              lazy: imageLazy,
-                              fetchPriority: imagePriority,
-                              decoding: imageDecoding
-                            }
-                          )}
-                          alt={name}
-                          className="team-image-large"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className={`team-row team-row-bottom${teamList.length === 3 ? ' team-row-single' : ''}`}>
-                {rows[1].map((name, idx) => {
-                  const char = getCharacterByName(name);
-                  return (
-                    <div key={idx} className="character-panel">
-                      <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
-                      <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
-                        <img
-                          {...getOptimizedImageProps(
-                            replacePlaceholderUrl(char?.image) || placeholderImages.character,
-                            {
-                              size: 280,
-                              lazy: imageLazy,
-                              fetchPriority: imagePriority,
-                              decoding: imageDecoding
-                            }
-                          )}
-                          alt={name}
-                          className="team-image-large"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            teamList.map((name, idx) => {
-              const char = getCharacterByName(name);
-              return (
-                <div key={idx} className="character-panel">
-                  <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
-                  <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
-                    <img
-                      {...getOptimizedImageProps(
-                        replacePlaceholderUrl(char?.image) || placeholderImages.character,
-                        {
-                          size: 280,
-                          lazy: imageLazy,
-                          fetchPriority: imagePriority,
-                          decoding: imageDecoding
-                        }
-                      )}
-                      alt={name}
-                      className="team-image-large"
-                    />
-                  </div>
+        <div className={`team-zone${isVoted ? ' sparkly' : ''}`}> 
+          {teamList.map((name, idx) => {
+            const char = getCharacterByName(name);
+            return (
+              <div key={idx} className="character-panel">
+                <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
+                <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
+                  <img
+                    {...getOptimizedImageProps(
+                      replacePlaceholderUrl(char?.image) || placeholderImages.character,
+                      {
+                        size: 280,
+                        lazy: imageLazy,
+                        fetchPriority: imagePriority,
+                        decoding: imageDecoding
+                      }
+                    )}
+                    alt={name}
+                    className="team-image-large"
+                  />
                 </div>
-              );
-            })
-          )}
+              </div>
+            );
+          })}
         </div>
 
         {canVote && (
@@ -875,11 +813,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
-    // Calculate visual height of a team (number of rows it occupies)
+    // Calculate visual height of a team (number of character slots vertically)
     const getTeamHeight = (teamSize) => {
-      if (teamSize <= 2) return 1;
-      if (teamSize <= 4) return 2;
-      return Math.ceil(teamSize / 2);
+      return teamSize; // Each character is one unit of height when stacked vertically
     };
 
     // Smart layout - group teams by similar size to minimize total height
