@@ -2059,7 +2059,7 @@ body.dark-mode .post-card {
   left: 50%;
   top: 38%;
   transform: translate(-50%, -50%);
-  width: 58px;
+  width: 116px;
   height: auto;
   opacity: 0.92;
   pointer-events: none;
@@ -2070,7 +2070,7 @@ body.dark-mode .post-card {
 .fight-voting-panels .fight-vs-between-overlay {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: clamp(18px, 2.6vw, 30px);
+  width: clamp(36px, 5.2vw, 60px);
   height: auto;
   opacity: 0.92;
   pointer-events: none;
