@@ -875,19 +875,94 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
+    // Calculate visual height of a team (number of rows it occupies)
+    const getTeamHeight = (teamSize) => {
+      if (teamSize <= 2) return 1;
+      if (teamSize <= 4) return 2;
+      return Math.ceil(teamSize / 2);
+    };
+
+    // Smart team arrangement - reorder teams to balance visual layout
+    const arrangeTeamsSmartly = (teams) => {
+      const teamData = teams.map((team, originalIndex) => {
+        const members = splitFightTeamMembers(team);
+        return {
+          originalIndex,
+          team,
+          size: members.length,
+          height: getTeamHeight(members.length)
+        };
+      });
+
+      // Check if this is a "weird" layout that needs reorganization
+      const heights = teamData.map(t => t.height);
+      const maxHeight = Math.max(...heights);
+      const minHeight = Math.min(...heights);
+      const hasLargeTeam = maxHeight >= 3;
+      const hasMixedSizes = maxHeight - minHeight > 1;
+      
+      // For simple layouts (all teams similar size), keep original order in pairs
+      if (!hasLargeTeam && !hasMixedSizes) {
+        const rows = [];
+        for (let i = 0; i < teamData.length; i += 2) {
+          const row = [teamData[i]];
+          if (i + 1 < teamData.length) {
+            row.push(teamData[i + 1]);
+          }
+          rows.push(row);
+        }
+        return rows;
+      }
+
+      // Sort by height (descending) for smart packing
+      const sorted = [...teamData].sort((a, b) => b.height - a.height);
+      const used = new Set();
+      const rows = [];
+
+      for (const primary of sorted) {
+        if (used.has(primary.originalIndex)) continue;
+        
+        const row = [primary];
+        used.add(primary.originalIndex);
+        
+        // Try to find ONE team for the second column that best matches primary's height
+        const candidates = sorted.filter(t => !used.has(t.originalIndex));
+        
+        // First, try to find a team with exactly the same height
+        let match = candidates.find(t => t.height === primary.height);
+        
+        // If not found, try to find the closest height
+        if (!match && candidates.length > 0) {
+          match = candidates.reduce((best, curr) => {
+            const bestDiff = Math.abs(best.height - primary.height);
+            const currDiff = Math.abs(curr.height - primary.height);
+            return currDiff < bestDiff ? curr : best;
+          });
+        }
+        
+        if (match) {
+          row.push(match);
+          used.add(match.originalIndex);
+        }
+        
+        rows.push(row);
+      }
+
+      return rows;
+    };
+
     // Group teams into rows of 2 for multi-team layout
     const renderMultiTeamLayout = () => {
-      const teamsPerRow = 2;
-      const teamRows = [];
-      for (let i = 0; i < teams.length; i += teamsPerRow) {
-        teamRows.push(teams.slice(i, i + teamsPerRow));
-      }
+      const smartRows = arrangeTeamsSmartly(teams);
 
       return (
         <>
-          {teamRows.map((rowTeams, rowIndex) => (
+          {smartRows.map((rowTeams, rowIndex) => (
             <React.Fragment key={`row-${rowIndex}`}>
-              <div className="fight-voting-panels multi-team-row" ref={rowIndex === 0 ? fightPanelsRef : null}>
+              <div 
+                className={`fight-voting-panels multi-team-row${rowTeams.length === 1 ? ' single-column' : ''}`}
+                ref={rowIndex === 0 ? fightPanelsRef : null}
+              >
                 {isMultiTeam && rowIndex === 0 && fightVsBetweenPositions.length > 0 &&
                   fightVsBetweenPositions.map((pos, index) => (
                     <img
@@ -904,23 +979,22 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     />
                   ))}
 
-                {rowTeams.map((teamValue, colIndex) => {
-                  const globalIndex = rowIndex * teamsPerRow + colIndex;
-                  const list = splitFightTeamMembers(teamValue);
-                  const key = String(globalIndex);
+                {rowTeams.map((teamData, colIndex) => {
+                  const list = splitFightTeamMembers(teamData.team);
+                  const key = String(teamData.originalIndex);
                   return (
                     <div
                       key={key}
                       className="fight-voting-panel-col"
                       ref={(el) => {
-                        fightPanelColsRef.current[globalIndex] = el;
+                        fightPanelColsRef.current[teamData.originalIndex] = el;
                       }}
                     >
                       {renderTeamPanel(
                         list,
-                        teamValue,
+                        teamData.team,
                         userVote === key,
-                        teamVotes[globalIndex] || 0,
+                        teamVotes[teamData.originalIndex] || 0,
                         key,
                         canVote,
                         handleVote
@@ -931,9 +1005,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               </div>
               
               {/* Vertical VS between rows */}
-              {rowIndex < teamRows.length - 1 && (
+              {rowIndex < smartRows.length - 1 && (
                 <div className="fight-vertical-vs-row">
-                  {rowTeams.map((_, colIndex) => (
+                  {rowTeams.map((teamData, colIndex) => (
                     <div key={`vs-col-${colIndex}`} className="vertical-vs-container">
                       <img
                         className="fight-vs-vertical"

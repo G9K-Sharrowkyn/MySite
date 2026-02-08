@@ -2129,6 +2129,14 @@ body.dark-mode .post-card {
   position: relative;
 }
 
+/* When there's only one team in a row, center it */
+.fight-voting-panels.multi-team-row.single-column {
+  grid-template-columns: 1fr;
+  max-width: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 /* Vertical VS between rows */
 .fight-vertical-vs-row {
   width: 100%;
