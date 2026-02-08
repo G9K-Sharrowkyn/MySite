@@ -390,13 +390,15 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           const teamName = team.name || `Team ${String.fromCharCode(65 + index)}`;
           const characters = team.warriors
             .filter(w => w.character && w.character.name)
-            .map(w => w.character.name)
-            .join(', ');
+            .map(w => w.character.name);
           
-          return characters ? `${teamName}: ${characters}` : '';
+          if (characters.length === 0) return '';
+          
+          // Format: Team A:\nCharacter 1,\nCharacter 2
+          return `${teamName}:\n${characters.join(',\n')}`;
         })
         .filter(line => line)
-        .join('\n');
+        .join('\n\n'); // Double newline between teams
       
       if (charactersList) {
         setPostData(prev => ({
