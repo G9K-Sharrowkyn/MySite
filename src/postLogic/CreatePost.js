@@ -380,28 +380,24 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     }));
   };
 
-  // Generate character list text
-  const generateCharactersList = () => {
-    if (!postData.teams || postData.teams.length === 0) return '';
-    
-    return postData.teams
-      .map((team, index) => {
-        const teamName = team.name || `Team ${String.fromCharCode(65 + index)}`;
-        const characters = team.warriors
-          .filter(w => w.character && w.character.name)
-          .map(w => w.character.name)
-          .join(', ');
-        
-        return characters ? `${teamName}: ${characters}` : '';
-      })
-      .filter(line => line)
-      .join('\n');
-  };
-
   // Auto-update content when checkbox is enabled
   useEffect(() => {
     if (autoListCharacters && postData.type === 'fight') {
-      const charactersList = generateCharactersList();
+      if (!postData.teams || postData.teams.length === 0) return;
+      
+      const charactersList = postData.teams
+        .map((team, index) => {
+          const teamName = team.name || `Team ${String.fromCharCode(65 + index)}`;
+          const characters = team.warriors
+            .filter(w => w.character && w.character.name)
+            .map(w => w.character.name)
+            .join(', ');
+          
+          return characters ? `${teamName}: ${characters}` : '';
+        })
+        .filter(line => line)
+        .join('\n');
+      
       if (charactersList) {
         setPostData(prev => ({
           ...prev,
