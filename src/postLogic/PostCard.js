@@ -875,17 +875,49 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
-    // Simple layout - just group teams in pairs (A+B, C+D, E+F...)
-    const renderMultiTeamLayout = () => {
+    // Calculate visual height of a team (number of rows it occupies)
+    const getTeamHeight = (teamSize) => {
+      if (teamSize <= 2) return 1;
+      if (teamSize <= 4) return 2;
+      return Math.ceil(teamSize / 2);
+    };
+
+    // Smart layout - group teams by similar size to minimize total height
+    const arrangeTeamsForCompactness = (teams) => {
+      const teamData = teams.map((team, originalIndex) => {
+        const members = splitFightTeamMembers(team);
+        return {
+          originalIndex,
+          team,
+          size: members.length,
+          height: getTeamHeight(members.length)
+        };
+      });
+
+      // Sort by size (descending) to group similar teams together
+      const sorted = [...teamData].sort((a, b) => {
+        // First by height (more important for compactness)
+        if (b.height !== a.height) return b.height - a.height;
+        // Then by size for consistency
+        return b.size - a.size;
+      });
+
+      // Pair teams - every two consecutive teams in one row
       const rows = [];
-      for (let i = 0; i < teams.length; i += 2) {
-        const rowTeams = [];
-        rowTeams.push({ originalIndex: i, team: teams[i] });
-        if (i + 1 < teams.length) {
-          rowTeams.push({ originalIndex: i + 1, team: teams[i + 1] });
+      for (let i = 0; i < sorted.length; i += 2) {
+        const row = [sorted[i]];
+        if (i + 1 < sorted.length) {
+          row.push(sorted[i + 1]);
         }
-        rows.push(rowTeams);
+        rows.push(row);
       }
+
+      return rows;
+    };
+
+    // Group teams into rows for multi-team layout
+    const renderMultiTeamLayout = () => {
+      const rows = arrangeTeamsForCompactness(teams);
 
       return (
         <>
