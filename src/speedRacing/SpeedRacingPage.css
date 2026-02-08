@@ -267,16 +267,18 @@
 }
 
 .speed-track.shake {
-  animation: shake 0.4s linear;
+  animation: shake 0.6s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 @keyframes shake {
-  0% { transform: translateX(-2px); }
-  20% { transform: translateX(3px); }
-  40% { transform: translateX(-3px); }
-  60% { transform: translateX(2px); }
-  80% { transform: translateX(-1px); }
-  100% { transform: translateX(0); }
+  0% { transform: translate(-3px, 0) rotateZ(-0.5deg); }
+  15% { transform: translate(4px, -1px) rotateZ(0.6deg); }
+  30% { transform: translate(-4px, 1px) rotateZ(-0.6deg); }
+  45% { transform: translate(3px, -1px) rotateZ(0.5deg); }
+  60% { transform: translate(-2px, 1px) rotateZ(-0.3deg); }
+  75% { transform: translate(2px, 0) rotateZ(0.2deg); }
+  90% { transform: translate(-1px, 0) rotateZ(-0.1deg); }
+  100% { transform: translate(0, 0) rotateZ(0); }
 }
 
 .parallax.layer {
@@ -297,18 +299,27 @@
   background: radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.05), transparent 40%),
               radial-gradient(circle at 80% 25%, rgba(255, 255, 255, 0.04), transparent 45%);
   animation: driftLeft 18s linear infinite;
+  filter: blur(var(--motion-blur, 0px));
+  will-change: filter;
+  transition: filter 0.3s ease;
 }
 
 .parallax.layer.texture.theme-dune {
   background: radial-gradient(circle at 20% 35%, rgba(255, 255, 255, 0.05), transparent 40%),
               radial-gradient(circle at 75% 18%, rgba(255, 255, 255, 0.04), transparent 45%);
   animation: driftRight 16s linear infinite;
+  filter: blur(var(--motion-blur, 0px));
+  will-change: filter;
+  transition: filter 0.3s ease;
 }
 
 .parallax.layer.texture.theme-cave {
   background: radial-gradient(circle at 35% 30%, rgba(124, 247, 255, 0.08), transparent 40%),
               radial-gradient(circle at 70% 18%, rgba(0, 198, 255, 0.08), transparent 45%);
   animation: driftLeft 20s linear infinite;
+  filter: blur(var(--motion-blur, 0px));
+  will-change: filter;
+  transition: filter 0.3s ease;
 }
 
 @keyframes driftStars {
@@ -324,6 +335,26 @@
 @keyframes driftRight {
   from { transform: translateX(0); }
   to { transform: translateX(18px); }
+}
+
+/* Speed lines for motion effect */
+.speed-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.speed-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: top center;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0) 80%);
+  border-radius: 2px;
+  filter: blur(1px);
+  will-change: transform, opacity;
 }
 
 .corridor {
@@ -475,28 +506,73 @@
   transform-origin: center;
   z-index: 2;
   transform-style: preserve-3d;
+  filter: blur(calc(var(--motion-blur, 0px) * 0.5));
+  will-change: transform, filter;
+  transition: filter 0.2s ease;
 }
 
 .track-item.obstacle {
-  background: linear-gradient(135deg, #5f6368, #3a3d42);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: linear-gradient(135deg, #5f6368 0%, #3a3d42 50%, #2a2d32 100%);
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.45),
+    inset -2px -2px 4px rgba(0, 0, 0, 0.4),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.5));
+  animation: obstacleFloat 3s ease-in-out infinite;
+}
+
+@keyframes obstacleFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-2px) rotate(1deg); }
+  75% { transform: translateY(2px) rotate(-1deg); }
 }
 
 .track-item.boost {
   background: linear-gradient(135deg, #48f2c2, #7cf7ff);
-  box-shadow: 0 0 18px rgba(76, 246, 222, 0.6);
-  border: 1px solid rgba(124, 247, 255, 0.8);
+  box-shadow: 
+    0 0 18px rgba(76, 246, 222, 0.6),
+    0 0 35px rgba(76, 246, 222, 0.4),
+    inset 0 -2px 8px rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(124, 247, 255, 0.9);
   filter: drop-shadow(0 6px 10px rgba(76, 246, 222, 0.45));
+  animation: boostPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes boostPulse {
+  0%, 100% { 
+    box-shadow: 
+      0 0 18px rgba(76, 246, 222, 0.6),
+      0 0 35px rgba(76, 246, 222, 0.4);
+  }
+  50% { 
+    box-shadow: 
+      0 0 25px rgba(76, 246, 222, 0.8),
+      0 0 50px rgba(76, 246, 222, 0.6),
+      0 0 70px rgba(76, 246, 222, 0.3);
+  }
+}
+
+.track-item.boost::before {
+  content: '';
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(circle, rgba(124, 247, 255, 0.3), transparent 60%);
+  border-radius: 50%;
+  animation: boostRing 1.2s ease-in-out infinite;
+}
+
+@keyframes boostRing {
+  0%, 100% { transform: scale(0.9); opacity: 0.4; }
+  50% { transform: scale(1.1); opacity: 0.7; }
 }
 
 .track-item.boost::after {
   content: '';
   position: absolute;
   inset: -20% 10% 60% 10%;
-  background: linear-gradient(180deg, rgba(124, 247, 255, 0.4), transparent);
-  filter: blur(8px);
+  background: linear-gradient(180deg, rgba(124, 247, 255, 0.5), transparent);
+  filter: blur(10px);
   border-radius: 10px;
 }
 

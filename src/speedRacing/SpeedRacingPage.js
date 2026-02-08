@@ -90,8 +90,11 @@ const SpeedRacingPage = () => {
   const [status, setStatus] = useState(t('speedRacingReady'));
   const [playerLane, setPlayerLane] = useState(1);
   const [screenShake, setScreenShake] = useState(false);
+  const [blurAmount, setBlurAmount] = useState(0);
 
   const speedRef = useRef(speed);
+  const lastSpeedRef = useRef(speed);
+  const rafIdRef = useRef(null);
   const distanceRef = useRef(distance);
   const elapsedRef = useRef(elapsed);
   const playerLaneRef = useRef(playerLane);
@@ -140,10 +143,12 @@ const SpeedRacingPage = () => {
 
   const trackStyle = useMemo(() => {
     const { laneShiftPct } = corridorMetrics;
+    const motionBlurPx = Math.min(8, blurAmount).toFixed(2);
     return {
-      '--lane-shift-pct': `${laneShiftPct}%`
+      '--lane-shift-pct': `${laneShiftPct}%`,
+      '--motion-blur': `${motionBlurPx}px`
     };
-  }, [corridorMetrics]);
+  }, [corridorMetrics, blurAmount]);
 
   const visibleItems = useMemo(() => {
     const start = Math.max(0, distance - 10);
@@ -216,6 +221,37 @@ const SpeedRacingPage = () => {
       x2: lanePct + laneShiftPct
     }));
   }, [corridorMetrics]);
+
+  // Speed lines for motion effect
+  const speedLines = useMemo(() => {
+    if (gameState !== 'running') return [];
+    
+    const speedRatio = speed / track.maxSpeed;
+    if (speedRatio < 0.3) return []; // Only show at 30%+ speed
+    
+    const lineCount = Math.floor(20 + speedRatio * 10); // 20-30 lines
+    const scroll = (distance * 0.15) % 1;
+    const lines = [];
+    
+    for (let i = 0; i < lineCount; i++) {
+      const angle = (i / lineCount) * 360;
+      const lifecycle = ((i / lineCount) + scroll) % 1;
+      const length = 40 + lifecycle * 40; // 40-80px
+      const opacity = (1 - lifecycle) * speedRatio * 0.6;
+      
+      if (opacity < 0.05) continue;
+      
+      lines.push({
+        id: `speed-line-${i}`,
+        angle,
+        length,
+        opacity,
+        width: 2 + speedRatio * 2 // 2-4px
+      });
+    }
+    
+    return lines;
+  }, [distance, speed, track.maxSpeed, gameState]);
 
   const handleLaneChange = useCallback((direction) => {
     setPlayerLane((prev) => {
@@ -333,11 +369,53 @@ const SpeedRacingPage = () => {
     });
   }, [finishRace, handleBoostPickup, handleCollision, items.boosts, items.obstacles, track.length]);
 
+  // Calculate motion blur based on speed delta
+  const calculateMotionBlur = useCallback(() => {
+    const currentSpeed = speedRef.current;
+    const delta = currentSpeed - lastSpeedRef.current;
+    lastSpeedRef.current = currentSpeed;
+    
+    // Blur intensity: 0-8px based on speed and acceleration
+    const speedFactor = (currentSpeed / track.maxSpeed) * 4;
+    const accelFactor = Math.abs(delta) * 2;
+    const totalBlur = Math.min(8, speedFactor + accelFactor);
+    setBlurAmount(totalBlur);
+  }, [track.maxSpeed]);
+
+  // RAF game loop - 60 FPS render, 20 TPS physics
   useEffect(() => {
-    if (gameState !== 'running') return undefined;
-    const interval = setInterval(tick, TICK_MS);
-    return () => clearInterval(interval);
-  }, [gameState, tick]);
+    if (gameState !== 'running') {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      return undefined;
+    }
+
+    let lastPhysicsTick = performance.now();
+
+    const gameLoop = (currentTime) => {
+      if (gameStateRef.current !== 'running') return;
+
+      // Physics tick at 50ms intervals
+      if (currentTime - lastPhysicsTick >= TICK_MS) {
+        tick();
+        calculateMotionBlur();
+        lastPhysicsTick = currentTime;
+      }
+
+      rafIdRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    rafIdRef.current = requestAnimationFrame(gameLoop);
+
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+    };
+  }, [gameState, tick, calculateMotionBlur]);
 
   const startRace = useCallback(() => {
     if (gameStateRef.current === 'lights') return;
@@ -460,6 +538,23 @@ const SpeedRacingPage = () => {
           </div>
         <div className="parallax layer stars" />
         <div className={`parallax layer texture theme-${track.theme}`} />
+        
+        {/* Speed lines for motion sensation */}
+        <div className="speed-lines">
+          {speedLines.map((line) => (
+            <div
+              key={line.id}
+              className="speed-line"
+              style={{
+                transform: `rotate(${line.angle}deg) translateX(-50%)`,
+                height: `${line.length}px`,
+                width: `${line.width}px`,
+                opacity: line.opacity
+              }}
+            />
+          ))}
+        </div>
+        
         <div className="corridor">
           <div className="corridor-wall ceiling-wall" />
           <div className="corridor-wall floor-wall" />
