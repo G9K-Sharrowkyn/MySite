@@ -733,12 +733,11 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   // Helper to get character object by name
 
-  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey, canVote, onVote, characterSize = 280) => {
+  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey, canVote, onVote) => {
     const isVoted = userVote === teamKey;
     const votesHidden = Boolean(post.fight?.votesHidden);
     const totalVotes = votesHidden ? 0 : getTotalVotes();
     const votePercentage = votesHidden ? 0 : getVotePercentage(votes, totalVotes);
-    const scaleFactor = characterSize / 280; // Calculate scale for entire panel
     
     return (
       <div className="team-column">
@@ -746,15 +745,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           {teamList.map((name, idx) => {
             const char = getCharacterByName(name);
             return (
-              <div 
-                key={idx} 
-                className="character-panel"
-                style={scaleFactor !== 1 ? {
-                  transform: `scale(${scaleFactor})`,
-                  transformOrigin: 'center center',
-                  margin: `${(280 * scaleFactor - 280) / 2}px 0`
-                } : undefined}
-              >
+              <div key={idx} className="character-panel">
                 <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
                 <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                   <img
@@ -928,46 +919,54 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     />
                   ))}
 
-                {rowTeams.map((columnData, colIndex) => (
-                  <div key={`col-${colIndex}`} className="multi-team-column">
-                    {columnData.teams.map((teamData, teamIndex) => {
-                      const list = splitFightTeamMembers(teamData.team);
-                      const key = String(teamData.originalIndex);
-                      return (
-                        <React.Fragment key={key}>
-                          {teamIndex > 0 && (
-                            <div className="fight-vertical-vs-in-column">
-                              <img
-                                className="fight-vs-vertical"
-                                src={`${process.env.PUBLIC_URL}/VS.png`}
-                                alt=""
-                                aria-hidden="true"
-                                draggable="false"
-                              />
-                            </div>
-                          )}
-                          <div
-                            className="fight-voting-panel-col"
-                            ref={(el) => {
-                              fightPanelColsRef.current[teamData.originalIndex] = el;
-                            }}
-                          >
-                            {renderTeamPanel(
-                              list,
-                              teamData.team,
-                              userVote === key,
-                              teamVotes[teamData.originalIndex] || 0,
-                              key,
-                              canVote,
-                              handleVote,
-                              columnData.characterSize
+                {rowTeams.map((columnData, colIndex) => {
+                  const scaleFactor = columnData.characterSize / 280;
+                  return (
+                    <div 
+                      key={`col-${colIndex}`} 
+                      className="multi-team-column"
+                      style={scaleFactor !== 1 ? {
+                        '--character-scale': scaleFactor
+                      } : undefined}
+                    >
+                      {columnData.teams.map((teamData, teamIndex) => {
+                        const list = splitFightTeamMembers(teamData.team);
+                        const key = String(teamData.originalIndex);
+                        return (
+                          <React.Fragment key={key}>
+                            {teamIndex > 0 && (
+                              <div className="fight-vertical-vs-in-column">
+                                <img
+                                  className="fight-vs-vertical"
+                                  src={`${process.env.PUBLIC_URL}/VS.png`}
+                                  alt=""
+                                  aria-hidden="true"
+                                  draggable="false"
+                                />
+                              </div>
                             )}
-                          </div>
-                        </React.Fragment>
-                      );
-                    })}
-                  </div>
-                ))}
+                            <div
+                              className="fight-voting-panel-col"
+                              ref={(el) => {
+                                fightPanelColsRef.current[teamData.originalIndex] = el;
+                              }}
+                            >
+                              {renderTeamPanel(
+                                list,
+                                teamData.team,
+                                userVote === key,
+                                teamVotes[teamData.originalIndex] || 0,
+                                key,
+                                canVote,
+                                handleVote
+                              )}
+                            </div>
+                          </React.Fragment>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
               
               {/* Vertical VS between rows */}

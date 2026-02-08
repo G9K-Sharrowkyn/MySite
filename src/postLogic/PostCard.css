@@ -2136,6 +2136,9 @@ body.dark-mode .post-card {
   gap: 0;
   align-items: center;
   width: 100%;
+  --character-scale: 1;
+  transform: scale(var(--character-scale));
+  transform-origin: top center;
 }
 
 /* Vertical VS separator between teams within the same column */
