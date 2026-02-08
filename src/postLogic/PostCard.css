@@ -152,6 +152,8 @@ body.dark-mode .post-card {
 /* Post Content */
 .post-content {
   padding: 0 25px 20px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 
 .post-title {
