@@ -329,7 +329,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     const teamLabel = String.fromCharCode(65 + teamIndex); // A, B, C, D...
     setPostData(prev => ({
       ...prev,
-      teams: [...prev.teams, { name: `Team ${teamLabel}`, warriors: [] }]
+      teams: [...prev.teams, { name: `Team ${teamLabel}`, warriors: [{ character: null, customImage: null }] }]
     }));
   };
 
