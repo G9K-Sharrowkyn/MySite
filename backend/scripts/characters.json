@@ -987,15 +987,15 @@
     "image": "/characters/Mr. Freeze (DC).jpg"
   },
   {
-    "id": "nate-grey-uncanny-x-men",
-    "name": "Nate Grey (Uncanny X-Men)",
+    "id": "nate-grey-marvel",
+    "name": "Nate Grey (Marvel)",
     "baseName": "Nate Grey",
     "tags": [
       "Marvel",
       "X-Men"
     ],
     "universe": "Marvel",
-    "image": "/characters/Nate Grey (Uncanny X-Men).jpg"
+    "image": "/characters/Nate Grey (Marvel).jpg"
   },
   {
     "id": "omega-shenron-dbgt",
