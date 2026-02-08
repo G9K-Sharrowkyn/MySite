@@ -895,9 +895,11 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                     </p>
                   </div>
                 )}
-                {/* Render any additional teams vertically (community mode) */}
-                {fightMode === 'community' && postData.teams.length > 2 && postData.teams.slice(2).map((team, index) => (
-                  <div key={index + 2} className="team-builder">
+                {/* Render any additional teams in a 2-column grid (community mode) */}
+                {fightMode === 'community' && postData.teams.length > 2 && (
+                  <div className="teams-grid">
+                    {postData.teams.slice(2).map((team, index) => (
+                      <div key={index + 2} className="team-builder">
                     <div className="team-header">
                       <h5>{team.name || `Team ${String.fromCharCode(65 + index + 2)}`}</h5>
                       <button
@@ -956,7 +958,9 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                       </button>
                     </div>
                   </div>
-                ))}
+                    ))}
+                  </div>
+                )}
                 {fightMode === 'community' && (
                   <button
                     type="button"
