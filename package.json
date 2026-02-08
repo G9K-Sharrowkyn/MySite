@@ -1,6 +1,6 @@
 {
   "name": "my-site",
-  "version": "0.263",
+  "version": "0.266",
   "private": true,
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
