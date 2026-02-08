@@ -325,9 +325,11 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
   };
 
   const addTeam = () => {
+    const teamIndex = postData.teams.length;
+    const teamLabel = String.fromCharCode(65 + teamIndex); // A, B, C, D...
     setPostData(prev => ({
       ...prev,
-      teams: [...prev.teams, { name: '', warriors: [] }]
+      teams: [...prev.teams, { name: `Team ${teamLabel}`, warriors: [] }]
     }));
   };
 
@@ -774,7 +776,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                     {postData.teams.slice(0, 2).map((team, index) => (
                       <div key={index} className="team-builder">
                         <div className="team-header">
-                          <h5>{team.name}</h5>
+                          <h5>{team.name || `Team ${String.fromCharCode(65 + index)}`}</h5>
                           <button
                             type="button"
                             className="remove-team-btn"
@@ -897,7 +899,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
                 {fightMode === 'community' && postData.teams.length > 2 && postData.teams.slice(2).map((team, index) => (
                   <div key={index + 2} className="team-builder">
                     <div className="team-header">
-                      <h5>{team.name}</h5>
+                      <h5>{team.name || `Team ${String.fromCharCode(65 + index + 2)}`}</h5>
                       <button
                         type="button"
                         className="remove-team-btn"
