@@ -288,6 +288,36 @@
   pointer-events: none;
 }
 
+/* Background parallax (far away, slow scroll) */
+.parallax.layer.background {
+  z-index: -2;
+  opacity: 0.4;
+}
+
+.parallax.layer.background.theme-canyon {
+  background: 
+    linear-gradient(to bottom, rgba(139, 69, 19, 0.2) 0%, transparent 50%),
+    radial-gradient(ellipse at 10% 30%, rgba(160, 82, 45, 0.3), transparent 60%),
+    radial-gradient(ellipse at 90% 20%, rgba(139, 69, 19, 0.25), transparent 55%);
+  animation: driftLeft 40s linear infinite;
+}
+
+.parallax.layer.background.theme-dune {
+  background: 
+    linear-gradient(to bottom, rgba(255, 193, 7, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 25%, rgba(255, 224, 130, 0.2), transparent 65%),
+    radial-gradient(ellipse at 85% 30%, rgba(255, 202, 40, 0.18), transparent 60%);
+  animation: driftRight 45s linear infinite;
+}
+
+.parallax.layer.background.theme-cave {
+  background: 
+    linear-gradient(to bottom, rgba(0, 198, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 20%, rgba(124, 247, 255, 0.15), transparent 70%),
+    radial-gradient(ellipse at 80% 35%, rgba(0, 168, 255, 0.12), transparent 65%);
+  animation: driftLeft 50s linear infinite;
+}
+
 .parallax.layer.stars {
   background: radial-gradient(2px 2px at 20% 10%, rgba(255, 255, 255, 0.35), transparent),
               radial-gradient(1.5px 1.5px at 70% 22%, rgba(255, 255, 255, 0.25), transparent),
@@ -320,6 +350,33 @@
   filter: blur(var(--motion-blur, 0px));
   will-change: filter;
   transition: filter 0.3s ease;
+}
+
+/* Foreground parallax (close, fast scroll) */
+.parallax.layer.foreground {
+  z-index: 3;
+  opacity: 0.3;
+}
+
+.parallax.layer.foreground.theme-canyon {
+  background: 
+    radial-gradient(ellipse at 5% 80%, rgba(101, 67, 33, 0.4), transparent 25%),
+    radial-gradient(ellipse at 95% 75%, rgba(139, 69, 19, 0.35), transparent 30%);
+  animation: driftLeft 8s linear infinite;
+}
+
+.parallax.layer.foreground.theme-dune {
+  background: 
+    radial-gradient(ellipse at 8% 85%, rgba(218, 165, 32, 0.35), transparent 22%),
+    radial-gradient(ellipse at 92% 78%, rgba(184, 134, 11, 0.3), transparent 28%);
+  animation: driftRight 7s linear infinite;
+}
+
+.parallax.layer.foreground.theme-cave {
+  background: 
+    radial-gradient(ellipse at 10% 82%, rgba(0, 128, 255, 0.25), transparent 20%),
+    radial-gradient(ellipse at 90% 80%, rgba(30, 144, 255, 0.22), transparent 25%);
+  animation: driftLeft 9s linear infinite;
 }
 
 @keyframes driftStars {
@@ -629,4 +686,254 @@
   .speed-racing-page {
     padding: 1rem 0.6rem;
   }
+}
+
+/* ==================== Combo Display ==================== */
+.combo-display {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  pointer-events: none;
+  animation: comboAppear 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.combo-text {
+  font-size: 3rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+  animation: comboPulse 0.8s ease-in-out infinite;
+}
+
+.combo-level-1 { color: #ffd32a; }
+.combo-level-2 { color: #ff9100; }
+.combo-level-3 { color: #ff6b6b; }
+.combo-level-4 { color: #ee5a6f; }
+.combo-level-5 { color: #c44569; }
+
+@keyframes comboAppear {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes comboPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* ==================== Drift Indicator ==================== */
+.drift-indicator {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid #00d9ff;
+  border-radius: 12px;
+  padding: 8px 16px;
+  min-width: 200px;
+  box-shadow: 0 0 20px rgba(0, 217, 255, 0.5);
+  animation: driftEnter 0.2s ease-out;
+}
+
+.drift-label {
+  text-align: center;
+  font-weight: 900;
+  font-size: 1.2rem;
+  color: #00d9ff;
+  margin-bottom: 4px;
+  letter-spacing: 0.15em;
+  text-shadow: 0 0 10px #00d9ff;
+}
+
+.drift-bar {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.drift-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd32a, #ff9100);
+  border-radius: 6px;
+  transition: width 0.1s linear, background 0.3s ease;
+  box-shadow: 0 0 10px currentColor;
+}
+
+.drift-fill.good {
+  background: linear-gradient(90deg, #ff9100, #ff6b6b);
+}
+
+.drift-fill.perfect {
+  background: linear-gradient(90deg, #ff6b6b, #c44569);
+  animation: driftPerfect 0.3s ease-in-out infinite;
+}
+
+.drift-value {
+  text-align: center;
+  font-weight: 700;
+  color: #fff;
+  margin-top: 4px;
+  font-size: 0.9rem;
+}
+
+@keyframes driftEnter {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes driftPerfect {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+
+/* ==================== Power-up HUD ==================== */
+.powerup-hud {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.powerup-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 2px solid;
+  background: rgba(0, 0, 0, 0.6);
+  box-shadow: 0 0 20px currentColor;
+  animation: powerupEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.powerup-icon.shield {
+  border-color: #00a8ff;
+  color: #00a8ff;
+  background: radial-gradient(circle, rgba(0, 168, 255, 0.3), rgba(0, 0, 0, 0.6));
+}
+
+.powerup-icon.magnet {
+  border-color: #a29bfe;
+  color: #a29bfe;
+  background: radial-gradient(circle, rgba(162, 155, 254, 0.3), rgba(0, 0, 0, 0.6));
+}
+
+.powerup-icon.hyper {
+  border-color: #ffd32a;
+  color: #ffd32a;
+  background: radial-gradient(circle, rgba(255, 211, 42, 0.3), rgba(0, 0, 0, 0.6));
+  animation: powerupEnter 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), hyperPulse 0.5s ease-in-out infinite;
+}
+
+.powerup-icon.expiring {
+  animation: powerupExpire 0.5s ease-in-out infinite;
+}
+
+.powerup-timer {
+  position: absolute;
+  bottom: -4px;
+  right: -4px;
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid currentColor;
+}
+
+@keyframes powerupEnter {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-180deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes hyperPulse {
+  0%, 100% { box-shadow: 0 0 20px currentColor; }
+  50% { box-shadow: 0 0 40px currentColor, 0 0 60px currentColor; }
+}
+
+@keyframes powerupExpire {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ==================== Power-up Items on Track ==================== */
+.track-item.powerup {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid;
+  position: relative;
+  animation: powerupFloat 2s ease-in-out infinite;
+  filter: blur(calc(var(--motion-blur, 0) * 0.5));
+  will-change: transform, opacity;
+}
+
+.track-item.powerup.shield {
+  background: radial-gradient(circle, rgba(0, 168, 255, 0.8), rgba(0, 84, 128, 0.4));
+  border-color: #00a8ff;
+  box-shadow: 0 0 20px rgba(0, 168, 255, 0.8), inset 0 0 15px rgba(0, 168, 255, 0.3);
+}
+
+.track-item.powerup.magnet {
+  background: radial-gradient(circle, rgba(162, 155, 254, 0.8), rgba(81, 77, 127, 0.4));
+  border-color: #a29bfe;
+  box-shadow: 0 0 20px rgba(162, 155, 254, 0.8), inset 0 0 15px rgba(162, 155, 254, 0.3);
+  animation: powerupFloat 2s ease-in-out infinite, magnetPulse 1.5s ease-in-out infinite;
+}
+
+.track-item.powerup.hyper {
+  background: radial-gradient(circle, rgba(255, 211, 42, 0.9), rgba(255, 145, 0, 0.5));
+  border-color: #ffd32a;
+  box-shadow: 0 0 25px rgba(255, 211, 42, 1), inset 0 0 20px rgba(255, 145, 0, 0.5);
+  animation: powerupFloat 2s ease-in-out infinite, hyperSpin 1s linear infinite;
+}
+
+@keyframes powerupFloat {
+  0%, 100% { transform: translate(-50%, -50%) scale(var(--scale, 1)) translateY(0); }
+  50% { transform: translate(-50%, -50%) scale(var(--scale, 1)) translateY(-8px); }
+}
+
+@keyframes magnetPulse {
+  0%, 100% { 
+    box-shadow: 0 0 20px rgba(162, 155, 254, 0.8), inset 0 0 15px rgba(162, 155, 254, 0.3); 
+  }
+  50% { 
+    box-shadow: 0 0 35px rgba(162, 155, 254, 1), inset 0 0 25px rgba(162, 155, 254, 0.6); 
+  }
+}
+
+@keyframes hyperSpin {
+  0% { transform: translate(-50%, -50%) scale(var(--scale, 1)) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) scale(var(--scale, 1)) rotate(360deg); }
 }

@@ -47,11 +47,14 @@ const TICK_MS = 50;
 const TICK_SECONDS = TICK_MS / 1000;
 const VIEW_DISTANCE = 140;
 
+const POWERUP_TYPES = ['shield', 'magnet', 'hyper'];
+
 const randomBetween = (min, max) => Math.random() * (max - min) + min;
 
 const generateItems = (track) => {
   const obstacles = [];
   const boosts = [];
+  const powerups = [];
 
   for (let pos = 70; pos < track.length - 40; ) {
     pos += randomBetween(track.obstacleSpacing * 0.65, track.obstacleSpacing * 1.15);
@@ -73,13 +76,25 @@ const generateItems = (track) => {
     });
   }
 
-  return { obstacles, boosts };
+  // Power-ups every 150-200m
+  for (let pos = 100; pos < track.length - 50; pos += randomBetween(150, 200)) {
+    const lane = Math.floor(randomBetween(0, LANES.length));
+    const type = POWERUP_TYPES[Math.floor(randomBetween(0, POWERUP_TYPES.length))];
+    powerups.push({
+      id: `pw-${lane}-${pos.toFixed(2)}`,
+      lane,
+      position: pos,
+      type
+    });
+  }
+
+  return { obstacles, boosts, powerups };
 };
 
 const SpeedRacingPage = () => {
   const { t } = useLanguage();
   const [track, setTrack] = useState(TRACKS[0]);
-  const [items, setItems] = useState({ obstacles: [], boosts: [] });
+  const [items, setItems] = useState({ obstacles: [], boosts: [], powerups: [] });
   const [gameState, setGameState] = useState('idle'); // idle | lights | running | finished
   const [countdownStage, setCountdownStage] = useState('red');
   const [distance, setDistance] = useState(0);
@@ -91,6 +106,21 @@ const SpeedRacingPage = () => {
   const [playerLane, setPlayerLane] = useState(1);
   const [screenShake, setScreenShake] = useState(false);
   const [blurAmount, setBlurAmount] = useState(0);
+  
+  // Drift mechanics
+  const [isDrifting, setIsDrifting] = useState(false);
+  const [driftCharge, setDriftCharge] = useState(0);
+  // eslint-disable-next-line no-unused-vars
+  const [driftDirection, setDriftDirection] = useState(0); // -1 left, 1 right (future: racer rotation)
+  
+  // Combo system
+  const [combo, setCombo] = useState(0);
+  const [comboTimer, setComboTimer] = useState(0);
+  const [lastActionTime, setLastActionTime] = useState(0);
+  
+  // Power-ups
+  const [activePowerups, setActivePowerups] = useState([]);
+  const [collectedPowerups, setCollectedPowerups] = useState([]);
 
   const speedRef = useRef(speed);
   const lastSpeedRef = useRef(speed);
@@ -180,7 +210,8 @@ const SpeedRacingPage = () => {
 
     return [
       ...items.obstacles.map((item) => mapItem(item, 'obstacle')),
-      ...items.boosts.map((item) => mapItem(item, 'boost'))
+      ...items.boosts.map((item) => mapItem(item, 'boost')),
+      ...items.powerups.map((item) => mapItem({ ...item, powerupType: item.type }, 'powerup'))
     ].filter(Boolean);
   }, [corridorMetrics, distance, items]);
 
@@ -253,27 +284,84 @@ const SpeedRacingPage = () => {
     return lines;
   }, [distance, speed, track.maxSpeed, gameState]);
 
+  const addComboAction = useCallback((actionType) => {
+    const now = performance.now();
+    if (now - lastActionTime < 5000) {
+      setCombo(prev => Math.min(5, prev + 1));
+      setComboTimer(5);
+    } else {
+      setCombo(1);
+      setComboTimer(5);
+    }
+    setLastActionTime(now);
+  }, [lastActionTime]);
+
+  const resetCombo = useCallback(() => {
+    setCombo(0);
+    setComboTimer(0);
+  }, []);
+
   const handleLaneChange = useCallback((direction) => {
     setPlayerLane((prev) => {
       const next = Math.min(2, Math.max(0, prev + direction));
       playerLaneRef.current = next;
       return next;
     });
+    
+    if (isDrifting) {
+      setDriftDirection(direction);
+    }
+    
     setStatus(direction < 0 ? 'Edge left through the canyon.' : 'Slide right toward the open lane.');
+  }, [isDrifting]);
+
+  const startDrift = useCallback((direction) => {
+    setIsDrifting(true);
+    setDriftDirection(direction);
+    setDriftCharge(0);
   }, []);
+
+  const endDrift = useCallback(() => {
+    if (!isDrifting) return;
+    
+    setIsDrifting(false);
+    
+    // Drift boost based on charge
+    if (driftCharge >= 70) {
+      setSpeed((prev) => {
+        const boosted = Math.min(track.maxSpeed, prev + 8);
+        speedRef.current = boosted;
+        return boosted;
+      });
+      setStatus('Perfect drift! Massive boost!');
+      addComboAction('drift');
+    } else if (driftCharge >= 40) {
+      setSpeed((prev) => {
+        const boosted = Math.min(track.maxSpeed, prev + 4);
+        speedRef.current = boosted;
+        return boosted;
+      });
+      setStatus('Good drift! Nice boost.');
+    }
+    
+    setDriftCharge(0);
+    setDriftDirection(0);
+  }, [isDrifting, driftCharge, track.maxSpeed, addComboAction]);
 
   const handleShift = useCallback(() => {
     if (gameStateRef.current !== 'running') return;
 
     if (shiftReadyRef.current) {
+      const comboBonus = combo > 0 ? combo * 1.5 : 0;
       setSpeed((prev) => {
-        const boosted = Math.min(track.maxSpeed, prev + 6);
+        const boosted = Math.min(track.maxSpeed, prev + 6 + comboBonus);
         speedRef.current = boosted;
         return boosted;
       });
       setGearMeter(10);
       setShiftReady(false);
       setStatus('Perfect shift! Engine howls.');
+      addComboAction('shift');
     } else {
       setSpeed((prev) => {
         const dipped = Math.max(track.baseSpeed - 6, prev - 4);
@@ -281,10 +369,19 @@ const SpeedRacingPage = () => {
         return dipped;
       });
       setStatus('Late shift. Power droops.');
+      resetCombo();
     }
-  }, [track.baseSpeed, track.maxSpeed]);
+  }, [track.baseSpeed, track.maxSpeed, combo, addComboAction, resetCombo]);
 
   const handleCollision = useCallback(() => {
+    // Check for shield power-up
+    const hasShield = activePowerups.find(p => p.type === 'shield');
+    if (hasShield) {
+      setActivePowerups(prev => prev.filter(p => p.type !== 'shield'));
+      setStatus('Shield absorbed impact!');
+      return;
+    }
+    
     setSpeed((prev) => {
       const slowed = Math.max(track.baseSpeed - 6, prev * 0.65);
       speedRef.current = slowed;
@@ -293,15 +390,46 @@ const SpeedRacingPage = () => {
     setStatus('Rock hit! Frame rattles.');
     setScreenShake(true);
     setTimeout(() => setScreenShake(false), 220);
-  }, [track.baseSpeed]);
+    resetCombo();
+    setIsDrifting(false);
+    setDriftCharge(0);
+  }, [track.baseSpeed, activePowerups, resetCombo]);
 
   const handleBoostPickup = useCallback(() => {
+    const comboBonus = combo > 0 ? combo * 1.5 : 0;
     setSpeed((prev) => {
-      const surged = Math.min(track.maxSpeed, prev + 7);
+      const surged = Math.min(track.maxSpeed, prev + 7 + comboBonus);
       speedRef.current = surged;
       return surged;
     });
     setStatus('Pad boost! Repulsors flare.');
+    addComboAction('boost');
+  }, [track.maxSpeed, combo, addComboAction]);
+
+  const handlePowerupPickup = useCallback((powerupType) => {
+    setCollectedPowerups(prev => [...prev, powerupType]);
+    const startTime = performance.now();
+    
+    switch(powerupType) {
+      case 'shield':
+        setActivePowerups(prev => [...prev, { type: 'shield', duration: 10000, startTime }]);
+        setStatus('Shield active! Immune to next hit.');
+        break;
+      case 'magnet':
+        setActivePowerups(prev => [...prev, { type: 'magnet', duration: 8000, startTime }]);
+        setStatus('Magnet active! Auto-collecting boosts.');
+        break;
+      case 'hyper':
+        setActivePowerups(prev => [...prev, { type: 'hyper', duration: 5000, startTime }]);
+        setSpeed(() => {
+          speedRef.current = track.maxSpeed;
+          return track.maxSpeed;
+        });
+        setStatus('HYPER BOOST! Maximum velocity!');
+        break;
+      default:
+        break;
+    }
   }, [track.maxSpeed]);
 
   const finishRace = useCallback(() => {
@@ -318,6 +446,23 @@ const SpeedRacingPage = () => {
       elapsedRef.current = next;
       return next;
     });
+
+    // Drift charge accumulation
+    if (isDrifting) {
+      setDriftCharge(prev => Math.min(100, prev + 5));
+    }
+
+    // Combo timer countdown
+    if (comboTimer > 0) {
+      setComboTimer(prev => Math.max(0, prev - TICK_SECONDS));
+      if (comboTimer - TICK_SECONDS <= 0) {
+        resetCombo();
+      }
+    }
+
+    // Power-up expiration
+    const now = performance.now();
+    setActivePowerups(prev => prev.filter(p => (now - p.startTime) < p.duration));
 
     setGearMeter((prev) => {
       const next = prev + 3;
@@ -338,6 +483,7 @@ const SpeedRacingPage = () => {
       const segmentStart = prevDistance;
       const segmentEnd = nextDistance;
 
+      // Check collisions
       const obstacleHit = items.obstacles.find(
         (item) =>
           item.lane === playerLaneRef.current &&
@@ -345,17 +491,34 @@ const SpeedRacingPage = () => {
           item.position < segmentEnd
       );
 
+      // Check boosts (with magnet power-up range)
+      const hasMagnet = activePowerups.find(p => p.type === 'magnet');
       const boostHit = items.boosts.find(
+        (item) => {
+          const inLane = hasMagnet ? 
+            Math.abs(item.lane - playerLaneRef.current) <= 1 : 
+            item.lane === playerLaneRef.current;
+          return inLane &&
+            item.position >= segmentStart &&
+            item.position < segmentEnd;
+        }
+      );
+
+      // Check power-ups
+      const powerupHit = items.powerups.find(
         (item) =>
           item.lane === playerLaneRef.current &&
           item.position >= segmentStart &&
-          item.position < segmentEnd
+          item.position < segmentEnd &&
+          !collectedPowerups.includes(item.id)
       );
 
       if (obstacleHit) {
         handleCollision();
       } else if (boostHit) {
         handleBoostPickup();
+      } else if (powerupHit) {
+        handlePowerupPickup(powerupHit.type);
       }
 
       if (nextDistance >= track.length) {
@@ -367,7 +530,7 @@ const SpeedRacingPage = () => {
       distanceRef.current = nextDistance;
       return nextDistance;
     });
-  }, [finishRace, handleBoostPickup, handleCollision, items.boosts, items.obstacles, track.length]);
+  }, [finishRace, handleBoostPickup, handleCollision, handlePowerupPickup, items, track.length, isDrifting, comboTimer, resetCombo, activePowerups, collectedPowerups]);
 
   // Calculate motion blur based on speed delta
   const calculateMotionBlur = useCallback(() => {
@@ -457,11 +620,19 @@ const SpeedRacingPage = () => {
     const handleKeyDown = (event) => {
       if (event.key === 'a' || event.key === 'ArrowLeft') {
         event.preventDefault();
-        handleLaneChange(-1);
+        if (!isDrifting && gameStateRef.current === 'running') {
+          startDrift(-1);
+        } else {
+          handleLaneChange(-1);
+        }
       }
       if (event.key === 'd' || event.key === 'ArrowRight') {
         event.preventDefault();
-        handleLaneChange(1);
+        if (!isDrifting && gameStateRef.current === 'running') {
+          startDrift(1);
+        } else {
+          handleLaneChange(1);
+        }
       }
       if (event.code === 'Space' || event.key === 'w' || event.key === 'W') {
         event.preventDefault();
@@ -473,9 +644,20 @@ const SpeedRacingPage = () => {
       }
     };
 
+    const handleKeyUp = (event) => {
+      if ((event.key === 'a' || event.key === 'ArrowLeft' || event.key === 'd' || event.key === 'ArrowRight') && isDrifting) {
+        event.preventDefault();
+        endDrift();
+      }
+    };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleLaneChange, handleShift, startRace]);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [handleLaneChange, handleShift, startRace, isDrifting, startDrift, endDrift]);
 
   const handleTrackClick = useCallback(() => {
     if (gameStateRef.current === 'idle' || gameStateRef.current === 'finished') {
@@ -536,8 +718,53 @@ const SpeedRacingPage = () => {
             </div>
             <div className="status-text">{status}</div>
           </div>
+
+          {/* Combo display */}
+          {combo > 0 && (
+            <div className="combo-display">
+              <div className={`combo-text combo-level-${Math.min(combo, 5)}`}>
+                COMBO x{combo}!
+              </div>
+            </div>
+          )}
+
+          {/* Drift charge indicator */}
+          {isDrifting && (
+            <div className="drift-indicator">
+              <div className="drift-label">DRIFT</div>
+              <div className="drift-bar">
+                <div 
+                  className={`drift-fill ${driftCharge >= 70 ? 'perfect' : driftCharge >= 40 ? 'good' : ''}`}
+                  style={{ width: `${driftCharge}%` }}
+                />
+              </div>
+              <div className="drift-value">{Math.round(driftCharge)}%</div>
+            </div>
+          )}
+
+          {/* Power-up HUD */}
+          {activePowerups.length > 0 && (
+            <div className="powerup-hud">
+              {activePowerups.map((powerup, idx) => {
+                const elapsed = performance.now() - powerup.startTime;
+                const remaining = Math.max(0, (powerup.duration - elapsed) / 1000);
+                return (
+                  <div 
+                    key={`${powerup.type}-${idx}`} 
+                    className={`powerup-icon ${powerup.type} ${remaining < 2 ? 'expiring' : ''}`}
+                  >
+                    <div className="powerup-timer">{remaining.toFixed(1)}s</div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+        {/* Parallax depth layers */}
+        <div className={`parallax layer background theme-${track.theme}`} />
         <div className="parallax layer stars" />
         <div className={`parallax layer texture theme-${track.theme}`} />
+        <div className={`parallax layer foreground theme-${track.theme}`} />
         
         {/* Speed lines for motion sensation */}
         <div className="speed-lines">
@@ -591,7 +818,7 @@ const SpeedRacingPage = () => {
           {visibleItems.map((item) => (
             <div
               key={item.id}
-              className={`track-item ${item.type}`}
+              className={`track-item ${item.type}${item.powerupType ? ` ${item.powerupType}` : ''}`}
               style={{
                 left: `${item.left}%`,
                 top: `${item.top}%`,
