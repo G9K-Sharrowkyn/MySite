@@ -211,12 +211,12 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         });
 
         const positions = [];
+        
+        // Horizontal VS icons (between panels in the same row)
         rows.forEach((row) => {
           if (row.items.length < 2) return;
 
           const items = row.items.slice().sort((a, b) => a.rect.left - b.rect.left);
-          // Use the team-zone box (excluding vote panel) so the VS aligns with the character stack,
-          // not the extra vote/footer height.
           const rowTop = Math.min(...items.map((x) => x.zoneRect.top));
           const rowBottom = Math.max(...items.map((x) => x.zoneRect.bottom));
           const centerY = rowTop + (rowBottom - rowTop) * 0.52;
@@ -232,6 +232,40 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             });
           }
         });
+
+        // Vertical VS icons (between panels in different rows)
+        if (rows.length > 1) {
+          for (let rowIdx = 0; rowIdx < rows.length - 1; rowIdx++) {
+            const topRow = rows[rowIdx];
+            const bottomRow = rows[rowIdx + 1];
+            
+            // Get all panel positions in both rows sorted by left position
+            const topItems = topRow.items.slice().sort((a, b) => a.rect.left - b.rect.left);
+            const bottomItems = bottomRow.items.slice().sort((a, b) => a.rect.left - b.rect.left);
+            
+            // Place VS between vertically aligned panels
+            topItems.forEach(topItem => {
+              bottomItems.forEach(bottomItem => {
+                // Check if panels are roughly vertically aligned (within horizontal threshold)
+                const horizontalThreshold = 100; // px
+                const topCenterX = (topItem.rect.left + topItem.rect.right) / 2;
+                const bottomCenterX = (bottomItem.rect.left + bottomItem.rect.right) / 2;
+                
+                if (Math.abs(topCenterX - bottomCenterX) < horizontalThreshold) {
+                  const centerX = (topCenterX + bottomCenterX) / 2;
+                  const topZoneBottom = topItem.zoneRect.bottom;
+                  const bottomZoneTop = bottomItem.zoneRect.top;
+                  const centerY = (topZoneBottom + bottomZoneTop) / 2;
+                  
+                  positions.push({
+                    left: Math.round(centerX - containerRect.left),
+                    top: Math.round(centerY - containerRect.top)
+                  });
+                }
+              });
+            });
+          }
+        }
 
         setFightVsBetweenPositions(positions);
       });
@@ -733,7 +767,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   // Helper to get character object by name
 
-  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey) => {
+  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey, canVote, onVote) => {
     const isVoted = userVote === teamKey;
     const votesHidden = Boolean(post.fight?.votesHidden);
     const totalVotes = votesHidden ? 0 : getTotalVotes();
@@ -829,14 +863,24 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           )}
         </div>
 
+        {canVote && (
+          <button
+            className={`animated-vote-btn team-vote-btn${isVoted ? ' voted' : ''}`}
+            onClick={() => onVote(teamKey)}
+          >
+            {isVoted ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
+          </button>
+        )}
+
         <div className="team-vote-panel">
           {votesHidden ? (
             <div className="team-vote-hidden">{t('votesHiddenUntilEnd') || 'Votes hidden until the end'}</div>
           ) : (
-            <>
-              <div className="team-vote-count">{votes} {t('votes') || 'votes'}</div>
-              <div className="team-vote-percent">{votePercentage}%</div>
-            </>
+            <div className="team-vote-stats">
+              <span className="team-vote-count">{votes} {t('votes') || 'votes'}</span>
+              <span className="team-vote-separator">•</span>
+              <span className="team-vote-percent">{votePercentage}%</span>
+            </div>
           )}
         </div>
       </div>
@@ -910,7 +954,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                   teamValue,
                   userVote === key,
                   teamVotes[index] || 0,
-                  key
+                  key,
+                  canVote,
+                  handleVote
                 )}
               </div>
             );
@@ -943,30 +989,14 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         )}
 
         {canVote && teamCount > 2 && (
-          <>
-            <div className={`fight-voting-buttons multi-team${userVote ? ' has-voted' : ''}`}>
-              {teams.map((_, index) => {
-                const key = String(index);
-                return (
-                  <button
-                    key={key}
-                    className={`animated-vote-btn team-multi${userVote === key ? ' voted' : ''}`}
-                    onClick={() => handleVote(key)}
-                  >
-                    {userVote === key ? t('voted') || 'Voted!' : t('vote') || 'Vote!'}
-                  </button>
-                );
-              })}
-            </div>
-            <div className="fight-voting-buttons draw-row">
-              <button
-                className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
-                onClick={() => handleVote('draw')}
-              >
-                {t('draw')}
-              </button>
-            </div>
-          </>
+          <div className="fight-voting-buttons draw-row">
+            <button
+              className={`animated-vote-btn draw${userVote === 'draw' ? ' voted' : ''}`}
+              onClick={() => handleVote('draw')}
+            >
+              {t('draw')}
+            </button>
+          </div>
         )}
 
         <div className={`fight-draw-count${votesHidden ? ' hidden' : ''}`}>
