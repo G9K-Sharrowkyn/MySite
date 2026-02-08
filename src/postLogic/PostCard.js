@@ -733,7 +733,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   // Helper to get character object by name
 
-  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey, canVote, onVote) => {
+  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey, canVote, onVote, teamCount) => {
     const isVoted = userVote === teamKey;
     const votesHidden = Boolean(post.fight?.votesHidden);
     const totalVotes = votesHidden ? 0 : getTotalVotes();
@@ -767,7 +767,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           })}
         </div>
 
-        {canVote && (
+        {canVote && teamCount > 2 && (
           <button
             className={`animated-vote-btn team-vote-btn${isVoted ? ' voted' : ''}`}
             onClick={() => onVote(teamKey)}
@@ -1009,7 +1009,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                                   teamVotes[teamData.originalIndex] || 0,
                                   key,
                                   canVote,
-                                  handleVote
+                                  handleVote,
+                                  teamCount
                                 )}
                               </div>
                             </React.Fragment>
@@ -1036,7 +1037,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                           teamVotes[item.originalIndex] || 0,
                           key,
                           canVote,
-                          handleVote
+                          handleVote,
+                          teamCount
                         )}
                       </div>
                     );
@@ -1096,7 +1098,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     teamVotes[index] || 0,
                     key,
                     canVote,
-                    handleVote
+                    handleVote,
+                    teamCount
                   )}
                 </div>
               );
