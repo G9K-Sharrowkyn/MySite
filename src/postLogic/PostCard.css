@@ -2129,6 +2129,24 @@ body.dark-mode .post-card {
   position: relative;
 }
 
+/* Column within a row - can contain multiple teams stacked vertically */
+.multi-team-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  align-items: center;
+}
+
+/* Vertical VS separator between teams within the same column */
+.fight-vertical-vs-in-column {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
+  min-height: 40px;
+}
+
 /* When there's only one team in a row, center it */
 .fight-voting-panels.multi-team-row.single-column {
   grid-template-columns: 1fr;

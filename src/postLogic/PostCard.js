@@ -733,11 +733,13 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   // Helper to get character object by name
 
-  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey, canVote, onVote) => {
+  const renderTeamPanel = (teamList, teamLabel, isSelected, votes, teamKey, canVote, onVote, scaleFactor = 1) => {
     const isVoted = userVote === teamKey;
     const votesHidden = Boolean(post.fight?.votesHidden);
     const totalVotes = votesHidden ? 0 : getTotalVotes();
     const votePercentage = votesHidden ? 0 : getVotePercentage(votes, totalVotes);
+    const baseSize = 280;
+    const scaledSize = Math.round(baseSize * scaleFactor);
     
     return (
       <div className="team-column">
@@ -760,6 +762,12 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     )}
                     alt={name}
                     className="team-image-large"
+                    style={{
+                      width: `${scaledSize}px`,
+                      height: `${scaledSize}px`,
+                      maxWidth: `${scaledSize}px`,
+                      maxHeight: `${scaledSize}px`
+                    }}
                   />
                 </div>
               </div>
@@ -819,41 +827,68 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     };
 
     // Smart layout - group teams by similar size to minimize total height
-    const arrangeTeamsForCompactness = (teams) => {
+    const arrangeTeamsIntoColumns = (teams) => {
+      // For 2 or fewer teams, use simple side-by-side layout
+      if (teams.length <= 2) {
+        const teamData = teams.map((team, originalIndex) => {
+          const members = splitFightTeamMembers(team);
+          return { originalIndex, team, size: members.length };
+        });
+        return [teamData.map(td => ({ teams: [td], scaleFactor: 1 }))];
+      }
+
+      // For 3+ teams, use bin-packing into columns
       const teamData = teams.map((team, originalIndex) => {
         const members = splitFightTeamMembers(team);
-        return {
-          originalIndex,
-          team,
-          size: members.length,
-          height: getTeamHeight(members.length)
-        };
+        return { originalIndex, team, size: members.length };
       });
 
-      // Sort by size (descending) to group similar teams together
-      const sorted = [...teamData].sort((a, b) => {
-        // First by height (more important for compactness)
-        if (b.height !== a.height) return b.height - a.height;
-        // Then by size for consistency
-        return b.size - a.size;
+      // Sort by size descending for better packing
+      const sorted = [...teamData].sort((a, b) => b.size - a.size);
+
+      // Bin-packing: distribute teams into 2 columns, balancing character count
+      const columns = [[], []];
+      const columnHeights = [0, 0]; // Track character count
+
+      sorted.forEach(td => {
+        const targetCol = columnHeights[0] <= columnHeights[1] ? 0 : 1;
+        columns[targetCol].push(td);
+        columnHeights[targetCol] += td.size;
       });
 
-      // Pair teams - every two consecutive teams in one row
-      const rows = [];
-      for (let i = 0; i < sorted.length; i += 2) {
-        const row = [sorted[i]];
-        if (i + 1 < sorted.length) {
-          row.push(sorted[i + 1]);
-        }
-        rows.push(row);
-      }
+      // Calculate scale factors to balance visual heights
+      const CHAR_SIZE = 280;
+      const PANEL_OVERHEAD = 100; // Approx: padding, button, stats
+      const VS_HEIGHT = 40; // Vertical VS separator between teams
+
+      const columnData = columns.filter(col => col.length > 0).map(colTeams => {
+        const numTeams = colTeams.length;
+        const numChars = colTeams.reduce((sum, td) => sum + td.size, 0);
+        const vsCount = Math.max(0, numTeams - 1);
+        const totalHeight = numChars * CHAR_SIZE + numTeams * PANEL_OVERHEAD + vsCount * VS_HEIGHT;
+        return { teams: colTeams, totalHeight, numChars, numTeams, vsCount };
+      });
+
+      // Find max height across all columns
+      const maxHeight = Math.max(...columnData.map(c => c.totalHeight));
+
+      // Calculate scale factor for each column to match max height
+      const columnsWithScale = columnData.map(col => {
+        const fixedOverhead = col.numTeams * PANEL_OVERHEAD + col.vsCount * VS_HEIGHT;
+        const availableForChars = maxHeight - fixedOverhead;
+        const scaledCharSize = availableForChars / col.numChars;
+        const scaleFactor = Math.min(1, scaledCharSize / CHAR_SIZE); // Only scale down, not up
+        return { teams: col.teams, scaleFactor };
+      });
+
+      const rows = [columnsWithScale];
 
       return rows;
     };
 
     // Group teams into rows for multi-team layout
     const renderMultiTeamLayout = () => {
-      const rows = arrangeTeamsForCompactness(teams);
+      const rows = arrangeTeamsIntoColumns(teams);
 
       return (
         <>
@@ -879,29 +914,46 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     />
                   ))}
 
-                {rowTeams.map((teamData, colIndex) => {
-                  const list = splitFightTeamMembers(teamData.team);
-                  const key = String(teamData.originalIndex);
-                  return (
-                    <div
-                      key={key}
-                      className="fight-voting-panel-col"
-                      ref={(el) => {
-                        fightPanelColsRef.current[teamData.originalIndex] = el;
-                      }}
-                    >
-                      {renderTeamPanel(
-                        list,
-                        teamData.team,
-                        userVote === key,
-                        teamVotes[teamData.originalIndex] || 0,
-                        key,
-                        canVote,
-                        handleVote
-                      )}
-                    </div>
-                  );
-                })}
+                {rowTeams.map((columnData, colIndex) => (
+                  <div key={`col-${colIndex}`} className="multi-team-column">
+                    {columnData.teams.map((teamData, teamIndex) => {
+                      const list = splitFightTeamMembers(teamData.team);
+                      const key = String(teamData.originalIndex);
+                      return (
+                        <React.Fragment key={key}>
+                          {teamIndex > 0 && (
+                            <div className="fight-vertical-vs-in-column">
+                              <img
+                                className="fight-vs-vertical"
+                                src={`${process.env.PUBLIC_URL}/VS.png`}
+                                alt=""
+                                aria-hidden="true"
+                                draggable="false"
+                              />
+                            </div>
+                          )}
+                          <div
+                            className="fight-voting-panel-col"
+                            ref={(el) => {
+                              fightPanelColsRef.current[teamData.originalIndex] = el;
+                            }}
+                          >
+                            {renderTeamPanel(
+                              list,
+                              teamData.team,
+                              userVote === key,
+                              teamVotes[teamData.originalIndex] || 0,
+                              key,
+                              canVote,
+                              handleVote,
+                              columnData.scaleFactor
+                            )}
+                          </div>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                ))}
               </div>
               
               {/* Vertical VS between rows */}
