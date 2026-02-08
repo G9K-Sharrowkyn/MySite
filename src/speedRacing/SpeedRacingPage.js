@@ -205,12 +205,18 @@ const SpeedRacingPage = () => {
   const trackStyle = useMemo(() => {
     const { laneShiftPct, fovScale } = corridorMetrics;
     const motionBlurPx = Math.min(8, blurAmount).toFixed(2);
+    
+    // Floor scrolling based on distance (seamless loop every 200m)
+    const scrollOffset = (distance * 0.8) % 200;
+    const scrollPct = (scrollOffset / 200) * 100;
+    
     return {
       '--lane-shift-pct': `${laneShiftPct}%`,
       '--motion-blur': `${motionBlurPx}px`,
-      '--fov-scale': fovScale.toFixed(3)
+      '--fov-scale': fovScale.toFixed(3),
+      '--scroll-offset': `${scrollPct.toFixed(2)}%`
     };
-  }, [corridorMetrics, blurAmount]);
+  }, [corridorMetrics, blurAmount, distance]);
 
   const visibleItems = useMemo(() => {
     const start = Math.max(0, distance - 10);

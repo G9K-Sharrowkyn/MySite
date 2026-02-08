@@ -439,6 +439,49 @@
   );
   background: linear-gradient(180deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.04) 50%, transparent 80%);
   opacity: 0.65;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Scrolling floor textures - theme specific patterns */
+.floor-wall::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.25;
+  background-size: 100px 100px;
+  background-position: 0 var(--scroll-offset, 0%);
+  will-change: background-position;
+}
+
+.theme-canyon .floor-wall::before {
+  background-image: 
+    repeating-linear-gradient(45deg, 
+      transparent, transparent 10px,
+      rgba(139, 69, 19, 0.3) 10px, rgba(139, 69, 19, 0.3) 12px),
+    repeating-linear-gradient(-45deg,
+      transparent, transparent 15px,
+      rgba(160, 82, 45, 0.2) 15px, rgba(160, 82, 45, 0.2) 17px);
+}
+
+.theme-dune .floor-wall::before {
+  background-image:
+    repeating-linear-gradient(90deg,
+      transparent, transparent 8px,
+      rgba(218, 165, 32, 0.2) 8px, rgba(218, 165, 32, 0.2) 10px),
+    repeating-linear-gradient(180deg,
+      rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.1) 20px,
+      rgba(255, 224, 130, 0.15) 20px, rgba(255, 224, 130, 0.15) 40px);
+}
+
+.theme-cave .floor-wall::before {
+  background-image:
+    repeating-linear-gradient(60deg,
+      transparent, transparent 12px,
+      rgba(0, 198, 255, 0.25) 12px, rgba(0, 198, 255, 0.25) 14px),
+    repeating-linear-gradient(120deg,
+      transparent, transparent 15px,
+      rgba(124, 247, 255, 0.2) 15px, rgba(124, 247, 255, 0.2) 17px);
 }
 
 .ceiling-wall {
@@ -459,6 +502,39 @@
   );
   background: linear-gradient(90deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.05) 60%, transparent 85%);
   opacity: 0.6;
+  position: relative;
+  overflow: hidden;
+}
+
+.left-wall::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-size: 50px 80px;
+  background-position: 0 var(--scroll-offset, 0%);
+  will-change: background-position;
+}
+
+.theme-canyon .left-wall::before {
+  background-image:
+    repeating-linear-gradient(180deg,
+      rgba(101, 67, 33, 0.4), rgba(101, 67, 33, 0.4) 20px,
+      rgba(139, 69, 19, 0.3) 20px, rgba(139, 69, 19, 0.3) 40px);
+}
+
+.theme-dune .left-wall::before {
+  background-image:
+    repeating-linear-gradient(180deg,
+      rgba(218, 165, 32, 0.3), rgba(218, 165, 32, 0.3) 15px,
+      rgba(184, 134, 11, 0.25) 15px, rgba(184, 134, 11, 0.25) 30px);
+}
+
+.theme-cave .left-wall::before {
+  background-image:
+    repeating-linear-gradient(180deg,
+      rgba(0, 128, 255, 0.3), rgba(0, 128, 255, 0.3) 25px,
+      rgba(30, 144, 255, 0.2) 25px, rgba(30, 144, 255, 0.2) 50px);
 }
 
 .right-wall {
@@ -469,6 +545,39 @@
   );
   background: linear-gradient(270deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.05) 60%, transparent 85%);
   opacity: 0.6;
+  position: relative;
+  overflow: hidden;
+}
+
+.right-wall::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0.3;
+  background-size: 50px 80px;
+  background-position: 0 var(--scroll-offset, 0%);
+  will-change: background-position;
+}
+
+.theme-canyon .right-wall::before {
+  background-image:
+    repeating-linear-gradient(180deg,
+      rgba(101, 67, 33, 0.4), rgba(101, 67, 33, 0.4) 20px,
+      rgba(139, 69, 19, 0.3) 20px, rgba(139, 69, 19, 0.3) 40px);
+}
+
+.theme-dune .right-wall::before {
+  background-image:
+    repeating-linear-gradient(180deg,
+      rgba(218, 165, 32, 0.3), rgba(218, 165, 32, 0.3) 15px,
+      rgba(184, 134, 11, 0.25) 15px, rgba(184, 134, 11, 0.25) 30px);
+}
+
+.theme-cave .right-wall::before {
+  background-image:
+    repeating-linear-gradient(180deg,
+      rgba(0, 128, 255, 0.3), rgba(0, 128, 255, 0.3) 25px,
+      rgba(30, 144, 255, 0.2) 25px, rgba(30, 144, 255, 0.2) 50px);
 }
 
 .floor-motion {
