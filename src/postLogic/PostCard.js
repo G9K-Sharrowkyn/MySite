@@ -212,7 +212,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
         const positions = [];
         
-        // Horizontal VS icons (between panels in the same row)
+        // Only horizontal VS icons (between panels in the same row)
         rows.forEach((row) => {
           if (row.items.length < 2) return;
 
@@ -232,41 +232,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             });
           }
         });
-
-        // Vertical VS icons (between panels in different rows)
-        if (rows.length > 1) {
-          for (let rowIdx = 0; rowIdx < rows.length - 1; rowIdx++) {
-            const topRow = rows[rowIdx];
-            const bottomRow = rows[rowIdx + 1];
-            
-            // Get all panel positions in both rows sorted by left position
-            const topItems = topRow.items.slice().sort((a, b) => a.rect.left - b.rect.left);
-            const bottomItems = bottomRow.items.slice().sort((a, b) => a.rect.left - b.rect.left);
-            
-            // Place VS between vertically aligned panels
-            topItems.forEach(topItem => {
-              bottomItems.forEach(bottomItem => {
-                // Check if panels are roughly vertically aligned (within horizontal threshold)
-                const horizontalThreshold = 100; // px
-                const topCenterX = (topItem.rect.left + topItem.rect.right) / 2;
-                const bottomCenterX = (bottomItem.rect.left + bottomItem.rect.right) / 2;
-                
-                if (Math.abs(topCenterX - bottomCenterX) < horizontalThreshold) {
-                  const centerX = (topCenterX + bottomCenterX) / 2;
-                  // Place VS between vote stats of top row and characters of bottom row
-                  const topPanelBottom = topItem.rect.bottom; // Bottom of entire top panel (including vote button & stats)
-                  const bottomZoneTop = bottomItem.zoneRect.top; // Top of bottom team-zone (characters only)
-                  const centerY = (topPanelBottom + bottomZoneTop) / 2;
-                  
-                  positions.push({
-                    left: Math.round(centerX - containerRect.left),
-                    top: Math.round(centerY - containerRect.top)
-                  });
-                }
-              });
-            });
-          }
-        }
 
         setFightVsBetweenPositions(positions);
       });
@@ -910,10 +875,87 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
+    // Group teams into rows of 2 for multi-team layout
+    const renderMultiTeamLayout = () => {
+      const teamsPerRow = 2;
+      const teamRows = [];
+      for (let i = 0; i < teams.length; i += teamsPerRow) {
+        teamRows.push(teams.slice(i, i + teamsPerRow));
+      }
+
+      return (
+        <>
+          {teamRows.map((rowTeams, rowIndex) => (
+            <React.Fragment key={`row-${rowIndex}`}>
+              <div className="fight-voting-panels multi-team-row" ref={rowIndex === 0 ? fightPanelsRef : null}>
+                {isMultiTeam && rowIndex === 0 && fightVsBetweenPositions.length > 0 &&
+                  fightVsBetweenPositions.map((pos, index) => (
+                    <img
+                      key={`vs-between-${index}`}
+                      className="fight-vs-between-overlay"
+                      src={`${process.env.PUBLIC_URL}/VS.png`}
+                      alt=""
+                      aria-hidden="true"
+                      draggable="false"
+                      style={{
+                        left: `${pos.left}px`,
+                        top: `${pos.top}px`
+                      }}
+                    />
+                  ))}
+
+                {rowTeams.map((teamValue, colIndex) => {
+                  const globalIndex = rowIndex * teamsPerRow + colIndex;
+                  const list = splitFightTeamMembers(teamValue);
+                  const key = String(globalIndex);
+                  return (
+                    <div
+                      key={key}
+                      className="fight-voting-panel-col"
+                      ref={(el) => {
+                        fightPanelColsRef.current[globalIndex] = el;
+                      }}
+                    >
+                      {renderTeamPanel(
+                        list,
+                        teamValue,
+                        userVote === key,
+                        teamVotes[globalIndex] || 0,
+                        key,
+                        canVote,
+                        handleVote
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Vertical VS between rows */}
+              {rowIndex < teamRows.length - 1 && (
+                <div className="fight-vertical-vs-row">
+                  {rowTeams.map((_, colIndex) => (
+                    <div key={`vs-col-${colIndex}`} className="vertical-vs-container">
+                      <img
+                        className="fight-vs-vertical"
+                        src={`${process.env.PUBLIC_URL}/VS.png`}
+                        alt=""
+                        aria-hidden="true"
+                        draggable="false"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
+            </React.Fragment>
+          ))}
+        </>
+      );
+    };
+
     return (
       <div className="voting-section fight-voting" onClick={e => e.stopPropagation()}>
-        <div className="fight-voting-panels" ref={fightPanelsRef}>
-          {teamCount === 2 && teams[0] && teams[1] && (
+        {teamCount === 2 ? (
+          <div className="fight-voting-panels" ref={fightPanelsRef}>
             <img
               className="fight-vs-icon"
               src={`${process.env.PUBLIC_URL}/VS.png`}
@@ -921,48 +963,34 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               aria-hidden="true"
               draggable="false"
             />
-          )}
 
-          {isMultiTeam && fightVsBetweenPositions.length > 0 &&
-            fightVsBetweenPositions.map((pos, index) => (
-              <img
-                key={`vs-between-${index}`}
-                className="fight-vs-between-overlay"
-                src={`${process.env.PUBLIC_URL}/VS.png`}
-                alt=""
-                aria-hidden="true"
-                draggable="false"
-                style={{
-                  left: `${pos.left}px`,
-                  top: `${pos.top}px`
-                }}
-              />
-            ))}
-
-          {teams.map((teamValue, index) => {
-            const list = splitFightTeamMembers(teamValue);
-            const key = String(index);
-            return (
-              <div
-                key={key}
-                className="fight-voting-panel-col"
-                ref={(el) => {
-                  fightPanelColsRef.current[index] = el;
-                }}
-              >
-                {renderTeamPanel(
-                  list,
-                  teamValue,
-                  userVote === key,
-                  teamVotes[index] || 0,
-                  key,
-                  canVote,
-                  handleVote
-                )}
-              </div>
-            );
-          })}
-        </div>
+            {teams.map((teamValue, index) => {
+              const list = splitFightTeamMembers(teamValue);
+              const key = String(index);
+              return (
+                <div
+                  key={key}
+                  className="fight-voting-panel-col"
+                  ref={(el) => {
+                    fightPanelColsRef.current[index] = el;
+                  }}
+                >
+                  {renderTeamPanel(
+                    list,
+                    teamValue,
+                    userVote === key,
+                    teamVotes[index] || 0,
+                    key,
+                    canVote,
+                    handleVote
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          renderMultiTeamLayout()
+        )}
 
         {canVote && teamCount === 2 && (
           <div className={`fight-voting-buttons${userVote ? ' has-voted' : ''}`}>

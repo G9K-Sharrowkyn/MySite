@@ -2118,37 +2118,38 @@ body.dark-mode .post-card {
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
 }
 
-.fight-voting-panels.multi-team-strip {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
+/* Multi-team row layout */
+.fight-voting-panels.multi-team-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
-  padding-bottom: 6px;
-  align-items: stretch;
-  scroll-snap-type: x proximity;
-  -webkit-overflow-scrolling: touch;
+  align-items: start;
+  justify-content: center;
+  position: relative;
 }
 
-.fight-voting-panels.multi-team-strip .fight-voting-panel-col {
-  flex: 0 0 clamp(220px, 24vw, 310px);
-  scroll-snap-align: start;
+/* Vertical VS between rows */
+.fight-vertical-vs-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin: 16px 0;
 }
 
-.fight-voting-panels.multi-team-strip .fight-vs-between {
-  flex: 0 0 54px;
+.vertical-vs-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
+  min-height: 60px;
 }
 
-.fight-voting-panels.multi-team-strip .fight-vs-between-icon {
-  width: 40px;
+.fight-vs-vertical {
+  width: clamp(50px, 7vw, 80px);
   height: auto;
   opacity: 0.92;
-  filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45));
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.4));
 }
 
 .fight-voting-panel-col {
@@ -2266,18 +2267,6 @@ body.dark-mode .post-card {
     top: 50%;
   }
 
-  .fight-voting-panels.multi-team-strip {
-    gap: 8px;
-  }
-
-  .fight-voting-panels.multi-team-strip .fight-vs-between {
-    flex-basis: 48px;
-  }
-
-  .fight-voting-panels.multi-team-strip .fight-vs-between-icon {
-    width: 36px;
-  }
-
   .fight-voting-panels .team-zone {
     padding: 0.65rem;
     border-radius: 14px;
@@ -2315,10 +2304,6 @@ body.dark-mode .post-card {
   .fight-voting-panels .fight-vs-icon {
     width: 44px;
     top: 49%;
-  }
-
-  .fight-voting-panels.multi-team-strip .fight-voting-panel-col {
-    flex-basis: min(82vw, 320px);
   }
 
   .fight-voting-panels .team-zone {
