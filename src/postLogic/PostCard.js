@@ -738,8 +738,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     const votesHidden = Boolean(post.fight?.votesHidden);
     const totalVotes = votesHidden ? 0 : getTotalVotes();
     const votePercentage = votesHidden ? 0 : getVotePercentage(votes, totalVotes);
-    const baseSize = 280;
-    const scaledSize = Math.round(baseSize * scaleFactor);
     
     return (
       <div className="team-column">
@@ -749,7 +747,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             return (
               <div key={idx} className="character-panel">
                 <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
-                <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
+                <div 
+                  className={`character-frame${!isVoted ? ' not-chosen' : ''}`}
+                  style={scaleFactor !== 1 ? { transform: `scale(${scaleFactor})` } : undefined}
+                >
                   <img
                     {...getOptimizedImageProps(
                       replacePlaceholderUrl(char?.image) || placeholderImages.character,
@@ -762,12 +763,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     )}
                     alt={name}
                     className="team-image-large"
-                    style={{
-                      width: `${scaledSize}px`,
-                      height: `${scaledSize}px`,
-                      maxWidth: `${scaledSize}px`,
-                      maxHeight: `${scaledSize}px`
-                    }}
                   />
                 </div>
               </div>
