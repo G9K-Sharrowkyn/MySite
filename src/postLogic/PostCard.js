@@ -869,15 +869,15 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         return { teams: colTeams, totalHeight, numChars, numTeams, vsCount };
       });
 
-      // Find max height across all columns
-      const maxHeight = Math.max(...columnData.map(c => c.totalHeight));
+      // Find MIN height across all columns (we scale taller columns DOWN to match)
+      const minHeight = Math.min(...columnData.map(c => c.totalHeight));
 
-      // Calculate scale factor for each column to match max height
+      // Calculate scale factor for each column to match min height
       const columnsWithScale = columnData.map(col => {
         const fixedOverhead = col.numTeams * PANEL_OVERHEAD + col.vsCount * VS_HEIGHT;
-        const availableForChars = maxHeight - fixedOverhead;
-        const scaledCharSize = availableForChars / col.numChars;
-        const scaleFactor = Math.min(1, scaledCharSize / CHAR_SIZE); // Only scale down, not up
+        const currentCharHeight = col.numChars * CHAR_SIZE;
+        const targetCharHeight = minHeight - fixedOverhead;
+        const scaleFactor = Math.max(0.5, Math.min(1, targetCharHeight / currentCharHeight)); // Scale down only, min 50%
         return { teams: col.teams, scaleFactor };
       });
 
