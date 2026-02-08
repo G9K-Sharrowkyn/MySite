@@ -813,69 +813,130 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
-    // Hybrid layout: rows for balanced teams, columns for imbalanced
+    // Intelligent grouping: match teams by size, only scale remainders
     const arrangeTeamsIntoRows = (teams) => {
       const teamData = teams.map((team, originalIndex) => {
         const members = splitFightTeamMembers(team);
         return { originalIndex, team, size: members.length };
       });
 
-      // Check if sizes are balanced (max difference <= 1)
-      const sizes = teamData.map(td => td.size);
-      const minSize = Math.min(...sizes);
-      const maxSize = Math.max(...sizes);
-      const isBalanced = (maxSize - minSize) <= 1;
+      // Group teams by size
+      const sizeGroups = {};
+      teamData.forEach(td => {
+        if (!sizeGroups[td.size]) sizeGroups[td.size] = [];
+        sizeGroups[td.size].push(td);
+      });
 
-      if (isBalanced) {
-        // Simple row layout for balanced teams
-        const sorted = [...teamData].sort((a, b) => b.size - a.size);
-        const rows = [];
-        for (let i = 0; i < sorted.length; i += 2) {
-          const row = [sorted[i]];
-          if (i + 1 < sorted.length) {
-            row.push(sorted[i + 1]);
+      const normalRows = [];
+      const remainders = [];
+
+      // For each size group, pair teams normally, keep odd ones as remainders
+      Object.values(sizeGroups).forEach(group => {
+        for (let i = 0; i < group.length; i += 2) {
+          if (i + 1 < group.length) {
+            // Pair: both same size, normal row
+            normalRows.push([group[i], group[i + 1]]);
+          } else {
+            // Odd one out: add to remainders
+            remainders.push(group[i]);
           }
-          rows.push(row);
         }
-        return rows;
+      });
+
+      // If no remainders, return normal rows
+      if (remainders.length === 0) {
+        return normalRows;
       }
 
-      // For imbalanced teams: bin-pack into columns
-      const sorted = [...teamData].sort((a, b) => b.size - a.size);
-      const columns = [[], []];
-      const columnCharCounts = [0, 0];
+      // If only remainders (all different sizes), bin-pack with scaling
+      if (normalRows.length === 0 && remainders.length > 0) {
+        if (remainders.length === 1) {
+          // Single team
+          return [[remainders[0]]];
+        }
+        
+        if (remainders.length === 2) {
+          // Two teams of different sizes - simple side by side
+          return [[remainders[0], remainders[1]]];
+        }
 
-      sorted.forEach(td => {
-        const targetCol = columnCharCounts[0] <= columnCharCounts[1] ? 0 : 1;
-        columns[targetCol].push(td);
-        columnCharCounts[targetCol] += td.size;
-      });
+        // 3+ teams with different sizes: bin-pack into columns
+        const sorted = [...remainders].sort((a, b) => b.size - a.size);
+        const columns = [[], []];
+        const columnCharCounts = [0, 0];
 
-      // Calculate proportional scaling
-      const BASE_SIZE = 280;
-      const OVERHEAD_PER_TEAM = 140; // button + stats + padding
-      const VS_HEIGHT = 60;
+        sorted.forEach(td => {
+          const targetCol = columnCharCounts[0] <= columnCharCounts[1] ? 0 : 1;
+          columns[targetCol].push(td);
+          columnCharCounts[targetCol] += td.size;
+        });
 
-      const columnInfo = columns.map(col => {
-        const numTeams = col.length;
-        const numChars = col.reduce((sum, t) => sum + t.size, 0);
-        const vsCount = Math.max(0, numTeams - 1);
-        const height = numChars * BASE_SIZE + numTeams * OVERHEAD_PER_TEAM + vsCount * VS_HEIGHT;
-        return { teams: col, numChars, height, vsCount, numTeams };
-      });
+        // Calculate proportional scaling
+        const BASE_SIZE = 280;
+        const OVERHEAD_PER_TEAM = 140;
+        const VS_HEIGHT = 60;
 
-      const minHeight = Math.min(...columnInfo.map(c => c.height));
+        const columnInfo = columns.map(col => {
+          const numTeams = col.length;
+          const numChars = col.reduce((sum, t) => sum + t.size, 0);
+          const vsCount = Math.max(0, numTeams - 1);
+          const height = numChars * BASE_SIZE + numTeams * OVERHEAD_PER_TEAM + vsCount * VS_HEIGHT;
+          return { teams: col, numChars, height, vsCount, numTeams };
+        });
 
-      // Calculate scaled size for each column
-      const scaledColumns = columnInfo.map(col => {
-        const fixedHeight = col.numTeams * OVERHEAD_PER_TEAM + col.vsCount * VS_HEIGHT;
-        const availableForChars = minHeight - fixedHeight;
-        const charSize = Math.floor(availableForChars / col.numChars);
-        return { teams: col.teams, charSize: Math.max(180, Math.min(BASE_SIZE, charSize)) };
-      });
+        const minHeight = Math.min(...columnInfo.map(c => c.height));
 
-      // Return as single row with column structure
-      return [scaledColumns];
+        const scaledColumns = columnInfo.map(col => {
+          const fixedHeight = col.numTeams * OVERHEAD_PER_TEAM + col.vsCount * VS_HEIGHT;
+          const availableForChars = minHeight - fixedHeight;
+          const charSize = Math.floor(availableForChars / col.numChars);
+          return { teams: col.teams, charSize: Math.max(180, Math.min(BASE_SIZE, charSize)) };
+        });
+
+        return [...normalRows, scaledColumns];
+      }
+
+      // Mix: some normal rows + remainders
+      // Remainders go in last row with scaling if needed
+      if (remainders.length === 1) {
+        normalRows.push([remainders[0]]);
+      } else {
+        // Multiple remainders: bin-pack with scaling
+        const sorted = [...remainders].sort((a, b) => b.size - a.size);
+        const columns = [[], []];
+        const columnCharCounts = [0, 0];
+
+        sorted.forEach(td => {
+          const targetCol = columnCharCounts[0] <= columnCharCounts[1] ? 0 : 1;
+          columns[targetCol].push(td);
+          columnCharCounts[targetCol] += td.size;
+        });
+
+        const BASE_SIZE = 280;
+        const OVERHEAD_PER_TEAM = 140;
+        const VS_HEIGHT = 60;
+
+        const columnInfo = columns.map(col => {
+          const numTeams = col.length;
+          const numChars = col.reduce((sum, t) => sum + t.size, 0);
+          const vsCount = Math.max(0, numTeams - 1);
+          const height = numChars * BASE_SIZE + numTeams * OVERHEAD_PER_TEAM + vsCount * VS_HEIGHT;
+          return { teams: col, numChars, height, vsCount, numTeams };
+        });
+
+        const minHeight = Math.min(...columnInfo.map(c => c.height));
+
+        const scaledColumns = columnInfo.map(col => {
+          const fixedHeight = col.numTeams * OVERHEAD_PER_TEAM + col.vsCount * VS_HEIGHT;
+          const availableForChars = minHeight - fixedHeight;
+          const charSize = Math.floor(availableForChars / col.numChars);
+          return { teams: col.teams, charSize: Math.max(180, Math.min(BASE_SIZE, charSize)) };
+        });
+
+        normalRows.push(scaledColumns);
+      }
+
+      return normalRows;
     };
 
     // Group teams into rows for multi-team layout
