@@ -4,7 +4,6 @@ const { execSync } = require('child_process');
 
 const repoRoot = path.join(__dirname, '..');
 const outPath = path.join(repoRoot, 'src', 'buildInfo.generated.js');
-const packageJsonPath = path.join(repoRoot, 'package.json');
 
 const safeExec = (cmd) => {
   try {
@@ -15,22 +14,16 @@ const safeExec = (cmd) => {
 };
 
 const main = () => {
+  const githubRun = String(process.env.GITHUB_RUN_NUMBER || '').trim();
   const githubSha = String(process.env.GITHUB_SHA || '').trim();
 
   const revCount = safeExec('git rev-list --count HEAD');
   const shortSha = safeExec('git rev-parse --short HEAD') || (githubSha ? githubSha.slice(0, 7) : '');
 
-  const buildNumber = Number(revCount || 0);
+  const numeric = Number(githubRun || revCount || 0);
+  const buildNumber = Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
 
-  // Read version from package.json
-  let version = 'v0.0.0';
-  try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    version = packageJson.version.startsWith('v') ? packageJson.version : `v${packageJson.version}`;
-  } catch (err) {
-    console.error('Failed to read package.json version:', err.message);
-  }
-
+  const version = `v0.${buildNumber}`;
   const builtAt = new Date().toISOString();
 
   const contents = `// Generated at build time. Do not edit.
