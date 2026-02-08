@@ -821,12 +821,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
-    // Calculate visual height of a team (number of character slots vertically)
-    const getTeamHeight = (teamSize) => {
-      return teamSize; // Each character is one unit of height when stacked vertically
-    };
-
-    // Smart layout - group teams by similar size to minimize total height
+    // Smart layout - bin-packing algorithm for balanced column heights
     const arrangeTeamsIntoColumns = (teams) => {
       // For 2 or fewer teams, use simple side-by-side layout
       if (teams.length <= 2) {
