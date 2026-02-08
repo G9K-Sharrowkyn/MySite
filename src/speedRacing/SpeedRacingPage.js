@@ -88,7 +88,20 @@ const generateItems = (track) => {
     });
   }
 
-  return { obstacles, boosts, powerups };
+  // Spatial partitioning: bin items into 50m segments for O(1) collision detection
+  const SEGMENT_SIZE = 50;
+  const segments = {};
+  
+  [...obstacles, ...boosts, ...powerups].forEach(item => {
+    const segmentId = Math.floor(item.position / SEGMENT_SIZE);
+    if (!segments[segmentId]) segments[segmentId] = { obstacles: [], boosts: [], powerups: [] };
+    
+    if (item.id.startsWith('ob-')) segments[segmentId].obstacles.push(item);
+    else if (item.id.startsWith('bo-')) segments[segmentId].boosts.push(item);
+    else if (item.id.startsWith('pw-')) segments[segmentId].powerups.push(item);
+  });
+
+  return { obstacles, boosts, powerups, segments };
 };
 
 const SpeedRacingPage = () => {
@@ -125,10 +138,15 @@ const SpeedRacingPage = () => {
   // Particle effects
   const [particles, setParticles] = useState([]);
   const particleIdRef = useRef(0);
+  const particlePoolRef = useRef([]); // Object pool for reuse
   
   // Environmental effects
   const [envParticles, setEnvParticles] = useState([]);
   const envParticleIdRef = useRef(0);
+  
+  // Screen effects
+  const [boostWarp, setBoostWarp] = useState(false);
+  const [collisionRipple, setCollisionRipple] = useState(null);
 
   const speedRef = useRef(speed);
   const lastSpeedRef = useRef(speed);
@@ -320,28 +338,45 @@ const SpeedRacingPage = () => {
     const baseLeft = LANE_POSITIONS[fromLane];
     
     for (let i = 0; i < count; i++) {
-      const id = particleIdRef.current++;
-      const angle = (Math.random() - 0.5) * 120; // -60 to +60 degrees
-      const speed = 0.5 + Math.random() * 1.5; // Random speed
-      const size = type === 'boost' ? 8 + Math.random() * 8 : 6 + Math.random() * 6;
+      // Try to reuse from pool first
+      let particle = particlePoolRef.current.pop();
       
-      newParticles.push({
-        id: `particle-${type}-${id}`,
-        type,
-        left: baseLeft + (Math.random() - 0.5) * 10,
-        top: 85,
-        angle,
-        speed,
-        size,
-        lifetime: 0
-      });
+      if (!particle) {
+        // Create new if pool empty
+        particle = {
+          id: `particle-${type}-${particleIdRef.current++}`,
+          type,
+          left: 0,
+          top: 0,
+          angle: 0,
+          speed: 1,
+          size: 8,
+          lifetime: 0
+        };
+      }
+      
+      // Reset properties
+      particle.type = type;
+      particle.left = baseLeft + (Math.random() - 0.5) * 10;
+      particle.top = 85;
+      particle.angle = (Math.random() - 0.5) * 120;
+      particle.speed = 0.5 + Math.random() * 1.5;
+      particle.size = type === 'boost' ? 8 + Math.random() * 8 : 6 + Math.random() * 6;
+      particle.lifetime = 0;
+      
+      newParticles.push(particle);
     }
     
     setParticles(prev => [...prev, ...newParticles]);
     
-    // Auto-cleanup after animation
+    // Return to pool after animation
     setTimeout(() => {
-      setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+      setParticles(prev => {
+        const remaining = prev.filter(p => !newParticles.find(np => np.id === p.id));
+        // Add used particles back to pool
+        particlePoolRef.current.push(...newParticles.slice(0, Math.min(20 - particlePoolRef.current.length, newParticles.length)));
+        return remaining;
+      });
     }, 1000);
   }, []);
 
@@ -429,6 +464,10 @@ const SpeedRacingPage = () => {
     // Spawn collision debris particles
     spawnParticles('debris', 8, playerLane);
     
+    // Trigger collision ripple effect
+    setCollisionRipple({ x: 50, y: 85, timestamp: performance.now() });
+    setTimeout(() => setCollisionRipple(null), 800);
+    
     setSpeed((prev) => {
       const slowed = Math.max(track.baseSpeed - 6, prev * 0.65);
       speedRef.current = slowed;
@@ -445,6 +484,10 @@ const SpeedRacingPage = () => {
   const handleBoostPickup = useCallback(() => {
     // Spawn boost trail particles
     spawnParticles('boost', 6, playerLane);
+    
+    // Trigger fisheye warp effect
+    setBoostWarp(true);
+    setTimeout(() => setBoostWarp(false), 300);
     
     const comboBonus = combo > 0 ? combo * 1.5 : 0;
     setSpeed((prev) => {
@@ -533,35 +576,56 @@ const SpeedRacingPage = () => {
       const segmentStart = prevDistance;
       const segmentEnd = nextDistance;
 
-      // Check collisions
-      const obstacleHit = items.obstacles.find(
-        (item) =>
-          item.lane === playerLaneRef.current &&
-          item.position >= segmentStart &&
-          item.position < segmentEnd
-      );
-
-      // Check boosts (with magnet power-up range)
-      const hasMagnet = activePowerups.find(p => p.type === 'magnet');
-      const boostHit = items.boosts.find(
-        (item) => {
-          const inLane = hasMagnet ? 
-            Math.abs(item.lane - playerLaneRef.current) <= 1 : 
-            item.lane === playerLaneRef.current;
-          return inLane &&
-            item.position >= segmentStart &&
-            item.position < segmentEnd;
+      // Spatial partitioning: check only relevant segments (O(1) instead of O(n))
+      const SEGMENT_SIZE = 50;
+      const currentSegment = Math.floor(prevDistance / SEGMENT_SIZE);
+      const nextSegment = Math.floor(nextDistance / SEGMENT_SIZE);
+      
+      let obstacleHit = null;
+      let boostHit = null;
+      let powerupHit = null;
+      
+      // Check current and next segments only
+      for (let seg = currentSegment; seg <= nextSegment + 1; seg++) {
+        const segment = items.segments?.[seg];
+        if (!segment) continue;
+        
+        // Check obstacles
+        if (!obstacleHit) {
+          obstacleHit = segment.obstacles.find(
+            (item) =>
+              item.lane === playerLaneRef.current &&
+              item.position >= segmentStart &&
+              item.position < segmentEnd
+          );
         }
-      );
-
-      // Check power-ups
-      const powerupHit = items.powerups.find(
-        (item) =>
-          item.lane === playerLaneRef.current &&
-          item.position >= segmentStart &&
-          item.position < segmentEnd &&
-          !collectedPowerups.includes(item.id)
-      );
+        
+        // Check boosts (with magnet power-up range)
+        if (!boostHit) {
+          const hasMagnet = activePowerups.find(p => p.type === 'magnet');
+          boostHit = segment.boosts.find(
+            (item) => {
+              const inLane = hasMagnet ? 
+                Math.abs(item.lane - playerLaneRef.current) <= 1 : 
+                item.lane === playerLaneRef.current;
+              return inLane &&
+                item.position >= segmentStart &&
+                item.position < segmentEnd;
+            }
+          );
+        }
+        
+        // Check power-ups
+        if (!powerupHit) {
+          powerupHit = segment.powerups.find(
+            (item) =>
+              item.lane === playerLaneRef.current &&
+              item.position >= segmentStart &&
+              item.position < segmentEnd &&
+              !collectedPowerups.includes(item.id)
+          );
+        }
+      }
 
       if (obstacleHit) {
         handleCollision();
@@ -798,7 +862,7 @@ const SpeedRacingPage = () => {
       </div>
       <div className="speed-racing-stage">
         <div
-          className={`speed-track theme-${track.theme} ${screenShake ? 'shake' : ''}`}
+          className={`speed-track theme-${track.theme} ${screenShake ? 'shake' : ''} ${boostWarp ? 'boost-warp' : ''}`}
           style={trackStyle}
           onClick={handleTrackClick}
         >
@@ -904,6 +968,17 @@ const SpeedRacingPage = () => {
         </svg>
         <div className="track-overlay" />
         <div className="vanish-point" />
+        
+        {/* Collision ripple effect */}
+        {collisionRipple && (
+          <div
+            className="collision-ripple"
+            style={{
+              left: `${collisionRipple.x}%`,
+              top: `${collisionRipple.y}%`
+            }}
+          />
+        )}
         
         {/* Environmental particles */}
         {envParticles.map((particle) => (
