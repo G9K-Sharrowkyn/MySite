@@ -437,8 +437,8 @@
     var(--front-right) 100%,
     var(--vanish-x) var(--vanish-y)
   );
-  background: linear-gradient(180deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.04) 50%, transparent 80%);
-  opacity: 0.65;
+  background: rgba(5, 15, 25, 0.3);
+  opacity: 1;
   position: relative;
   overflow: hidden;
 }
@@ -449,13 +449,13 @@
   position: absolute;
   inset: 0;
   background-image: url('./assets/road.png');
-  background-size: 400px auto;
+  background-size: 300px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
-  opacity: 0.85;
+  opacity: 1;
   will-change: background-position;
-  z-index: 1;
-  filter: brightness(0.9);
+  z-index: 2;
+  filter: brightness(1.4) contrast(1.2);
 }
 
 .ceiling-wall {
@@ -464,8 +464,8 @@
     var(--front-right) 0%,
     var(--vanish-x) var(--vanish-y)
   );
-  background: linear-gradient(0deg, rgba(0, 198, 255, 0.18), rgba(0, 198, 255, 0.04) 50%, transparent 80%);
-  opacity: 0.55;
+  background: rgba(5, 15, 25, 0.2);
+  opacity: 1;
   position: relative;
   overflow: hidden;
 }
@@ -475,13 +475,13 @@
   position: absolute;
   inset: 0;
   background-image: url('./assets/rock.png');
-  background-size: 300px auto;
+  background-size: 250px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
-  opacity: 0.4;
+  opacity: 0.8;
   will-change: background-position;
-  z-index: 1;
-  filter: brightness(0.6);
+  z-index: 2;
+  filter: brightness(1.1) contrast(1.2);
 }
 
 .left-wall {
@@ -490,8 +490,8 @@
     var(--vanish-x) var(--vanish-y),
     var(--front-left) 100%
   );
-  background: linear-gradient(90deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.05) 60%, transparent 85%);
-  opacity: 0.6;
+  background: rgba(5, 15, 25, 0.2);
+  opacity: 1;
   position: relative;
   overflow: hidden;
 }
@@ -501,13 +501,13 @@
   position: absolute;
   inset: 0;
   background-image: url('./assets/rock.png');
-  background-size: 250px auto;
+  background-size: 200px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
-  opacity: 0.6;
+  opacity: 0.9;
   will-change: background-position;
-  z-index: 1;
-  filter: brightness(0.7);
+  z-index: 2;
+  filter: brightness(1.2) contrast(1.2);
 }
 
 .right-wall {
@@ -516,8 +516,8 @@
     var(--vanish-x) var(--vanish-y),
     var(--front-right) 100%,
   );
-  background: linear-gradient(270deg, rgba(0, 198, 255, 0.22), rgba(0, 198, 255, 0.05) 60%, transparent 85%);
-  opacity: 0.6;
+  background: rgba(5, 15, 25, 0.2);
+  opacity: 1;
   position: relative;
   overflow: hidden;
 }
@@ -527,13 +527,13 @@
   position: absolute;
   inset: 0;
   background-image: url('./assets/rock.png');
-  background-size: 250px auto;
+  background-size: 200px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
-  opacity: 0.6;
+  opacity: 0.9;
   will-change: background-position;
-  z-index: 1;
-  filter: brightness(0.7);
+  z-index: 2;
+  filter: brightness(1.2) contrast(1.2);
 }
 
 .floor-motion {
@@ -626,7 +626,7 @@
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  filter: drop-shadow(0 0 12px rgba(0, 198, 255, 0.6));
+  filter: drop-shadow(0 0 16px rgba(0, 198, 255, 0.8)) brightness(1.3);
 }
 
 .track-items {
