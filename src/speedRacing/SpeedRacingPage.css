@@ -448,40 +448,41 @@
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.25;
-  background-size: 100px 100px;
+  opacity: 0.6;
+  background-size: 60px 60px;
   background-position: 0 var(--scroll-offset, 0%);
   will-change: background-position;
+  z-index: 1;
 }
 
 .theme-canyon .floor-wall::before {
   background-image: 
     repeating-linear-gradient(45deg, 
-      transparent, transparent 10px,
-      rgba(139, 69, 19, 0.3) 10px, rgba(139, 69, 19, 0.3) 12px),
+      transparent, transparent 8px,
+      rgba(139, 69, 19, 0.7) 8px, rgba(139, 69, 19, 0.7) 10px),
     repeating-linear-gradient(-45deg,
-      transparent, transparent 15px,
-      rgba(160, 82, 45, 0.2) 15px, rgba(160, 82, 45, 0.2) 17px);
+      transparent, transparent 10px,
+      rgba(160, 82, 45, 0.6) 10px, rgba(160, 82, 45, 0.6) 12px);
 }
 
 .theme-dune .floor-wall::before {
   background-image:
     repeating-linear-gradient(90deg,
-      transparent, transparent 8px,
-      rgba(218, 165, 32, 0.2) 8px, rgba(218, 165, 32, 0.2) 10px),
+      transparent, transparent 6px,
+      rgba(218, 165, 32, 0.6) 6px, rgba(218, 165, 32, 0.6) 8px),
     repeating-linear-gradient(180deg,
-      rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.1) 20px,
-      rgba(255, 224, 130, 0.15) 20px, rgba(255, 224, 130, 0.15) 40px);
+      rgba(255, 193, 7, 0.5), rgba(255, 193, 7, 0.5) 15px,
+      rgba(255, 224, 130, 0.4) 15px, rgba(255, 224, 130, 0.4) 30px);
 }
 
 .theme-cave .floor-wall::before {
   background-image:
     repeating-linear-gradient(60deg,
-      transparent, transparent 12px,
-      rgba(0, 198, 255, 0.25) 12px, rgba(0, 198, 255, 0.25) 14px),
+      transparent, transparent 9px,
+      rgba(0, 198, 255, 0.7) 9px, rgba(0, 198, 255, 0.7) 11px),
     repeating-linear-gradient(120deg,
-      transparent, transparent 15px,
-      rgba(124, 247, 255, 0.2) 15px, rgba(124, 247, 255, 0.2) 17px);
+      transparent, transparent 12px,
+      rgba(124, 247, 255, 0.6) 12px, rgba(124, 247, 255, 0.6) 14px);
 }
 
 .ceiling-wall {
@@ -510,31 +511,32 @@
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.3;
-  background-size: 50px 80px;
+  opacity: 0.55;
+  background-size: 40px 60px;
   background-position: 0 var(--scroll-offset, 0%);
   will-change: background-position;
+  z-index: 1;
 }
 
 .theme-canyon .left-wall::before {
   background-image:
     repeating-linear-gradient(180deg,
-      rgba(101, 67, 33, 0.4), rgba(101, 67, 33, 0.4) 20px,
-      rgba(139, 69, 19, 0.3) 20px, rgba(139, 69, 19, 0.3) 40px);
+      rgba(101, 67, 33, 0.8), rgba(101, 67, 33, 0.8) 15px,
+      rgba(139, 69, 19, 0.6) 15px, rgba(139, 69, 19, 0.6) 30px);
 }
 
 .theme-dune .left-wall::before {
   background-image:
     repeating-linear-gradient(180deg,
-      rgba(218, 165, 32, 0.3), rgba(218, 165, 32, 0.3) 15px,
-      rgba(184, 134, 11, 0.25) 15px, rgba(184, 134, 11, 0.25) 30px);
+      rgba(218, 165, 32, 0.7), rgba(218, 165, 32, 0.7) 12px,
+      rgba(184, 134, 11, 0.55) 12px, rgba(184, 134, 11, 0.55) 24px);
 }
 
 .theme-cave .left-wall::before {
   background-image:
     repeating-linear-gradient(180deg,
-      rgba(0, 128, 255, 0.3), rgba(0, 128, 255, 0.3) 25px,
-      rgba(30, 144, 255, 0.2) 25px, rgba(30, 144, 255, 0.2) 50px);
+      rgba(0, 128, 255, 0.7), rgba(0, 128, 255, 0.7) 18px,
+      rgba(30, 144, 255, 0.6) 18px, rgba(30, 144, 255, 0.6) 36px);
 }
 
 .right-wall {
@@ -553,31 +555,32 @@
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.3;
-  background-size: 50px 80px;
+  opacity: 0.55;
+  background-size: 40px 60px;
   background-position: 0 var(--scroll-offset, 0%);
   will-change: background-position;
+  z-index: 1;
 }
 
 .theme-canyon .right-wall::before {
   background-image:
     repeating-linear-gradient(180deg,
-      rgba(101, 67, 33, 0.4), rgba(101, 67, 33, 0.4) 20px,
-      rgba(139, 69, 19, 0.3) 20px, rgba(139, 69, 19, 0.3) 40px);
+      rgba(101, 67, 33, 0.8), rgba(101, 67, 33, 0.8) 15px,
+      rgba(139, 69, 19, 0.6) 15px, rgba(139, 69, 19, 0.6) 30px);
 }
 
 .theme-dune .right-wall::before {
   background-image:
     repeating-linear-gradient(180deg,
-      rgba(218, 165, 32, 0.3), rgba(218, 165, 32, 0.3) 15px,
-      rgba(184, 134, 11, 0.25) 15px, rgba(184, 134, 11, 0.25) 30px);
+      rgba(218, 165, 32, 0.7), rgba(218, 165, 32, 0.7) 12px,
+      rgba(184, 134, 11, 0.55) 12px, rgba(184, 134, 11, 0.55) 24px);
 }
 
 .theme-cave .right-wall::before {
   background-image:
     repeating-linear-gradient(180deg,
-      rgba(0, 128, 255, 0.3), rgba(0, 128, 255, 0.3) 25px,
-      rgba(30, 144, 255, 0.2) 25px, rgba(30, 144, 255, 0.2) 50px);
+      rgba(0, 128, 255, 0.7), rgba(0, 128, 255, 0.7) 18px,
+      rgba(30, 144, 255, 0.6) 18px, rgba(30, 144, 255, 0.6) 36px);
 }
 
 .floor-motion {
