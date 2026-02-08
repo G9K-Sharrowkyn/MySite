@@ -259,36 +259,6 @@ const SpeedRacingPage = () => {
     ].filter(Boolean);
   }, [corridorMetrics, distance, items]);
 
-  const floorLines = useMemo(() => {
-    const { laneShiftPct } = corridorMetrics;
-    const vanishX = 50;
-    const vanishY = 50;
-    const frontLeft = laneShiftPct;
-    const frontRight = 100 + laneShiftPct;
-    const lineCount = 16;
-    const scroll = (distance * 0.06) % 1;
-    const lines = [];
-
-    for (let i = 0; i < lineCount; i += 1) {
-      const t = (i / lineCount + scroll) % 1;
-      const depth = t * t;
-      const left = vanishX + (frontLeft - vanishX) * depth;
-      const right = vanishX + (frontRight - vanishX) * depth;
-      const top = vanishY + (100 - vanishY) * depth;
-      const opacity = 0.1 + depth * 0.45;
-
-      lines.push({
-        id: `line-${i}`,
-        left: `${left}%`,
-        width: `${right - left}%`,
-        top: `${top}%`,
-        opacity
-      });
-    }
-
-    return lines;
-  }, [corridorMetrics, distance]);
-
   const laneGuides = useMemo(() => {
     const { laneShiftPct } = corridorMetrics;
     return LANE_POSITIONS.map((lanePct, index) => ({
@@ -296,37 +266,6 @@ const SpeedRacingPage = () => {
       x2: lanePct + laneShiftPct
     }));
   }, [corridorMetrics]);
-
-  // Speed lines for motion effect
-  const speedLines = useMemo(() => {
-    if (gameState !== 'running') return [];
-    
-    const speedRatio = speed / track.maxSpeed;
-    if (speedRatio < 0.3) return []; // Only show at 30%+ speed
-    
-    const lineCount = Math.floor(20 + speedRatio * 10); // 20-30 lines
-    const scroll = (distance * 0.15) % 1;
-    const lines = [];
-    
-    for (let i = 0; i < lineCount; i++) {
-      const angle = (i / lineCount) * 360;
-      const lifecycle = ((i / lineCount) + scroll) % 1;
-      const length = 40 + lifecycle * 40; // 40-80px
-      const opacity = (1 - lifecycle) * speedRatio * 0.6;
-      
-      if (opacity < 0.05) continue;
-      
-      lines.push({
-        id: `speed-line-${i}`,
-        angle,
-        length,
-        opacity,
-        width: 2 + speedRatio * 2 // 2-4px
-      });
-    }
-    
-    return lines;
-  }, [distance, speed, track.maxSpeed, gameState]);
 
   const addComboAction = useCallback((actionType) => {
     const now = performance.now();
@@ -931,47 +870,11 @@ const SpeedRacingPage = () => {
             </div>
           )}
 
-        {/* Parallax depth layers */}
-        <div className={`parallax layer background theme-${track.theme}`} />
-        <div className="parallax layer stars" />
-        <div className={`parallax layer texture theme-${track.theme}`} />
-        <div className={`parallax layer foreground theme-${track.theme}`} />
-        
-        {/* Speed lines for motion sensation */}
-        <div className="speed-lines">
-          {speedLines.map((line) => (
-            <div
-              key={line.id}
-              className="speed-line"
-              style={{
-                transform: `rotate(${line.angle}deg) translateX(-50%)`,
-                height: `${line.length}px`,
-                width: `${line.width}px`,
-                opacity: line.opacity
-              }}
-            />
-          ))}
-        </div>
-        
         <div className="corridor">
           <div className="corridor-wall ceiling-wall" />
           <div className="corridor-wall floor-wall" />
           <div className="corridor-wall left-wall" />
           <div className="corridor-wall right-wall" />
-          <div className="floor-motion">
-            {floorLines.map((line) => (
-              <div
-                key={line.id}
-                className="floor-line"
-                style={{
-                  top: line.top,
-                  left: line.left,
-                  width: line.width,
-                  opacity: line.opacity
-                }}
-              />
-            ))}
-          </div>
         </div>
         <svg className="lane-guides" viewBox="0 0 100 100" preserveAspectRatio="none">
           {laneGuides.map((guide) => (
