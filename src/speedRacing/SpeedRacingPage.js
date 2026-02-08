@@ -1005,9 +1005,7 @@ const SpeedRacingPage = () => {
           className={`racer${isDrifting ? ' drifting' : ''}${driftDirection < 0 ? ' drift-left' : driftDirection > 0 ? ' drift-right' : ''}`} 
           style={{ left: `${LANE_POSITIONS[playerLane]}%` }}
         >
-          <div className="racer-body">
-            <span className="racer-glow" />
-          </div>
+          <div className="racer-body" />
         </div>
         
         {/* Boost and collision particles */}

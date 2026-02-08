@@ -443,46 +443,19 @@
   overflow: hidden;
 }
 
-/* Scrolling floor textures - theme specific patterns */
+/* Scrolling floor texture with real image */
 .floor-wall::before {
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.6;
-  background-size: 60px 60px;
-  background-position: 0 var(--scroll-offset, 0%);
+  background-image: url('./assets/road.png');
+  background-size: 400px auto;
+  background-repeat: repeat;
+  background-position: center var(--scroll-offset, 0%);
+  opacity: 0.85;
   will-change: background-position;
   z-index: 1;
-}
-
-.theme-canyon .floor-wall::before {
-  background-image: 
-    repeating-linear-gradient(45deg, 
-      transparent, transparent 8px,
-      rgba(139, 69, 19, 0.7) 8px, rgba(139, 69, 19, 0.7) 10px),
-    repeating-linear-gradient(-45deg,
-      transparent, transparent 10px,
-      rgba(160, 82, 45, 0.6) 10px, rgba(160, 82, 45, 0.6) 12px);
-}
-
-.theme-dune .floor-wall::before {
-  background-image:
-    repeating-linear-gradient(90deg,
-      transparent, transparent 6px,
-      rgba(218, 165, 32, 0.6) 6px, rgba(218, 165, 32, 0.6) 8px),
-    repeating-linear-gradient(180deg,
-      rgba(255, 193, 7, 0.5), rgba(255, 193, 7, 0.5) 15px,
-      rgba(255, 224, 130, 0.4) 15px, rgba(255, 224, 130, 0.4) 30px);
-}
-
-.theme-cave .floor-wall::before {
-  background-image:
-    repeating-linear-gradient(60deg,
-      transparent, transparent 9px,
-      rgba(0, 198, 255, 0.7) 9px, rgba(0, 198, 255, 0.7) 11px),
-    repeating-linear-gradient(120deg,
-      transparent, transparent 12px,
-      rgba(124, 247, 255, 0.6) 12px, rgba(124, 247, 255, 0.6) 14px);
+  filter: brightness(0.9);
 }
 
 .ceiling-wall {
@@ -493,6 +466,22 @@
   );
   background: linear-gradient(0deg, rgba(0, 198, 255, 0.18), rgba(0, 198, 255, 0.04) 50%, transparent 80%);
   opacity: 0.55;
+  position: relative;
+  overflow: hidden;
+}
+
+.ceiling-wall::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url('./assets/rock.png');
+  background-size: 300px auto;
+  background-repeat: repeat;
+  background-position: center var(--scroll-offset, 0%);
+  opacity: 0.4;
+  will-change: background-position;
+  z-index: 1;
+  filter: brightness(0.6);
 }
 
 .left-wall {
@@ -511,32 +500,14 @@
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.55;
-  background-size: 40px 60px;
-  background-position: 0 var(--scroll-offset, 0%);
+  background-image: url('./assets/rock.png');
+  background-size: 250px auto;
+  background-repeat: repeat;
+  background-position: center var(--scroll-offset, 0%);
+  opacity: 0.6;
   will-change: background-position;
   z-index: 1;
-}
-
-.theme-canyon .left-wall::before {
-  background-image:
-    repeating-linear-gradient(180deg,
-      rgba(101, 67, 33, 0.8), rgba(101, 67, 33, 0.8) 15px,
-      rgba(139, 69, 19, 0.6) 15px, rgba(139, 69, 19, 0.6) 30px);
-}
-
-.theme-dune .left-wall::before {
-  background-image:
-    repeating-linear-gradient(180deg,
-      rgba(218, 165, 32, 0.7), rgba(218, 165, 32, 0.7) 12px,
-      rgba(184, 134, 11, 0.55) 12px, rgba(184, 134, 11, 0.55) 24px);
-}
-
-.theme-cave .left-wall::before {
-  background-image:
-    repeating-linear-gradient(180deg,
-      rgba(0, 128, 255, 0.7), rgba(0, 128, 255, 0.7) 18px,
-      rgba(30, 144, 255, 0.6) 18px, rgba(30, 144, 255, 0.6) 36px);
+  filter: brightness(0.7);
 }
 
 .right-wall {
@@ -555,32 +526,14 @@
   content: '';
   position: absolute;
   inset: 0;
-  opacity: 0.55;
-  background-size: 40px 60px;
-  background-position: 0 var(--scroll-offset, 0%);
+  background-image: url('./assets/rock.png');
+  background-size: 250px auto;
+  background-repeat: repeat;
+  background-position: center var(--scroll-offset, 0%);
+  opacity: 0.6;
   will-change: background-position;
   z-index: 1;
-}
-
-.theme-canyon .right-wall::before {
-  background-image:
-    repeating-linear-gradient(180deg,
-      rgba(101, 67, 33, 0.8), rgba(101, 67, 33, 0.8) 15px,
-      rgba(139, 69, 19, 0.6) 15px, rgba(139, 69, 19, 0.6) 30px);
-}
-
-.theme-dune .right-wall::before {
-  background-image:
-    repeating-linear-gradient(180deg,
-      rgba(218, 165, 32, 0.7), rgba(218, 165, 32, 0.7) 12px,
-      rgba(184, 134, 11, 0.55) 12px, rgba(184, 134, 11, 0.55) 24px);
-}
-
-.theme-cave .right-wall::before {
-  background-image:
-    repeating-linear-gradient(180deg,
-      rgba(0, 128, 255, 0.7), rgba(0, 128, 255, 0.7) 18px,
-      rgba(30, 144, 255, 0.6) 18px, rgba(30, 144, 255, 0.6) 36px);
+  filter: brightness(0.7);
 }
 
 .floor-motion {
@@ -669,21 +622,11 @@
   position: relative;
   width: 100%;
   height: 100%;
-  background: linear-gradient(180deg, #00c6ff 0%, #0072ff 100%);
-  clip-path: polygon(50% 0%, 80% 100%, 20% 100%);
-  box-shadow: 0 0 14px rgba(0, 198, 255, 0.6);
-}
-
-.racer-glow {
-  position: absolute;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 24px;
-  height: 20px;
-  background: radial-gradient(circle, rgba(124, 247, 255, 0.8), rgba(0, 198, 255, 0.15));
-  border-radius: 50%;
-  filter: blur(1px);
+  background-image: url('./assets/speeder.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(0 0 12px rgba(0, 198, 255, 0.6));
 }
 
 .track-items {
