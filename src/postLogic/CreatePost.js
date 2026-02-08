@@ -75,6 +75,9 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
   const [searchResults, setSearchResults] = useState([]);
   const [selectedOpponent, setSelectedOpponent] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  
+  // Auto-list characters in description
+  const [autoListCharacters, setAutoListCharacters] = useState(false);
 
   const [postData, setPostData] = useState({
     title: '',
@@ -377,6 +380,37 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
     }));
   };
 
+  // Generate character list text
+  const generateCharactersList = () => {
+    if (!postData.teams || postData.teams.length === 0) return '';
+    
+    return postData.teams
+      .map((team, index) => {
+        const teamName = team.name || `Team ${String.fromCharCode(65 + index)}`;
+        const characters = team.warriors
+          .filter(w => w.character && w.character.name)
+          .map(w => w.character.name)
+          .join(', ');
+        
+        return characters ? `${teamName}: ${characters}` : '';
+      })
+      .filter(line => line)
+      .join('\n');
+  };
+
+  // Auto-update content when checkbox is enabled
+  useEffect(() => {
+    if (autoListCharacters && postData.type === 'fight') {
+      const charactersList = generateCharactersList();
+      if (charactersList) {
+        setPostData(prev => ({
+          ...prev,
+          content: charactersList
+        }));
+      }
+    }
+  }, [autoListCharacters, postData.teams, postData.type]);
+
   const validateForm = () => {
     if (!postData.title.trim() || !postData.content.trim()) {
       return false;
@@ -634,6 +668,19 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
               required
             />
 
+            {postData.type === 'fight' && (
+              <div className="auto-list-checkbox">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={autoListCharacters}
+                    onChange={(e) => setAutoListCharacters(e.target.checked)}
+                  />
+                  <span>{lang === 'pl' ? '📝 Automatycznie wypisz postacie w opisie' : '📝 Auto-list characters in description'}</span>
+                </label>
+              </div>
+            )}
+
             <textarea
               name="content"
               value={postData.content}
@@ -642,6 +689,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
               className="content-input"
               rows="4"
               required
+              disabled={autoListCharacters && postData.type === 'fight'}
             />
 
             {/* Photo Upload Section */}
