@@ -253,9 +253,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                 
                 if (Math.abs(topCenterX - bottomCenterX) < horizontalThreshold) {
                   const centerX = (topCenterX + bottomCenterX) / 2;
-                  const topZoneBottom = topItem.zoneRect.bottom;
-                  const bottomZoneTop = bottomItem.zoneRect.top;
-                  const centerY = (topZoneBottom + bottomZoneTop) / 2;
+                  // Place VS between vote stats of top row and characters of bottom row
+                  const topPanelBottom = topItem.rect.bottom; // Bottom of entire top panel (including vote button & stats)
+                  const bottomZoneTop = bottomItem.zoneRect.top; // Top of bottom team-zone (characters only)
+                  const centerY = (topPanelBottom + bottomZoneTop) / 2;
                   
                   positions.push({
                     left: Math.round(centerX - containerRect.left),
