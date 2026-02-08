@@ -245,25 +245,13 @@
   margin: 0 auto;
   perspective: 1200px;
   transform-style: preserve-3d;
-  background: radial-gradient(circle at 50% 20%, rgba(0, 255, 255, 0.06), transparent 28%), #05090f;
+  background: #000000;
   --lane-shift-pct: 0%;
   --vanish-x: 50%;
   --vanish-y: 50%;
   --front-left: calc(0% + var(--lane-shift-pct));
   --front-right: calc(100% + var(--lane-shift-pct));
   cursor: pointer;
-}
-
-.speed-track.theme-canyon {
-  background: radial-gradient(circle at 40% 20%, rgba(0, 255, 255, 0.06), transparent 32%), linear-gradient(180deg, #0a1a2c 0%, #071019 35%, #04070c 100%);
-}
-
-.speed-track.theme-dune {
-  background: radial-gradient(circle at 60% 18%, rgba(0, 255, 255, 0.05), transparent 32%), linear-gradient(180deg, #0b1418 0%, #070f13 35%, #030709 100%);
-}
-
-.speed-track.theme-cave {
-  background: radial-gradient(circle at 55% 22%, rgba(0, 198, 255, 0.08), transparent 32%), linear-gradient(180deg, #0a1b23 0%, #081420 45%, #050a0f 100%);
 }
 
 .speed-track.shake {
@@ -556,32 +544,6 @@
   box-shadow: 0 0 8px rgba(0, 198, 255, 0.25);
 }
 
-.lane-guides {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  clip-path: polygon(
-    var(--front-left) 100%,
-    var(--front-right) 100%,
-    var(--vanish-x) var(--vanish-y)
-  );
-}
-
-.lane-guides line {
-  stroke: rgba(0, 198, 255, 0.28);
-  stroke-width: 0.35;
-  stroke-dasharray: 2 4;
-}
-
-.track-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0.5) 80%, rgba(0, 0, 0, 0.65) 100%);
-  pointer-events: none;
-}
-
-
 .racer {
   position: absolute;
   bottom: 12px;
@@ -717,21 +679,6 @@
   background: linear-gradient(180deg, rgba(124, 247, 255, 0.5), transparent);
   filter: blur(10px);
   border-radius: 10px;
-}
-
-.vanish-point {
-  position: absolute;
-  top: var(--vanish-y);
-  left: var(--vanish-x);
-  width: 12px;
-  height: 12px;
-  transform: translate(-50%, -50%);
-  background: radial-gradient(circle, rgba(124, 247, 255, 0.9), rgba(0, 198, 255, 0.1));
-  border-radius: 50%;
-  box-shadow: 0 0 22px rgba(124, 247, 255, 0.6), 0 0 44px rgba(0, 198, 255, 0.2);
-  pointer-events: none;
-  z-index: 3;
-  transition: left 0.2s ease, top 0.2s ease;
 }
 
 .race-footer {

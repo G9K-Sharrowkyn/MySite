@@ -259,13 +259,6 @@ const SpeedRacingPage = () => {
     ].filter(Boolean);
   }, [corridorMetrics, distance, items]);
 
-  const laneGuides = useMemo(() => {
-    const { laneShiftPct } = corridorMetrics;
-    return LANE_POSITIONS.map((lanePct, index) => ({
-      id: `lane-guide-${index}`,
-      x2: lanePct + laneShiftPct
-    }));
-  }, [corridorMetrics]);
 
   const addComboAction = useCallback((actionType) => {
     const now = performance.now();
@@ -876,13 +869,6 @@ const SpeedRacingPage = () => {
           <div className="corridor-wall left-wall" />
           <div className="corridor-wall right-wall" />
         </div>
-        <svg className="lane-guides" viewBox="0 0 100 100" preserveAspectRatio="none">
-          {laneGuides.map((guide) => (
-            <line key={guide.id} x1="50" y1="50" x2={guide.x2} y2="100" />
-          ))}
-        </svg>
-        <div className="track-overlay" />
-        <div className="vanish-point" />
         
         {/* Collision ripple effect */}
         {collisionRipple && (
