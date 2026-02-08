@@ -738,6 +738,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     const votesHidden = Boolean(post.fight?.votesHidden);
     const totalVotes = votesHidden ? 0 : getTotalVotes();
     const votePercentage = votesHidden ? 0 : getVotePercentage(votes, totalVotes);
+    const scaleFactor = characterSize / 280; // Calculate scale for entire panel
     
     return (
       <div className="team-column">
@@ -745,7 +746,15 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           {teamList.map((name, idx) => {
             const char = getCharacterByName(name);
             return (
-              <div key={idx} className="character-panel">
+              <div 
+                key={idx} 
+                className="character-panel"
+                style={scaleFactor !== 1 ? {
+                  transform: `scale(${scaleFactor})`,
+                  transformOrigin: 'center center',
+                  margin: `${(280 * scaleFactor - 280) / 2}px 0`
+                } : undefined}
+              >
                 <div className="character-name-simple">{formatCharacterDisplayName(name)}</div>
                 <div className={`character-frame${!isVoted ? ' not-chosen' : ''}`}>
                   <img
@@ -760,11 +769,6 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     )}
                     alt={name}
                     className="team-image-large"
-                    style={characterSize !== 280 ? {
-                      width: `${characterSize}px`,
-                      height: `${characterSize}px`,
-                      objectFit: 'cover'
-                    } : undefined}
                   />
                 </div>
               </div>
@@ -818,7 +822,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
-    // Column-based bin-packing for balanced layout
+    // Smart layout - rows for equal sizes, columns with scaling for imbalanced teams
     const arrangeTeamsIntoColumns = (teams) => {
       // For 2 teams, use simple side-by-side layout
       if (teams.length === 2) {
@@ -829,13 +833,34 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         return [[{ teams: teamData.slice(0, 1), characterSize: 280 }, { teams: teamData.slice(1, 2), characterSize: 280 }]];
       }
 
-      // For 3+ teams, use bin-packing into 2 columns
+      // For 3+ teams, check if all have similar sizes
       const teamData = teams.map((team, originalIndex) => {
         const members = splitFightTeamMembers(team);
         return { originalIndex, team, size: members.length };
       });
 
-      // Sort by size descending
+      const sizes = teamData.map(td => td.size);
+      const minSize = Math.min(...sizes);
+      const maxSize = Math.max(...sizes);
+
+      // If all teams have similar sizes (diff <= 1), use simple row layout
+      if (maxSize - minSize <= 1) {
+        // Sort by size for consistency
+        const sorted = [...teamData].sort((a, b) => b.size - a.size);
+        // Create rows of 2 teams each
+        const rows = [];
+        for (let i = 0; i < sorted.length; i += 2) {
+          const rowTeams = [];
+          rowTeams.push({ teams: [sorted[i]], characterSize: 280 });
+          if (i + 1 < sorted.length) {
+            rowTeams.push({ teams: [sorted[i + 1]], characterSize: 280 });
+          }
+          rows.push(rowTeams);
+        }
+        return rows;
+      }
+
+      // For imbalanced sizes, use bin-packing with scaling
       const sorted = [...teamData].sort((a, b) => b.size - a.size);
 
       // Distribute into 2 columns, balancing character count
