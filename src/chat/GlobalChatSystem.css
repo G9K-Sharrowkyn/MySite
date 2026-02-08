@@ -21,6 +21,12 @@ body.chat-open .chat-toggle-wrapper {
   display: none !important;
 }
 
+/* Desktop: move scroll button above chat when chat is open */
+body.chat-open-desktop .scroll-top-button {
+  bottom: 690px;
+  transition: bottom 0.3s ease;
+}
+
 .chat-close-btn {
   display: none;
 }

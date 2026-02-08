@@ -578,8 +578,10 @@ const GlobalChatSystem = () => {
     if (typeof window === 'undefined' || typeof document === 'undefined') return undefined;
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const shouldCover = Boolean(isMobile && isChatOpen && !isMinimized);
+    const chatOpenDesktop = Boolean(!isMobile && isChatOpen && !isMinimized);
 
     document.body.classList.toggle('chat-open', shouldCover);
+    document.body.classList.toggle('chat-open-desktop', chatOpenDesktop);
 
     const prevOverflow = document.body.style.overflow;
     if (shouldCover) {
@@ -588,6 +590,7 @@ const GlobalChatSystem = () => {
 
     return () => {
       document.body.classList.remove('chat-open');
+      document.body.classList.remove('chat-open-desktop');
       document.body.style.overflow = prevOverflow;
     };
   }, [isChatOpen, isMinimized]);
