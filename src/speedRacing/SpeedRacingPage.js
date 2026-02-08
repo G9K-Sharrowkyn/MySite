@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import './SpeedRacingPage.css';
+import roadTexture from './assets/road.png';
+import rockTexture from './assets/rock.png';
+import speederSprite from './assets/speeder.png';
 
 const TRACKS = [
   {
@@ -214,7 +217,10 @@ const SpeedRacingPage = () => {
       '--lane-shift-pct': `${laneShiftPct}%`,
       '--motion-blur': `${motionBlurPx}px`,
       '--fov-scale': fovScale.toFixed(3),
-      '--scroll-offset': `${scrollPct.toFixed(2)}%`
+      '--scroll-offset': `${scrollPct.toFixed(2)}%`,
+      '--road-texture': `url(${roadTexture})`,
+      '--rock-texture': `url(${rockTexture})`,
+      '--speeder-sprite': `url(${speederSprite})`
     };
   }, [corridorMetrics, blurAmount, distance]);
 
