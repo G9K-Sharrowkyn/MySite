@@ -813,87 +813,32 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
-    // Smart layout - rows for equal sizes, columns with scaling for imbalanced teams
-    const arrangeTeamsIntoColumns = (teams) => {
-      // For 2 teams, use simple side-by-side layout
-      if (teams.length === 2) {
-        const teamData = teams.map((team, originalIndex) => {
-          const members = splitFightTeamMembers(team);
-          return { originalIndex, team, size: members.length };
-        });
-        return [[{ teams: teamData.slice(0, 1), characterSize: 280 }, { teams: teamData.slice(1, 2), characterSize: 280 }]];
-      }
-
-      // For 3+ teams, check if all have similar sizes
+    // Simple row layout - group teams into rows of 2, sorted by size
+    const arrangeTeamsIntoRows = (teams) => {
       const teamData = teams.map((team, originalIndex) => {
         const members = splitFightTeamMembers(team);
         return { originalIndex, team, size: members.length };
       });
 
-      const sizes = teamData.map(td => td.size);
-      const minSize = Math.min(...sizes);
-      const maxSize = Math.max(...sizes);
-
-      // If all teams have similar sizes (diff <= 1), use simple row layout
-      if (maxSize - minSize <= 1) {
-        // Sort by size for consistency
-        const sorted = [...teamData].sort((a, b) => b.size - a.size);
-        // Create rows of 2 teams each
-        const rows = [];
-        for (let i = 0; i < sorted.length; i += 2) {
-          const rowTeams = [];
-          rowTeams.push({ teams: [sorted[i]], characterSize: 280 });
-          if (i + 1 < sorted.length) {
-            rowTeams.push({ teams: [sorted[i + 1]], characterSize: 280 });
-          }
-          rows.push(rowTeams);
-        }
-        return rows;
-      }
-
-      // For imbalanced sizes, use bin-packing with scaling
+      // Sort by size descending for visual consistency
       const sorted = [...teamData].sort((a, b) => b.size - a.size);
 
-      // Distribute into 2 columns, balancing character count
-      const columns = [[], []];
-      const columnCharCounts = [0, 0];
+      // Create rows of 2 teams each
+      const rows = [];
+      for (let i = 0; i < sorted.length; i += 2) {
+        const row = [sorted[i]];
+        if (i + 1 < sorted.length) {
+          row.push(sorted[i + 1]);
+        }
+        rows.push(row);
+      }
 
-      sorted.forEach(td => {
-        const targetCol = columnCharCounts[0] <= columnCharCounts[1] ? 0 : 1;
-        columns[targetCol].push(td);
-        columnCharCounts[targetCol] += td.size;
-      });
-
-      // Calculate heights and determine character size for each column
-      const BASE_CHAR_SIZE = 280;
-      const PANEL_OVERHEAD = 120; // padding, button, stats per team
-      const VS_SEPARATOR = 50; // VS between teams in column
-
-      const columnData = columns.map(col => {
-        const numTeams = col.length;
-        const numChars = col.reduce((sum, td) => sum + td.size, 0);
-        const numVS = Math.max(0, numTeams - 1);
-        const totalHeight = numChars * BASE_CHAR_SIZE + numTeams * PANEL_OVERHEAD + numVS * VS_SEPARATOR;
-        return { teams: col, numChars, totalHeight, numVS };
-      });
-
-      // Find the shortest column
-      const minHeight = Math.min(...columnData.map(c => c.totalHeight));
-
-      // Scale character sizes so all columns match min height
-      const columnsWithScaling = columnData.map(col => {
-        const fixedHeight = col.teams.length * PANEL_OVERHEAD + col.numVS * VS_SEPARATOR;
-        const availableForChars = minHeight - fixedHeight;
-        const characterSize = Math.floor(availableForChars / col.numChars);
-        return { teams: col.teams, characterSize: Math.max(180, Math.min(BASE_CHAR_SIZE, characterSize)) };
-      });
-
-      return [columnsWithScaling];
+      return rows;
     };
 
-    // Group teams into columns for multi-team layout
+    // Group teams into rows for multi-team layout
     const renderMultiTeamLayout = () => {
-      const rows = arrangeTeamsIntoColumns(teams);
+      const rows = arrangeTeamsIntoRows(teams);
 
       return (
         <>
@@ -919,52 +864,26 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                     />
                   ))}
 
-                {rowTeams.map((columnData, colIndex) => {
-                  const scaleFactor = columnData.characterSize / 280;
-                  const needsScaling = Math.abs(scaleFactor - 1) > 0.01; // Only scale if meaningfully different
+                {rowTeams.map((teamData, colIndex) => {
+                  const list = splitFightTeamMembers(teamData.team);
+                  const key = String(teamData.originalIndex);
                   return (
-                    <div 
-                      key={`col-${colIndex}`} 
-                      className="multi-team-column"
-                      style={needsScaling ? {
-                        '--character-scale': scaleFactor
-                      } : undefined}
+                    <div
+                      key={key}
+                      className="fight-voting-panel-col"
+                      ref={(el) => {
+                        fightPanelColsRef.current[teamData.originalIndex] = el;
+                      }}
                     >
-                      {columnData.teams.map((teamData, teamIndex) => {
-                        const list = splitFightTeamMembers(teamData.team);
-                        const key = String(teamData.originalIndex);
-                        return (
-                          <React.Fragment key={key}>
-                            {teamIndex > 0 && (
-                              <div className="fight-vertical-vs-in-column">
-                                <img
-                                  className="fight-vs-vertical"
-                                  src={`${process.env.PUBLIC_URL}/VS.png`}
-                                  alt=""
-                                  aria-hidden="true"
-                                  draggable="false"
-                                />
-                              </div>
-                            )}
-                            <div
-                              className="fight-voting-panel-col"
-                              ref={(el) => {
-                                fightPanelColsRef.current[teamData.originalIndex] = el;
-                              }}
-                            >
-                              {renderTeamPanel(
-                                list,
-                                teamData.team,
-                                userVote === key,
-                                teamVotes[teamData.originalIndex] || 0,
-                                key,
-                                canVote,
-                                handleVote
-                              )}
-                            </div>
-                          </React.Fragment>
-                        );
-                      })}
+                      {renderTeamPanel(
+                        list,
+                        teamData.team,
+                        userVote === key,
+                        teamVotes[teamData.originalIndex] || 0,
+                        key,
+                        canVote,
+                        handleVote
+                      )}
                     </div>
                   );
                 })}
