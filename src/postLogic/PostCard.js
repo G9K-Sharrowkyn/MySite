@@ -921,11 +921,12 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
                 {rowTeams.map((columnData, colIndex) => {
                   const scaleFactor = columnData.characterSize / 280;
+                  const needsScaling = Math.abs(scaleFactor - 1) > 0.01; // Only scale if meaningfully different
                   return (
                     <div 
                       key={`col-${colIndex}`} 
                       className="multi-team-column"
-                      style={scaleFactor !== 1 ? {
+                      style={needsScaling ? {
                         '--character-scale': scaleFactor
                       } : undefined}
                     >

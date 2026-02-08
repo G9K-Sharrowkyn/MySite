@@ -2136,7 +2136,10 @@ body.dark-mode .post-card {
   gap: 0;
   align-items: center;
   width: 100%;
-  --character-scale: 1;
+}
+
+/* Apply scaling only when CSS variable is set */
+.multi-team-column[style*="--character-scale"] {
   transform: scale(var(--character-scale));
   transform-origin: top center;
 }
