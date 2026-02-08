@@ -875,89 +875,21 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
     );
     const drawVotes = post.fight.votes?.draw || 0;
 
-    // Calculate visual height of a team (number of rows it occupies)
-    const getTeamHeight = (teamSize) => {
-      if (teamSize <= 2) return 1;
-      if (teamSize <= 4) return 2;
-      return Math.ceil(teamSize / 2);
-    };
-
-    // Smart team arrangement - reorder teams to balance visual layout
-    const arrangeTeamsSmartly = (teams) => {
-      const teamData = teams.map((team, originalIndex) => {
-        const members = splitFightTeamMembers(team);
-        return {
-          originalIndex,
-          team,
-          size: members.length,
-          height: getTeamHeight(members.length)
-        };
-      });
-
-      // Check if this is a "weird" layout that needs reorganization
-      const heights = teamData.map(t => t.height);
-      const maxHeight = Math.max(...heights);
-      const minHeight = Math.min(...heights);
-      const hasLargeTeam = maxHeight >= 3;
-      const hasMixedSizes = maxHeight - minHeight > 1;
-      
-      // For simple layouts (all teams similar size), keep original order in pairs
-      if (!hasLargeTeam && !hasMixedSizes) {
-        const rows = [];
-        for (let i = 0; i < teamData.length; i += 2) {
-          const row = [teamData[i]];
-          if (i + 1 < teamData.length) {
-            row.push(teamData[i + 1]);
-          }
-          rows.push(row);
-        }
-        return rows;
-      }
-
-      // Sort by height (descending) for smart packing
-      const sorted = [...teamData].sort((a, b) => b.height - a.height);
-      const used = new Set();
-      const rows = [];
-
-      for (const primary of sorted) {
-        if (used.has(primary.originalIndex)) continue;
-        
-        const row = [primary];
-        used.add(primary.originalIndex);
-        
-        // Try to find ONE team for the second column that best matches primary's height
-        const candidates = sorted.filter(t => !used.has(t.originalIndex));
-        
-        // First, try to find a team with exactly the same height
-        let match = candidates.find(t => t.height === primary.height);
-        
-        // If not found, try to find the closest height
-        if (!match && candidates.length > 0) {
-          match = candidates.reduce((best, curr) => {
-            const bestDiff = Math.abs(best.height - primary.height);
-            const currDiff = Math.abs(curr.height - primary.height);
-            return currDiff < bestDiff ? curr : best;
-          });
-        }
-        
-        if (match) {
-          row.push(match);
-          used.add(match.originalIndex);
-        }
-        
-        rows.push(row);
-      }
-
-      return rows;
-    };
-
-    // Group teams into rows of 2 for multi-team layout
+    // Simple layout - just group teams in pairs (A+B, C+D, E+F...)
     const renderMultiTeamLayout = () => {
-      const smartRows = arrangeTeamsSmartly(teams);
+      const rows = [];
+      for (let i = 0; i < teams.length; i += 2) {
+        const rowTeams = [];
+        rowTeams.push({ originalIndex: i, team: teams[i] });
+        if (i + 1 < teams.length) {
+          rowTeams.push({ originalIndex: i + 1, team: teams[i + 1] });
+        }
+        rows.push(rowTeams);
+      }
 
       return (
         <>
-          {smartRows.map((rowTeams, rowIndex) => (
+          {rows.map((rowTeams, rowIndex) => (
             <React.Fragment key={`row-${rowIndex}`}>
               <div 
                 className={`fight-voting-panels multi-team-row${rowTeams.length === 1 ? ' single-column' : ''}`}
@@ -1005,7 +937,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
               </div>
               
               {/* Vertical VS between rows */}
-              {rowIndex < smartRows.length - 1 && (
+              {rowIndex < rows.length - 1 && (
                 <div className="fight-vertical-vs-row">
                   {rowTeams.map((teamData, colIndex) => (
                     <div key={`vs-col-${colIndex}`} className="vertical-vs-container">
