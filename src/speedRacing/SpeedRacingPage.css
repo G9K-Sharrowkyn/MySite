@@ -425,25 +425,13 @@
     var(--front-right) 100%,
     var(--vanish-x) var(--vanish-y)
   );
-  background: rgba(5, 15, 25, 0.3);
-  opacity: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-/* Scrolling floor texture with real image */
-.floor-wall::before {
-  content: '';
-  position: absolute;
-  inset: 0;
   background-image: var(--road-texture);
-  background-size: 300px auto;
+  background-size: 150px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
   opacity: 1;
   will-change: background-position;
-  z-index: 2;
-  filter: brightness(1.4) contrast(1.2);
+  filter: brightness(3) contrast(1.5);
 }
 
 .ceiling-wall {
@@ -452,24 +440,13 @@
     var(--front-right) 0%,
     var(--vanish-x) var(--vanish-y)
   );
-  background: rgba(5, 15, 25, 0.2);
-  opacity: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.ceiling-wall::before {
-  content: '';
-  position: absolute;
-  inset: 0;
   background-image: var(--rock-texture);
-  background-size: 250px auto;
+  background-size: 120px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
-  opacity: 0.8;
+  opacity: 1;
   will-change: background-position;
-  z-index: 2;
-  filter: brightness(1.1) contrast(1.2);
+  filter: brightness(2.5) contrast(1.4);
 }
 
 .left-wall {
@@ -478,24 +455,13 @@
     var(--vanish-x) var(--vanish-y),
     var(--front-left) 100%
   );
-  background: rgba(5, 15, 25, 0.2);
-  opacity: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.left-wall::before {
-  content: '';
-  position: absolute;
-  inset: 0;
   background-image: var(--rock-texture);
-  background-size: 200px auto;
+  background-size: 100px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
-  opacity: 0.9;
+  opacity: 1;
   will-change: background-position;
-  z-index: 2;
-  filter: brightness(1.2) contrast(1.2);
+  filter: brightness(2.5) contrast(1.4);
 }
 
 .right-wall {
@@ -504,24 +470,13 @@
     var(--vanish-x) var(--vanish-y),
     var(--front-right) 100%,
   );
-  background: rgba(5, 15, 25, 0.2);
-  opacity: 1;
-  position: relative;
-  overflow: hidden;
-}
-
-.right-wall::before {
-  content: '';
-  position: absolute;
-  inset: 0;
   background-image: var(--rock-texture);
-  background-size: 200px auto;
+  background-size: 100px auto;
   background-repeat: repeat;
   background-position: center var(--scroll-offset, 0%);
-  opacity: 0.9;
+  opacity: 1;
   will-change: background-position;
-  z-index: 2;
-  filter: brightness(1.2) contrast(1.2);
+  filter: brightness(2.5) contrast(1.4);
 }
 
 .floor-motion {
