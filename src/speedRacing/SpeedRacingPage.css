@@ -419,6 +419,10 @@
   inset: 0;
   pointer-events: none;
   z-index: 1;
+  transform: scale(var(--fov-scale, 1));
+  transform-origin: 50% 50%;
+  transition: transform 0.2s ease;
+  will-change: transform;
 }
 
 .corridor-wall {
@@ -520,6 +524,33 @@
   width: 46px;
   height: 70px;
   z-index: 3;
+  transition: transform 0.15s ease;
+}
+
+.racer.drifting.drift-left {
+  transform: translateX(-50%) rotateZ(-15deg);
+}
+
+.racer.drifting.drift-right {
+  transform: translateX(-50%) rotateZ(15deg);
+}
+
+.racer.drifting::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 30px;
+  background: radial-gradient(ellipse, rgba(0, 198, 255, 0.4), transparent 70%);
+  filter: blur(8px);
+  animation: driftTrail 0.3s ease-in-out infinite;
+}
+
+@keyframes driftTrail {
+  0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.9; transform: translateX(-50%) scale(1.2); }
 }
 
 .racer-body {
@@ -936,4 +967,109 @@
 @keyframes hyperSpin {
   0% { transform: translate(-50%, -50%) scale(var(--scale, 1)) rotate(0deg); }
   100% { transform: translate(-50%, -50%) scale(var(--scale, 1)) rotate(360deg); }
+}
+
+/* ==================== Particle Effects ==================== */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 4;
+  will-change: transform, opacity;
+}
+
+.particle.boost {
+  background: radial-gradient(circle, rgba(0, 255, 200, 0.9), rgba(0, 198, 255, 0.4));
+  box-shadow: 0 0 12px rgba(0, 255, 200, 0.8);
+  animation: boostTrail 1s ease-out forwards;
+}
+
+.particle.debris {
+  background: radial-gradient(circle, rgba(255, 100, 0, 0.9), rgba(255, 60, 0, 0.4));
+  box-shadow: 0 0 10px rgba(255, 100, 0, 0.7);
+  animation: debrisTrail 1s ease-out forwards;
+}
+
+@keyframes boostTrail {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(-80px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes debrisTrail {
+  0% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  60% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--speed, 1) * -40px)) scale(0.8) rotate(180deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) rotate(var(--angle)) translateY(calc(var(--speed, 1) * -20px)) scale(0.2) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* ==================== Environmental Particles ==================== */
+.env-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, opacity;
+}
+
+.env-particle.sand {
+  background: rgba(218, 165, 32, 0.6);
+  animation: sandDrift 8s linear forwards;
+}
+
+.env-particle.bubble {
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.8), rgba(124, 247, 255, 0.3));
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  animation: bubbleRise 8s ease-out forwards;
+}
+
+@keyframes sandDrift {
+  0% {
+    transform: translateX(0) translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(110vw) translateY(20px);
+    opacity: 0;
+  }
+}
+
+@keyframes bubbleRise {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(-40vh) translateX(calc(sin(var(--time, 0)) * 20px)) scale(1.2);
+    opacity: 0.6;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-80vh) translateX(calc(sin(var(--time, 1)) * 30px)) scale(0.8);
+    opacity: 0;
+  }
 }

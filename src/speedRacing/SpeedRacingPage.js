@@ -121,6 +121,14 @@ const SpeedRacingPage = () => {
   // Power-ups
   const [activePowerups, setActivePowerups] = useState([]);
   const [collectedPowerups, setCollectedPowerups] = useState([]);
+  
+  // Particle effects
+  const [particles, setParticles] = useState([]);
+  const particleIdRef = useRef(0);
+  
+  // Environmental effects
+  const [envParticles, setEnvParticles] = useState([]);
+  const envParticleIdRef = useRef(0);
 
   const speedRef = useRef(speed);
   const lastSpeedRef = useRef(speed);
@@ -165,18 +173,24 @@ const SpeedRacingPage = () => {
   const corridorMetrics = useMemo(() => {
     const laneOffset = playerLane - 1;
     const laneShiftPct = laneOffset * 6;
+    
+    // FOV zoom effect at high speeds
+    const speedRatio = speed / track.maxSpeed;
+    const fovScale = 1.0 + (speedRatio * 0.15); // 1.0 to 1.15
 
     return {
-      laneShiftPct
+      laneShiftPct,
+      fovScale
     };
-  }, [playerLane]);
+  }, [playerLane, speed, track.maxSpeed]);
 
   const trackStyle = useMemo(() => {
-    const { laneShiftPct } = corridorMetrics;
+    const { laneShiftPct, fovScale } = corridorMetrics;
     const motionBlurPx = Math.min(8, blurAmount).toFixed(2);
     return {
       '--lane-shift-pct': `${laneShiftPct}%`,
-      '--motion-blur': `${motionBlurPx}px`
+      '--motion-blur': `${motionBlurPx}px`,
+      '--fov-scale': fovScale.toFixed(3)
     };
   }, [corridorMetrics, blurAmount]);
 
@@ -301,6 +315,36 @@ const SpeedRacingPage = () => {
     setComboTimer(0);
   }, []);
 
+  const spawnParticles = useCallback((type, count, fromLane) => {
+    const newParticles = [];
+    const baseLeft = LANE_POSITIONS[fromLane];
+    
+    for (let i = 0; i < count; i++) {
+      const id = particleIdRef.current++;
+      const angle = (Math.random() - 0.5) * 120; // -60 to +60 degrees
+      const speed = 0.5 + Math.random() * 1.5; // Random speed
+      const size = type === 'boost' ? 8 + Math.random() * 8 : 6 + Math.random() * 6;
+      
+      newParticles.push({
+        id: `particle-${type}-${id}`,
+        type,
+        left: baseLeft + (Math.random() - 0.5) * 10,
+        top: 85,
+        angle,
+        speed,
+        size,
+        lifetime: 0
+      });
+    }
+    
+    setParticles(prev => [...prev, ...newParticles]);
+    
+    // Auto-cleanup after animation
+    setTimeout(() => {
+      setParticles(prev => prev.filter(p => !newParticles.find(np => np.id === p.id)));
+    }, 1000);
+  }, []);
+
   const handleLaneChange = useCallback((direction) => {
     setPlayerLane((prev) => {
       const next = Math.min(2, Math.max(0, prev + direction));
@@ -382,6 +426,9 @@ const SpeedRacingPage = () => {
       return;
     }
     
+    // Spawn collision debris particles
+    spawnParticles('debris', 8, playerLane);
+    
     setSpeed((prev) => {
       const slowed = Math.max(track.baseSpeed - 6, prev * 0.65);
       speedRef.current = slowed;
@@ -393,9 +440,12 @@ const SpeedRacingPage = () => {
     resetCombo();
     setIsDrifting(false);
     setDriftCharge(0);
-  }, [track.baseSpeed, activePowerups, resetCombo]);
+  }, [track.baseSpeed, activePowerups, resetCombo, spawnParticles, playerLane]);
 
   const handleBoostPickup = useCallback(() => {
+    // Spawn boost trail particles
+    spawnParticles('boost', 6, playerLane);
+    
     const comboBonus = combo > 0 ? combo * 1.5 : 0;
     setSpeed((prev) => {
       const surged = Math.min(track.maxSpeed, prev + 7 + comboBonus);
@@ -404,7 +454,7 @@ const SpeedRacingPage = () => {
     });
     setStatus('Pad boost! Repulsors flare.');
     addComboAction('boost');
-  }, [track.maxSpeed, combo, addComboAction]);
+  }, [track.maxSpeed, combo, addComboAction, spawnParticles, playerLane]);
 
   const handlePowerupPickup = useCallback((powerupType) => {
     setCollectedPowerups(prev => [...prev, powerupType]);
@@ -659,6 +709,51 @@ const SpeedRacingPage = () => {
     };
   }, [handleLaneChange, handleShift, startRace, isDrifting, startDrift, endDrift]);
 
+  // Environmental particle effects based on track theme
+  useEffect(() => {
+    if (gameState !== 'running') return;
+    
+    const interval = setInterval(() => {
+      const id = envParticleIdRef.current++;
+      let particle;
+      
+      if (track.theme === 'dune') {
+        // Sand particles drifting across
+        particle = {
+          id: `env-${id}`,
+          type: 'sand',
+          left: -5,
+          top: 20 + Math.random() * 60,
+          size: 3 + Math.random() * 5,
+          speed: 0.5 + Math.random() * 1,
+          opacity: 0.3 + Math.random() * 0.4
+        };
+      } else if (track.theme === 'cave') {
+        // Bubbles rising
+        particle = {
+          id: `env-${id}`,
+          type: 'bubble',
+          left: 10 + Math.random() * 80,
+          top: 110,
+          size: 4 + Math.random() * 8,
+          speed: 0.3 + Math.random() * 0.7,
+          opacity: 0.2 + Math.random() * 0.3
+        };
+      }
+      
+      if (particle) {
+        setEnvParticles(prev => [...prev, particle]);
+        
+        // Remove after crossing screen
+        setTimeout(() => {
+          setEnvParticles(prev => prev.filter(p => p.id !== particle.id));
+        }, 8000);
+      }
+    }, 1500); // Spawn every 1.5s
+    
+    return () => clearInterval(interval);
+  }, [gameState, track.theme]);
+
   const handleTrackClick = useCallback(() => {
     if (gameStateRef.current === 'idle' || gameStateRef.current === 'finished') {
       startRace();
@@ -809,11 +904,46 @@ const SpeedRacingPage = () => {
         </svg>
         <div className="track-overlay" />
         <div className="vanish-point" />
-        <div className="racer" style={{ left: `${LANE_POSITIONS[playerLane]}%` }}>
+        
+        {/* Environmental particles */}
+        {envParticles.map((particle) => (
+          <div
+            key={particle.id}
+            className={`env-particle ${particle.type}`}
+            style={{
+              left: `${particle.left}%`,
+              top: `${particle.top}%`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              opacity: particle.opacity
+            }}
+          />
+        ))}
+        
+        <div 
+          className={`racer${isDrifting ? ' drifting' : ''}${driftDirection < 0 ? ' drift-left' : driftDirection > 0 ? ' drift-right' : ''}`} 
+          style={{ left: `${LANE_POSITIONS[playerLane]}%` }}
+        >
           <div className="racer-body">
             <span className="racer-glow" />
           </div>
         </div>
+        
+        {/* Boost and collision particles */}
+        {particles.map((particle) => (
+          <div
+            key={particle.id}
+            className={`particle ${particle.type}`}
+            style={{
+              left: `${particle.left}%`,
+              top: `${particle.top}%`,
+              width: `${particle.size}px`,
+              height: `${particle.size}px`,
+              '--angle': `${particle.angle}deg`,
+              '--speed': particle.speed
+            }}
+          />
+        ))}
         <div className="track-items">
           {visibleItems.map((item) => (
             <div
