@@ -31,6 +31,7 @@ const SpeedRacingPage = () => {
   const [boostActive, setBoostActive] = useState(false);
   const [countdownLights, setCountdownLights] = useState(0); // 0-3
   const [isJumping, setIsJumping] = useState(false);
+  const [fps, setFps] = useState(60);
   
   // Game refs
   const speedRef = useRef(0);
@@ -550,9 +551,13 @@ const SpeedRacingPage = () => {
         }
 
         // ===== CAMERA EFFECTS =====
-        // Slight head bob based on speed
-        const bob = Math.sin(currentTime * 0.01 * currentSpeed) * 0.03;
+        // Slight head bob based on speed (reduced for smoother feel)
+        const bob = Math.sin(currentTime * 0.005 * currentSpeed) * 0.01;
         camera.position.y = 1.2 + bob;
+        
+        // ===== FPS COUNTER =====
+        const currentFps = Math.round(1 / deltaTime);
+        setFps(currentFps);
       }
 
       scene.render();
@@ -619,10 +624,16 @@ const SpeedRacingPage = () => {
 
           <div className="hud-top-right">
             {gameState === 'racing' && (
-              <div className="hud-stat">
-                <span className="stat-label">DISTANCE</span>
-                <span className="stat-value">{distance}m</span>
-              </div>
+              <>
+                <div className="hud-stat">
+                  <span className="stat-label">DISTANCE</span>
+                  <span className="stat-value">{distance}m</span>
+                </div>
+                <div className="hud-stat fps-display">
+                  <span className="stat-label">FPS</span>
+                  <span className="stat-value">{fps}</span>
+                </div>
+              </>
             )}
           </div>
 

@@ -136,6 +136,11 @@
   color: #00ff00;
 }
 
+.fps-display .stat-value {
+  color: #00ff88;
+  font-size: 1.5rem;
+}
+
 /* ===== BOTTOM HUD - Speed & Gear Meter (KOTOR) ===== */
 .hud-bottom {
   position: absolute;
