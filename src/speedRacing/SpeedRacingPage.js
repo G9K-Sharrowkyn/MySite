@@ -1,383 +1,517 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import './SpeedRacingPage.css';
 import * as BABYLON from '@babylonjs/core';
 
+// Track configurations inspired by KOTOR
+const TRACKS = {
+  taris: {
+    name: 'Taris Circuit',
+    length: 800,
+    targetTime: 28.5,
+    boostPadCount: 25,
+    obstacleCount: 20
+  }
+};
+
 const SpeedRacingPage = () => {
   const canvasRef = useRef(null);
-  const [gameState, setGameState] = useState('ready'); // ready, racing
+  const [gameState, setGameState] = useState('ready'); // ready, countdown, racing, finished
+  const [currentGear, setCurrentGear] = useState(1);
+  const [gearMeter, setGearMeter] = useState(0);
   const [speed, setSpeed] = useState(0);
   const [distance, setDistance] = useState(0);
+  const [raceTime, setRaceTime] = useState(0);
+  const [bestTime, setBestTime] = useState(null);
+  const [targetTime] = useState(TRACKS.taris.targetTime);
+  const [shiftReady, setShiftReady] = useState(false);
+  const [boostActive, setBoostActive] = useState(false);
+  const [boostActive, setBoostActive] = useState(false);
+  
+  // Game refs
+  const speedRef = useRef(0);
+  const gearRef = useRef(1);
+  const currentLaneRef = useRef(0); // -1, 0, 1
+  const raceTimeRef = useRef(0);
+  const isAcceleratingRef = useRef(false);
+  const trackObjectsRef = useRef({ boostPads: [], obstacles: [] });
   
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    // Create Babylon.js engine
     const engine = new BABYLON.Engine(canvasRef.current, true, {
       preserveDrawingBuffer: true,
       stencil: true,
       antialias: true
     });
 
-    // Create scene
     const scene = new BABYLON.Scene(engine);
-    scene.clearColor = new BABYLON.Color4(0.02, 0.02, 0.08, 1);
+    scene.clearColor = new BABYLON.Color4(0.01, 0.01, 0.05, 1);
     scene.fogMode = BABYLON.Scene.FOGMODE_EXP;
-    scene.fogDensity = 0.01;
-    scene.fogColor = new BABYLON.Color3(0.02, 0.02, 0.08);
+    scene.fogDensity = 0.008;
+    scene.fogColor = new BABYLON.Color3(0.01, 0.01, 0.05);
 
-    // Create camera following the speeder
-    const camera = new BABYLON.FollowCamera(
-      'followCamera',
-      new BABYLON.Vector3(0, 5, -15),
+    // ===== FIRST-PERSON CAMERA (KOTOR style from cockpit) =====
+    const camera = new BABYLON.FreeCamera(
+      'firstPersonCamera',
+      new BABYLON.Vector3(0, 1.2, 0),
       scene
     );
-    camera.radius = 15;
-    camera.heightOffset = 5;
-    camera.rotationOffset = 0;
-    camera.cameraAcceleration = 0.05;
-    camera.maxCameraSpeed = 10;
+    camera.rotation = new BABYLON.Vector3(0, 0, 0);
+    camera.fov = 1.2; // Wider FOV for speed feeling
+    camera.minZ = 0.1;
+    camera.maxZ = 500;
 
-    // Lighting setup
+    // ===== LIGHTING =====
     const ambientLight = new BABYLON.HemisphericLight(
       'ambient',
       new BABYLON.Vector3(0, 1, 0),
       scene
     );
-    ambientLight.intensity = 0.3;
-    ambientLight.groundColor = new BABYLON.Color3(0.1, 0.1, 0.2);
-
-    // Directional light for shadows
-    const mainLight = new BABYLON.DirectionalLight(
-      'mainLight',
-      new BABYLON.Vector3(0.5, -1, 0.8),
-      scene
-    );
-    mainLight.intensity = 0.8;
-    mainLight.diffuse = new BABYLON.Color3(0.8, 0.9, 1);
-
-    // Create speeder vehicle (simple box for now)
-    const speeder = BABYLON.MeshBuilder.CreateBox(
-      'speeder',
-      { width: 2, height: 0.8, depth: 4 },
-      scene
-    );
-    speeder.position = new BABYLON.Vector3(0, 1, 0);
-
-    // Speeder material with glow
-    const speederMat = new BABYLON.StandardMaterial('speederMat', scene);
-    speederMat.diffuseColor = new BABYLON.Color3(0.1, 0.3, 0.5);
-    speederMat.specularColor = new BABYLON.Color3(0.5, 0.7, 1);
-    speederMat.emissiveColor = new BABYLON.Color3(0.05, 0.2, 0.4);
-    speederMat.specularPower = 128;
-    speeder.material = speederMat;
-
-    // Add engine glow lights to speeder
-    const leftEngine = BABYLON.MeshBuilder.CreateSphere(
-      'leftEngine',
-      { diameter: 0.5 },
-      scene
-    );
-    leftEngine.parent = speeder;
-    leftEngine.position = new BABYLON.Vector3(-1, -0.2, -1.5);
+    ambientLight.intensity = 0.4;
     
-    const rightEngine = leftEngine.clone('rightEngine');
-    rightEngine.position = new BABYLON.Vector3(1, -0.2, -1.5);
-
-    const engineGlowMat = new BABYLON.StandardMaterial('engineGlow', scene);
-    engineGlowMat.emissiveColor = new BABYLON.Color3(0, 0.8, 1);
-    engineGlowMat.disableLighting = true;
-    leftEngine.material = engineGlowMat;
-    rightEngine.material = engineGlowMat;
-
-    // Point lights for engines
-    const leftLight = new BABYLON.PointLight(
-      'leftEngineLight',
-      new BABYLON.Vector3(-1, 0.5, -1.5),
+    const directionalLight = new BABYLON.DirectionalLight(
+      'sun',
+      new BABYLON.Vector3(0.5, -1, 1),
       scene
     );
-    leftLight.parent = speeder;
-    leftLight.diffuse = new BABYLON.Color3(0, 0.8, 1);
-    leftLight.intensity = 2;
-    leftLight.range = 10;
+    directionalLight.intensity = 0.6;
+    directionalLight.diffuse = new BABYLON.Color3(0.8, 0.85, 1);
 
-    const rightLight = leftLight.clone('rightEngineLight');
-    rightLight.parent = speeder;
-    rightLight.position = new BABYLON.Vector3(1, 0.5, -1.5);
+    // ===== TRACK SURFACE (straight line) =====
+    const trackLength = TRACKS.taris.length;
+    const trackSegments = [];
+    const segmentLength = 50;
+    const segmentCount = Math.ceil(trackLength / segmentLength) + 10;
 
-    // Set camera target
-    camera.lockedTarget = speeder;
-
-    // Create tunnel segments
-    const tunnelSegments = [];
-    const SEGMENT_LENGTH = 20;
-    const TUNNEL_RADIUS = 8;
-    const SEGMENTS_COUNT = 30;
-
-    for (let i = 0; i < SEGMENTS_COUNT; i++) {
-      const segment = BABYLON.MeshBuilder.CreateTorus(
-        `tunnel_${i}`,
-        {
-          diameter: TUNNEL_RADIUS * 2,
-          thickness: 0.5,
-          tessellation: 32
-        },
+    for (let i = 0; i < segmentCount; i++) {
+      const segment = BABYLON.MeshBuilder.CreateGround(
+        `track_${i}`,
+        { width: 15, height: segmentLength },
         scene
       );
+      segment.position.z = i * segmentLength;
       
-      segment.position.z = i * SEGMENT_LENGTH;
-      segment.rotation.x = Math.PI / 2;
-
-      // Tunnel material with neon glow
-      const tunnelMat = new BABYLON.StandardMaterial(`tunnelMat_${i}`, scene);
-      const hue = (i * 0.1) % 1;
-      tunnelMat.emissiveColor = new BABYLON.Color3(
-        0.2 + hue * 0.3,
-        0.4 + Math.sin(hue * Math.PI) * 0.3,
-        0.8
-      );
-      tunnelMat.alpha = 0.7;
-      tunnelMat.wireframe = true;
-      segment.material = tunnelMat;
-
-      tunnelSegments.push(segment);
+      const trackMat = new BABYLON.StandardMaterial(`trackMat_${i}`, scene);
+      trackMat.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.2);
+      trackMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.15);
+      segment.material = trackMat;
+      
+      trackSegments.push(segment);
     }
 
-    // Create obstacles (rocks)
-    const obstacles = [];
-    for (let i = 0; i < 20; i++) {
-      const rock = BABYLON.MeshBuilder.CreateIcoSphere(
-        `rock_${i}`,
-        { radius: 1, subdivisions: 2 },
+    // ===== TRACK WALLS (side barriers) =====
+    const wallHeight = 3;
+    for (let i = 0; i < segmentCount; i++) {
+      const leftWall = BABYLON.MeshBuilder.CreateBox(
+        `leftWall_${i}`,
+        { width: 1, height: wallHeight, depth: segmentLength },
         scene
       );
+      leftWall.position = new BABYLON.Vector3(-8, wallHeight / 2, i * segmentLength);
       
-      const lane = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
-      rock.position = new BABYLON.Vector3(
-        lane * 3,
-        1,
-        (i + 3) * 15 + Math.random() * 10
-      );
+      const rightWall = leftWall.clone(`rightWall_${i}`);
+      rightWall.position.x = 8;
       
-      rock.rotation = new BABYLON.Vector3(
-        Math.random() * Math.PI,
-        Math.random() * Math.PI,
-        Math.random() * Math.PI
-      );
-
-      const rockMat = new BABYLON.StandardMaterial(`rockMat_${i}`, scene);
-      rockMat.diffuseColor = new BABYLON.Color3(0.3, 0.25, 0.2);
-      rockMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.1);
-      rock.material = rockMat;
-
-      obstacles.push(rock);
+      const wallMat = new BABYLON.StandardMaterial(`wallMat_${i}`, scene);
+      wallMat.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.15);
+      wallMat.emissiveColor = new BABYLON.Color3(0.05, 0.08, 0.15);
+      leftWall.material = wallMat;
+      rightWall.material = wallMat;
     }
 
-    // Create boost pads
+    // ===== BOOST PADS (glowing accelerators) =====
     const boostPads = [];
-    for (let i = 0; i < 15; i++) {
+    const lanes = [-4, 0, 4]; // Left, Center, Right
+    
+    for (let i = 0; i < TRACKS.taris.boostPadCount; i++) {
+      const zPos = 80 + i * 30 + Math.random() * 10;
+      const lane = lanes[Math.floor(Math.random() * lanes.length)];
+      
       const pad = BABYLON.MeshBuilder.CreateBox(
         `boost_${i}`,
-        { width: 3, height: 0.2, depth: 2 },
+        { width: 3, height: 0.3, depth: 4 },
         scene
       );
+      pad.position = new BABYLON.Vector3(lane, 0.15, zPos);
       
-      const lane = Math.floor(Math.random() * 3) - 1;
-      pad.position = new BABYLON.Vector3(
-        lane * 3,
-        0.1,
-        (i + 2) * 20 + Math.random() * 15
-      );
-
       const boostMat = new BABYLON.StandardMaterial(`boostMat_${i}`, scene);
-      boostMat.emissiveColor = new BABYLON.Color3(1, 0.8, 0);
-      boostMat.alpha = 0.8;
+      boostMat.emissiveColor = new BABYLON.Color3(0, 1, 0.8);
+      boostMat.diffuseColor = new BABYLON.Color3(0, 0.5, 0.4);
       pad.material = boostMat;
-
-      boostPads.push(pad);
+      
+      // Glow effect
+      const glow = new BABYLON.PointLight(
+        `boostLight_${i}`,
+        new BABYLON.Vector3(lane, 1, zPos),
+        scene
+      );
+      glow.diffuse = new BABYLON.Color3(0, 1, 0.8);
+      glow.intensity = 5;
+      glow.range = 15;
+      
+      boostPads.push({ mesh: pad, lane, zPos, collected: false });
     }
 
-    // Game state
-    let currentSpeed = 0;
-    let targetSpeed = 0;
-    let currentLane = 0; // -1 left, 0 center, 1 right
-    let travelDistance = 0;
-    let isRacing = false;
-
-    // Keyboard controls
-    const keys = {};
-    window.addEventListener('keydown', (e) => {
-      keys[e.key.toLowerCase()] = true;
+    // ===== OBSTACLES (debris/rocks) =====
+    const obstacles = [];
+    
+    for (let i = 0; i < TRACKS.taris.obstacleCount; i++) {
+      const zPos = 100 + i * 35 + Math.random() * 15;
+      const lane = lanes[Math.floor(Math.random() * lanes.length)];
       
-      if (e.key === 'Enter' && !isRacing) {
-        isRacing = true;
-        targetSpeed = 1;
-        setGameState('racing');
-      }
+      const obstacle = BABYLON.MeshBuilder.CreateIcoSphere(
+        `obstacle_${i}`,
+        { radius: 1.2, subdivisions: 2 },
+        scene
+      );
+      obstacle.position = new BABYLON.Vector3(lane, 1.2, zPos);
       
-      if (e.key === 'ArrowLeft' || e.key === 'a') {
-        currentLane = Math.max(-1, currentLane - 1);
-      }
-      if (e.key === 'ArrowRight' || e.key === 'd') {
-        currentLane = Math.min(1, currentLane + 1);
-      }
-      if (e.key === ' ') {
-        e.preventDefault();
-        targetSpeed = Math.min(2, targetSpeed + 0.5);
-      }
-    });
+      const obsMat = new BABYLON.StandardMaterial(`obsMat_${i}`, scene);
+      obsMat.diffuseColor = new BABYLON.Color3(0.3, 0.25, 0.2);
+      obsMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+      obstacle.material = obsMat;
+      
+      obstacles.push({ mesh: obstacle, lane, zPos, hit: false });
+    }
 
-    window.addEventListener('keyup', (e) => {
-      keys[e.key.toLowerCase()] = false;
-    });
+    trackObjectsRef.current = { boostPads, obstacles };
 
-    // Particle system for engine trail
-    const particleSystem = new BABYLON.ParticleSystem('particles', 2000, scene);
-    particleSystem.particleTexture = new BABYLON.Texture(
-      'https://www.babylonjs-playground.com/textures/flare.png',
+    // ===== SWOOP BIKE (invisible, we're IN it - first person) =====
+    // Just a reference point for position
+    const swoop = new BABYLON.TransformNode('swoop', scene);
+    swoop.position = new BABYLON.Vector3(0, 0, 0);
+
+    // Camera follows swoop position
+    camera.parent = swoop;
+
+    // ===== ENGINE SOUND SIMULATION (visual feedback) =====
+    const engineGlow = BABYLON.MeshBuilder.CreateSphere(
+      'engineGlow',
+      { diameter: 0.3 },
       scene
     );
-    particleSystem.emitter = speeder;
-    particleSystem.minEmitBox = new BABYLON.Vector3(-1, -0.5, -2);
-    particleSystem.maxEmitBox = new BABYLON.Vector3(1, -0.5, -2);
-    particleSystem.color1 = new BABYLON.Color4(0, 0.8, 1, 1);
-    particleSystem.color2 = new BABYLON.Color4(0.2, 0.5, 1, 1);
-    particleSystem.colorDead = new BABYLON.Color4(0, 0.2, 0.5, 0);
-    particleSystem.minSize = 0.3;
-    particleSystem.maxSize = 0.8;
-    particleSystem.minLifeTime = 0.3;
-    particleSystem.maxLifeTime = 0.6;
-    particleSystem.emitRate = 100;
-    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
-    particleSystem.gravity = new BABYLON.Vector3(0, -1, 0);
-    particleSystem.direction1 = new BABYLON.Vector3(-0.5, 0, -2);
-    particleSystem.direction2 = new BABYLON.Vector3(0.5, 0, -2);
-    particleSystem.minAngularSpeed = 0;
-    particleSystem.maxAngularSpeed = Math.PI;
-    particleSystem.minEmitPower = 2;
-    particleSystem.maxEmitPower = 4;
-    particleSystem.updateSpeed = 0.01;
+    engineGlow.parent = camera;
+    engineGlow.position = new BABYLON.Vector3(0, -0.5, 1);
+    
+    const glowMat = new BABYLON.StandardMaterial('glowMat', scene);
+    glowMat.emissiveColor = new BABYLON.Color3(0, 0.8, 1);
+    glowMat.disableLighting = true;
+    engineGlow.material = glowMat;
+    engineGlow.isVisible = false; // Hidden in first person
 
-    // Render loop
+    // ===== GAME STATE =====
+    let currentSpeed = 0;
+    let currentGear = 1;
+    let gearHeat = 0;
+    let currentLane = 0;
+    let travelDistance = 0;
+    let raceStartTime = 0;
+    let isRacing = false;
+    let isAccelerating = false;
+
+    // Speed constants per gear
+    const GEAR_MAX_SPEEDS = [0, 40, 80, 120, 160, 200]; // Gear 0 (unused), 1-5
+    const GEAR_ACCELERATION = [0, 8, 6, 5, 4, 3]; // Acceleration rate per gear
+    const MAX_GEAR = 5;
+
+    // ===== KEYBOARD CONTROLS =====
+    const keys = {};
+    
+    const handleKeyDown = (e) => {
+      keys[e.key.toLowerCase()] = true;
+      
+      // Start race with ENTER
+      if (e.key === 'Enter' && !isRacing) {
+        isRacing = true;
+        isAccelerating = true;
+        isAcceleratingRef.current = true;
+        raceStartTime = performance.now();
+        setGameState('racing');
+        
+        // Reset
+        currentSpeed = 0;
+        currentGear = 1;
+        gearHeat = 0;
+        travelDistance = 0;
+        swoop.position.z = 0;
+        camera.position.z = 0;
+        speedRef.current = 0;
+        gearRef.current = 1;
+        raceTimeRef.current = 0;
+        
+        // Reset boost pads and obstacles
+        boostPads.forEach(pad => { pad.collected = false; });
+        obstacles.forEach(obs => { obs.hit = false; });
+      }
+      
+      // Lane changes
+      if ((e.key === 'ArrowLeft' || e.key === 'a') && isRacing) {
+        currentLane = Math.max(-1, currentLane - 1);
+        currentLaneRef.current = currentLane;
+      }
+      if ((e.key === 'ArrowRight' || e.key === 'd') && isRacing) {
+        currentLane = Math.min(1, currentLane + 1);
+        currentLaneRef.current = currentLane;
+      }
+      
+      // GEAR SHIFT (Space or W)
+      if ((e.key === ' ' || e.key === 'w') && isRacing) {
+        e.preventDefault();
+        
+        if (gearHeat >= 100 && currentGear < MAX_GEAR) {
+          // Perfect shift!
+          currentGear++;
+          gearRef.current = currentGear;
+          gearHeat = 0;
+          setCurrentGear(currentGear);
+          setShiftReady(false);
+        }
+      }
+    };
+
+    const handleKeyUp = (e) => {
+      keys[e.key.toLowerCase()] = false;
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+
+    // ===== GAME LOOP =====
     let lastTime = performance.now();
+    
     engine.runRenderLoop(() => {
       const currentTime = performance.now();
       const deltaTime = (currentTime - lastTime) / 1000;
       lastTime = currentTime;
 
       if (isRacing) {
-        // Smooth speed change
-        currentSpeed += (targetSpeed - currentSpeed) * deltaTime * 3;
-        
-        // Update distance
-        travelDistance += currentSpeed * deltaTime * 50;
-        setDistance(Math.floor(travelDistance));
-        setSpeed(currentSpeed.toFixed(2));
+        // Update race time
+        const elapsed = (currentTime - raceStartTime) / 1000;
+        raceTimeRef.current = elapsed;
+        setRaceTime(elapsed);
 
-        // Move speeder horizontally to lane
-        const targetX = currentLane * 3;
-        speeder.position.x += (targetX - speeder.position.x) * deltaTime * 5;
-
-        // Move tunnel segments
-        tunnelSegments.forEach((segment, index) => {
-          segment.position.z -= currentSpeed * deltaTime * 50;
+        // ===== ACCELERATION & GEAR HEAT =====
+        if (isAccelerating) {
+          const maxSpeedForGear = GEAR_MAX_SPEEDS[currentGear];
+          const accel = GEAR_ACCELERATION[currentGear];
           
-          // Recycle segments
-          if (segment.position.z < speeder.position.z - 50) {
-            segment.position.z = speeder.position.z + 
-              (SEGMENTS_COUNT - 1) * SEGMENT_LENGTH;
+          if (currentSpeed < maxSpeedForGear) {
+            currentSpeed = Math.min(maxSpeedForGear, currentSpeed + accel * deltaTime * 10);
           }
-
-          // Pulse effect
-          const dist = Math.abs(segment.position.z - speeder.position.z);
-          const scale = 1 + Math.max(0, (20 - dist) / 50) * 0.2;
-          segment.scaling.set(scale, scale, 1);
-        });
-
-        // Move obstacles
-        obstacles.forEach((rock) => {
-          rock.position.z -= currentSpeed * deltaTime * 50;
-          rock.rotation.x += deltaTime;
-          rock.rotation.y += deltaTime * 0.5;
           
-          // Recycle obstacles
-          if (rock.position.z < speeder.position.z - 30) {
-            rock.position.z = speeder.position.z + 200 + Math.random() * 100;
-            const lane = Math.floor(Math.random() * 3) - 1;
-            rock.position.x = lane * 3;
+          // Heat builds up as we approach max speed
+          if (currentSpeed >= maxSpeedForGear * 0.8) {
+            gearHeat = Math.min(100, gearHeat + deltaTime * 50);
+            setGearMeter(gearHeat);
+            
+            if (gearHeat >= 100) {
+              setShiftReady(true);
+            }
           }
-        });
-
-        // Move boost pads
-        boostPads.forEach((pad) => {
-          pad.position.z -= currentSpeed * deltaTime * 50;
-          pad.rotation.y += deltaTime * 2;
-          
-          // Recycle pads
-          if (pad.position.z < speeder.position.z - 30) {
-            pad.position.z = speeder.position.z + 250 + Math.random() * 100;
-            const lane = Math.floor(Math.random() * 3) - 1;
-            pad.position.x = lane * 3;
-          }
-        });
-
-        // Update particle system intensity
-        particleSystem.emitRate = 50 + currentSpeed * 100;
-        
-        if (!particleSystem.isStarted()) {
-          particleSystem.start();
+        } else {
+          // Coasting/decelerating
+          currentSpeed = Math.max(0, currentSpeed - deltaTime * 20);
         }
 
-        // Engine light pulse
-        const pulse = 0.8 + Math.sin(currentTime * 0.01) * 0.2;
-        leftLight.intensity = 2 + currentSpeed * pulse;
-        rightLight.intensity = 2 + currentSpeed * pulse;
+        speedRef.current = currentSpeed;
+        setSpeed(currentSpeed.toFixed(0));
+
+        // ===== MOVEMENT =====
+        const moveSpeed = currentSpeed * deltaTime;
+        travelDistance += moveSpeed;
+        swoop.position.z += moveSpeed;
+        
+        setDistance(Math.floor(travelDistance));
+
+        // Move to lane
+        const targetX = currentLane * 4;
+        swoop.position.x += (targetX - swoop.position.x) * deltaTime * 8;
+
+        // ===== COLLISION DETECTION =====
+        const swoopZ = swoop.position.z;
+        const swoopX = swoop.position.x;
+        
+        // Check boost pads
+        boostPads.forEach(pad => {
+          if (!pad.collected && 
+              Math.abs(swoopZ - pad.zPos) < 3 && 
+              Math.abs(swoopX - pad.lane) < 2) {
+            // HIT BOOST PAD!
+            pad.collected = true;
+            pad.mesh.isVisible = false;
+            
+            // Speed surge
+            currentSpeed = Math.min(
+              GEAR_MAX_SPEEDS[MAX_GEAR],
+              currentSpeed + 30
+            );
+            
+            setBoostActive(true);
+            setTimeout(() => setBoostActive(false), 300);
+          }
+        });
+
+        // Check obstacles
+        obstacles.forEach(obs => {
+          if (!obs.hit && 
+              Math.abs(swoopZ - obs.zPos) < 2 && 
+              Math.abs(swoopX - obs.lane) < 2) {
+            // HIT OBSTACLE!
+            obs.hit = true;
+            
+            // Slowdown
+            currentSpeed = Math.max(0, currentSpeed * 0.6);
+            
+            // Visual feedback
+            obs.mesh.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
+            setTimeout(() => {
+              obs.mesh.scaling = new BABYLON.Vector3(1, 1, 1);
+            }, 500);
+          }
+        });
+
+        // ===== FINISH LINE =====
+        if (travelDistance >= TRACKS.taris.length) {
+          isRacing = false;
+          setGameState('finished');
+          
+          const finalTime = raceTimeRef.current;
+          if (!bestTime || finalTime < bestTime) {
+            setBestTime(finalTime);
+          }
+        }
+
+        // ===== CAMERA EFFECTS =====
+        // Slight head bob based on speed
+        const bob = Math.sin(currentTime * 0.01 * currentSpeed) * 0.05;
+        camera.position.y = 1.2 + bob;
       }
 
       scene.render();
     });
 
-    // Handle window resize
-    const handleResize = () => {
-      engine.resize();
-    };
+    // Window resize
+    const handleResize = () => engine.resize();
     window.addEventListener('resize', handleResize);
 
     // Cleanup
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('keydown', null);
-      window.removeEventListener('keyup', null);
-      particleSystem.dispose();
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
       engine.dispose();
     };
-  }, []);
+  }, [bestTime]);
+
+  const formatTime = (seconds) => {
+    if (!seconds) return '0.00';
+    return seconds.toFixed(2);
+  };
 
   return (
     <div className="speed-racing-page">
       <div className="canvas-container">
         <canvas ref={canvasRef} />
         
-        {/* HUD Overlay */}
+        {/* KOTOR-Style HUD */}
         <div className="hud-overlay">
-          <div className="hud-top">
-            <div className="hud-panel">
-              <div className="hud-label">SPEED</div>
-              <div className="hud-value">{speed}x</div>
+          
+          {/* Top Stats */}
+          <div className="hud-top-left">
+            <div className="hud-stat">
+              <span className="stat-label">TIME</span>
+              <span className="stat-value">{formatTime(raceTime)}</span>
             </div>
-            <div className="hud-panel">
-              <div className="hud-label">DISTANCE</div>
-              <div className="hud-value">{distance}m</div>
+            <div className="hud-stat">
+              <span className="stat-label">TARGET</span>
+              <span className="stat-value target">{formatTime(targetTime)}</span>
+            </div>
+            {bestTime && (
+              <div className="hud-stat">
+                <span className="stat-label">BEST</span>
+                <span className="stat-value best">{formatTime(bestTime)}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="hud-top-right">
+            <div className="hud-stat">
+              <span className="stat-label">DISTANCE</span>
+              <span className="stat-value">{distance}m</span>
             </div>
           </div>
-          
-          {gameState === 'ready' && (
-            <div className="start-prompt">
-              <h2>🏎️ SPEED RACING 3D</h2>
-              <p>Press ENTER to start</p>
-              <div className="controls-info">
-                <div>← → or A D - Change lanes</div>
-                <div>SPACE - Boost</div>
+
+          {/* Bottom - Speed & Gear Meter (KOTOR Style) */}
+          <div className="hud-bottom">
+            <div className="speed-display">
+              <div className="speed-label">SPEED</div>
+              <div className="speed-value">{speed}</div>
+            </div>
+
+            <div className="gear-meter-container">
+              <div className="gear-label">
+                GEAR {currentGear}
+                {shiftReady && <span className="shift-indicator">▲ SHIFT! ▲</span>}
               </div>
+              <div className="gear-meter">
+                <div 
+                  className={`gear-fill ${shiftReady ? 'ready' : ''} ${boostActive ? 'boost' : ''}`}
+                  style={{ width: `${gearMeter}%` }}
+                />
+                {shiftReady && <div className="shift-zone" />}
+              </div>
+              <div className="gear-hint">
+                {!shiftReady && gearMeter > 50 ? 'Building heat...' : ''}
+                {shiftReady ? 'Press SPACE to shift!' : ''}
+              </div>
+            </div>
+          </div>
+
+          {/* Start Screen */}
+          {gameState === 'ready' && (
+            <div className="start-screen">
+              <h1>SWOOP RACING</h1>
+              <h2>Taris Circuit</h2>
+              <div className="race-info">
+                <p>Target Time: <span className="highlight">{formatTime(targetTime)}s</span></p>
+                {bestTime && (
+                  <p>Your Best: <span className="highlight best">{formatTime(bestTime)}s</span></p>
+                )}
+              </div>
+              <div className="controls">
+                <h3>CONTROLS</h3>
+                <p><kbd>ENTER</kbd> START RACE</p>
+                <p><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> CHANGE LANES</p>
+                <p><kbd>SPACE</kbd> SHIFT GEAR (when meter full)</p>
+              </div>
+              <div className="press-start">Press ENTER to begin</div>
+            </div>
+          )}
+
+          {/* Finish Screen */}
+          {gameState === 'finished' && (
+            <div className="finish-screen">
+              <h1>RACE COMPLETE!</h1>
+              <div className="final-stats">
+                <div className="final-time">
+                  <span className="label">Your Time:</span>
+                  <span className="value">{formatTime(raceTime)}s</span>
+                </div>
+                <div className="final-target">
+                  <span className="label">Target:</span>
+                  <span className="value">{formatTime(targetTime)}s</span>
+                </div>
+                {raceTime <= targetTime ? (
+                  <div className="result-message victory">
+                    ★ VICTORY! TARGET BEATEN! ★
+                  </div>
+                ) : (
+                  <div className="result-message">
+                    Try again to beat the target time
+                  </div>
+                )}
+              </div>
+              <div className="press-start">Press ENTER to race again</div>
             </div>
           )}
         </div>

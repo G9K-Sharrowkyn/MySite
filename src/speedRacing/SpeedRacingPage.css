@@ -18,11 +18,10 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
-/* 16:9 aspect ratio trick */
 .canvas-container::before {
   content: '';
   display: block;
-  padding-top: 56.25%; /* 9/16 = 0.5625 = 56.25% */
+  padding-top: 56.25%;
 }
 
 .canvas-container canvas {
@@ -35,7 +34,7 @@
   outline: none;
 }
 
-/* HUD Overlay */
+/* ===== KOTOR-STYLE HUD ===== */
 .hud-overlay {
   position: absolute;
   top: 0;
@@ -44,114 +43,381 @@
   height: 100%;
   pointer-events: none;
   z-index: 10;
+  font-family: 'Courier New', monospace;
 }
 
-.hud-top {
+/* Top stats - corners */
+.hud-top-left,
+.hud-top-right {
+  position: absolute;
+  top: 2rem;
   display: flex;
-  justify-content: space-between;
-  padding: 2rem;
-  gap: 2rem;
+  flex-direction: column;
+  gap: 1rem;
 }
 
-.hud-panel {
-  background: rgba(0, 0, 0, 0.7);
-  border: 2px solid rgba(0, 200, 255, 0.5);
-  border-radius: 12px;
-  padding: 1rem 1.5rem;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 0 20px rgba(0, 200, 255, 0.3);
-  min-width: 150px;
+.hud-top-left {
+  left: 2rem;
 }
 
-.hud-label {
-  color: rgba(0, 200, 255, 0.8);
-  font-size: 0.8rem;
+.hud-top-right {
+  right: 2rem;
+  align-items: flex-end;
+}
+
+.hud-stat {
+  background: rgba(0, 0, 0, 0.8);
+  border: 2px solid rgba(0, 150, 200, 0.6);
+  padding: 0.75rem 1.25rem;
+  border-radius: 8px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 15px rgba(0, 150, 200, 0.3);
+}
+
+.stat-label {
+  display: block;
+  color: rgba(0, 200, 255, 0.9);
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
+  letter-spacing: 0.12em;
   margin-bottom: 0.25rem;
 }
 
-.hud-value {
+.stat-value {
+  display: block;
   color: #fff;
-  font-size: 2rem;
+  font-size: 1.8rem;
   font-weight: 700;
-  font-family: 'Courier New', monospace;
-  text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+  text-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
 }
 
-.start-prompt {
+.stat-value.target {
+  color: #ffa500;
+}
+
+.stat-value.best {
+  color: #00ff00;
+}
+
+/* ===== BOTTOM HUD - Speed & Gear Meter (KOTOR) ===== */
+.hud-bottom {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 2rem;
+}
+
+.speed-display {
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(0, 150, 200, 0.6);
+  padding: 1rem 1.5rem;
+  border-radius: 10px;
+  text-align: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(0, 150, 200, 0.3);
+}
+
+.speed-label {
+  color: rgba(0, 200, 255, 0.9);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  margin-bottom: 0.25rem;
+}
+
+.speed-value {
+  color: #fff;
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(0, 200, 255, 0.6);
+}
+
+/* Gear Meter Container */
+.gear-meter-container {
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(0, 150, 200, 0.6);
+  padding: 1rem 2rem;
+  border-radius: 10px;
+  min-width: 400px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 20px rgba(0, 150, 200, 0.3);
+}
+
+.gear-label {
+  color: rgba(0, 200, 255, 0.9);
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-bottom: 0.5rem;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+
+.shift-indicator {
+  color: #ffff00;
+  animation: shiftBlink 0.5s ease-in-out infinite;
+  text-shadow: 0 0 10px #ffff00;
+}
+
+@keyframes shiftBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.gear-meter {
+  position: relative;
+  width: 100%;
+  height: 30px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(0, 150, 200, 0.4);
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+}
+
+.gear-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00a0ff, #00c8ff);
+  transition: width 0.1s linear;
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.6);
+}
+
+.gear-fill.ready {
+  background: linear-gradient(90deg, #ff8800, #ffaa00);
+  box-shadow: 0 0 20px rgba(255, 170, 0, 0.8);
+  animation: gearPulse 0.5s ease-in-out infinite;
+}
+
+.gear-fill.boost {
+  background: linear-gradient(90deg, #00ff00, #00ff88);
+  box-shadow: 0 0 25px rgba(0, 255, 100, 1);
+}
+
+@keyframes gearPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.shift-zone {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 20%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 170, 0, 0.3));
+  border-left: 2px solid #ffaa00;
+}
+
+.gear-hint {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.85rem;
+  min-height: 1.2rem;
+}
+
+/* ===== START SCREEN ===== */
+.start-screen,
+.finish-screen {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   text-align: center;
-  background: rgba(0, 0, 0, 0.85);
-  border: 2px solid rgba(0, 200, 255, 0.6);
+  background: rgba(0, 0, 0, 0.9);
+  border: 3px solid rgba(0, 150, 200, 0.7);
   border-radius: 20px;
   padding: 3rem 4rem;
   backdrop-filter: blur(15px);
-  box-shadow: 0 0 40px rgba(0, 200, 255, 0.4);
-  animation: pulse 2s ease-in-out infinite;
+  box-shadow: 0 0 50px rgba(0, 150, 200, 0.5);
+  max-width: 600px;
 }
 
-.start-prompt h2 {
+.start-screen h1,
+.finish-screen h1 {
   color: #00c8ff;
   font-size: 3rem;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.5rem 0;
   text-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
+  letter-spacing: 0.15em;
+  font-weight: 900;
+}
+
+.start-screen h2 {
+  color: #fff;
+  font-size: 1.8rem;
+  margin: 0 0 2rem 0;
+  font-weight: 700;
   letter-spacing: 0.1em;
 }
 
-.start-prompt p {
-  color: #fff;
-  font-size: 1.5rem;
-  margin: 0 0 2rem 0;
-  animation: blink 1.5s ease-in-out infinite;
+.race-info {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 150, 200, 0.3);
 }
 
-.controls-info {
-  color: rgba(255, 255, 255, 0.7);
+.race-info p {
+  color: #fff;
+  font-size: 1.2rem;
+  margin: 0.5rem 0;
+}
+
+.race-info .highlight {
+  color: #ffa500;
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+
+.race-info .highlight.best {
+  color: #00ff00;
+}
+
+.controls {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 150, 200, 0.3);
+}
+
+.controls h3 {
+  color: #00c8ff;
+  font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+  letter-spacing: 0.12em;
+}
+
+.controls p {
+  color: #fff;
   font-size: 1rem;
+  margin: 0.75rem 0;
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
 }
 
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 0 40px rgba(0, 200, 255, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 60px rgba(0, 200, 255, 0.7);
-  }
+.controls kbd {
+  background: rgba(0, 200, 255, 0.2);
+  border: 2px solid rgba(0, 200, 255, 0.5);
+  padding: 0.25rem 0.75rem;
+  border-radius: 5px;
+  font-weight: 700;
+  color: #00c8ff;
+  box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+}
+
+.press-start {
+  margin-top: 2rem;
+  color: #ffff00;
+  font-size: 1.3rem;
+  font-weight: 700;
+  animation: blink 1.5s ease-in-out infinite;
+  text-shadow: 0 0 15px rgba(255, 255, 0, 0.7);
 }
 
 @keyframes blink {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
-/* Responsive adjustments */
+/* ===== FINISH SCREEN ===== */
+.final-stats {
+  margin: 2rem 0;
+}
+
+.final-time,
+.final-target {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  margin: 0.5rem 0;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 150, 200, 0.3);
+}
+
+.final-time .label,
+.final-target .label {
+  color: rgba(200, 200, 200, 0.9);
+  font-size: 1.2rem;
+}
+
+.final-time .value,
+.final-target .value {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  text-shadow: 0 0 10px rgba(0, 200, 255, 0.5);
+}
+
+.result-message {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(255, 100, 50, 0.2);
+  border: 2px solid rgba(255, 100, 50, 0.5);
+  border-radius: 10px;
+  color: #ffaa66;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.result-message.victory {
+  background: rgba(0, 255, 100, 0.2);
+  border-color: rgba(0, 255, 100, 0.6);
+  color: #00ff88;
+  font-size: 1.5rem;
+  text-shadow: 0 0 15px rgba(0, 255, 100, 0.8);
+  animation: victoryPulse 1s ease-in-out infinite;
+}
+
+@keyframes victoryPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
   .speed-racing-page {
     padding: 1rem 0.5rem;
   }
   
-  .hud-top {
-    padding: 1.5rem;
+  .hud-top-left,
+  .hud-top-right {
+    top: 1rem;
   }
   
-  .start-prompt {
+  .hud-top-left {
+    left: 1rem;
+  }
+  
+  .hud-top-right {
+    right: 1rem;
+  }
+  
+  .hud-bottom {
+    bottom: 1rem;
+    gap: 1rem;
+  }
+  
+  .gear-meter-container {
+    min-width: 300px;
+  }
+  
+  .start-screen,
+  .finish-screen {
     padding: 2rem 3rem;
-  }
-  
-  .start-prompt h2 {
-    font-size: 2rem;
   }
 }
 
@@ -164,33 +430,68 @@
     border-radius: 0;
   }
   
-  .hud-top {
-    padding: 1rem;
-    gap: 1rem;
+  .hud-top-left,
+  .hud-top-right {
+    top: 0.5rem;
+    gap: 0.5rem;
   }
   
-  .hud-panel {
+  .hud-top-left {
+    left: 0.5rem;
+  }
+  
+  .hud-top-right {
+    right: 0.5rem;
+  }
+  
+  .hud-stat {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .stat-label {
+    font-size: 0.65rem;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem;
+  }
+  
+  .hud-bottom {
+    bottom: 0.5rem;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .speed-display {
     padding: 0.75rem 1rem;
-    min-width: 120px;
   }
   
-  .hud-value {
-    font-size: 1.5rem;
+  .speed-value {
+    font-size: 2rem;
   }
   
-  .start-prompt {
+  .gear-meter-container {
+    min-width: 250px;
+    padding: 0.75rem 1rem;
+  }
+  
+  .start-screen,
+  .finish-screen {
     padding: 1.5rem 2rem;
+    max-width: 90%;
   }
   
-  .start-prompt h2 {
-    font-size: 1.5rem;
+  .start-screen h1,
+  .finish-screen h1 {
+    font-size: 2rem;
   }
   
-  .start-prompt p {
-    font-size: 1rem;
+  .start-screen h2 {
+    font-size: 1.2rem;
   }
   
-  .controls-info {
+  .controls p {
     font-size: 0.85rem;
+    flex-wrap: wrap;
   }
 }
