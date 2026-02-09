@@ -230,7 +230,7 @@ const SpeedRacingPage = () => {
     let jumpVelocity = 0;
 
     // Game constants (use globals defined above)
-    const GEAR_ACCELERATION = [0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]; // Gear 0 = 0 (stopped), others accelerate
+    const GEAR_ACCELERATION = [0, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8]; // Gear 0 = 0 (stopped), others slower acceleration
     const JUMP_STRENGTH = 8;
     const GRAVITY = 20;
 
@@ -383,11 +383,18 @@ const SpeedRacingPage = () => {
         setRaceTime(elapsed);
 
         // ===== GEAR METER: Each 1 km/h = 5% (20 km/h range = 100%) =====
-        const minSpeed = GEAR_MAX_SPEEDS[currentGear];
+        // minSpeed = start of current gear range
+        const minSpeed = currentGear > 0 ? GEAR_MAX_SPEEDS[currentGear - 1] : 0;
+        const maxSpeed = GEAR_MAX_SPEEDS[currentGear];
         const speedInGear = currentSpeed - minSpeed;
-        const speedRange = 20; // Fixed 20 km/h per gear
+        const speedRange = maxSpeed - minSpeed;
         
-        gearHeat = Math.min(100, Math.max(0, (speedInGear / speedRange) * 100));
+        // Avoid division by zero for gear 0
+        if (speedRange > 0) {
+          gearHeat = Math.min(100, Math.max(0, (speedInGear / speedRange) * 100));
+        } else {
+          gearHeat = 0;
+        }
         gearHeatRef.current = gearHeat;
         setGearMeter(gearHeat);
         
@@ -519,7 +526,7 @@ const SpeedRacingPage = () => {
         camera.position.y = 1.2; // No bob, perfectly stable
         
         // ===== FPS COUNTER =====
-        const currentFps = Math.round(1 / deltaTime);
+        const currentFps = Math.round(engine.getFps());
         setFps(currentFps);
       }
 
