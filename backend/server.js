@@ -934,21 +934,13 @@ const passwordAuthLimitMax =
 const googleAuthLimitMax =
   Number(process.env.GOOGLE_AUTH_RATE_LIMIT_MAX) ||
   (isDev ? 600 : 400);
-const buildRateLimitKey = (req) => {
-  const token = req.get('x-auth-token');
-  if (token && token.length > 16) {
-    return `token:${token.slice(-16)}`;
-  }
-  // Return undefined to let express-rate-limit handle IP properly with IPv6 support
-  return undefined;
-};
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: apiLimitMax,
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: buildRateLimitKey,
   requestPropertyName: 'rateLimitInfo',
   handler: (req, res) => {
     logAuthDebug(req, res, 'rate_limit_global', {
@@ -964,7 +956,6 @@ const loginAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: loginAuthLimitMax,
   message: 'Too many login attempts, please try again later.',
-  keyGenerator: buildRateLimitKey,
   requestPropertyName: 'rateLimitInfo',
   handler: (req, res) => {
     logAuthDebug(req, res, 'rate_limit_login', {
@@ -979,7 +970,6 @@ const registerAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: registerAuthLimitMax,
   message: 'Too many registration attempts, please try again later.',
-  keyGenerator: buildRateLimitKey,
   requestPropertyName: 'rateLimitInfo',
   handler: (req, res) => {
     logAuthDebug(req, res, 'rate_limit_register', {
@@ -994,7 +984,6 @@ const googleAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: googleAuthLimitMax,
   message: 'Too many Google sign-in attempts, please try again later.',
-  keyGenerator: buildRateLimitKey,
   requestPropertyName: 'rateLimitInfo',
   handler: (req, res) => {
     logAuthDebug(req, res, 'rate_limit_google', {
@@ -1009,7 +998,6 @@ const passwordAuthLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: passwordAuthLimitMax,
   message: 'Too many password reset attempts, please try again later.',
-  keyGenerator: buildRateLimitKey,
   requestPropertyName: 'rateLimitInfo',
   handler: (req, res) => {
     logAuthDebug(req, res, 'rate_limit_password', {
