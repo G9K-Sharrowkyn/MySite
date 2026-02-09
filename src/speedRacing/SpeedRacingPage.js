@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLanguage } from '../i18n/LanguageContext';
 import './SpeedRacingPage.css';
 import * as BABYLON from '@babylonjs/core';
 
 const SpeedRacingPage = () => {
-  const { t } = useLanguage();
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('ready'); // ready, racing
   const [speed, setSpeed] = useState(0);
