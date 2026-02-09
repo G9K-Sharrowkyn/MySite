@@ -35,10 +35,123 @@
   outline: none;
 }
 
+/* HUD Overlay */
+.hud-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.hud-top {
+  display: flex;
+  justify-content: space-between;
+  padding: 2rem;
+  gap: 2rem;
+}
+
+.hud-panel {
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(0, 200, 255, 0.5);
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 0 20px rgba(0, 200, 255, 0.3);
+  min-width: 150px;
+}
+
+.hud-label {
+  color: rgba(0, 200, 255, 0.8);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.25rem;
+}
+
+.hud-value {
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  text-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+}
+
+.start-prompt {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(0, 200, 255, 0.6);
+  border-radius: 20px;
+  padding: 3rem 4rem;
+  backdrop-filter: blur(15px);
+  box-shadow: 0 0 40px rgba(0, 200, 255, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.start-prompt h2 {
+  color: #00c8ff;
+  font-size: 3rem;
+  margin: 0 0 1rem 0;
+  text-shadow: 0 0 20px rgba(0, 200, 255, 0.8);
+  letter-spacing: 0.1em;
+}
+
+.start-prompt p {
+  color: #fff;
+  font-size: 1.5rem;
+  margin: 0 0 2rem 0;
+  animation: blink 1.5s ease-in-out infinite;
+}
+
+.controls-info {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 40px rgba(0, 200, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 60px rgba(0, 200, 255, 0.7);
+  }
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 1200px) {
   .speed-racing-page {
     padding: 1rem 0.5rem;
+  }
+  
+  .hud-top {
+    padding: 1.5rem;
+  }
+  
+  .start-prompt {
+    padding: 2rem 3rem;
+  }
+  
+  .start-prompt h2 {
+    font-size: 2rem;
   }
 }
 
@@ -49,5 +162,35 @@
   
   .canvas-container {
     border-radius: 0;
+  }
+  
+  .hud-top {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .hud-panel {
+    padding: 0.75rem 1rem;
+    min-width: 120px;
+  }
+  
+  .hud-value {
+    font-size: 1.5rem;
+  }
+  
+  .start-prompt {
+    padding: 1.5rem 2rem;
+  }
+  
+  .start-prompt h2 {
+    font-size: 1.5rem;
+  }
+  
+  .start-prompt p {
+    font-size: 1rem;
+  }
+  
+  .controls-info {
+    font-size: 0.85rem;
   }
 }
