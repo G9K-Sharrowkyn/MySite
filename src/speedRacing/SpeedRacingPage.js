@@ -230,6 +230,7 @@ const SpeedRacingPage = () => {
     let jumpVelocity = 0;
 
     // Game constants (use globals defined above)
+    const GEAR_ACCELERATION = [0, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15]; // Gear 0 = 0 (stopped), others accelerate
     const JUMP_STRENGTH = 8;
     const GRAVITY = 20;
 
@@ -271,9 +272,6 @@ const SpeedRacingPage = () => {
         if (isRacingRef.current && gearRef.current < MAX_GEAR) {
           currentGear++;
           gearRef.current = currentGear;
-          // Add 20 km/h per gear shift
-          currentSpeed = GEAR_MAX_SPEEDS[currentGear];
-          speedRef.current = currentSpeed;
           setCurrentGear(currentGear);
           setShiftReady(false);
         }
@@ -348,9 +346,6 @@ const SpeedRacingPage = () => {
         if (gearRef.current < MAX_GEAR) {
           currentGear++;
           gearRef.current = currentGear;
-          // Add 20 km/h per gear shift
-          currentSpeed = GEAR_MAX_SPEEDS[currentGear];
-          speedRef.current = currentSpeed;
           setCurrentGear(currentGear);
           setShiftReady(false);
         }
@@ -402,10 +397,16 @@ const SpeedRacingPage = () => {
           setShiftReady(false);
         }
 
-        // Speed is controlled by gear shifts only, no auto-acceleration
-        // Gentle slowdown from obstacle hits
-        if (currentSpeed > GEAR_MAX_SPEEDS[currentGear]) {
-          currentSpeed = Math.max(GEAR_MAX_SPEEDS[currentGear], currentSpeed - deltaTime * 30);
+        // ===== ACCELERATION =====
+        // Vehicle accelerates up to max speed of current gear
+        const maxSpeedForGear = GEAR_MAX_SPEEDS[currentGear];
+        const accel = GEAR_ACCELERATION[currentGear];
+        
+        if (currentSpeed < maxSpeedForGear) {
+          currentSpeed = Math.min(maxSpeedForGear, currentSpeed + accel * deltaTime);
+        } else if (currentSpeed > maxSpeedForGear) {
+          // Gentle slowdown when over max speed (from obstacle or boost)
+          currentSpeed = Math.max(maxSpeedForGear, currentSpeed - deltaTime * 15);
         }
         
         speedRef.current = currentSpeed;
@@ -461,13 +462,9 @@ const SpeedRacingPage = () => {
               pad.collected = true;
               pad.mesh.isVisible = false;
               
-              // Add 25% to gear heat
-              gearHeat = Math.min(100, gearHeat + 25);
-              setGearMeter(gearHeat);
-              
-              if(gearHeat >= 100) {
-                setShiftReady(true);
-              }
+              // Boost adds +30 km/h to speed
+              currentSpeed = Math.min(200, currentSpeed + 30);
+              speedRef.current = currentSpeed;
               
               setBoostActive(true);
               setTimeout(() => setBoostActive(false), 300);
