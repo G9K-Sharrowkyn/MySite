@@ -248,6 +248,8 @@ const SpeedRacingPage = () => {
             // GO!
             setGameState('racing');
             countdownStep = 0;
+            isRacing = true;
+            raceStartTime = performance.now();
           }, 600);
         }, 600);
       }, 600);
@@ -258,7 +260,10 @@ const SpeedRacingPage = () => {
       if (gameState === 'ready') return;
       
       if (e.button === 0) { // LEFT CLICK - Shift gear
-        if (isRacing && currentGear < MAX_GEAR && gearHeat >= 100) {
+        // Gear 0 -> 1 always allowed (start), others need full heat
+        const canShift = currentGear === 0 || gearHeat >= 100;
+        
+        if (isRacing && currentGear < MAX_GEAR && canShift) {
           currentGear++;
           gearRef.current = currentGear;
           gearHeat = 0;
@@ -319,12 +324,6 @@ const SpeedRacingPage = () => {
         });
       }
 
-      // Start racing when countdown finishes
-      if (gameState === 'countdown' && countdownStep === 0) {
-        isRacing = true;
-        raceStartTime = performance.now();
-      }
-
       // Restart after finish
       if (e.key === 'Enter' && gameState === 'finished') {
         setGameState('ready');
@@ -335,7 +334,10 @@ const SpeedRacingPage = () => {
       if ((e.key === ' ' || e.key === 'Shift') && isRacing) {
         e.preventDefault();
         
-        if (currentGear < MAX_GEAR && gearHeat >= 100) {
+        // Gear 0 -> 1 always allowed (start), others need full heat
+        const canShift = currentGear === 0 || gearHeat >= 100;
+        
+        if (currentGear < MAX_GEAR && canShift) {
           currentGear++;
           gearRef.current = currentGear;
           gearHeat = 0;
