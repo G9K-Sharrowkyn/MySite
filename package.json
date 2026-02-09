@@ -1,8 +1,10 @@
 {
   "name": "my-site",
-  "version": "0.300",
+  "version": "0.301",
   "private": true,
   "dependencies": {
+    "@babylonjs/core": "^8.50.2",
+    "@babylonjs/loaders": "^8.50.2",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -57,5 +59,3 @@
     "tailwindcss": "^3.4.4"
   }
 }
-
-
