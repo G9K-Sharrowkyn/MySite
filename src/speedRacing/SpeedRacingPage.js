@@ -42,6 +42,7 @@ const SpeedRacingPage = () => {
   const isJumpingRef = useRef(false);
   const gearHeatRef = useRef(0);
   const isRacingRef = useRef(false);
+  const gameStateRef = useRef('ready'); // Track gameState for handlers
   
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -235,6 +236,7 @@ const SpeedRacingPage = () => {
       if (countdownStep > 0) return; // Already started
       
       setGameState('countdown');
+      gameStateRef.current = 'countdown';
       countdownStep = 1;
       setCountdownLights(1);
       
@@ -249,6 +251,7 @@ const SpeedRacingPage = () => {
           setTimeout(() => {
             // GO!
             setGameState('racing');
+            gameStateRef.current = 'racing';
             countdownStep = 0;
             isRacing = true;
             isRacingRef.current = true;
@@ -260,7 +263,7 @@ const SpeedRacingPage = () => {
 
     // ===== MOUSE CONTROLS =====
     const handleMouseDown = (e) => {
-      if (gameState === 'ready') return;
+      if (gameStateRef.current === 'ready') return;
       
       if (e.button === 0) { // LEFT CLICK - Shift gear
         // Gear 0 -> 1 always allowed (start), others need full heat
@@ -300,7 +303,7 @@ const SpeedRacingPage = () => {
       keys[e.key.toLowerCase()] = true;
       
       // Start countdown with ENTER
-      if (e.key === 'Enter' && gameState === 'ready') {
+      if (e.key === 'Enter' && gameStateRef.current === 'ready') {
         startCountdown();
         
         // Reset game state
@@ -320,6 +323,7 @@ const SpeedRacingPage = () => {
         currentXRef.current = 0;
         isJumpingRef.current = false;
         isRacingRef.current = false;
+        gameStateRef.current = 'ready';
         setIsJumping(false);
         
         // Reset boost pads and obstacles
@@ -334,8 +338,9 @@ const SpeedRacingPage = () => {
       }
 
       // Restart after finish
-      if (e.key === 'Enter' && gameState === 'finished') {
+      if (e.key === 'Enter' && gameStateRef.current === 'finished') {
         setGameState('ready');
+        gameStateRef.current = 'ready';
         setCountdownLights(0);
       }
       
@@ -522,6 +527,7 @@ const SpeedRacingPage = () => {
           isRacing = false;
           isRacingRef.current = false;
           setGameState('finished');
+          gameStateRef.current = 'finished';
           
           const finalTime = raceTimeRef.current;
           if (!bestTime || finalTime < bestTime) {
