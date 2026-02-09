@@ -939,9 +939,8 @@ const buildRateLimitKey = (req) => {
   if (token && token.length > 16) {
     return `token:${token.slice(-16)}`;
   }
-  const ip = req.ip || req.socket?.remoteAddress || 'unknown-ip';
-  const ua = (req.get('user-agent') || 'unknown-ua').slice(0, 120);
-  return `${ip}:${ua}`;
+  // Return undefined to let express-rate-limit handle IP properly with IPv6 support
+  return undefined;
 };
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
