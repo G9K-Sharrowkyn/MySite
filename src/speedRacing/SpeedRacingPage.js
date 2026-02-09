@@ -15,7 +15,7 @@ const TRACKS = {
 
 // Game constants
 const MAX_GEAR = 10;
-const GEAR_MAX_SPEEDS = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
+const GEAR_MAX_SPEEDS = [5, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200]; // Gear 0 = 5 km/h idle
 
 const SpeedRacingPage = () => {
   const canvasRef = useRef(null);
@@ -225,7 +225,7 @@ const SpeedRacingPage = () => {
     let jumpVelocity = 0;
 
     // Game constants (use globals defined above)
-    const GEAR_ACCELERATION = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; // Slower acceleration
+    const GEAR_ACCELERATION = [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; // Gear 0 has slow accel
     const GEAR_HEAT_AUTO_RATE = 100 / 15; // 100% in 15 seconds
     const JUMP_STRENGTH = 8;
     const GRAVITY = 20;
@@ -310,6 +310,7 @@ const SpeedRacingPage = () => {
         travelDistance = 0;
         currentX = 0;
         jumpHeight = 0;
+        jumpVelocity = 0;
         isJumping = false;
         swoop.position.set(0, 0, 0);
         speedRef.current = 2;
@@ -319,6 +320,7 @@ const SpeedRacingPage = () => {
         currentXRef.current = 0;
         isJumpingRef.current = false;
         isRacingRef.current = false;
+        setIsJumping(false);
         
         // Reset boost pads and obstacles
         boostPads.forEach(pad => { 
@@ -403,8 +405,9 @@ const SpeedRacingPage = () => {
         
         if (currentSpeed < maxSpeedForGear) {
           currentSpeed = Math.min(maxSpeedForGear, currentSpeed + accel * deltaTime);
-        } else {
-          currentSpeed = maxSpeedForGear;
+        } else if (currentSpeed > maxSpeedForGear) {
+          // Gentle deceleration when over max speed
+          currentSpeed = Math.max(maxSpeedForGear, currentSpeed - deltaTime * 15);
         }
 
         speedRef.current = currentSpeed;
