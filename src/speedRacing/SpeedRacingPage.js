@@ -40,6 +40,8 @@ const SpeedRacingPage = () => {
   const trackObjectsRef = useRef({ boostPads: [], obstacles: [] });
   const jumpHeightRef = useRef(0);
   const isJumpingRef = useRef(false);
+  const gearHeatRef = useRef(0);
+  const isRacingRef = useRef(false);
   
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -249,6 +251,7 @@ const SpeedRacingPage = () => {
             setGameState('racing');
             countdownStep = 0;
             isRacing = true;
+            isRacingRef.current = true;
             raceStartTime = performance.now();
           }, 600);
         }, 600);
@@ -261,19 +264,20 @@ const SpeedRacingPage = () => {
       
       if (e.button === 0) { // LEFT CLICK - Shift gear
         // Gear 0 -> 1 always allowed (start), others need full heat
-        const canShift = currentGear === 0 || gearHeat >= 100;
+        const canShift = gearRef.current === 0 || gearHeatRef.current >= 100;
         
-        if (isRacing && currentGear < MAX_GEAR && canShift) {
+        if (isRacingRef.current && gearRef.current < MAX_GEAR && canShift) {
           currentGear++;
           gearRef.current = currentGear;
           gearHeat = 0;
+          gearHeatRef.current = 0;
           setCurrentGear(currentGear);
           setShiftReady(false);
           setGearMeter(0);
         }
       } else if (e.button === 2) { // RIGHT CLICK - Jump
         e.preventDefault();
-        if (isRacing && !isJumping) {
+        if (isRacingRef.current && !isJumpingRef.current) {
           isJumping = true;
           jumpVelocity = JUMP_STRENGTH;
           isJumpingRef.current = true;
@@ -310,8 +314,11 @@ const SpeedRacingPage = () => {
         swoop.position.set(0, 0, 0);
         speedRef.current = 2;
         gearRef.current = 0;
+        gearHeatRef.current = 0;
         raceTimeRef.current = 0;
         currentXRef.current = 0;
+        isJumpingRef.current = false;
+        isRacingRef.current = false;
         
         // Reset boost pads and obstacles
         boostPads.forEach(pad => { 
@@ -331,16 +338,17 @@ const SpeedRacingPage = () => {
       }
       
       // GEAR SHIFT (Space or Shift or LMB)
-      if ((e.key === ' ' || e.key === 'Shift') && isRacing) {
+      if ((e.key === ' ' || e.key === 'Shift') && isRacingRef.current) {
         e.preventDefault();
         
         // Gear 0 -> 1 always allowed (start), others need full heat
-        const canShift = currentGear === 0 || gearHeat >= 100;
+        const canShift = gearRef.current === 0 || gearHeatRef.current >= 100;
         
-        if (currentGear < MAX_GEAR && canShift) {
+        if (gearRef.current < MAX_GEAR && canShift) {
           currentGear++;
           gearRef.current = currentGear;
           gearHeat = 0;
+          gearHeatRef.current = 0;
           setCurrentGear(currentGear);
           setShiftReady(false);
           setGearMeter(0);
@@ -348,7 +356,7 @@ const SpeedRacingPage = () => {
       }
 
       // JUMP (Space or RMB)
-      if (e.key === ' ' && isRacing && !isJumping) {
+      if (e.key === ' ' && isRacingRef.current && !isJumpingRef.current) {
         e.preventDefault();
         isJumping = true;
         jumpVelocity = JUMP_STRENGTH;
@@ -381,6 +389,7 @@ const SpeedRacingPage = () => {
         // ===== AUTO-GROWING GEAR HEAT =====
         if (currentGear > 0 && currentGear < MAX_GEAR) {
           gearHeat = Math.min(100, gearHeat + GEAR_HEAT_AUTO_RATE * deltaTime);
+          gearHeatRef.current = gearHeat;
           setGearMeter(gearHeat);
           
           if (gearHeat >= 100) {
@@ -508,6 +517,7 @@ const SpeedRacingPage = () => {
         // ===== FINISH LINE =====
         if (travelDistance >= TRACKS.taris.length) {
           isRacing = false;
+          isRacingRef.current = false;
           setGameState('finished');
           
           const finalTime = raceTimeRef.current;
