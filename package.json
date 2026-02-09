@@ -1,6 +1,6 @@
 {
   "name": "my-site",
-  "version": "0.316",
+  "version": "0.317",
   "private": true,
   "dependencies": {
     "@babylonjs/core": "^8.50.2",

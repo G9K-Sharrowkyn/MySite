@@ -103,7 +103,10 @@ const SpeedRacingPage = () => {
       segment.position.z = i * segmentLength;
       
       const trackMat = new BABYLON.StandardMaterial(`trackMat_${i}`, scene);
-      trackMat.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.2);
+      const roadTexture = new BABYLON.Texture('/sr/road.png', scene);
+      roadTexture.uScale = 3; // Repeat across width
+      roadTexture.vScale = 10; // Repeat along length
+      trackMat.diffuseTexture = roadTexture;
       trackMat.specularColor = new BABYLON.Color3(0.1, 0.1, 0.15);
       segment.material = trackMat;
       
