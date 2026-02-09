@@ -134,9 +134,9 @@ const SpeedRacingPage = () => {
     const boostPads = [];
     const lanes = [-6, -2, 2, 6]; // Four lanes spread across track
     
-    // Statyczne pozycje boosterów (co ~200m)
+    // Statyczne pozycje boosterów (co ~20m)
     for (let i = 0; i < TRACKS.taris.boostPadCount; i++) {
-      const zPos = 200 + i * 200;
+      const zPos = 50 + i * 20;
       const lane = lanes[i % lanes.length];
       
       const pad = BABYLON.MeshBuilder.CreateBox(
@@ -167,9 +167,9 @@ const SpeedRacingPage = () => {
     // ===== OBSTACLES (debris/rocks) - STATYCZNE POZYCJE =====
     const obstacles = [];
     
-    // Statyczne pozycje przeszkód (co ~250m, offsetowane od boosterów)
+    // Statyczne pozycje przeszkód (co ~20m, offsetowane od boosterów)
     for (let i = 0; i < TRACKS.taris.obstacleCount; i++) {
-      const zPos = 350 + i * 250;
+      const zPos = 60 + i * 20;
       const lane = lanes[(i + 2) % lanes.length]; // Offset from boosters
       
       const obstacle = BABYLON.MeshBuilder.CreateIcoSphere(
@@ -227,7 +227,6 @@ const SpeedRacingPage = () => {
 
     // Game constants (use globals defined above)
     const GEAR_ACCELERATION = [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; // Gear 0 has slow accel
-    const GEAR_HEAT_AUTO_RATE = 100 / 15; // 100% in 15 seconds
     const JUMP_STRENGTH = 8;
     const GRAVITY = 20;
 
@@ -272,11 +271,9 @@ const SpeedRacingPage = () => {
         if (isRacingRef.current && gearRef.current < MAX_GEAR && canShift) {
           currentGear++;
           gearRef.current = currentGear;
-          gearHeat = 0;
-          gearHeatRef.current = 0;
+          // gearHeat is now calculated from speed, no reset needed
           setCurrentGear(currentGear);
           setShiftReady(false);
-          setGearMeter(0);
         }
       } else if (e.button === 2) { // RIGHT CLICK - Jump
         e.preventDefault();
@@ -354,11 +351,9 @@ const SpeedRacingPage = () => {
         if (gearRef.current < MAX_GEAR && canShift) {
           currentGear++;
           gearRef.current = currentGear;
-          gearHeat = 0;
-          gearHeatRef.current = 0;
+          // gearHeat is now calculated from speed, no reset needed
           setCurrentGear(currentGear);
           setShiftReady(false);
-          setGearMeter(0);
         }
       }
 
@@ -393,15 +388,33 @@ const SpeedRacingPage = () => {
         raceTimeRef.current = elapsed;
         setRaceTime(elapsed);
 
-        // ===== AUTO-GROWING GEAR HEAT =====
-        if (currentGear > 0 && currentGear < MAX_GEAR) {
-          gearHeat = Math.min(100, gearHeat + GEAR_HEAT_AUTO_RATE * deltaTime);
+        // ===== GEAR METER BASED ON SPEED (not time) =====
+        if (currentGear > 0 && currentGear <= MAX_GEAR) {
+          const minSpeed = GEAR_MAX_SPEEDS[currentGear - 1]; // Previous gear max
+          const maxSpeed = GEAR_MAX_SPEEDS[currentGear]; // Current gear max
+          const speedRange = maxSpeed - minSpeed;
+          const speedInGear = currentSpeed - minSpeed;
+          
+          gearHeat = Math.min(100, Math.max(0, (speedInGear / speedRange) * 100));
           gearHeatRef.current = gearHeat;
           setGearMeter(gearHeat);
           
-          if (gearHeat >= 100) {
+          if (gearHeat >= 100 && currentGear < MAX_GEAR) {
             setShiftReady(true);
+          } else {
+            setShiftReady(false);
           }
+        } else if (currentGear === 0) {
+          // Gear 0: show progress from 2 to 5 km/h
+          const minSpeed = 2;
+          const maxSpeed = 5;
+          const speedRange = maxSpeed - minSpeed;
+          const speedInGear = currentSpeed - minSpeed;
+          
+          gearHeat = Math.min(100, Math.max(0, (speedInGear / speedRange) * 100));
+          gearHeatRef.current = gearHeat;
+          setGearMeter(gearHeat);
+          setShiftReady(false);
         }
 
         // ===== ACCELERATION =====
@@ -509,9 +522,7 @@ const SpeedRacingPage = () => {
               currentGear = newGear;
               gearRef.current = newGear;
               setCurrentGear(newGear);
-              gearHeat = 0;
-              setGearMeter(0);
-              setShiftReady(false);
+              // gearMeter will auto-recalculate based on new speed
               
               // Visual feedback
               obs.mesh.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
