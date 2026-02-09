@@ -382,8 +382,10 @@ const SpeedRacingPage = () => {
         raceTimeRef.current = elapsed;
         setRaceTime(elapsed);
 
-        // ===== GEAR METER: Each 1 km/h = 5% (20 km/h range = 100%) =====
-        // minSpeed = start of current gear range
+        // ===== GEAR METER: Each 1 km/h within gear = 5% of meter =====
+        // Gear 1 (0-20 km/h): 10 km/h = 50%, 18 km/h = 90%, 20 km/h = 100%
+        // Gear 2 (20-40 km/h): 21 km/h = 5%, 30 km/h = 50%, 40 km/h = 100%
+        // Meter resets each gear shift
         const minSpeed = currentGear > 0 ? GEAR_MAX_SPEEDS[currentGear - 1] : 0;
         const maxSpeed = GEAR_MAX_SPEEDS[currentGear];
         const speedInGear = currentSpeed - minSpeed;
@@ -469,8 +471,8 @@ const SpeedRacingPage = () => {
               pad.collected = true;
               pad.mesh.isVisible = false;
               
-              // Boost adds +30 km/h to speed
-              currentSpeed = Math.min(200, currentSpeed + 30);
+              // Boost adds +5 km/h to speed (+25% of meter in 20 km/h range)
+              currentSpeed = Math.min(200, currentSpeed + 5);
               speedRef.current = currentSpeed;
               
               setBoostActive(true);
