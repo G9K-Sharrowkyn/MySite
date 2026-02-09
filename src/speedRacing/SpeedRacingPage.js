@@ -387,7 +387,7 @@ const SpeedRacingPage = () => {
       const deltaTime = (currentTime - lastTime) / 1000;
       lastTime = currentTime;
 
-      if (isRacing && gameState === 'racing') {
+      if (isRacing && gameStateRef.current === 'racing') {
         // Update race time
         const elapsed = (currentTime - raceStartTime) / 1000;
         raceTimeRef.current = elapsed;
@@ -557,7 +557,7 @@ const SpeedRacingPage = () => {
       canvas.removeEventListener('contextmenu', handleContextMenu);
       engine.dispose();
     };
-  }, [bestTime, gameState]);
+  }, [bestTime]);
 
   const formatTime = (seconds) => {
     if (!seconds) return '0.00';
