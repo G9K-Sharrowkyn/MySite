@@ -25,7 +25,6 @@ const SpeedRacingPage = () => {
   const [targetTime] = useState(TRACKS.taris.targetTime);
   const [shiftReady, setShiftReady] = useState(false);
   const [boostActive, setBoostActive] = useState(false);
-  const [boostActive, setBoostActive] = useState(false);
   
   // Game refs
   const speedRef = useRef(0);
