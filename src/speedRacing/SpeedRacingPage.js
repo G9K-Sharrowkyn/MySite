@@ -6,17 +6,21 @@ import * as BABYLON from '@babylonjs/core';
 const TRACKS = {
   taris: {
     name: 'Taris Circuit',
-    length: 800,
-    targetTime: 28.5,
-    boostPadCount: 25,
-    obstacleCount: 20
+    length: 8000,
+    targetTime: 120,
+    boostPadCount: 40,
+    obstacleCount: 30
   }
 };
+
+// Game constants
+const MAX_GEAR = 10;
+const GEAR_MAX_SPEEDS = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200];
 
 const SpeedRacingPage = () => {
   const canvasRef = useRef(null);
   const [gameState, setGameState] = useState('ready'); // ready, countdown, racing, finished
-  const [currentGear, setCurrentGear] = useState(1);
+  const [currentGear, setCurrentGear] = useState(0);
   const [gearMeter, setGearMeter] = useState(0);
   const [speed, setSpeed] = useState(0);
   const [distance, setDistance] = useState(0);
@@ -25,19 +29,24 @@ const SpeedRacingPage = () => {
   const [targetTime] = useState(TRACKS.taris.targetTime);
   const [shiftReady, setShiftReady] = useState(false);
   const [boostActive, setBoostActive] = useState(false);
+  const [countdownLights, setCountdownLights] = useState(0); // 0-3
+  const [isJumping, setIsJumping] = useState(false);
   
   // Game refs
   const speedRef = useRef(0);
-  const gearRef = useRef(1);
-  const currentLaneRef = useRef(0); // -1, 0, 1
+  const gearRef = useRef(0);
+  const currentXRef = useRef(0); // Full X position (-7 to +7)
   const raceTimeRef = useRef(0);
-  const isAcceleratingRef = useRef(false);
   const trackObjectsRef = useRef({ boostPads: [], obstacles: [] });
+  const jumpHeightRef = useRef(0);
+  const isJumpingRef = useRef(false);
   
   useEffect(() => {
     if (!canvasRef.current) return;
 
-    const engine = new BABYLON.Engine(canvasRef.current, true, {
+    const canvas = canvasRef.current; // Store ref for cleanup
+
+    const engine = new BABYLON.Engine(canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true,
       antialias: true
@@ -118,13 +127,14 @@ const SpeedRacingPage = () => {
       rightWall.material = wallMat;
     }
 
-    // ===== BOOST PADS (glowing accelerators) =====
+    // ===== BOOST PADS (glowing accelerators) - STATYCZNE POZYCJE =====
     const boostPads = [];
-    const lanes = [-4, 0, 4]; // Left, Center, Right
+    const lanes = [-6, -2, 2, 6]; // Four lanes spread across track
     
+    // Statyczne pozycje boosterów (co ~200m)
     for (let i = 0; i < TRACKS.taris.boostPadCount; i++) {
-      const zPos = 80 + i * 30 + Math.random() * 10;
-      const lane = lanes[Math.floor(Math.random() * lanes.length)];
+      const zPos = 200 + i * 200;
+      const lane = lanes[i % lanes.length];
       
       const pad = BABYLON.MeshBuilder.CreateBox(
         `boost_${i}`,
@@ -148,15 +158,16 @@ const SpeedRacingPage = () => {
       glow.intensity = 5;
       glow.range = 15;
       
-      boostPads.push({ mesh: pad, lane, zPos, collected: false });
+      boostPads.push({ mesh: pad, xPos: lane, zPos, collected: false });
     }
 
-    // ===== OBSTACLES (debris/rocks) =====
+    // ===== OBSTACLES (debris/rocks) - STATYCZNE POZYCJE =====
     const obstacles = [];
     
+    // Statyczne pozycje przeszkód (co ~250m, offsetowane od boosterów)
     for (let i = 0; i < TRACKS.taris.obstacleCount; i++) {
-      const zPos = 100 + i * 35 + Math.random() * 15;
-      const lane = lanes[Math.floor(Math.random() * lanes.length)];
+      const zPos = 350 + i * 250;
+      const lane = lanes[(i + 2) % lanes.length]; // Offset from boosters
       
       const obstacle = BABYLON.MeshBuilder.CreateIcoSphere(
         `obstacle_${i}`,
@@ -170,7 +181,7 @@ const SpeedRacingPage = () => {
       obsMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
       obstacle.material = obsMat;
       
-      obstacles.push({ mesh: obstacle, lane, zPos, hit: false });
+      obstacles.push({ mesh: obstacle, xPos: lane, zPos, hit: false });
     }
 
     trackObjectsRef.current = { boostPads, obstacles };
@@ -199,19 +210,79 @@ const SpeedRacingPage = () => {
     engineGlow.isVisible = false; // Hidden in first person
 
     // ===== GAME STATE =====
-    let currentSpeed = 0;
-    let currentGear = 1;
+    let currentSpeed = 2; // Start from 2 km/h
+    let currentGear = 0;
     let gearHeat = 0;
-    let currentLane = 0;
+    let currentX = 0; // Full X position (-7 to +7)
     let travelDistance = 0;
     let raceStartTime = 0;
     let isRacing = false;
-    let isAccelerating = false;
+    let countdownStep = 0;
+    let jumpHeight = 0;
+    let isJumping = false;
+    let jumpVelocity = 0;
 
-    // Speed constants per gear
-    const GEAR_MAX_SPEEDS = [0, 40, 80, 120, 160, 200]; // Gear 0 (unused), 1-5
-    const GEAR_ACCELERATION = [0, 8, 6, 5, 4, 3]; // Acceleration rate per gear
-    const MAX_GEAR = 5;
+    // Game constants (use globals defined above)
+    const GEAR_ACCELERATION = [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; // Slower acceleration
+    const GEAR_HEAT_AUTO_RATE = 100 / 15; // 100% in 15 seconds
+    const JUMP_STRENGTH = 8;
+    const GRAVITY = 20;
+
+    // ===== START COUNTDOWN SYSTEM =====
+    const startCountdown = () => {
+      if (countdownStep > 0) return; // Already started
+      
+      setGameState('countdown');
+      countdownStep = 1;
+      setCountdownLights(1);
+      
+      setTimeout(() => {
+        countdownStep = 2;
+        setCountdownLights(2);
+        
+        setTimeout(() => {
+          countdownStep = 3;
+          setCountdownLights(3);
+          
+          setTimeout(() => {
+            // GO!
+            setGameState('racing');
+            countdownStep = 0;
+          }, 600);
+        }, 600);
+      }, 600);
+    };
+
+    // ===== MOUSE CONTROLS =====
+    const handleMouseDown = (e) => {
+      if (gameState === 'ready') return;
+      
+      if (e.button === 0) { // LEFT CLICK - Shift gear
+        if (isRacing && currentGear < MAX_GEAR && gearHeat >= 100) {
+          currentGear++;
+          gearRef.current = currentGear;
+          gearHeat = 0;
+          setCurrentGear(currentGear);
+          setShiftReady(false);
+          setGearMeter(0);
+        }
+      } else if (e.button === 2) { // RIGHT CLICK - Jump
+        e.preventDefault();
+        if (isRacing && !isJumping) {
+          isJumping = true;
+          jumpVelocity = JUMP_STRENGTH;
+          isJumpingRef.current = true;
+          setIsJumping(true);
+        }
+      }
+    };
+
+    const handleContextMenu = (e) => {
+      e.preventDefault();
+    };
+
+    canvas.addEventListener('mousedown', handleMouseDown);
+    canvas.addEventListener('contextmenu', handleContextMenu);
 
     // ===== KEYBOARD CONTROLS =====
     const keys = {};
@@ -219,52 +290,68 @@ const SpeedRacingPage = () => {
     const handleKeyDown = (e) => {
       keys[e.key.toLowerCase()] = true;
       
-      // Start race with ENTER
-      if (e.key === 'Enter' && !isRacing) {
-        isRacing = true;
-        isAccelerating = true;
-        isAcceleratingRef.current = true;
-        raceStartTime = performance.now();
-        setGameState('racing');
+      // Start countdown with ENTER
+      if (e.key === 'Enter' && gameState === 'ready') {
+        startCountdown();
         
-        // Reset
-        currentSpeed = 0;
-        currentGear = 1;
+        // Reset game state
+        currentSpeed = 2;
+        currentGear = 0;
         gearHeat = 0;
         travelDistance = 0;
-        swoop.position.z = 0;
-        camera.position.z = 0;
-        speedRef.current = 0;
-        gearRef.current = 1;
+        currentX = 0;
+        jumpHeight = 0;
+        isJumping = false;
+        swoop.position.set(0, 0, 0);
+        speedRef.current = 2;
+        gearRef.current = 0;
         raceTimeRef.current = 0;
+        currentXRef.current = 0;
         
         // Reset boost pads and obstacles
-        boostPads.forEach(pad => { pad.collected = false; });
-        obstacles.forEach(obs => { obs.hit = false; });
+        boostPads.forEach(pad => { 
+          pad.collected = false;
+          pad.mesh.isVisible = true;
+        });
+        obstacles.forEach(obs => { 
+          obs.hit = false;
+          obs.mesh.scaling = new BABYLON.Vector3(1, 1, 1);
+        });
+      }
+
+      // Start racing when countdown finishes
+      if (gameState === 'countdown' && countdownStep === 0) {
+        isRacing = true;
+        raceStartTime = performance.now();
+      }
+
+      // Restart after finish
+      if (e.key === 'Enter' && gameState === 'finished') {
+        setGameState('ready');
+        setCountdownLights(0);
       }
       
-      // Lane changes
-      if ((e.key === 'ArrowLeft' || e.key === 'a') && isRacing) {
-        currentLane = Math.max(-1, currentLane - 1);
-        currentLaneRef.current = currentLane;
-      }
-      if ((e.key === 'ArrowRight' || e.key === 'd') && isRacing) {
-        currentLane = Math.min(1, currentLane + 1);
-        currentLaneRef.current = currentLane;
-      }
-      
-      // GEAR SHIFT (Space or W)
-      if ((e.key === ' ' || e.key === 'w') && isRacing) {
+      // GEAR SHIFT (Space or Shift or LMB)
+      if ((e.key === ' ' || e.key === 'Shift') && isRacing) {
         e.preventDefault();
         
-        if (gearHeat >= 100 && currentGear < MAX_GEAR) {
-          // Perfect shift!
+        if (currentGear < MAX_GEAR && gearHeat >= 100) {
           currentGear++;
           gearRef.current = currentGear;
           gearHeat = 0;
           setCurrentGear(currentGear);
           setShiftReady(false);
+          setGearMeter(0);
         }
+      }
+
+      // JUMP (Space or RMB)
+      if (e.key === ' ' && isRacing && !isJumping) {
+        e.preventDefault();
+        isJumping = true;
+        jumpVelocity = JUMP_STRENGTH;
+        isJumpingRef.current = true;
+        setIsJumping(true);
       }
     };
 
@@ -283,91 +370,138 @@ const SpeedRacingPage = () => {
       const deltaTime = (currentTime - lastTime) / 1000;
       lastTime = currentTime;
 
-      if (isRacing) {
+      if (isRacing && gameState === 'racing') {
         // Update race time
         const elapsed = (currentTime - raceStartTime) / 1000;
         raceTimeRef.current = elapsed;
         setRaceTime(elapsed);
 
-        // ===== ACCELERATION & GEAR HEAT =====
-        if (isAccelerating) {
-          const maxSpeedForGear = GEAR_MAX_SPEEDS[currentGear];
-          const accel = GEAR_ACCELERATION[currentGear];
+        // ===== AUTO-GROWING GEAR HEAT =====
+        if (currentGear > 0 && currentGear < MAX_GEAR) {
+          gearHeat = Math.min(100, gearHeat + GEAR_HEAT_AUTO_RATE * deltaTime);
+          setGearMeter(gearHeat);
           
-          if (currentSpeed < maxSpeedForGear) {
-            currentSpeed = Math.min(maxSpeedForGear, currentSpeed + accel * deltaTime * 10);
+          if (gearHeat >= 100) {
+            setShiftReady(true);
           }
-          
-          // Heat builds up as we approach max speed
-          if (currentSpeed >= maxSpeedForGear * 0.8) {
-            gearHeat = Math.min(100, gearHeat + deltaTime * 50);
-            setGearMeter(gearHeat);
-            
-            if (gearHeat >= 100) {
-              setShiftReady(true);
-            }
-          }
+        }
+
+        // ===== ACCELERATION =====
+        const maxSpeedForGear = GEAR_MAX_SPEEDS[currentGear];
+        const accel = GEAR_ACCELERATION[currentGear];
+        
+        if (currentSpeed < maxSpeedForGear) {
+          currentSpeed = Math.min(maxSpeedForGear, currentSpeed + accel * deltaTime);
         } else {
-          // Coasting/decelerating
-          currentSpeed = Math.max(0, currentSpeed - deltaTime * 20);
+          currentSpeed = maxSpeedForGear;
         }
 
         speedRef.current = currentSpeed;
         setSpeed(currentSpeed.toFixed(0));
 
+        // ===== STEERING (Full X freedom: -7 to +7) =====
+        const steerSpeed = 12;
+        if (keys['arrowleft'] || keys['a']) {
+          currentX = Math.max(-7, currentX - steerSpeed * deltaTime);
+        }
+        if (keys['arrowright'] || keys['d']) {
+          currentX = Math.min(7, currentX + steerSpeed * deltaTime);
+        }
+        currentXRef.current = currentX;
+
+        // ===== JUMP PHYSICS =====
+        if (isJumping) {
+          jumpVelocity -= GRAVITY * deltaTime;
+          jumpHeight += jumpVelocity * deltaTime;
+          
+          if (jumpHeight <= 0) {
+            jumpHeight = 0;
+            isJumping = false;
+            jumpVelocity = 0;
+            isJumpingRef.current = false;
+            setIsJumping(false);
+          }
+          
+          jumpHeightRef.current = jumpHeight;
+        }
+
         // ===== MOVEMENT =====
-        const moveSpeed = currentSpeed * deltaTime;
+        const moveSpeed = currentSpeed * deltaTime * 0.28; // Convert km/h to m/s (~divide by 3.6)
         travelDistance += moveSpeed;
         swoop.position.z += moveSpeed;
+        swoop.position.x = currentX;
+        swoop.position.y = jumpHeight;
         
         setDistance(Math.floor(travelDistance));
-
-        // Move to lane
-        const targetX = currentLane * 4;
-        swoop.position.x += (targetX - swoop.position.x) * deltaTime * 8;
 
         // ===== COLLISION DETECTION =====
         const swoopZ = swoop.position.z;
         const swoopX = swoop.position.x;
+        const swoopY = swoop.position.y;
         
-        // Check boost pads
-        boostPads.forEach(pad => {
-          if (!pad.collected && 
-              Math.abs(swoopZ - pad.zPos) < 3 && 
-              Math.abs(swoopX - pad.lane) < 2) {
-            // HIT BOOST PAD!
-            pad.collected = true;
-            pad.mesh.isVisible = false;
-            
-            // Speed surge
-            currentSpeed = Math.min(
-              GEAR_MAX_SPEEDS[MAX_GEAR],
-              currentSpeed + 30
-            );
-            
-            setBoostActive(true);
-            setTimeout(() => setBoostActive(false), 300);
-          }
-        });
+        // Check boost pads (only if not jumping)
+        if (!isJumping || swoopY < 0.5) {
+          boostPads.forEach(pad => {
+            if (!pad.collected && 
+                Math.abs(swoopZ - pad.zPos) < 3 && 
+                Math.abs(swoopX - pad.xPos) < 2.5) {
+              // HIT BOOST PAD!
+              pad.collected = true;
+              pad.mesh.isVisible = false;
+              
+              // Add 25% to gear heat
+              gearHeat = Math.min(100, gearHeat + 25);
+              setGearMeter(gearHeat);
+              
+              if(gearHeat >= 100) {
+                setShiftReady(true);
+              }
+              
+              setBoostActive(true);
+              setTimeout(() => setBoostActive(false), 300);
+            }
+          });
+        }
 
-        // Check obstacles
-        obstacles.forEach(obs => {
-          if (!obs.hit && 
-              Math.abs(swoopZ - obs.zPos) < 2 && 
-              Math.abs(swoopX - obs.lane) < 2) {
-            // HIT OBSTACLE!
-            obs.hit = true;
-            
-            // Slowdown
-            currentSpeed = Math.max(0, currentSpeed * 0.6);
-            
-            // Visual feedback
-            obs.mesh.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
-            setTimeout(() => {
-              obs.mesh.scaling = new BABYLON.Vector3(1, 1, 1);
-            }, 500);
-          }
-        });
+        // Check obstacles (only if not jumping over them)
+        if (!isJumping || swoopY < 1.5) {
+          obstacles.forEach(obs => {
+            if (!obs.hit && 
+                Math.abs(swoopZ - obs.zPos) < 2.5 && 
+                Math.abs(swoopX - obs.xPos) < 2.5) {
+              // HIT OBSTACLE!
+              obs.hit = true;
+              
+              // 50% speed reduction
+              currentSpeed = currentSpeed * 0.5;
+              
+              // Calculate new gear based on speed
+              let newGear = 0;
+              for (let g = 1; g <= MAX_GEAR; g++) {
+                if (currentSpeed >= GEAR_MAX_SPEEDS[g - 1] && currentSpeed < GEAR_MAX_SPEEDS[g]) {
+                  newGear = g - 1;
+                  break;
+                } else if (currentSpeed >= GEAR_MAX_SPEEDS[MAX_GEAR]) {
+                  newGear = MAX_GEAR;
+                  break;
+                }
+              }
+              
+              currentGear = newGear;
+              gearRef.current = newGear;
+              setCurrentGear(newGear);
+              gearHeat = 0;
+              setGearMeter(0);
+              setShiftReady(false);
+              
+              // Visual feedback
+              obs.mesh.scaling = new BABYLON.Vector3(0.5, 0.5, 0.5);
+              setTimeout(() => {
+                obs.mesh.scaling = new BABYLON.Vector3(1, 1, 1);
+              }, 500);
+            }
+          });
+        }
 
         // ===== FINISH LINE =====
         if (travelDistance >= TRACKS.taris.length) {
@@ -382,7 +516,7 @@ const SpeedRacingPage = () => {
 
         // ===== CAMERA EFFECTS =====
         // Slight head bob based on speed
-        const bob = Math.sin(currentTime * 0.01 * currentSpeed) * 0.05;
+        const bob = Math.sin(currentTime * 0.01 * currentSpeed) * 0.03;
         camera.position.y = 1.2 + bob;
       }
 
@@ -398,9 +532,11 @@ const SpeedRacingPage = () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
+      canvas.removeEventListener('mousedown', handleMouseDown);
+      canvas.removeEventListener('contextmenu', handleContextMenu);
       engine.dispose();
     };
-  }, [bestTime]);
+  }, [bestTime, gameState]);
 
   const formatTime = (seconds) => {
     if (!seconds) return '0.00';
@@ -417,54 +553,76 @@ const SpeedRacingPage = () => {
           
           {/* Top Stats */}
           <div className="hud-top-left">
-            <div className="hud-stat">
-              <span className="stat-label">TIME</span>
-              <span className="stat-value">{formatTime(raceTime)}</span>
-            </div>
-            <div className="hud-stat">
-              <span className="stat-label">TARGET</span>
-              <span className="stat-value target">{formatTime(targetTime)}</span>
-            </div>
-            {bestTime && (
-              <div className="hud-stat">
-                <span className="stat-label">BEST</span>
-                <span className="stat-value best">{formatTime(bestTime)}</span>
+            {/* START LIGHTS */}
+            {(gameState === 'countdown' || gameState === 'ready') && (
+              <div className="start-lights">
+                <div className={`light ${countdownLights >= 1 ? 'green' : 'red'}`}></div>
+                <div className={`light ${countdownLights >= 2 ? 'green' : 'red'}`}></div>
+                <div className={`light ${countdownLights >= 3 ? 'green' : 'red'}`}></div>
               </div>
+            )}
+            
+            {gameState === 'racing' && (
+              <>
+                <div className="hud-stat">
+                  <span className="stat-label">TIME</span>
+                  <span className="stat-value">{formatTime(raceTime)}</span>
+                </div>
+                <div className="hud-stat">
+                  <span className="stat-label">TARGET</span>
+                  <span className="stat-value target">{formatTime(targetTime)}</span>
+                </div>
+                {bestTime && (
+                  <div className="hud-stat">
+                    <span className="stat-label">BEST</span>
+                    <span className="stat-value best">{formatTime(bestTime)}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
           <div className="hud-top-right">
-            <div className="hud-stat">
-              <span className="stat-label">DISTANCE</span>
-              <span className="stat-value">{distance}m</span>
-            </div>
+            {gameState === 'racing' && (
+              <div className="hud-stat">
+                <span className="stat-label">DISTANCE</span>
+                <span className="stat-value">{distance}m</span>
+              </div>
+            )}
           </div>
 
           {/* Bottom - Speed & Gear Meter (KOTOR Style) */}
-          <div className="hud-bottom">
-            <div className="speed-display">
-              <div className="speed-label">SPEED</div>
-              <div className="speed-value">{speed}</div>
-            </div>
+          {gameState === 'racing' && (
+            <div className="hud-bottom">
+              <div className="speed-display">
+                <div className="speed-label">SPEED</div>
+                <div className="speed-value">{speed}</div>
+              </div>
 
-            <div className="gear-meter-container">
-              <div className="gear-label">
-                GEAR {currentGear}
-                {shiftReady && <span className="shift-indicator">▲ SHIFT! ▲</span>}
-              </div>
-              <div className="gear-meter">
-                <div 
-                  className={`gear-fill ${shiftReady ? 'ready' : ''} ${boostActive ? 'boost' : ''}`}
-                  style={{ width: `${gearMeter}%` }}
-                />
-                {shiftReady && <div className="shift-zone" />}
-              </div>
-              <div className="gear-hint">
-                {!shiftReady && gearMeter > 50 ? 'Building heat...' : ''}
-                {shiftReady ? 'Press SPACE to shift!' : ''}
+              <div className="gear-meter-container">
+                <div className="gear-label">
+                  GEAR {currentGear}/{MAX_GEAR}
+                  {shiftReady && <span className="shift-indicator">▲ SHIFT! ▲</span>}
+                </div>
+                <div className="gear-meter">
+                  <div 
+                    className={`gear-fill ${shiftReady ? 'ready' : ''} ${boostActive ? 'boost' : ''}`}
+                    style={{ width: `${gearMeter}%` }}
+                  />
+                  {shiftReady && <div className="shift-zone" />}
+                </div>
+                <div className="gear-hint">
+                  {currentGear === 0 ? 'Press SHIFT or LMB to start!' : ''}
+                  {currentGear > 0 && !shiftReady && gearMeter < 100 ? 'Building power...' : ''}
+                  {shiftReady && currentGear < MAX_GEAR ? 'Press SHIFT or LMB!' : ''}
+                  {currentGear === MAX_GEAR ? 'MAX GEAR!' : ''}
+                </div>
+                {isJumping && (
+                  <div className="jump-indicator">⬆ JUMPING ⬆</div>
+                )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Start Screen */}
           {gameState === 'ready' && (
@@ -472,6 +630,7 @@ const SpeedRacingPage = () => {
               <h1>SWOOP RACING</h1>
               <h2>Taris Circuit</h2>
               <div className="race-info">
+                <p>Distance: <span className="highlight">8000m</span></p>
                 <p>Target Time: <span className="highlight">{formatTime(targetTime)}s</span></p>
                 {bestTime && (
                   <p>Your Best: <span className="highlight best">{formatTime(bestTime)}s</span></p>
@@ -479,9 +638,19 @@ const SpeedRacingPage = () => {
               </div>
               <div className="controls">
                 <h3>CONTROLS</h3>
-                <p><kbd>ENTER</kbd> START RACE</p>
-                <p><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> CHANGE LANES</p>
-                <p><kbd>SPACE</kbd> SHIFT GEAR (when meter full)</p>
+                <p><kbd>ENTER</kbd> START COUNTDOWN (Watch the lights!)</p>
+                <p><kbd>←</kbd> <kbd>→</kbd> or <kbd>A</kbd> <kbd>D</kbd> STEER (Full freedom)</p>
+                <p><kbd>SHIFT</kbd> or <kbd>LMB</kbd> SHIFT GEAR (when meter full)</p>
+                <p><kbd>SPACE</kbd> or <kbd>RMB</kbd> JUMP (avoid obstacles!)</p>
+              </div>
+              <div className="race-tips">
+                <h3>RACING TIPS</h3>
+                <p>• Start in gear 0 (2 km/h), shift when meter fills</p>
+                <p>• 10 gears total: 0 → 200 km/h (20 km/h per gear)</p>
+                <p>• Boosters add +25% to your gear meter</p>
+                <p>• Obstacles cut your speed in HALF</p>
+                <p>• Jump over obstacles to avoid slowdown</p>
+                <p>• Gear meter fills automatically in 15 seconds</p>
               </div>
               <div className="press-start">Press ENTER to begin</div>
             </div>

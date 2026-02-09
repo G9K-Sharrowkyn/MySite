@@ -46,6 +46,43 @@
   font-family: 'Courier New', monospace;
 }
 
+/* START LIGHTS (Traffic light style) */
+.start-lights {
+  display: flex;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.85);
+  border: 2px solid rgba(0, 150, 200, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 0 20px rgba(0, 150, 200, 0.4);
+}
+
+.start-lights .light {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+}
+
+.start-lights .light.red {
+  background: radial-gradient(circle, #ff0000, #880000);
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.8), inset 0 0 10px rgba(255, 100, 100, 0.5);
+}
+
+.start-lights .light.green {
+  background: radial-gradient(circle, #00ff00, #008800);
+  box-shadow: 0 0 30px rgba(0, 255, 0, 1), inset 0 0 15px rgba(100, 255, 100, 0.5);
+  animation: greenPulse 0.5s ease-in-out;
+}
+
+@keyframes greenPulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
 /* Top stats - corners */
 .hud-top-left,
 .hud-top-right {
@@ -223,6 +260,21 @@
   min-height: 1.2rem;
 }
 
+.jump-indicator {
+  margin-top: 0.75rem;
+  text-align: center;
+  color: #ffff00;
+  font-size: 1rem;
+  font-weight: 700;
+  animation: jumpBlink 0.3s ease-in-out infinite;
+  text-shadow: 0 0 10px rgba(255, 255, 0, 0.8);
+}
+
+@keyframes jumpBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
 /* ===== START SCREEN ===== */
 .start-screen,
 .finish-screen {
@@ -315,6 +367,29 @@
   font-weight: 700;
   color: #00c8ff;
   box-shadow: 0 0 10px rgba(0, 200, 255, 0.3);
+}
+
+.race-tips {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(0, 150, 200, 0.3);
+}
+
+.race-tips h3 {
+  color: #00c8ff;
+  font-size: 1.2rem;
+  margin: 0 0 1rem 0;
+  letter-spacing: 0.12em;
+}
+
+.race-tips p {
+  color: #fff;
+  font-size: 0.9rem;
+  margin: 0.5rem 0;
+  text-align: left;
+  line-height: 1.5;
 }
 
 .press-start {
