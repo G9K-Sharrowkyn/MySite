@@ -15,7 +15,7 @@ const TRACKS = {
 
 // Game constants
 const MAX_GEAR = 10;
-const GEAR_MAX_SPEEDS = [5, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200]; // Gear 0 = 5 km/h idle
+const GEAR_MAX_SPEEDS = [0, 20, 40, 60, 80, 100, 120, 140, 160, 180, 200]; // Each gear = 20 km/h range
 
 const SpeedRacingPage = () => {
   const canvasRef = useRef(null);
@@ -217,7 +217,7 @@ const SpeedRacingPage = () => {
     engineGlow.isVisible = false; // Hidden in first person
 
     // ===== GAME STATE =====
-    let currentSpeed = 2; // Start from 2 km/h
+    let currentSpeed = 0; // Start from 0 km/h
     let currentGear = 0;
     let gearHeat = 0;
     let currentX = 0; // Full X position (-7 to +7)
@@ -230,7 +230,6 @@ const SpeedRacingPage = () => {
     let jumpVelocity = 0;
 
     // Game constants (use globals defined above)
-    const GEAR_ACCELERATION = [2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3]; // Gear 0 has slow accel
     const JUMP_STRENGTH = 8;
     const GRAVITY = 20;
 
@@ -269,13 +268,12 @@ const SpeedRacingPage = () => {
       if (gameStateRef.current === 'ready') return;
       
       if (e.button === 0) { // LEFT CLICK - Shift gear
-        // Gear 0 -> 1 always allowed (start), others need full heat
-        const canShift = gearRef.current === 0 || gearHeatRef.current >= 100;
-        
-        if (isRacingRef.current && gearRef.current < MAX_GEAR && canShift) {
+        if (isRacingRef.current && gearRef.current < MAX_GEAR) {
           currentGear++;
           gearRef.current = currentGear;
-          // gearHeat is now calculated from speed, no reset needed
+          // Add 20 km/h per gear shift
+          currentSpeed = GEAR_MAX_SPEEDS[currentGear];
+          speedRef.current = currentSpeed;
           setCurrentGear(currentGear);
           setShiftReady(false);
         }
@@ -308,7 +306,7 @@ const SpeedRacingPage = () => {
         startCountdown();
         
         // Reset game state
-        currentSpeed = 2;
+        currentSpeed = 0;
         currentGear = 0;
         gearHeat = 0;
         travelDistance = 0;
@@ -317,7 +315,7 @@ const SpeedRacingPage = () => {
         jumpVelocity = 0;
         isJumping = false;
         swoop.position.set(0, 0, 0);
-        speedRef.current = 2;
+        speedRef.current = 0;
         gearRef.current = 0;
         gearHeatRef.current = 0;
         raceTimeRef.current = 0;
@@ -345,17 +343,14 @@ const SpeedRacingPage = () => {
         setCountdownLights(0);
       }
       
-      // GEAR SHIFT (Space or Shift or LMB)
-      if ((e.key === ' ' || e.key === 'Shift') && isRacingRef.current) {
-        e.preventDefault();
-        
-        // Gear 0 -> 1 always allowed (start), others need full heat
-        const canShift = gearRef.current === 0 || gearHeatRef.current >= 100;
-        
-        if (gearRef.current < MAX_GEAR && canShift) {
+      // GEAR SHIFT (Shift key only)
+      if (e.key === 'Shift' && isRacingRef.current) {
+        if (gearRef.current < MAX_GEAR) {
           currentGear++;
           gearRef.current = currentGear;
-          // gearHeat is now calculated from speed, no reset needed
+          // Add 20 km/h per gear shift
+          currentSpeed = GEAR_MAX_SPEEDS[currentGear];
+          speedRef.current = currentSpeed;
           setCurrentGear(currentGear);
           setShiftReady(false);
         }
@@ -392,46 +387,27 @@ const SpeedRacingPage = () => {
         raceTimeRef.current = elapsed;
         setRaceTime(elapsed);
 
-        // ===== GEAR METER BASED ON SPEED (not time) =====
-        if (currentGear > 0 && currentGear <= MAX_GEAR) {
-          const minSpeed = GEAR_MAX_SPEEDS[currentGear - 1]; // Previous gear max
-          const maxSpeed = GEAR_MAX_SPEEDS[currentGear]; // Current gear max
-          const speedRange = maxSpeed - minSpeed;
-          const speedInGear = currentSpeed - minSpeed;
-          
-          gearHeat = Math.min(100, Math.max(0, (speedInGear / speedRange) * 100));
-          gearHeatRef.current = gearHeat;
-          setGearMeter(gearHeat);
-          
-          if (gearHeat >= 100 && currentGear < MAX_GEAR) {
-            setShiftReady(true);
-          } else {
-            setShiftReady(false);
-          }
-        } else if (currentGear === 0) {
-          // Gear 0: show progress from 2 to 5 km/h
-          const minSpeed = 2;
-          const maxSpeed = 5;
-          const speedRange = maxSpeed - minSpeed;
-          const speedInGear = currentSpeed - minSpeed;
-          
-          gearHeat = Math.min(100, Math.max(0, (speedInGear / speedRange) * 100));
-          gearHeatRef.current = gearHeat;
-          setGearMeter(gearHeat);
+        // ===== GEAR METER: Each 1 km/h = 5% (20 km/h range = 100%) =====
+        const minSpeed = GEAR_MAX_SPEEDS[currentGear];
+        const speedInGear = currentSpeed - minSpeed;
+        const speedRange = 20; // Fixed 20 km/h per gear
+        
+        gearHeat = Math.min(100, Math.max(0, (speedInGear / speedRange) * 100));
+        gearHeatRef.current = gearHeat;
+        setGearMeter(gearHeat);
+        
+        if (gearHeat >= 100 && currentGear < MAX_GEAR) {
+          setShiftReady(true);
+        } else {
           setShiftReady(false);
         }
 
-        // ===== ACCELERATION =====
-        const maxSpeedForGear = GEAR_MAX_SPEEDS[currentGear];
-        const accel = GEAR_ACCELERATION[currentGear];
-        
-        if (currentSpeed < maxSpeedForGear) {
-          currentSpeed = Math.min(maxSpeedForGear, currentSpeed + accel * deltaTime);
-        } else if (currentSpeed > maxSpeedForGear) {
-          // Gentle deceleration when over max speed
-          currentSpeed = Math.max(maxSpeedForGear, currentSpeed - deltaTime * 15);
+        // Speed is controlled by gear shifts only, no auto-acceleration
+        // Gentle slowdown from obstacle hits
+        if (currentSpeed > GEAR_MAX_SPEEDS[currentGear]) {
+          currentSpeed = Math.max(GEAR_MAX_SPEEDS[currentGear], currentSpeed - deltaTime * 30);
         }
-
+        
         speedRef.current = currentSpeed;
         setSpeed(currentSpeed.toFixed(0));
 
@@ -510,18 +486,10 @@ const SpeedRacingPage = () => {
               
               // 50% speed reduction
               currentSpeed = currentSpeed * 0.5;
+              speedRef.current = currentSpeed;
               
-              // Calculate new gear based on speed
-              let newGear = 0;
-              for (let g = 1; g <= MAX_GEAR; g++) {
-                if (currentSpeed >= GEAR_MAX_SPEEDS[g - 1] && currentSpeed < GEAR_MAX_SPEEDS[g]) {
-                  newGear = g - 1;
-                  break;
-                } else if (currentSpeed >= GEAR_MAX_SPEEDS[MAX_GEAR]) {
-                  newGear = MAX_GEAR;
-                  break;
-                }
-              }
+              // Calculate new gear based on speed (each gear = 20 km/h)
+              let newGear = Math.min(MAX_GEAR, Math.floor(currentSpeed / 20));
               
               currentGear = newGear;
               gearRef.current = newGear;
@@ -550,10 +518,8 @@ const SpeedRacingPage = () => {
           }
         }
 
-        // ===== CAMERA EFFECTS =====
-        // Slight head bob based on speed (reduced for smoother feel)
-        const bob = Math.sin(currentTime * 0.005 * currentSpeed) * 0.01;
-        camera.position.y = 1.2 + bob;
+        // ===== CAMERA =====
+        camera.position.y = 1.2; // No bob, perfectly stable
         
         // ===== FPS COUNTER =====
         const currentFps = Math.round(1 / deltaTime);
