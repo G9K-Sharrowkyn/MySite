@@ -22,9 +22,62 @@ on:
         description: URL to check (check-http)
         required: false
         default: "https://versusversevault.com/api/health"
+  push:
+    branches: ["main"]
 
 jobs:
+  decide:
+    runs-on: ubuntu-latest
+    outputs:
+      action: ${{ steps.decide.outputs.action }}
+      lines: ${{ steps.decide.outputs.lines }}
+      url: ${{ steps.decide.outputs.url }}
+    steps:
+      - name: Decide Action
+        id: decide
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          event="${GITHUB_EVENT_NAME}"
+          action=""
+          lines="120"
+          url="https://versusversevault.com/api/health"
+
+          if [ "${event}" = "workflow_dispatch" ]; then
+            # Inputs exist only for workflow_dispatch, read them from the event payload to avoid quoting issues.
+            action="$(jq -r '.inputs.action // "doctor"' "${GITHUB_EVENT_PATH}")"
+            lines="$(jq -r '.inputs.lines // "120"' "${GITHUB_EVENT_PATH}")"
+            url="$(jq -r '.inputs.url // "https://versusversevault.com/api/health"' "${GITHUB_EVENT_PATH}")"
+          else
+            # Auto-trigger only when the commit message explicitly asks for it.
+            # Use one of:
+            # - "vps:install-proxy"
+            # - "vps:restart-backend"
+            # - "vps:doctor"
+            # - "vps:check-http"
+            msg="$(jq -r '.head_commit.message // ""' "${GITHUB_EVENT_PATH}")"
+            if echo "${msg}" | grep -qiE '(^|[[:space:]])vps:install-proxy([[:space:]]|$)'; then
+              action="install-proxy"
+            elif echo "${msg}" | grep -qiE '(^|[[:space:]])vps:restart-backend([[:space:]]|$)'; then
+              action="restart-backend"
+            elif echo "${msg}" | grep -qiE '(^|[[:space:]])vps:doctor([[:space:]]|$)'; then
+              action="doctor"
+            elif echo "${msg}" | grep -qiE '(^|[[:space:]])vps:check-http([[:space:]]|$)'; then
+              action="check-http"
+            else
+              action=""
+            fi
+          fi
+
+          echo "action=${action}" >> "${GITHUB_OUTPUT}"
+          echo "lines=${lines}" >> "${GITHUB_OUTPUT}"
+          echo "url=${url}" >> "${GITHUB_OUTPUT}"
+          echo "Selected action: '${action}'"
+
   vps-ops:
+    needs: decide
+    if: ${{ needs.decide.outputs.action != '' }}
     runs-on: ubuntu-latest
     steps:
       - name: Setup SSH key
@@ -78,7 +131,7 @@ jobs:
           ssh-keyscan -p "${VPS_PORT}" -H "${VPS_HOST}" >> ~/.ssh/known_hosts
 
       - name: Doctor
-        if: ${{ inputs.action == 'doctor' }}
+        if: ${{ needs.decide.outputs.action == 'doctor' }}
         shell: bash
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -103,7 +156,7 @@ jobs:
           SH
 
       - name: Install Apache Proxy (/api, /share, /socket.io)
-        if: ${{ inputs.action == 'install-proxy' }}
+        if: ${{ needs.decide.outputs.action == 'install-proxy' }}
         shell: bash
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -224,7 +277,7 @@ jobs:
           SH
 
       - name: Restart backend
-        if: ${{ inputs.action == 'restart-backend' }}
+        if: ${{ needs.decide.outputs.action == 'restart-backend' }}
         shell: bash
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -249,22 +302,22 @@ jobs:
           SH
 
       - name: Backend logs
-        if: ${{ inputs.action == 'backend-logs' }}
+        if: ${{ needs.decide.outputs.action == 'backend-logs' }}
         shell: bash
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          LINES: ${{ inputs.lines }}
+          LINES: ${{ needs.decide.outputs.lines }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "pm2 logs versusversevault-backend --lines ${LINES:-120} --nostream" || true
 
       - name: Check HTTP
-        if: ${{ inputs.action == 'check-http' }}
+        if: ${{ needs.decide.outputs.action == 'check-http' }}
         shell: bash
         env:
-          URL: ${{ inputs.url }}
+          URL: ${{ needs.decide.outputs.url }}
         run: |
           set -euo pipefail
           echo "Checking: ${URL}"
