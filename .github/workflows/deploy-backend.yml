@@ -24,22 +24,48 @@ jobs:
         shell: bash
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
         run: |
           set -euo pipefail
           mkdir -p ~/.ssh
           python3 - <<'PY'
-          import os, pathlib
-          key = os.environ.get("VPS_SSH_KEY", "")
-          if not key.strip():
-            raise SystemExit("VPS_SSH_KEY secret is empty")
-          key = key.replace("\r\n", "\n").replace("\r", "\n")
-          if "\\n" in key and "BEGIN" in key and "\n" not in key:
-            key = key.replace("\\n", "\n")
+          import base64
+          import os
+          import pathlib
+          import re
+
           p = pathlib.Path.home() / ".ssh" / "deploy_key"
-          p.write_text(key if key.endswith("\n") else key + "\n")
-          print(f"Wrote {p}")
+
+          key_b64 = (os.environ.get("VPS_SSH_KEY_B64") or "").strip()
+          if key_b64:
+            data = base64.b64decode(key_b64)
+            if not data.endswith(b"\n"):
+              data += b"\n"
+            p.write_bytes(data)
+            print("Wrote deploy_key from VPS_SSH_KEY_B64")
+            raise SystemExit(0)
+
+          raw = os.environ.get("VPS_SSH_KEY", "")
+          if not raw.strip():
+            raise SystemExit("VPS_SSH_KEY secret is empty. Provide VPS_SSH_KEY or VPS_SSH_KEY_B64.")
+
+          raw = raw.replace("\r\n", "\n").replace("\r", "\n")
+          if "\\n" in raw and "BEGIN" in raw and "\n" not in raw:
+            raw = raw.replace("\\n", "\n")
+
+          begin = re.search(r"-----BEGIN [A-Z0-9 ]+ PRIVATE KEY-----", raw)
+          end = re.search(r"-----END [A-Z0-9 ]+ PRIVATE KEY-----", raw)
+          if begin and end and end.end() > begin.start():
+            raw = raw[begin.start():end.end()]
+
+          if raw.lstrip().startswith("ssh-"):
+            raise SystemExit("VPS_SSH_KEY looks like a PUBLIC key. Paste the PRIVATE key (BEGIN ... PRIVATE KEY).")
+
+          key = raw.strip() + "\n"
+          p.write_text(key)
+          print("Wrote deploy_key from VPS_SSH_KEY")
           PY
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${VPS_PORT}" -H "${VPS_HOST}" >> ~/.ssh/known_hosts
