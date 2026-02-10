@@ -11,6 +11,8 @@ on:
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
+    env:
+      VPS_BACKEND_RESTART_CMD: ${{ secrets.VPS_BACKEND_RESTART_CMD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -102,11 +104,11 @@ jobs:
             backend/ "${VPS_USER}@${VPS_HOST}:${VPS_BACKEND_DIR%/}/"
 
       - name: Restart backend (optional)
-        if: ${{ secrets.VPS_BACKEND_RESTART_CMD != '' }}
+        if: ${{ env.VPS_BACKEND_RESTART_CMD != '' }}
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT }}
-          script: ${{ secrets.VPS_BACKEND_RESTART_CMD }}
+          script: ${{ env.VPS_BACKEND_RESTART_CMD }}
