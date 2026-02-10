@@ -1,5 +1,12 @@
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { MongoClient } from 'mongodb';
 import { COLLECTION_KEYS, normalizeDb } from './dbSchema.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const BACKEND_ROOT = path.resolve(__dirname, '..');
 
 const getMongoUri = () =>
   process.env.MONGO_URI ||
@@ -7,6 +14,127 @@ const getMongoUri = () =>
   process.env.MONGO_URL ||
   process.env.DATABASE_URL ||
   '';
+
+const parseCsv = (value) =>
+  String(value || '')
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+const isAutoBackupEnabled = () =>
+  String(process.env.MONGO_AUTO_BACKUP_DISABLED || '').trim().toLowerCase() !==
+  'true';
+
+const getAutoBackupCollections = () => {
+  const configured = parseCsv(process.env.MONGO_AUTO_BACKUP_COLLECTIONS);
+  if (configured.length > 0) {
+    return new Set(configured);
+  }
+  // Safe default: protect the most painful-to-recreate data.
+  return new Set(['characters', 'users', 'posts']);
+};
+
+const getAutoBackupMinIntervalMs = () =>
+  Number.parseInt(process.env.MONGO_AUTO_BACKUP_MIN_INTERVAL_MS || '300000', 10); // 5 min
+
+const getAutoBackupMaxFiles = () =>
+  Number.parseInt(process.env.MONGO_AUTO_BACKUP_MAX_FILES || '50', 10);
+
+const getAutoBackupDir = () =>
+  path.resolve(BACKEND_ROOT, 'backups', 'auto-mongo');
+
+const lastBackupByCollection = new Map();
+let cleanupPromise;
+
+const safeFilePart = (value) =>
+  String(value || '')
+    .replace(/[^a-z0-9._-]+/gi, '_')
+    .slice(0, 80);
+
+const cleanupBackupDir = async (dir) => {
+  if (cleanupPromise) return cleanupPromise;
+  cleanupPromise = (async () => {
+    try {
+      const maxFiles = getAutoBackupMaxFiles();
+      if (!Number.isFinite(maxFiles) || maxFiles <= 0) return;
+
+      const entries = await fs.readdir(dir, { withFileTypes: true }).catch(() => []);
+      const files = entries.filter((e) => e.isFile()).map((e) => e.name);
+      if (files.length <= maxFiles) return;
+
+      const stats = await Promise.all(
+        files.map(async (name) => {
+          const filePath = path.join(dir, name);
+          const st = await fs.stat(filePath).catch(() => null);
+          return st ? { name, mtimeMs: st.mtimeMs } : null;
+        })
+      );
+
+      const sorted = stats
+        .filter(Boolean)
+        .sort((a, b) => (b.mtimeMs || 0) - (a.mtimeMs || 0));
+
+      const toDelete = sorted.slice(maxFiles);
+      await Promise.all(
+        toDelete.map(({ name }) =>
+          fs.unlink(path.join(dir, name)).catch(() => null)
+        )
+      );
+    } finally {
+      cleanupPromise = null;
+    }
+  })();
+  return cleanupPromise;
+};
+
+const maybeAutoBackupCollection = async (db, collectionKey, meta = {}) => {
+  if (!isAutoBackupEnabled()) return;
+
+  const allow = getAutoBackupCollections();
+  if (!allow.has(collectionKey)) return;
+
+  const now = Date.now();
+  const lastAt = lastBackupByCollection.get(collectionKey) || 0;
+  const minInterval = getAutoBackupMinIntervalMs();
+  if (now - lastAt < minInterval) {
+    return;
+  }
+
+  const dir = getAutoBackupDir();
+  await fs.mkdir(dir, { recursive: true });
+
+  // Snapshot current collection state BEFORE deleteMany/insertMany.
+  const docs = await db
+    .collection(collectionKey)
+    .find({})
+    .project({ _id: 0 })
+    .toArray();
+
+  const payload = {
+    version: 1,
+    createdAt: new Date(now).toISOString(),
+    dbName: db.databaseName,
+    collection: collectionKey,
+    count: docs.length,
+    meta: {
+      reason: meta.reason || 'pre_replace',
+      actor: meta.actor || null
+    },
+    docs
+  };
+
+  const stamp = new Date(now).toISOString().replace(/[:.]/g, '-');
+  const filename = `auto-${safeFilePart(db.databaseName)}-${safeFilePart(collectionKey)}-${stamp}-${safeFilePart(payload.meta.reason)}.json`;
+  const targetPath = path.join(dir, filename);
+  await fs.writeFile(targetPath, JSON.stringify(payload, null, 2), 'utf8');
+
+  lastBackupByCollection.set(collectionKey, now);
+  cleanupBackupDir(dir).catch(() => null);
+
+  console.log(
+    `Auto-backup saved: ${targetPath} (collection=${collectionKey}, count=${docs.length})`
+  );
+};
 
 const deriveMongoHostFromUri = (uri) => {
   const raw = String(uri || '').trim();
@@ -208,6 +336,16 @@ const sanitizeDoc = (doc) => {
 };
 
 const replaceCollection = async (db, key, items) => {
+  try {
+    await maybeAutoBackupCollection(db, key, { reason: 'replace_collection' });
+  } catch (error) {
+    // Best-effort safety net: never break the request flow due to backup issues.
+    console.error(
+      `Auto-backup failed for collection ${key}:`,
+      error?.message || error
+    );
+  }
+
   const collection = db.collection(key);
   await collection.deleteMany({});
   if (items.length > 0) {
