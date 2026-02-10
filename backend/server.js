@@ -1334,6 +1334,7 @@ app.get(['/healthz', '/api/health'], (req, res) => {
     mongoUriPresent,
     mongoDbName: mongoConfig?.dbName || null,
     mongoDbNameSource: mongoConfig?.dbNameSource || null,
+    mongoHost: mongoConfig?.host || null,
     googleAuthConfigured,
     uptimeSec: Math.round(process.uptime()),
     timestamp: new Date().toISOString()

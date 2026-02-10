@@ -8,6 +8,20 @@ const getMongoUri = () =>
   process.env.DATABASE_URL ||
   '';
 
+const deriveMongoHostFromUri = (uri) => {
+  const raw = String(uri || '').trim();
+  if (!raw) return '';
+  const match = raw.match(/^mongodb(?:\+srv)?:\/\/([^/]+)/i);
+  if (!match) return '';
+  const authority = String(match[1] || '').trim();
+  if (!authority) return '';
+  // Strip credentials if present: user:pass@host
+  const withoutCreds = authority.includes('@')
+    ? authority.slice(authority.lastIndexOf('@') + 1)
+    : authority;
+  return withoutCreds.trim();
+};
+
 const deriveDbNameFromUri = (uri) => {
   const raw = String(uri || '').trim();
   if (!raw) return '';
@@ -369,6 +383,7 @@ export const getMongoConfig = () => ({
   uri: getMongoUri(),
   dbName: getMongoDbName(),
   dbNameSource: resolveMongoDbName().source,
+  host: deriveMongoHostFromUri(getMongoUri()),
   connectTimeoutMs: getMongoConnectTimeoutMs(),
   cacheTtlMs: getMongoCacheTtlMs()
 });
