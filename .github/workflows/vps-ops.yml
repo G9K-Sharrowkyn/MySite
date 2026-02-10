@@ -115,10 +115,8 @@ jobs:
           set -euo pipefail
 
           DOMAIN="versusversevault.com"
-          IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
-          if [ -z "${IP}" ]; then
-            IP="203.161.52.204"
-          fi
+          # Webuzo Apache uses IP-specific vhosts (see `httpd -S`), so use the public IP.
+          IP="203.161.52.204"
 
           HTTPD="/usr/local/apps/apache2/bin/httpd"
           CONF_DIR="/usr/local/apps/apache2/etc/conf.d"
@@ -210,6 +208,12 @@ jobs:
             RewriteRule ^ /index.html [L]
           </VirtualHost>
           EOF
+
+          # Ensure this vhost wins (avoid duplicate ServerName vhosts).
+          LEGACY_VHOST="${CONF_DIR}/zz-${DOMAIN}.conf"
+          if [ -f "${LEGACY_VHOST}" ]; then
+            mv -f "${LEGACY_VHOST}" "${LEGACY_VHOST}.disabled.$(date +%s)"
+          fi
 
           echo "Testing config..."
           "${HTTPD}" -t
