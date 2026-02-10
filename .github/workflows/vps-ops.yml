@@ -77,170 +77,187 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${VPS_PORT}" -H "${VPS_HOST}" >> ~/.ssh/known_hosts
 
-      - name: Run VPS operation
+      - name: Doctor
+        if: ${{ inputs.action == 'doctor' }}
         shell: bash
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          ACTION: ${{ inputs.action }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
+set -euo pipefail
+echo "== System =="
+uname -a || true
+cat /etc/os-release || true
+echo
+echo "== Network (listening) =="
+ss -ltnp | egrep ':80|:443|:5000|:2002|:2003|:2004|:2005' || true
+echo
+echo "== Web server vhosts (Webuzo Apache) =="
+/usr/local/apps/apache2/bin/httpd -S 2>&1 | head -n 140 || true
+echo
+echo "== PM2 =="
+command -v pm2 >/dev/null 2>&1 && pm2 status || echo "pm2 missing"
+SH
+
+      - name: Install Apache Proxy (/api, /share, /socket.io)
+        if: ${{ inputs.action == 'install-proxy' }}
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "bash -se" <<'SH'
+set -euo pipefail
+
+DOMAIN="versusversevault.com"
+IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
+if [ -z "${IP}" ]; then
+  IP="203.161.52.204"
+fi
+
+HTTPD="/usr/local/apps/apache2/bin/httpd"
+CONF_DIR="/usr/local/apps/apache2/etc/conf.d"
+MODULES_CNF="${CONF_DIR}/modules.cnf"
+DOCROOT="/usr/local/apps/apache2/www/htdocs"
+CERT_DIR="/etc/letsencrypt/live/${DOMAIN}"
+CERT_FULLCHAIN="${CERT_DIR}/fullchain.pem"
+CERT_PRIVKEY="${CERT_DIR}/privkey.pem"
+
+if [ ! -x "${HTTPD}" ]; then
+  echo "ERROR: httpd not found at ${HTTPD}"
+  exit 1
+fi
+
+if [ ! -d "${DOCROOT}" ]; then
+  echo "ERROR: DOCROOT not found: ${DOCROOT}"
+  exit 1
+fi
+
+if [ ! -f "${CERT_FULLCHAIN}" ] || [ ! -f "${CERT_PRIVKEY}" ]; then
+  echo "ERROR: Let's Encrypt cert not found. Expected:"
+  echo "  ${CERT_FULLCHAIN}"
+  echo "  ${CERT_PRIVKEY}"
+  exit 1
+fi
+
+echo "Enabling proxy modules (if present)..."
+if [ -f "${MODULES_CNF}" ]; then
+  sed -i \
+    -e 's/^#\\s*LoadModule\\s\\+proxy_module\\b/LoadModule proxy_module/' \
+    -e 's/^#\\s*LoadModule\\s\\+proxy_http_module\\b/LoadModule proxy_http_module/' \
+    -e 's/^#\\s*LoadModule\\s\\+proxy_wstunnel_module\\b/LoadModule proxy_wstunnel_module/' \
+    -e 's/^#\\s*LoadModule\\s\\+headers_module\\b/LoadModule headers_module/' \
+    "${MODULES_CNF}" || true
+fi
+
+CONF_FILE="${CONF_DIR}/zzz-${DOMAIN}.conf"
+if [ -f "${CONF_FILE}" ]; then
+  cp -a "${CONF_FILE}" "${CONF_FILE}.bak.$(date +%s)"
+fi
+
+cat > "${CONF_FILE}" <<EOF
+# Managed by GitHub Actions (VPS Ops). Safe to edit, but changes may be overwritten.
+
+<VirtualHost ${IP}:80>
+  ServerName ${DOMAIN}
+  ServerAlias www.${DOMAIN}
+  DocumentRoot ${DOCROOT}
+
+  RewriteEngine On
+  RewriteRule ^/\\.well-known/acme-challenge/ - [L]
+  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+</VirtualHost>
+
+<VirtualHost ${IP}:443>
+  ServerName ${DOMAIN}
+  ServerAlias www.${DOMAIN}
+  DocumentRoot ${DOCROOT}
+
+  SSLEngine on
+  SSLCertificateFile ${CERT_FULLCHAIN}
+  SSLCertificateKeyFile ${CERT_PRIVKEY}
+
+  ProxyPreserveHost On
+  ProxyRequests Off
+  RequestHeader set X-Forwarded-Proto "https"
+
+  ProxyPass        /api/ http://127.0.0.1:5000/api/
+  ProxyPassReverse /api/ http://127.0.0.1:5000/api/
+
+  ProxyPass        /share/ http://127.0.0.1:5000/share/
+  ProxyPassReverse /share/ http://127.0.0.1:5000/share/
+
+  ProxyPass        /socket.io/ ws://127.0.0.1:5000/socket.io/
+  ProxyPassReverse /socket.io/ ws://127.0.0.1:5000/socket.io/
+
+  <Directory ${DOCROOT}>
+    Options FollowSymLinks
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+  RewriteEngine On
+  RewriteCond %{REQUEST_URI} ^/(api|share|socket\\.io)(/|$) [NC]
+  RewriteRule ^ - [L]
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^ /index.html [L]
+</VirtualHost>
+EOF
+
+echo "Testing config..."
+"${HTTPD}" -t
+
+echo "Reloading httpd..."
+"${HTTPD}" -k graceful
+echo "OK"
+SH
+
+      - name: Restart backend
+        if: ${{ inputs.action == 'restart-backend' }}
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
+set -euo pipefail
+if command -v pm2 >/dev/null 2>&1; then
+  pm2 restart versusversevault-backend --update-env || pm2 restart all --update-env
+  pm2 save || true
+  pm2 status || true
+else
+  echo "pm2 missing"
+  exit 1
+fi
+SH
+
+      - name: Backend logs
+        if: ${{ inputs.action == 'backend-logs' }}
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
           LINES: ${{ inputs.lines }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "pm2 logs versusversevault-backend --lines ${LINES:-120} --nostream" || true
+
+      - name: Check HTTP
+        if: ${{ inputs.action == 'check-http' }}
+        shell: bash
+        env:
           URL: ${{ inputs.url }}
         run: |
           set -euo pipefail
-          case "${ACTION}" in
-            doctor)
-              ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
-              set -euo pipefail
-              echo "== System =="
-              uname -a || true
-              cat /etc/os-release || true
-              echo
-              echo "== Network (listening) =="
-              ss -ltnp | egrep ':80|:443|:5000|:2002|:2003|:2004|:2005' || true
-              echo
-              echo "== Web server vhosts (Webuzo Apache) =="
-              /usr/local/apps/apache2/bin/httpd -S 2>&1 | head -n 140 || true
-              echo
-              echo "== PM2 =="
-              command -v pm2 >/dev/null 2>&1 && pm2 status || echo "pm2 missing"
-              SH
-              ;;
-            install-proxy)
-              ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "bash -se" <<'SH'
-              set -euo pipefail
-
-              DOMAIN="versusversevault.com"
-              IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"
-              if [ -z "${IP}" ]; then
-                IP="203.161.52.204"
-              fi
-
-              HTTPD="/usr/local/apps/apache2/bin/httpd"
-              CONF_DIR="/usr/local/apps/apache2/etc/conf.d"
-              MODULES_CNF="${CONF_DIR}/modules.cnf"
-              DOCROOT="/usr/local/apps/apache2/www/htdocs"
-              CERT_DIR="/etc/letsencrypt/live/${DOMAIN}"
-              CERT_FULLCHAIN="${CERT_DIR}/fullchain.pem"
-              CERT_PRIVKEY="${CERT_DIR}/privkey.pem"
-
-              if [ ! -x "${HTTPD}" ]; then
-                echo "ERROR: httpd not found at ${HTTPD}"
-                exit 1
-              fi
-
-              if [ ! -d "${DOCROOT}" ]; then
-                echo "ERROR: DOCROOT not found: ${DOCROOT}"
-                exit 1
-              fi
-
-              if [ ! -f "${CERT_FULLCHAIN}" ] || [ ! -f "${CERT_PRIVKEY}" ]; then
-                echo "ERROR: Let's Encrypt cert not found. Expected:"
-                echo "  ${CERT_FULLCHAIN}"
-                echo "  ${CERT_PRIVKEY}"
-                exit 1
-              fi
-
-              echo "Enabling proxy modules (if present)..."
-              if [ -f "${MODULES_CNF}" ]; then
-                sed -i \
-                  -e 's/^#\\s*LoadModule\\s\\+proxy_module\\b/LoadModule proxy_module/' \
-                  -e 's/^#\\s*LoadModule\\s\\+proxy_http_module\\b/LoadModule proxy_http_module/' \
-                  -e 's/^#\\s*LoadModule\\s\\+proxy_wstunnel_module\\b/LoadModule proxy_wstunnel_module/' \
-                  -e 's/^#\\s*LoadModule\\s\\+headers_module\\b/LoadModule headers_module/' \
-                  "${MODULES_CNF}" || true
-              fi
-
-              CONF_FILE="${CONF_DIR}/zzz-${DOMAIN}.conf"
-              if [ -f "${CONF_FILE}" ]; then
-                cp -a "${CONF_FILE}" "${CONF_FILE}.bak.$(date +%s)"
-              fi
-
-              cat > "${CONF_FILE}" <<EOF
-              # Managed by GitHub Actions (VPS Ops). Safe to edit, but changes may be overwritten.
-              
-              <VirtualHost ${IP}:80>
-                ServerName ${DOMAIN}
-                ServerAlias www.${DOMAIN}
-                DocumentRoot ${DOCROOT}
-              
-                RewriteEngine On
-                # Allow ACME HTTP-01 challenges over plain HTTP.
-                RewriteRule ^/\\.well-known/acme-challenge/ - [L]
-                RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
-              </VirtualHost>
-              
-              <VirtualHost ${IP}:443>
-                ServerName ${DOMAIN}
-                ServerAlias www.${DOMAIN}
-                DocumentRoot ${DOCROOT}
-              
-                SSLEngine on
-                SSLCertificateFile ${CERT_FULLCHAIN}
-                SSLCertificateKeyFile ${CERT_PRIVKEY}
-              
-                # Reverse proxy to Node backend on localhost.
-                ProxyPreserveHost On
-                ProxyRequests Off
-                RequestHeader set X-Forwarded-Proto "https"
-              
-                ProxyPass        /api/ http://127.0.0.1:5000/api/
-                ProxyPassReverse /api/ http://127.0.0.1:5000/api/
-              
-                ProxyPass        /share/ http://127.0.0.1:5000/share/
-                ProxyPassReverse /share/ http://127.0.0.1:5000/share/
-              
-                # Socket.IO (WebSocket)
-                ProxyPass        /socket.io/ ws://127.0.0.1:5000/socket.io/
-                ProxyPassReverse /socket.io/ ws://127.0.0.1:5000/socket.io/
-              
-                <Directory ${DOCROOT}>
-                  Options FollowSymLinks
-                  AllowOverride None
-                  Require all granted
-                </Directory>
-              
-                # SPA routing: keep API/share/socket.io out of the fallback.
-                RewriteEngine On
-                RewriteCond %{REQUEST_URI} ^/(api|share|socket\\.io)(/|$) [NC]
-                RewriteRule ^ - [L]
-                RewriteCond %{REQUEST_FILENAME} -f [OR]
-                RewriteCond %{REQUEST_FILENAME} -d
-                RewriteRule ^ - [L]
-                RewriteRule ^ /index.html [L]
-              </VirtualHost>
-              EOF
-
-              echo "Testing config..."
-              "${HTTPD}" -t
-
-              echo "Reloading httpd..."
-              "${HTTPD}" -k graceful
-              echo "OK"
-              SH
-              ;;
-            restart-backend)
-              ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
-              set -euo pipefail
-              if command -v pm2 >/dev/null 2>&1; then
-                pm2 restart versusversevault-backend --update-env || pm2 restart all --update-env
-                pm2 save || true
-                pm2 status || true
-              else
-                echo "pm2 missing"
-                exit 1
-              fi
-              SH
-              ;;
-            backend-logs)
-              ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "pm2 logs versusversevault-backend --lines ${LINES:-120} --nostream" || true
-              ;;
-            check-http)
-              echo "Checking: ${URL}"
-              curl -sS -D - "${URL}" -o /dev/null | head -n 40
-              ;;
-            *)
-              echo "Unknown action: ${ACTION}"
-              exit 1
-              ;;
-          esac
+          echo "Checking: ${URL}"
+          curl -sS -D - "${URL}" -o /dev/null | head -n 40
