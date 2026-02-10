@@ -377,7 +377,8 @@ jobs:
             DocumentRoot ${DOCROOT}
 
             RewriteEngine On
-            RewriteRule ^/\\.well-known/acme-challenge/ - [L]
+            # Allow ACME HTTP-01 challenges over plain HTTP.
+            RewriteRule ^\\.well-known/acme-challenge/ - [L]
             RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
           </VirtualHost>
 
@@ -412,8 +413,12 @@ jobs:
             RewriteEngine On
             RewriteCond %{REQUEST_URI} ^/(api|share|socket\\.io)(/|$) [NC]
             RewriteRule ^ - [L]
-            RewriteCond %{REQUEST_FILENAME} -f [OR]
-            RewriteCond %{REQUEST_FILENAME} -d
+
+            # Serve real files/directories as-is.
+            # In this Apache build, REQUEST_FILENAME is not reliably a filesystem path here,
+            # so use DOCUMENT_ROOT + REQUEST_URI.
+            RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -f [OR]
+            RewriteCond %{DOCUMENT_ROOT}%{REQUEST_URI} -d
             RewriteRule ^ - [L]
             RewriteRule ^ /index.html [L]
           </VirtualHost>
