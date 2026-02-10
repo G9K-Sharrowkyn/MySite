@@ -1303,17 +1303,34 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
 
 // Lightweight health endpoints for uptime checks
 app.get(['/healthz', '/api/health'], (req, res) => {
-  const databaseModeRaw = process.env.DATABASE || process.env.Database || 'local';
+  const mongoUriPresent = Boolean(
+    process.env.MONGO_URI ||
+      process.env.MONGODB_URI ||
+      process.env.MONGO_URL ||
+      process.env.DATABASE_URL
+  );
+  const explicitDatabaseMode = String(process.env.DATABASE || process.env.Database || '').trim();
+  const databaseModeRaw = explicitDatabaseMode || (mongoUriPresent ? 'mongo' : 'local');
   const databaseMode = databaseModeRaw.toLowerCase();
-  const databaseLabel = databaseMode === 'mongo' || databaseMode === 'mongodb'
-    ? 'mongo'
-    : 'local';
+  const databaseLabel =
+    databaseMode === 'mongo' || databaseMode === 'mongodb' ? 'mongo' : 'local';
+
+  const googleAuthConfigured = Boolean(
+    String(
+      process.env.GOOGLE_CLIENT_ID ||
+        process.env.GOOGLE_CLIENT_IDS ||
+        process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+        ''
+    ).trim()
+  );
 
   res.status(200).json({
     ok: true,
     service: 'versusversevault-backend',
     env: process.env.NODE_ENV || 'development',
     database: databaseLabel,
+    mongoUriPresent,
+    googleAuthConfigured,
     uptimeSec: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
   });
