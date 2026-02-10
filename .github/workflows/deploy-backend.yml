@@ -135,14 +135,13 @@ jobs:
           raw = envfile.read_text("utf-8", errors="ignore") if envfile.exists() else ""
           lines = [line for line in raw.splitlines() if line.strip()]
 
-          def upsert(key: str, value: str):
-              nonlocal lines
+          def upsert(current, key: str, value: str):
               if not value:
-                  return
+                  return current
               prefix = f"{key}="
               out = []
               replaced = False
-              for line in lines:
+              for line in current:
                   if line.startswith(prefix):
                       out.append(prefix + value)
                       replaced = True
@@ -150,12 +149,12 @@ jobs:
                       out.append(line)
               if not replaced:
                   out.append(prefix + value)
-              lines = out
+              return out
 
-          upsert("DATABASE", "mongo")
-          upsert("MONGO_URI", mongo_uri)
+          lines = upsert(lines, "DATABASE", "mongo")
+          lines = upsert(lines, "MONGO_URI", mongo_uri)
           if mongo_db:
-              upsert("MONGO_DB_NAME", mongo_db)
+              lines = upsert(lines, "MONGO_DB_NAME", mongo_db)
 
           envfile.write_text("\n".join(lines).rstrip() + "\n", "utf-8")
           print("Updated", str(envfile))
