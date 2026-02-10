@@ -281,6 +281,33 @@ jobs:
             }
           }
 
+          // If the user has permissions, list databases in the cluster to find where the "old data" lives.
+          try {
+            const admin = client.db().admin();
+            const dbs = await admin.listDatabases();
+            const names = (dbs?.databases || [])
+              .map((d) => d?.name)
+              .filter((n) => typeof n === 'string' && n.trim())
+              .slice(0, 50); // keep logs bounded
+
+            safePrint('mongo.databases=', names.join(',') || '(none)');
+
+            for (const dbName of names) {
+              try {
+                const db = client.db(dbName);
+                const users = await db.collection('users').estimatedDocumentCount().catch(() => null);
+                const posts = await db.collection('posts').estimatedDocumentCount().catch(() => null);
+                if ((users || 0) > 0 || (posts || 0) > 0) {
+                  safePrint(`mongo.db_nonzero=${dbName} `, `users=${users ?? 'n/a'} posts=${posts ?? 'n/a'}`);
+                }
+              } catch {
+                // ignore per-db errors
+              }
+            }
+          } catch (e) {
+            safePrint('mongo.list_databases_error=', e?.message || String(e));
+          }
+
           await client.close();
           NODE
           SH
