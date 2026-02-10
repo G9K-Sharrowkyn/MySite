@@ -29,8 +29,7 @@ jobs:
           REMOTE_PORT: ${{ secrets.VPS_PORT }}
           SOURCE: "backend/"
           TARGET: ${{ secrets.VPS_BACKEND_DIR }}
-          ARGS: "-rlgoDzvc --delete"
-          EXCLUDE: "/.git/ /node_modules/ /.env /.env.* /npm-debug.log* /.DS_Store"
+          ARGS: "-rlgoDzvc --delete --exclude=/.git/ --exclude=/node_modules/ --exclude=/.env --exclude=/.env.* --exclude=/npm-debug.log* --exclude=/.DS_Store"
 
       - name: Restart backend (optional)
         if: ${{ secrets.VPS_BACKEND_RESTART_CMD != '' }}

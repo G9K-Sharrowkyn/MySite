@@ -36,5 +36,4 @@ jobs:
           REMOTE_PORT: ${{ secrets.VPS_PORT }}
           SOURCE: "build/"
           TARGET: ${{ secrets.VPS_FRONTEND_DIR }}
-          ARGS: "-rlgoDzvc --delete"
-          EXCLUDE: "/.git/ /node_modules/"
+          ARGS: "-rlgoDzvc --delete --exclude=/.git/ --exclude=/node_modules/"
