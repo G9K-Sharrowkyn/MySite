@@ -1,0 +1,133 @@
+name: VPS Ops (SSH)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: What to do on the VPS
+        required: true
+        default: doctor
+        type: choice
+        options:
+          - doctor
+          - restart-backend
+          - backend-logs
+          - check-http
+      lines:
+        description: Lines for logs (backend-logs)
+        required: false
+        default: "120"
+      url:
+        description: URL to check (check-http)
+        required: false
+        default: "https://versusversevault.com/api/health"
+
+jobs:
+  vps-ops:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH key
+        shell: bash
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KEY_B64: ${{ secrets.VPS_SSH_KEY_B64 }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          python3 - <<'PY'
+          import base64
+          import os
+          import pathlib
+          import re
+
+          p = pathlib.Path.home() / ".ssh" / "deploy_key"
+
+          key_b64 = (os.environ.get("VPS_SSH_KEY_B64") or "").strip()
+          if key_b64:
+            data = base64.b64decode(key_b64)
+            if not data.endswith(b"\n"):
+              data += b"\n"
+            p.write_bytes(data)
+            print("Wrote deploy_key from VPS_SSH_KEY_B64")
+            raise SystemExit(0)
+
+          raw = os.environ.get("VPS_SSH_KEY", "")
+          if not raw.strip():
+            raise SystemExit("VPS_SSH_KEY secret is empty. Provide VPS_SSH_KEY or VPS_SSH_KEY_B64.")
+
+          raw = raw.replace("\r\n", "\n").replace("\r", "\n")
+          if "\\n" in raw and "BEGIN" in raw and "\n" not in raw:
+            raw = raw.replace("\\n", "\n")
+
+          begin = re.search(r"-----BEGIN [A-Z0-9 ]+ PRIVATE KEY-----", raw)
+          end = re.search(r"-----END [A-Z0-9 ]+ PRIVATE KEY-----", raw)
+          if begin and end and end.end() > begin.start():
+            raw = raw[begin.start():end.end()]
+
+          if raw.lstrip().startswith("ssh-"):
+            raise SystemExit("VPS_SSH_KEY looks like a PUBLIC key. Paste the PRIVATE key (BEGIN ... PRIVATE KEY).")
+
+          key = raw.strip() + "\n"
+          p.write_text(key)
+          print("Wrote deploy_key from VPS_SSH_KEY")
+          PY
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${VPS_PORT}" -H "${VPS_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Run VPS operation
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          ACTION: ${{ inputs.action }}
+          LINES: ${{ inputs.lines }}
+          URL: ${{ inputs.url }}
+        run: |
+          set -euo pipefail
+          case "${ACTION}" in
+            doctor)
+              ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
+              set -euo pipefail
+              echo "== System =="
+              uname -a || true
+              cat /etc/os-release || true
+              echo
+              echo "== Network (listening) =="
+              ss -ltnp | egrep ':80|:443|:5000|:2002|:2003|:2004|:2005' || true
+              echo
+              echo "== Web server vhosts (Webuzo Apache) =="
+              /usr/local/apps/apache2/bin/httpd -S 2>&1 | head -n 140 || true
+              echo
+              echo "== PM2 =="
+              command -v pm2 >/dev/null 2>&1 && pm2 status || echo "pm2 missing"
+              SH
+              ;;
+            restart-backend)
+              ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
+              set -euo pipefail
+              if command -v pm2 >/dev/null 2>&1; then
+                pm2 restart versusversevault-backend --update-env || pm2 restart all --update-env
+                pm2 save || true
+                pm2 status || true
+              else
+                echo "pm2 missing"
+                exit 1
+              fi
+              SH
+              ;;
+            backend-logs)
+              ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "pm2 logs versusversevault-backend --lines ${LINES:-120} --nostream" || true
+              ;;
+            check-http)
+              echo "Checking: ${URL}"
+              curl -sS -D - "${URL}" -o /dev/null | head -n 40
+              ;;
+            *)
+              echo "Unknown action: ${ACTION}"
+              exit 1
+              ;;
+          esac
+

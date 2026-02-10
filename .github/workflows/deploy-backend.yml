@@ -105,10 +105,15 @@ jobs:
 
       - name: Restart backend (optional)
         if: ${{ env.VPS_BACKEND_RESTART_CMD != '' }}
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script: ${{ env.VPS_BACKEND_RESTART_CMD }}
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_BACKEND_RESTART_CMD: ${{ env.VPS_BACKEND_RESTART_CMD }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "bash -se" <<SH
+          set -euo pipefail
+          ${VPS_BACKEND_RESTART_CMD}
+          SH
