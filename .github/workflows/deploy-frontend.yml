@@ -99,8 +99,9 @@ jobs:
           VPS_FRONTEND_DIR: ${{ secrets.VPS_FRONTEND_DIR }}
         run: |
           set -euo pipefail
-          rsync -rlgoDzvc --delete \
+          rsync -rltzv --delete \
             --exclude=/.git/ \
             --exclude=/node_modules/ \
+            --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r \
             -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o StrictHostKeyChecking=yes" \
             build/ "${VPS_USER}@${VPS_HOST}:${VPS_FRONTEND_DIR%/}/"
