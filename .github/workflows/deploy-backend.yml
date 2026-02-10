@@ -1,4 +1,4 @@
-name: Deploy Backend to cPanel
+name: Deploy Backend to VPS (SSH)
 
 on:
   push:
@@ -20,19 +20,24 @@ jobs:
           mkdir -p backend/tmp
           date +%s > backend/tmp/restart.txt
 
-      - name: Deploy backend/ to cPanel via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      - name: Deploy backend/ to VPS via rsync over SSH
+        uses: easingthemes/ssh-deploy@v5.0.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.VPS_HOST }}
+          REMOTE_USER: ${{ secrets.VPS_USER }}
+          REMOTE_PORT: ${{ secrets.VPS_PORT }}
+          SOURCE: "backend/"
+          TARGET: ${{ secrets.VPS_BACKEND_DIR }}
+          ARGS: "-rlgoDzvc --delete"
+          EXCLUDE: "/.git/ /node_modules/ /.env /.env.* /npm-debug.log* /.DS_Store"
+
+      - name: Restart backend (optional)
+        if: ${{ secrets.VPS_BACKEND_RESTART_CMD != '' }}
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /backend/
-          local-dir: backend/
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/node_modules/**
-            **/.env
-            **/.env.*
-            **/npm-debug.log*
-            **/.DS_Store
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: ${{ secrets.VPS_BACKEND_RESTART_CMD }}

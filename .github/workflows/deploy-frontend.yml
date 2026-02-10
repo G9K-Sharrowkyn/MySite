@@ -1,4 +1,4 @@
-name: Deploy Frontend to cPanel
+name: Deploy Frontend to VPS (SSH)
 
 on:
   push:
@@ -19,19 +19,22 @@ jobs:
           node-version: 20
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build frontend
         run: npm run build
 
-      - name: Deploy build/ to cPanel via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /public_html/
-          local-dir: build/
-          exclude: |
-            **/.git*
-            **/.git*/**
+      - name: Include Apache rewrites (.htaccess) in build output
+        run: cp .htaccess build/.htaccess
+
+      - name: Deploy build/ to VPS via rsync over SSH
+        uses: easingthemes/ssh-deploy@v5.0.0
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
+          REMOTE_HOST: ${{ secrets.VPS_HOST }}
+          REMOTE_USER: ${{ secrets.VPS_USER }}
+          REMOTE_PORT: ${{ secrets.VPS_PORT }}
+          SOURCE: "build/"
+          TARGET: ${{ secrets.VPS_FRONTEND_DIR }}
+          ARGS: "-rlgoDzvc --delete"
+          EXCLUDE: "/.git/ /node_modules/"
