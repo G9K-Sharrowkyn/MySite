@@ -54,3 +54,10 @@ The response includes flags:
 - `googleAuthConfigured`
 - `database`
 
+## Troubleshooting: First Deploy
+
+If a GitHub Actions deploy fails, the most common causes are:
+- `VPS_SSH_KEY` is missing/invalid.
+- `VPS_FRONTEND_DIR` / `VPS_BACKEND_DIR` point to a path that does not exist or is not writable for `VPS_USER`.
+- SSH is blocked by firewall or uses a non-standard port (update `VPS_PORT`).
+

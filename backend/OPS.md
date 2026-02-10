@@ -91,3 +91,8 @@ Helper endpoint:
 - Avatar uploads are converted to `.jpg` (max 640x640).
 - Profile backgrounds are converted to `.jpg` (max 1920x1080).
 - Upload size limit is 8 MB.
+
+## VPS Deploy (Webuzo)
+
+If you deploy to a VPS with Webuzo, prefer SSH-based deploy (rsync) over FTP/FTPS.
+The GitHub Actions workflows in `.github/workflows/` can deploy `build/` and `backend/` directly to the server.
