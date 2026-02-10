@@ -96,3 +96,5 @@ Helper endpoint:
 
 If you deploy to a VPS with Webuzo, prefer SSH-based deploy (rsync) over FTP/FTPS.
 The GitHub Actions workflows in `.github/workflows/` can deploy `build/` and `backend/` directly to the server.
+
+Last updated: 2026-02-10
