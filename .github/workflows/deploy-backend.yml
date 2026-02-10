@@ -101,6 +101,67 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o StrictHostKeyChecking=yes" \
             backend/ "${VPS_USER}@${VPS_HOST}:${VPS_BACKEND_DIR%/}/"
 
+      - name: Configure MongoDB env (optional)
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_BACKEND_DIR: ${{ secrets.VPS_BACKEND_DIR }}
+          VPS_MONGO_URI: ${{ secrets.VPS_MONGO_URI }}
+          VPS_MONGO_DB_NAME: ${{ secrets.VPS_MONGO_DB_NAME }}
+        run: |
+          set -euo pipefail
+          if [ -z "${VPS_MONGO_URI:-}" ]; then
+            echo "VPS_MONGO_URI not set, skipping MongoDB env config."
+            exit 0
+          fi
+
+          remote_dir="${VPS_BACKEND_DIR%/}"
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" \
+            "ENVFILE='${remote_dir}/.env.production' MONGO_URI='${VPS_MONGO_URI}' MONGO_DB_NAME='${VPS_MONGO_DB_NAME}' bash -se" <<'SH'
+          set -euo pipefail
+          umask 077
+          touch "${ENVFILE}"
+
+          python3 - <<'PY'
+          import os
+          import pathlib
+
+          envfile = pathlib.Path(os.environ["ENVFILE"])
+          mongo_uri = (os.environ.get("MONGO_URI") or "").strip()
+          mongo_db = (os.environ.get("MONGO_DB_NAME") or "").strip()
+
+          raw = envfile.read_text("utf-8", errors="ignore") if envfile.exists() else ""
+          lines = [line for line in raw.splitlines() if line.strip()]
+
+          def upsert(key: str, value: str):
+              nonlocal lines
+              if not value:
+                  return
+              prefix = f"{key}="
+              out = []
+              replaced = False
+              for line in lines:
+                  if line.startswith(prefix):
+                      out.append(prefix + value)
+                      replaced = True
+                  else:
+                      out.append(line)
+              if not replaced:
+                  out.append(prefix + value)
+              lines = out
+
+          upsert("DATABASE", "mongo")
+          upsert("MONGO_URI", mongo_uri)
+          if mongo_db:
+              upsert("MONGO_DB_NAME", mongo_db)
+
+          envfile.write_text("\n".join(lines).rstrip() + "\n", "utf-8")
+          print("Updated", str(envfile))
+          PY
+          SH
+
       - name: Restart backend via PM2
         shell: bash
         env:
