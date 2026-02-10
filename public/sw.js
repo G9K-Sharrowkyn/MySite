@@ -1,5 +1,6 @@
 // Service Worker for PWA
-const CACHE_NAME = 'fight-site-v3';
+// Bump this when caching rules change to force clients to drop stale cached entries.
+const CACHE_NAME = 'fight-site-v4';
 const urlsToCache = [
   '/',
   '/logo192.png',
@@ -38,7 +39,15 @@ self.addEventListener('fetch', (event) => {
 
   // Skip API, socket, and cross-origin requests
   if (requestUrl.origin !== self.location.origin) return;
-  if (requestUrl.pathname.startsWith('/api') || requestUrl.pathname.startsWith('/socket.io')) {
+  // Also skip backend-served static media (uploads) and large static libraries (characters).
+  // These are already cached by the browser via HTTP cache headers, and we don't want SW
+  // to accidentally pin an incorrect response (e.g. HTML during a server migration).
+  if (
+    requestUrl.pathname.startsWith('/api') ||
+    requestUrl.pathname.startsWith('/socket.io') ||
+    requestUrl.pathname.startsWith('/uploads') ||
+    requestUrl.pathname.startsWith('/characters')
+  ) {
     return;
   }
 
