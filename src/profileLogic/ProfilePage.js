@@ -81,7 +81,12 @@ const ProfilePage = () => {
 
   const fetchUserPosts = useCallback(async (id) => {
     try {
-      const response = await axios.get(`/api/posts/user/${id}`);
+      // Include auth token when available so the backend can include viewer-specific fields
+      // like fight.myVote, which drives vote highlighting in PostCard.
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`/api/posts/user/${id}`, token ? {
+        headers: { 'x-auth-token': token }
+      } : undefined);
       const postsWithImages = response.data.map(post => ({
         ...post,
         author: {
