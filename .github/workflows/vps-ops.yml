@@ -137,9 +137,11 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_BACKEND_DIR: ${{ secrets.VPS_BACKEND_DIR }}
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" \
+            "VPS_BACKEND_DIR='${VPS_BACKEND_DIR:-}' bash -se" <<'SH'
           set -euo pipefail
           echo "== System =="
           uname -a || true
@@ -153,6 +155,134 @@ jobs:
           echo
           echo "== PM2 =="
           command -v pm2 >/dev/null 2>&1 && pm2 status || echo "pm2 missing"
+          echo
+          echo "== Data (local db.json vs Mongo) =="
+          BACKEND_DIR="${VPS_BACKEND_DIR:-/root/backend}"
+          if [ ! -d "${BACKEND_DIR}" ]; then
+            echo "Backend dir not found: ${BACKEND_DIR}"
+            exit 0
+          fi
+          cd "${BACKEND_DIR}"
+          if ! command -v node >/dev/null 2>&1; then
+            echo "node missing"
+            exit 0
+          fi
+          node --input-type=module - <<'NODE'
+          import fs from 'fs/promises';
+          import { MongoClient } from 'mongodb';
+
+          const safePrint = (label, value) => {
+            process.stdout.write(`${label}${value}\n`);
+          };
+
+          const parseEnvFile = (raw) => {
+            const env = {};
+            for (const line of raw.split(/\r?\n/)) {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith('#')) continue;
+              const idx = trimmed.indexOf('=');
+              if (idx <= 0) continue;
+              const key = trimmed.slice(0, idx).trim();
+              const value = trimmed.slice(idx + 1).trim();
+              if (key) env[key] = value;
+            }
+            return env;
+          };
+
+          const deriveDbNameFromUri = (uri) => {
+            const raw = String(uri || '').trim();
+            if (!raw) return '';
+            const match = raw.match(/^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]*)/i);
+            if (!match) return '';
+            const candidate = String(match[1] || '').trim();
+            if (!candidate) return '';
+            try {
+              return decodeURIComponent(candidate);
+            } catch {
+              return candidate;
+            }
+          };
+
+          const tryRead = async (p) => {
+            try {
+              return await fs.readFile(p, 'utf8');
+            } catch {
+              return '';
+            }
+          };
+
+          const localDbRaw = await tryRead('db.json');
+          if (localDbRaw) {
+            try {
+              const json = JSON.parse(localDbRaw.replace(/^\uFEFF/, '').trim() || '{}');
+              const users = Array.isArray(json.users) ? json.users.length : 0;
+              const posts = Array.isArray(json.posts) ? json.posts.length : 0;
+              const comments = Array.isArray(json.comments) ? json.comments.length : 0;
+              safePrint('local.db.json users=', users);
+              safePrint('local.db.json posts=', posts);
+              safePrint('local.db.json comments=', comments);
+            } catch (e) {
+              safePrint('local.db.json parse_error=', e?.message || String(e));
+            }
+          } else {
+            safePrint('local.db.json=', 'missing');
+          }
+
+          const envRaw = await tryRead('.env.production');
+          const envFile = envRaw ? parseEnvFile(envRaw) : {};
+          const merged = { ...process.env, ...envFile };
+          const uri =
+            merged.MONGO_URI ||
+            merged.MONGODB_URI ||
+            merged.MONGO_URL ||
+            merged.DATABASE_URL ||
+            '';
+
+          safePrint('mongo.uri_present=', uri ? 'yes' : 'no');
+          if (!uri) process.exit(0);
+
+          const preferred = String(merged.MONGO_DB_NAME || '').trim();
+          const derived = deriveDbNameFromUri(uri);
+          const candidates = Array.from(
+            new Set(
+              [preferred, derived, 'versusversevault', 'geekfights']
+                .map((v) => String(v || '').trim())
+                .filter(Boolean)
+            )
+          );
+
+          let client;
+          try {
+            client = new MongoClient(uri, { serverSelectionTimeoutMS: 4000 });
+            await client.connect();
+          } catch (e) {
+            safePrint('mongo.connect_error=', e?.message || String(e));
+            process.exit(0);
+          }
+
+          const keys = ['users', 'posts', 'comments', 'characters', 'votes', 'messages', 'chatMessages'];
+          for (const dbName of candidates) {
+            try {
+              const db = client.db(dbName);
+              const counts = {};
+              for (const k of keys) {
+                try {
+                  counts[k] = await db.collection(k).estimatedDocumentCount();
+                } catch {
+                  counts[k] = null;
+                }
+              }
+              safePrint(
+                `mongo.db=${dbName} `,
+                keys.map((k) => `${k}=${counts[k] ?? 'n/a'}`).join(' ')
+              );
+            } catch (e) {
+              safePrint(`mongo.db=${dbName} error=`, e?.message || String(e));
+            }
+          }
+
+          await client.close();
+          NODE
           SH
 
       - name: Install Apache Proxy (/api, /share, /socket.io)

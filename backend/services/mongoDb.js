@@ -24,10 +24,23 @@ const deriveDbNameFromUri = (uri) => {
   }
 };
 
-const getMongoDbName = () =>
-  process.env.MONGO_DB_NAME ||
-  deriveDbNameFromUri(getMongoUri()) ||
-  'geekfights';
+const DEFAULT_MONGO_DB_NAME = 'versusversevault';
+
+const resolveMongoDbName = () => {
+  const explicit = String(process.env.MONGO_DB_NAME || '').trim();
+  if (explicit) {
+    return { dbName: explicit, source: 'env' };
+  }
+
+  const derived = deriveDbNameFromUri(getMongoUri());
+  if (derived) {
+    return { dbName: derived, source: 'uri' };
+  }
+
+  return { dbName: DEFAULT_MONGO_DB_NAME, source: 'default' };
+};
+
+const getMongoDbName = () => resolveMongoDbName().dbName;
 const getMongoConnectTimeoutMs = () =>
   Number.parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS || '10000', 10);
 const getMongoCacheTtlMs = () =>
@@ -352,6 +365,7 @@ export const closeMongo = async () => {
 export const getMongoConfig = () => ({
   uri: getMongoUri(),
   dbName: getMongoDbName(),
+  dbNameSource: resolveMongoDbName().source,
   connectTimeoutMs: getMongoConnectTimeoutMs(),
   cacheTtlMs: getMongoCacheTtlMs()
 });

@@ -68,6 +68,7 @@ import { notificationsRepo } from './repositories/index.js';
 import { usersRepo } from './repositories/index.js';
 import { readDb } from './repositories/index.js';
 import { readDb as warmupReadDb } from './services/jsonDb.js';
+import { getMongoConfig } from './services/mongoDb.js';
 
 const chatStore = {
   getRecentMessages: getLocalRecentMessages,
@@ -1315,6 +1316,7 @@ app.get(['/healthz', '/api/health'], (req, res) => {
   const databaseLabel =
     databaseMode === 'mongo' || databaseMode === 'mongodb' ? 'mongo' : 'local';
 
+  const mongoConfig = mongoUriPresent ? getMongoConfig() : null;
   const googleAuthConfigured = Boolean(
     String(
       process.env.GOOGLE_CLIENT_ID ||
@@ -1330,6 +1332,8 @@ app.get(['/healthz', '/api/health'], (req, res) => {
     env: process.env.NODE_ENV || 'development',
     database: databaseLabel,
     mongoUriPresent,
+    mongoDbName: mongoConfig?.dbName || null,
+    mongoDbNameSource: mongoConfig?.dbNameSource || null,
     googleAuthConfigured,
     uptimeSec: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
@@ -1683,7 +1687,14 @@ io.on('connection', (socket) => {
 
 // Start the server
 server.listen(PORT, () => {
-  const databaseModeRaw = process.env.DATABASE || process.env.Database || 'local';
+  const mongoUriPresent = Boolean(
+    process.env.MONGO_URI ||
+      process.env.MONGODB_URI ||
+      process.env.MONGO_URL ||
+      process.env.DATABASE_URL
+  );
+  const databaseModeRaw =
+    process.env.DATABASE || process.env.Database || (mongoUriPresent ? 'mongo' : 'local');
   const databaseMode = databaseModeRaw.toLowerCase();
   const databaseLabel = databaseMode === 'mongo' || databaseMode === 'mongodb'
     ? 'mongo'
