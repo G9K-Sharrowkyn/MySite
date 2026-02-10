@@ -11,8 +11,6 @@ on:
 jobs:
   deploy-backend:
     runs-on: ubuntu-latest
-    env:
-      VPS_BACKEND_RESTART_CMD: ${{ secrets.VPS_BACKEND_RESTART_CMD }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -103,17 +101,25 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o StrictHostKeyChecking=yes" \
             backend/ "${VPS_USER}@${VPS_HOST}:${VPS_BACKEND_DIR%/}/"
 
-      - name: Restart backend (optional)
-        if: ${{ env.VPS_BACKEND_RESTART_CMD != '' }}
+      - name: Restart backend via PM2
         shell: bash
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_USER: ${{ secrets.VPS_USER }}
-          VPS_BACKEND_RESTART_CMD: ${{ env.VPS_BACKEND_RESTART_CMD }}
+          VPS_BACKEND_DIR: ${{ secrets.VPS_BACKEND_DIR }}
         run: |
           set -euo pipefail
           ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "bash -se" <<SH
           set -euo pipefail
-          ${VPS_BACKEND_RESTART_CMD}
+          cd '${VPS_BACKEND_DIR%/}'
+          export LD_LIBRARY_PATH='${VPS_BACKEND_DIR%/}/node_modules/@img/sharp-libvips-linux-x64/lib'
+          if command -v pm2 >/dev/null 2>&1; then
+            pm2 delete versusversevault-backend || true
+            pm2 start server.js --name versusversevault-backend --update-env
+            pm2 save || true
+          else
+            echo "pm2 missing"
+            exit 1
+          fi
           SH

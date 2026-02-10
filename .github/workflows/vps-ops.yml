@@ -235,9 +235,13 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" 'bash -se' <<'SH'
           set -euo pipefail
           if command -v pm2 >/dev/null 2>&1; then
-            pm2 restart versusversevault-backend --update-env || pm2 restart all --update-env
+            cd /root/backend
+            export LD_LIBRARY_PATH=/root/backend/node_modules/@img/sharp-libvips-linux-x64/lib
+            pm2 delete versusversevault-backend || true
+            pm2 start server.js --name versusversevault-backend --update-env
             pm2 save || true
             pm2 status || true
+            ss -ltnp | egrep ':5000' || true
           else
             echo "pm2 missing"
             exit 1
