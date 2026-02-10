@@ -315,8 +315,11 @@ export const updateDb = async (mutator) => {
       beforeSnapshots.set(key, JSON.stringify(data[key] || []));
     }
 
-    const result = await mutator(data);
-    const updated = normalizeDb(result || data);
+    // Mutators in this codebase are expected to mutate `data` in-place.
+    // Never trust the return value here, because returning a partial object (e.g. `{ ok: true }`)
+    // would normalize into DEFAULT_DB and could wipe collections in Mongo.
+    await mutator(data);
+    const updated = normalizeDb(data);
     const db = await getDb();
 
     const writes = [];

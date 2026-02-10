@@ -76,8 +76,10 @@ export const writeDb = async (data) => {
 export const updateDb = async (mutator) => {
   return enqueueWrite(async () => {
     const data = await readDb();
-    const result = await mutator(data);
-    const updated = normalizeDb(result || data);
+    // Mutators are expected to mutate `data` in-place.
+    // Ignoring the return value prevents accidental partial returns from wiping keys.
+    await mutator(data);
+    const updated = normalizeDb(data);
     await fs.writeFile(DB_PATH, JSON.stringify(updated, null, 2), 'utf8');
     return updated;
   });
