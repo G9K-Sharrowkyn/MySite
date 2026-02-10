@@ -157,59 +157,59 @@ jobs:
               fi
 
               cat > "${CONF_FILE}" <<EOF
-# Managed by GitHub Actions (VPS Ops). Safe to edit, but changes may be overwritten.
-
-<VirtualHost ${IP}:80>
-  ServerName ${DOMAIN}
-  ServerAlias www.${DOMAIN}
-  DocumentRoot ${DOCROOT}
-
-  RewriteEngine On
-  # Allow ACME HTTP-01 challenges over plain HTTP.
-  RewriteRule ^/\\.well-known/acme-challenge/ - [L]
-  RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
-</VirtualHost>
-
-<VirtualHost ${IP}:443>
-  ServerName ${DOMAIN}
-  ServerAlias www.${DOMAIN}
-  DocumentRoot ${DOCROOT}
-
-  SSLEngine on
-  SSLCertificateFile ${CERT_FULLCHAIN}
-  SSLCertificateKeyFile ${CERT_PRIVKEY}
-
-  # Reverse proxy to Node backend on localhost.
-  ProxyPreserveHost On
-  ProxyRequests Off
-  RequestHeader set X-Forwarded-Proto "https"
-
-  ProxyPass        /api/ http://127.0.0.1:5000/api/
-  ProxyPassReverse /api/ http://127.0.0.1:5000/api/
-
-  ProxyPass        /share/ http://127.0.0.1:5000/share/
-  ProxyPassReverse /share/ http://127.0.0.1:5000/share/
-
-  # Socket.IO (WebSocket)
-  ProxyPass        /socket.io/ ws://127.0.0.1:5000/socket.io/
-  ProxyPassReverse /socket.io/ ws://127.0.0.1:5000/socket.io/
-
-  <Directory ${DOCROOT}>
-    Options FollowSymLinks
-    AllowOverride None
-    Require all granted
-  </Directory>
-
-  # SPA routing: keep API/share/socket.io out of the fallback.
-  RewriteEngine On
-  RewriteCond %{REQUEST_URI} ^/(api|share|socket\\.io)(/|$) [NC]
-  RewriteRule ^ - [L]
-  RewriteCond %{REQUEST_FILENAME} -f [OR]
-  RewriteCond %{REQUEST_FILENAME} -d
-  RewriteRule ^ - [L]
-  RewriteRule ^ /index.html [L]
-</VirtualHost>
-EOF
+              # Managed by GitHub Actions (VPS Ops). Safe to edit, but changes may be overwritten.
+              
+              <VirtualHost ${IP}:80>
+                ServerName ${DOMAIN}
+                ServerAlias www.${DOMAIN}
+                DocumentRoot ${DOCROOT}
+              
+                RewriteEngine On
+                # Allow ACME HTTP-01 challenges over plain HTTP.
+                RewriteRule ^/\\.well-known/acme-challenge/ - [L]
+                RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+              </VirtualHost>
+              
+              <VirtualHost ${IP}:443>
+                ServerName ${DOMAIN}
+                ServerAlias www.${DOMAIN}
+                DocumentRoot ${DOCROOT}
+              
+                SSLEngine on
+                SSLCertificateFile ${CERT_FULLCHAIN}
+                SSLCertificateKeyFile ${CERT_PRIVKEY}
+              
+                # Reverse proxy to Node backend on localhost.
+                ProxyPreserveHost On
+                ProxyRequests Off
+                RequestHeader set X-Forwarded-Proto "https"
+              
+                ProxyPass        /api/ http://127.0.0.1:5000/api/
+                ProxyPassReverse /api/ http://127.0.0.1:5000/api/
+              
+                ProxyPass        /share/ http://127.0.0.1:5000/share/
+                ProxyPassReverse /share/ http://127.0.0.1:5000/share/
+              
+                # Socket.IO (WebSocket)
+                ProxyPass        /socket.io/ ws://127.0.0.1:5000/socket.io/
+                ProxyPassReverse /socket.io/ ws://127.0.0.1:5000/socket.io/
+              
+                <Directory ${DOCROOT}>
+                  Options FollowSymLinks
+                  AllowOverride None
+                  Require all granted
+                </Directory>
+              
+                # SPA routing: keep API/share/socket.io out of the fallback.
+                RewriteEngine On
+                RewriteCond %{REQUEST_URI} ^/(api|share|socket\\.io)(/|$) [NC]
+                RewriteRule ^ - [L]
+                RewriteCond %{REQUEST_FILENAME} -f [OR]
+                RewriteCond %{REQUEST_FILENAME} -d
+                RewriteRule ^ - [L]
+                RewriteRule ^ /index.html [L]
+              </VirtualHost>
+              EOF
 
               echo "Testing config..."
               "${HTTPD}" -t
