@@ -27,13 +27,53 @@ jobs:
       - name: Include Apache rewrites (.htaccess) in build output
         run: cp .htaccess build/.htaccess
 
-      - name: Deploy build/ to VPS via rsync over SSH
-        uses: easingthemes/ssh-deploy@v5.0.0
+      - name: Setup SSH key
+        shell: bash
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.VPS_SSH_KEY }}
-          REMOTE_HOST: ${{ secrets.VPS_HOST }}
-          REMOTE_USER: ${{ secrets.VPS_USER }}
-          REMOTE_PORT: ${{ secrets.VPS_PORT }}
-          SOURCE: "build/"
-          TARGET: ${{ secrets.VPS_FRONTEND_DIR }}
-          ARGS: "-rlgoDzvc --delete --exclude=/.git/ --exclude=/node_modules/"
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          python3 - <<'PY'
+          import os, pathlib
+          key = os.environ.get("VPS_SSH_KEY", "")
+          if not key.strip():
+            raise SystemExit("VPS_SSH_KEY secret is empty")
+          # Normalize newlines and also support '\n' escaped keys.
+          key = key.replace("\r\n", "\n").replace("\r", "\n")
+          if "\\n" in key and "BEGIN" in key and "\n" not in key:
+            key = key.replace("\\n", "\n")
+          p = pathlib.Path.home() / ".ssh" / "deploy_key"
+          p.write_text(key if key.endswith("\n") else key + "\n")
+          print(f"Wrote {p}")
+          PY
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "${VPS_PORT}" -H "${VPS_HOST}" >> ~/.ssh/known_hosts
+
+      - name: Ensure remote frontend directory exists
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_FRONTEND_DIR: ${{ secrets.VPS_FRONTEND_DIR }}
+        run: |
+          set -euo pipefail
+          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "mkdir -p '${VPS_FRONTEND_DIR}'"
+
+      - name: Deploy build/ to VPS via rsync over SSH
+        shell: bash
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_FRONTEND_DIR: ${{ secrets.VPS_FRONTEND_DIR }}
+        run: |
+          set -euo pipefail
+          rsync -rlgoDzvc --delete \
+            --exclude=/.git/ \
+            --exclude=/node_modules/ \
+            -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o StrictHostKeyChecking=yes" \
+            build/ "${VPS_USER}@${VPS_HOST}:${VPS_FRONTEND_DIR%/}/"
