@@ -6,7 +6,24 @@ import {
 } from './localDb.js';
 
 const resolveDatabaseMode = () =>
-  (process.env.DATABASE || process.env.Database || 'local').toLowerCase();
+  (() => {
+    const explicit = process.env.DATABASE || process.env.Database;
+    if (explicit) {
+      return String(explicit).toLowerCase();
+    }
+
+    // Auto-enable Mongo when a connection string is present.
+    const hasMongoUri =
+      Boolean(process.env.MONGO_URI) ||
+      Boolean(process.env.MONGODB_URI) ||
+      Boolean(process.env.MONGO_URL) ||
+      Boolean(process.env.DATABASE_URL);
+    if (hasMongoUri) {
+      return 'mongo';
+    }
+
+    return 'local';
+  })();
 
 export const isMongoMode = () => {
   const mode = resolveDatabaseMode();

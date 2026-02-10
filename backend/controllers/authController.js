@@ -93,7 +93,12 @@ const verifySignedChallengeToken = (token) => {
 };
 
 const resolveGoogleClientIds = () =>
-  (process.env.GOOGLE_CLIENT_ID || '')
+  (
+    process.env.GOOGLE_CLIENT_ID ||
+    process.env.GOOGLE_CLIENT_IDS ||
+    process.env.REACT_APP_GOOGLE_CLIENT_ID ||
+    ''
+  )
     .split(',')
     .map((entry) => entry.trim())
     .filter(Boolean);

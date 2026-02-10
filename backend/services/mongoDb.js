@@ -1,8 +1,33 @@
 import { MongoClient } from 'mongodb';
 import { COLLECTION_KEYS, normalizeDb } from './dbSchema.js';
 
-const getMongoUri = () => process.env.MONGO_URI;
-const getMongoDbName = () => process.env.MONGO_DB_NAME || 'geekfights';
+const getMongoUri = () =>
+  process.env.MONGO_URI ||
+  process.env.MONGODB_URI ||
+  process.env.MONGO_URL ||
+  process.env.DATABASE_URL ||
+  '';
+
+const deriveDbNameFromUri = (uri) => {
+  const raw = String(uri || '').trim();
+  if (!raw) return '';
+
+  // Example: mongodb+srv://user:pass@cluster.mongodb.net/mydb?retryWrites=true&w=majority
+  const match = raw.match(/^mongodb(?:\+srv)?:\/\/[^/]+\/([^?]*)/i);
+  if (!match) return '';
+  const candidate = String(match[1] || '').trim();
+  if (!candidate) return '';
+  try {
+    return decodeURIComponent(candidate);
+  } catch (_error) {
+    return candidate;
+  }
+};
+
+const getMongoDbName = () =>
+  process.env.MONGO_DB_NAME ||
+  deriveDbNameFromUri(getMongoUri()) ||
+  'geekfights';
 const getMongoConnectTimeoutMs = () =>
   Number.parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS || '10000', 10);
 const getMongoCacheTtlMs = () =>
@@ -103,8 +128,10 @@ const ensureIndexes = async (db) => {
 
 const ensureMongoUri = () => {
   const uri = getMongoUri();
-  if (!uri || typeof uri !== 'string') {
-    throw new Error('MONGO_URI is not set. Set DATABASE=mongo and MONGO_URI to enable MongoDB.');
+  if (!uri || typeof uri !== 'string' || !uri.trim()) {
+    throw new Error(
+      'MongoDB is enabled but no connection string is set. Provide one of: MONGO_URI, MONGODB_URI, MONGO_URL, DATABASE_URL.'
+    );
   }
   return uri;
 };

@@ -1,5 +1,16 @@
 import dotenv from 'dotenv';
-dotenv.config();
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load env from common locations (backend folder or repo root). dotenv won't override
+// already-defined environment variables, so VPS/systemd values still win.
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env.production') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env.production') });
 import express from 'express';
 import cors from 'cors';
 import compression from 'compression';
@@ -11,8 +22,6 @@ import http from 'http';
 import axios from 'axios';
 import { readFile } from 'fs/promises';
 import { Server } from 'socket.io';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import jwt from 'jsonwebtoken';
 import sharp from 'sharp';
 import {
@@ -59,8 +68,6 @@ import { notificationsRepo } from './repositories/index.js';
 import { usersRepo } from './repositories/index.js';
 import { readDb } from './repositories/index.js';
 import { readDb as warmupReadDb } from './services/jsonDb.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const chatStore = {
   getRecentMessages: getLocalRecentMessages,
