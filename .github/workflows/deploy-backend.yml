@@ -193,6 +193,12 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "bash -se" <<SH
           set -euo pipefail
           cd '${VPS_BACKEND_DIR%/}'
+          if [ -f ./.env.production ]; then
+            set -a
+            . ./.env.production
+            set +a
+          fi
+          node ./scripts/importStaticCharactersToMongo.js
           export LD_LIBRARY_PATH='${VPS_BACKEND_DIR%/}/node_modules/@img/sharp-libvips-linux-x64/lib'
           if command -v pm2 >/dev/null 2>&1; then
             pm2 delete versusversevault-backend || true
