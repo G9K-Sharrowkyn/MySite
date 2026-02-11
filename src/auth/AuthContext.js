@@ -97,12 +97,9 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    if (!user) {
-      fetchUser(token);
-    } else {
-      setLoading(false);
-    }
-  }, [fetchUser, token, user]);
+    // Always refresh from backend for the active token to avoid stale role/UI state.
+    fetchUser(token);
+  }, [fetchUser, token]);
 
   const value = {
     user,

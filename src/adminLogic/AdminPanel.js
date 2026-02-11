@@ -5,6 +5,10 @@ import { AuthContext } from '../auth/AuthContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './AdminPanel.css';
 
+const PRIMARY_ADMIN_EMAIL = 'ak4maaru@gmail.com';
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const isPrimaryAdmin = (email) => normalizeEmail(email) === PRIMARY_ADMIN_EMAIL;
+
 const AdminPanel = () => {
   const { user, token } = useContext(AuthContext);
   const [activeTab, setActiveTab] = useState('alerts');
@@ -29,6 +33,59 @@ const AdminPanel = () => {
   const [characterImageBusy, setCharacterImageBusy] = useState(false);
   const [characterDeleteArmed, setCharacterDeleteArmed] = useState(false);
   const [characterDeleteConfirmName, setCharacterDeleteConfirmName] = useState('');
+  const [adminAccess, setAdminAccess] = useState(false);
+  const [adminCheckLoading, setAdminCheckLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkAdminAccess = async () => {
+      if (!token) {
+        if (!cancelled) {
+          setAdminAccess(false);
+          setAdminCheckLoading(false);
+        }
+        return;
+      }
+
+      if (user?.role === 'admin' || isPrimaryAdmin(user?.email)) {
+        if (!cancelled) {
+          setAdminAccess(true);
+          setAdminCheckLoading(false);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setAdminCheckLoading(true);
+      }
+
+      try {
+        const response = await axios.get('/api/profile/me', {
+          headers: { 'x-auth-token': token }
+        });
+        const isAdmin =
+          response?.data?.role === 'admin' ||
+          isPrimaryAdmin(response?.data?.email);
+        if (!cancelled) {
+          setAdminAccess(Boolean(isAdmin));
+        }
+      } catch (_error) {
+        if (!cancelled) {
+          setAdminAccess(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setAdminCheckLoading(false);
+        }
+      }
+    };
+
+    checkAdminAccess();
+    return () => {
+      cancelled = true;
+    };
+  }, [token, user?.role, user?.email]);
 
   const fetchAlerts = useCallback(async () => {
     if (!token) {
@@ -82,7 +139,7 @@ const AdminPanel = () => {
   }, [token]);
 
   useEffect(() => {
-    if (!token || user?.role !== 'admin') {
+    if (!token || !adminAccess) {
       setAlertsLoading(false);
       setUsersLoading(false);
       setCharactersLoading(false);
@@ -94,7 +151,7 @@ const AdminPanel = () => {
     fetchCharacters();
     const interval = setInterval(fetchAlerts, 10000);
     return () => clearInterval(interval);
-  }, [token, user?.role, fetchAlerts, fetchUsers, fetchCharacters]);
+  }, [token, adminAccess, fetchAlerts, fetchUsers, fetchCharacters]);
 
   const handleDeletePost = async (postId) => {
     if (!token || !postId) return;
@@ -296,7 +353,15 @@ const AdminPanel = () => {
     }
   };
 
-  if (!user || user.role !== 'admin') {
+  if (adminCheckLoading) {
+    return (
+      <div className="admin-panel access-denied">
+        <h2>Checking access...</h2>
+      </div>
+    );
+  }
+
+  if (!token || !adminAccess) {
     return (
       <div className="admin-panel access-denied">
         <h2>Access denied</h2>
