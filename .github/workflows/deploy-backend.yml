@@ -101,7 +101,7 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o StrictHostKeyChecking=yes" \
             backend/ "${VPS_USER}@${VPS_HOST}:${VPS_BACKEND_DIR%/}/"
 
-      - name: Configure MongoDB env (optional)
+      - name: Configure backend env (optional)
         shell: bash
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -110,21 +110,26 @@ jobs:
           VPS_BACKEND_DIR: ${{ secrets.VPS_BACKEND_DIR }}
           VPS_MONGO_URI: ${{ secrets.VPS_MONGO_URI }}
           VPS_MONGO_DB_NAME: ${{ secrets.VPS_MONGO_DB_NAME }}
+          VPS_PRIMARY_ADMIN_EMAIL: ${{ secrets.VPS_PRIMARY_ADMIN_EMAIL }}
         run: |
           set -euo pipefail
-          if [ -z "${VPS_MONGO_URI:-}" ]; then
-            echo "VPS_MONGO_URI not set, skipping MongoDB env config."
+          if [ -z "${VPS_MONGO_URI:-}" ] && [ -z "${VPS_PRIMARY_ADMIN_EMAIL:-}" ]; then
+            echo "No optional backend env provided (Mongo/Admin), skipping env config."
             exit 0
           fi
 
           remote_dir="${VPS_BACKEND_DIR%/}"
           mongo_uri_b64="$(printf '%s' "${VPS_MONGO_URI}" | base64 -w0)"
           mongo_db_b64="$(printf '%s' "${VPS_MONGO_DB_NAME:-}" | base64 -w0)"
+          primary_admin_email_b64="$(printf '%s' "${VPS_PRIMARY_ADMIN_EMAIL:-}" | base64 -w0)"
           ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" \
-            "ENVFILE='${remote_dir}/.env.production' MONGO_URI_B64='${mongo_uri_b64}' MONGO_DB_NAME_B64='${mongo_db_b64}' bash -se" <<'SH'
+            "ENVFILE='${remote_dir}/.env.production' MONGO_URI_B64='${mongo_uri_b64}' MONGO_DB_NAME_B64='${mongo_db_b64}' PRIMARY_ADMIN_EMAIL_B64='${primary_admin_email_b64}' bash -se" <<'SH'
           set -euo pipefail
           umask 077
           touch "${ENVFILE}"
+
+          PRIMARY_ADMIN_EMAIL="$(printf '%s' "${PRIMARY_ADMIN_EMAIL_B64:-}" | base64 -d 2>/dev/null || true)"
+          PRIMARY_ADMIN_EMAIL="$(printf '%s' "${PRIMARY_ADMIN_EMAIL}" | tr '[:upper:]' '[:lower:]' | xargs)"
 
           python3 - <<'PY'
           import base64
@@ -134,6 +139,7 @@ jobs:
           envfile = pathlib.Path(os.environ["ENVFILE"])
           mongo_uri = base64.b64decode(os.environ.get("MONGO_URI_B64") or b"").decode("utf-8", "ignore").strip()
           mongo_db = base64.b64decode(os.environ.get("MONGO_DB_NAME_B64") or b"").decode("utf-8", "ignore").strip()
+          primary_admin_email = base64.b64decode(os.environ.get("PRIMARY_ADMIN_EMAIL_B64") or b"").decode("utf-8", "ignore").strip().lower()
 
           raw = envfile.read_text("utf-8", errors="ignore") if envfile.exists() else ""
           lines = [line for line in raw.splitlines() if line.strip()]
@@ -158,10 +164,44 @@ jobs:
           lines = upsert(lines, "MONGO_URI", mongo_uri)
           if mongo_db:
             lines = upsert(lines, "MONGO_DB_NAME", mongo_db)
+          if primary_admin_email:
+            lines = upsert(lines, "PRIMARY_ADMIN_EMAIL", primary_admin_email)
 
           envfile.write_text("\n".join(lines).rstrip() + "\n", "utf-8")
           print("Updated", str(envfile))
           PY
+
+          if [ -n "${PRIMARY_ADMIN_EMAIL}" ]; then
+            cd "$(dirname "${ENVFILE}")"
+            PRIMARY_ADMIN_EMAIL="${PRIMARY_ADMIN_EMAIL}" node --input-type=module <<'NODE'
+            import { usersRepo, withDb } from './repositories/index.js';
+
+            const targetEmail = String(process.env.PRIMARY_ADMIN_EMAIL || '').trim().toLowerCase();
+            if (!targetEmail) {
+              console.log('PRIMARY_ADMIN_EMAIL missing, skipping admin role sync.');
+              process.exit(0);
+            }
+
+            let updated = 0;
+            await withDb(async (db) => {
+              await usersRepo.updateAll((users) => {
+                for (const user of users) {
+                  const email = String(user.email || '').trim().toLowerCase();
+                  if (email !== targetEmail) continue;
+                  if (user.role !== 'admin') {
+                    user.role = 'admin';
+                    user.updatedAt = new Date().toISOString();
+                    updated += 1;
+                  }
+                }
+                return users;
+              }, { db });
+              return db;
+            });
+
+            console.log(`Primary admin role sync complete. target=${targetEmail} updated=${updated}`);
+            NODE
+          fi
           SH
 
       - name: Restart backend via PM2
