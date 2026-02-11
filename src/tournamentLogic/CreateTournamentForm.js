@@ -33,7 +33,11 @@ const normalizeUniverse = (value) =>
     .replace(/\s+/g, '-')
     .trim();
 
-const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
+const CreateTournamentForm = ({
+  onClose,
+  onTournamentCreated,
+  initialMode = TOURNAMENT_MODE_CHARACTER
+}) => {
   const [toast, setToast] = useState(null);
   const [characters, setCharacters] = useState([]);
   const [availableCharacters, setAvailableCharacters] = useState([]);
@@ -53,7 +57,7 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
     showOnFeed: false,
     voteVisibility: 'live',
 
-    mode: TOURNAMENT_MODE_CHARACTER,
+    mode: initialMode,
     loadoutType: 'powers',
     budget: 10,
     allowAllLoadoutOptions: true,
@@ -64,6 +68,13 @@ const CreateTournamentForm = ({ onClose, onTournamentCreated }) => {
   });
 
   const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      mode: initialMode || TOURNAMENT_MODE_CHARACTER
+    }));
+  }, [initialMode]);
 
   const fetchCharacters = useCallback(async () => {
     try {

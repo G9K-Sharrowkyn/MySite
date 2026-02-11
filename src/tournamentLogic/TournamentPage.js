@@ -11,6 +11,7 @@ const TournamentPage = () => {
   const [selectedTournament, setSelectedTournament] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createFormMode, setCreateFormMode] = useState('character');
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [joiningTournamentId, setJoiningTournamentId] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -47,7 +48,13 @@ const TournamentPage = () => {
 
   const handleTournamentCreated = () => {
     setShowCreateForm(false);
+    setCreateFormMode('character');
     fetchTournaments();
+  };
+
+  const handleOpenCreateForm = (mode = 'character') => {
+    setCreateFormMode(mode);
+    setShowCreateForm(true);
   };
 
   const handleJoinClick = (tournamentId) => {
@@ -154,19 +161,31 @@ const TournamentPage = () => {
         <div className="tournaments-header">
           <h1>🏆 Tournaments</h1>
           {token && !showCreateForm && (
-            <button 
-              className="create-tournament-btn"
-              onClick={() => setShowCreateForm(true)}
-            >
-              ➕ Create Tournament
-            </button>
+            <div className="create-tournament-actions">
+              <button 
+                className="create-tournament-btn"
+                onClick={() => handleOpenCreateForm('character')}
+              >
+                ➕ Create Tournament
+              </button>
+              <button
+                className="create-tournament-btn choose-weapon-btn"
+                onClick={() => handleOpenCreateForm('choose_your_weapon')}
+              >
+                ⚔️ Create Choose Your Weapon
+              </button>
+            </div>
           )}
         </div>
 
         {showCreateForm && (
           <CreateTournamentForm 
-            onClose={() => setShowCreateForm(false)}
+            onClose={() => {
+              setShowCreateForm(false);
+              setCreateFormMode('character');
+            }}
             onTournamentCreated={handleTournamentCreated}
+            initialMode={createFormMode}
           />
         )}
 
@@ -201,12 +220,20 @@ const TournamentPage = () => {
           <div className="no-tournaments">
             <p>No tournaments found</p>
             {token && (
-              <button 
-                className="create-tournament-btn"
-                onClick={() => setShowCreateForm(true)}
-              >
-                Create Tournament
-              </button>
+              <div className="create-tournament-actions">
+                <button 
+                  className="create-tournament-btn"
+                  onClick={() => handleOpenCreateForm('character')}
+                >
+                  Create Tournament
+                </button>
+                <button
+                  className="create-tournament-btn choose-weapon-btn"
+                  onClick={() => handleOpenCreateForm('choose_your_weapon')}
+                >
+                  Create Choose Your Weapon
+                </button>
+              </div>
             )}
           </div>
         ) : (
