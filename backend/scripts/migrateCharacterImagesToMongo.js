@@ -21,9 +21,28 @@ dotenv.config();
 
 const normalize = (value) => String(value || '').trim();
 const PLACEHOLDER_FILE = path.resolve(__dirname, '..', '..', 'public', 'placeholder-character.png');
+const INLINE_PLACEHOLDER_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO7Zx5QAAAAASUVORK5CYII=';
 
 const isApiMediaPath = (value) =>
   normalize(value).toLowerCase().startsWith('/api/media/characters/');
+
+const loadPlaceholderBuffer = async () => {
+  try {
+    const fileBuffer = await fs.readFile(PLACEHOLDER_FILE);
+    if (Buffer.isBuffer(fileBuffer) && fileBuffer.length > 0) {
+      return { buffer: fileBuffer, source: `file:${PLACEHOLDER_FILE}` };
+    }
+  } catch (_error) {
+    // Fall back to embedded placeholder for environments where frontend assets
+    // are not present (e.g. backend-only deployment on VPS).
+  }
+
+  return {
+    buffer: Buffer.from(INLINE_PLACEHOLDER_PNG_BASE64, 'base64'),
+    source: 'inline:1x1-png'
+  };
+};
 
 const run = async () => {
   const frontendOrigin = process.env.FRONTEND_URL || 'https://versusversevault.com';
@@ -37,7 +56,8 @@ const run = async () => {
   let failed = 0;
   let placeholderApplied = 0;
   const updatesById = new Map();
-  const placeholderBuffer = await fs.readFile(PLACEHOLDER_FILE);
+  const { buffer: placeholderBuffer, source: placeholderSource } =
+    await loadPlaceholderBuffer();
 
   for (const character of list) {
     const id = normalize(character?.id);
@@ -74,7 +94,7 @@ const run = async () => {
           characterId: id,
           buffer: placeholderBuffer,
           contentType: 'image/png',
-          source: `file:${PLACEHOLDER_FILE}`
+          source: placeholderSource
         });
         updatesById.set(id, buildCharacterMediaPath(id));
         placeholderApplied += 1;
