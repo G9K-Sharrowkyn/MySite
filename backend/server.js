@@ -69,6 +69,7 @@ import { usersRepo } from './repositories/index.js';
 import { readDb } from './repositories/index.js';
 import { readDb as warmupReadDb } from './services/jsonDb.js';
 import { getMongoConfig } from './services/mongoDb.js';
+import { getCharacterMediaById } from './services/characterMedia.js';
 
 const chatStore = {
   getRecentMessages: getLocalRecentMessages,
@@ -239,7 +240,9 @@ const resolveAssetUrl = (raw, options = {}) => {
   if (/^https?:\/\//i.test(raw)) return raw;
   const normalized = raw.startsWith('/') ? raw : `/${raw}`;
   const base =
-    normalized.startsWith('/uploads/') || normalized.startsWith('/api/uploads/')
+    normalized.startsWith('/uploads/') ||
+    normalized.startsWith('/api/uploads/') ||
+    normalized.startsWith('/api/media/')
       ? normalizeBaseUrl(options.apiBaseUrl)
       : normalizeBaseUrl(options.imageBaseUrl || options.baseUrl);
   if (!base) return normalized;
@@ -1052,13 +1055,36 @@ app.use(
     etag: true
   })
 );
-app.use(
-  '/characters',
-  express.static(path.join(__dirname, '..', 'public', 'characters'), {
-    maxAge: '7d',
-    etag: true
-  })
-);
+
+app.get('/api/media/characters/:id', async (req, res) => {
+  try {
+    const id = String(req.params.id || '').trim();
+    if (!id) {
+      return res.status(400).json({ msg: 'Character id is required.' });
+    }
+
+    const media = await getCharacterMediaById(id);
+    if (!media || !Buffer.isBuffer(media.data) || media.data.length === 0) {
+      return res.status(404).json({ msg: 'Character media not found.' });
+    }
+
+    const etag = media.etag ? `"${media.etag}"` : '';
+    if (etag && req.headers['if-none-match'] === etag) {
+      return res.status(304).end();
+    }
+
+    res.set('Content-Type', media.contentType || 'application/octet-stream');
+    res.set('Content-Length', String(media.data.length));
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    if (etag) {
+      res.set('ETag', etag);
+    }
+    return res.send(media.data);
+  } catch (error) {
+    console.error('Failed to serve character media:', error?.message || error);
+    return res.status(500).json({ msg: 'Server error' });
+  }
+});
 
 // Make io accessible to routes
 app.use((req, res, next) => {

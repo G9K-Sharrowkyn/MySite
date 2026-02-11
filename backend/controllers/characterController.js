@@ -3,6 +3,10 @@ import {
   charactersRepo,
   characterSuggestionsRepo
 } from '../repositories/index.js';
+import {
+  buildCharacterMediaPath,
+  ingestCharacterMediaFromSource
+} from '../services/characterMedia.js';
 
 const resolveCharacterImage = (character) =>
   String(
@@ -117,18 +121,35 @@ export const addCharacter = async (req, res) => {
     let created;
     const normalizedTags = normalizeTags(tags);
     const resolvedBaseName = String(baseName || '').trim() || deriveBaseName(name);
+    const resolvedId = String(id || '').trim() || uuidv4();
+
+    const ingested = await ingestCharacterMediaFromSource({
+      characterId: resolvedId,
+      image,
+      frontendOrigin: process.env.FRONTEND_URL,
+      apiOrigin: process.env.API_ORIGIN || process.env.FRONTEND_URL
+    }).catch((error) => ({
+      ok: false,
+      reason: error?.message || 'ingest_failed'
+    }));
+
+    if (!ingested?.ok) {
+      return res.status(400).json({
+        msg: `Character image could not be imported to Mongo media (${ingested?.reason || 'unknown_error'}).`
+      });
+    }
 
     const newCharacter = {
-      id: String(id || '').trim() || uuidv4(),
+      id: resolvedId,
       name: String(name || '').trim(),
       baseName: resolvedBaseName,
       tags: normalizedTags,
       universe: universe || 'Other',
-      image: String(image || '').trim(),
+      image: buildCharacterMediaPath(resolvedId),
       images: {
-        primary: image,
+        primary: buildCharacterMediaPath(resolvedId),
         gallery: [],
-        thumbnail: image
+        thumbnail: buildCharacterMediaPath(resolvedId)
       },
       powerTier: powerTier || 'Metahuman',
       category: category || 'Other',
@@ -169,8 +190,34 @@ export const updateCharacter = async (req, res) => {
         : (resolvedName ? deriveBaseName(resolvedName) : '');
 
     const existing = await charactersRepo.findById(id);
+    let nextImagePath =
+      typeof image === 'string' && image.trim()
+        ? image.trim()
+        : String(existing?.image || '').trim();
+
+    if (typeof image === 'string' && image.trim()) {
+      const ingested = await ingestCharacterMediaFromSource({
+        characterId: id,
+        image,
+        frontendOrigin: process.env.FRONTEND_URL,
+        apiOrigin: process.env.API_ORIGIN || process.env.FRONTEND_URL
+      }).catch((error) => ({
+        ok: false,
+        reason: error?.message || 'ingest_failed'
+      }));
+
+      if (!ingested?.ok) {
+        return res.status(400).json({
+          msg: `Character image could not be imported to Mongo media (${ingested?.reason || 'unknown_error'}).`
+        });
+      }
+      nextImagePath = buildCharacterMediaPath(id);
+    }
 
     if (!existing) {
+      if (!nextImagePath) {
+        return res.status(400).json({ msg: 'Image is required for new character.' });
+      }
       // Upsert: allow creating a character if a specific ID does not exist yet.
       const created = {
         id,
@@ -178,7 +225,12 @@ export const updateCharacter = async (req, res) => {
         baseName: resolvedBaseName || deriveBaseName(resolvedName || id),
         tags: normalizedTags,
         universe: typeof universe === 'string' && universe.trim() ? universe.trim() : 'Other',
-        image: typeof image === 'string' && image.trim() ? image.trim() : '/logo512.png',
+        image: nextImagePath,
+        images: {
+          primary: nextImagePath,
+          gallery: [],
+          thumbnail: nextImagePath
+        },
         createdAt: new Date().toISOString(),
         addedBy: req.user?.id || null,
         status: 'active'
@@ -209,8 +261,8 @@ export const updateCharacter = async (req, res) => {
         character.universe = universe.trim();
       }
 
-      if (typeof image === 'string' && image.trim()) {
-        character.image = image.trim();
+      if (nextImagePath) {
+        character.image = nextImagePath;
         character.images = character.images || {};
         character.images.primary = character.image;
         character.images.thumbnail = character.image;

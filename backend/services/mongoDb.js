@@ -316,6 +316,8 @@ const getDb = async () => {
   return activeClient.db(getMongoDbName());
 };
 
+export const getMongoDb = async () => getDb();
+
 const stripMongoId = (doc) => {
   if (!doc || typeof doc !== 'object') {
     return doc;

@@ -10,6 +10,7 @@
     "dev": "nodemon server.js",
     "migrate:mongo": "node scripts/migrateToMongo.js",
     "migrate:characters:mongo": "node scripts/importStaticCharactersToMongo.js",
+    "migrate:character-images:mongo": "node scripts/migrateCharacterImagesToMongo.js",
     "migrate:avatars": "node scripts/migrateDefaultAvatars.js",
     "migrate:display-names": "node scripts/migrateDisplayNames.js",
     "backup:db": "node scripts/backupDb.js",
