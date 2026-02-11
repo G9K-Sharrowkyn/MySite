@@ -113,7 +113,8 @@ jobs:
           VPS_PRIMARY_ADMIN_EMAIL: ${{ secrets.VPS_PRIMARY_ADMIN_EMAIL }}
         run: |
           set -euo pipefail
-          if [ -z "${VPS_MONGO_URI:-}" ] && [ -z "${VPS_PRIMARY_ADMIN_EMAIL:-}" ]; then
+          effective_primary_admin_email="${VPS_PRIMARY_ADMIN_EMAIL:-ak4maaru@gmail.com}"
+          if [ -z "${VPS_MONGO_URI:-}" ] && [ -z "${effective_primary_admin_email:-}" ]; then
             echo "No optional backend env provided (Mongo/Admin), skipping env config."
             exit 0
           fi
@@ -121,7 +122,7 @@ jobs:
           remote_dir="${VPS_BACKEND_DIR%/}"
           mongo_uri_b64="$(printf '%s' "${VPS_MONGO_URI}" | base64 -w0)"
           mongo_db_b64="$(printf '%s' "${VPS_MONGO_DB_NAME:-}" | base64 -w0)"
-          primary_admin_email_b64="$(printf '%s' "${VPS_PRIMARY_ADMIN_EMAIL:-}" | base64 -w0)"
+          primary_admin_email_b64="$(printf '%s' "${effective_primary_admin_email}" | base64 -w0)"
           ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" \
             "ENVFILE='${remote_dir}/.env.production' MONGO_URI_B64='${mongo_uri_b64}' MONGO_DB_NAME_B64='${mongo_db_b64}' PRIMARY_ADMIN_EMAIL_B64='${primary_admin_email_b64}' bash -se" <<'SH'
           set -euo pipefail
