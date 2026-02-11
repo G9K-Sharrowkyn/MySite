@@ -1,7 +1,12 @@
 import { usersRepo, withDb } from '../repositories/index.js';
+import {
+  ensurePrimaryAdminRole as enforceAdminRole,
+  normalizeEmail
+} from '../utils/primaryAdmin.js';
 
-const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
-const targetEmail = normalizeEmail(process.env.PRIMARY_ADMIN_EMAIL || '');
+const targetEmail = normalizeEmail(
+  process.env.PRIMARY_ADMIN_EMAIL || 'ak4maaru@gmail.com'
+);
 
 const run = async () => {
   if (!targetEmail) {
@@ -17,9 +22,7 @@ const run = async () => {
       for (const user of users) {
         if (normalizeEmail(user.email) !== targetEmail) continue;
         found += 1;
-        if (user.role !== 'admin') {
-          user.role = 'admin';
-          user.updatedAt = new Date().toISOString();
+        if (enforceAdminRole(user)) {
           updated += 1;
         }
       }

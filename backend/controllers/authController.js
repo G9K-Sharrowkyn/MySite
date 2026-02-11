@@ -15,6 +15,11 @@ import {
   sendPasswordResetEmail,
   sendTwoFactorCodeEmail
 } from '../services/emailService.js';
+import {
+  ensurePrimaryAdminRole,
+  isPrimaryAdminEmail,
+  normalizeEmail
+} from '../utils/primaryAdmin.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 
 const isJwtConfigured = () =>
@@ -31,20 +36,16 @@ const ensureAuthAvailability = (res) => {
   return true;
 };
 
-const normalizeEmail = (email) => email.trim().toLowerCase();
 const DEFAULT_AVATAR = '/logo192.png';
 const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const TWO_FACTOR_TTL_MS = 10 * 60 * 1000;
-const PRIMARY_ADMIN_EMAIL = normalizeEmail(process.env.PRIMARY_ADMIN_EMAIL || '');
 const requireEmailVerification =
   process.env.REQUIRE_EMAIL_VERIFICATION === 'true' ||
   process.env.NODE_ENV === 'production';
 
 const isStaffRole = (role) => role === 'admin' || role === 'moderator';
 const isPrimaryAdminAccount = (user) =>
-  Boolean(user) &&
-  Boolean(PRIMARY_ADMIN_EMAIL) &&
-  normalizeEmail(user.email || '') === PRIMARY_ADMIN_EMAIL;
+  Boolean(user) && isPrimaryAdminEmail(user.email);
 
 const getActiveSuspension = (user) => {
   const suspension = user?.moderation?.suspension;
@@ -55,15 +56,6 @@ const getActiveSuspension = (user) => {
     }
   }
   return suspension;
-};
-
-const ensurePrimaryAdminRole = (user) => {
-  if (!user || !PRIMARY_ADMIN_EMAIL) return false;
-  if (normalizeEmail(user.email || '') !== PRIMARY_ADMIN_EMAIL) return false;
-  if (user.role === 'admin') return false;
-  user.role = 'admin';
-  user.updatedAt = new Date().toISOString();
-  return true;
 };
 
 const createTwoFactorCode = () =>

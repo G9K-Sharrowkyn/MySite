@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
 import { blocksRepo, readDb, nicknameChangeLogsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
+import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 import { getRankInfo } from '../utils/rankSystem.js';
 import { getUserDisplayName, normalizeDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
@@ -26,6 +27,8 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     ? buildProfileFights(db, resolveUserId(user))
     : user.fights || [];
 
+  const effectiveRole = isPrimaryAdminEmail(user.email) ? 'admin' : (user.role || 'user');
+
   return {
     id: resolveUserId(user),
     username: user.username,
@@ -33,7 +36,7 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     ...(includeEmail ? { email: user.email } : {}),
     ...(includeEmail ? { emailVerified: Boolean(user.emailVerified) } : {}),
     ...(includeEmail ? { timezone: user.timezone || 'UTC' } : {}),
-    role: user.role || 'user',
+    role: effectiveRole,
     description,
     profilePicture: profile.profilePicture || profile.avatar || '',
     points: stats.points || 0,

@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { readDb, usersRepo } from '../repositories/index.js';
+import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 
 const resolveUserId = (user) => user?.id || user?._id || null;
 
@@ -40,10 +41,14 @@ export default async function authMiddleware(req, res, next) {
     }
 
     // Keep role in sync with DB even when client holds an older token.
+    const effectiveRole = isPrimaryAdminEmail(currentUser.email)
+      ? 'admin'
+      : currentUser.role;
+
     req.user = {
       ...req.user,
       id: resolveUserId(currentUser),
-      role: currentUser.role
+      role: effectiveRole
     };
 
     const suspension = getActiveSuspension(currentUser);
