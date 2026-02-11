@@ -1,13 +1,28 @@
-export default (roles) => (req, res, next) => {
-  // Sprawdź, czy użytkownik jest zalogowany i ma rolę
-  if (!req.user || !req.user.role) {
-    return res.status(403).json({ msg: 'Brak autoryzacji: brak roli użytkownika' });
+import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
+
+export default (roles = []) => (req, res, next) => {
+  const user = req.user || {};
+  const role = String(user.role || '').trim().toLowerCase();
+  const allowedRoles = Array.isArray(roles)
+    ? roles.map((entry) => String(entry || '').trim().toLowerCase())
+    : [];
+
+  if (!user.id) {
+    return res.status(403).json({ msg: 'Access denied: missing authenticated user.' });
   }
 
-  // Sprawdź, czy rola użytkownika jest jedną z dozwolonych ról
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ msg: 'Brak autoryzacji: niewystarczające uprawnienia' });
+  // Always allow the primary admin account, even if legacy data has stale role.
+  if (isPrimaryAdminEmail(user.email)) {
+    return next();
   }
 
-  next();
+  if (!role) {
+    return res.status(403).json({ msg: 'Access denied: missing user role.' });
+  }
+
+  if (!allowedRoles.includes(role)) {
+    return res.status(403).json({ msg: 'Access denied: insufficient permissions.' });
+  }
+
+  return next();
 };

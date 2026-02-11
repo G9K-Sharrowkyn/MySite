@@ -1,4 +1,5 @@
 import { usersRepo } from '../repositories/index.js';
+import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -15,7 +16,10 @@ const moderatorAuth = async (req, res, next) => {
       return res.status(401).json({ msg: 'User not found' });
     }
 
-    const hasAccess = user.role === 'moderator' || user.role === 'admin';
+    const hasAccess =
+      user.role === 'moderator' ||
+      user.role === 'admin' ||
+      isPrimaryAdminEmail(user.email);
     if (!hasAccess) {
       return res
         .status(403)

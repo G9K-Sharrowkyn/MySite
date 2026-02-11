@@ -15,6 +15,7 @@ import { getLeaderboard, getUserStats, getUserAchievements } from '../controller
 import auth from '../middleware/auth.js';
 import authOptional from '../middleware/authOptional.js';
 import { readDb, withDb } from '../repositories/index.js';
+import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 
@@ -68,8 +69,12 @@ router.get('/', auth, getMyProfile);
 // @access  Private (admin/moderator)
 router.get('/all', auth, async (req, res) => {
   try {
-    // Check if user is admin or moderator
-    if (req.user.role !== 'admin' && req.user.role !== 'moderator') {
+    const hasStaffAccess =
+      req.user.role === 'admin' ||
+      req.user.role === 'moderator' ||
+      isPrimaryAdminEmail(req.user.email);
+
+    if (!hasStaffAccess) {
       return res.status(403).json({ msg: 'Access denied' });
     }
 

@@ -48,7 +48,9 @@ export default async function authMiddleware(req, res, next) {
     req.user = {
       ...req.user,
       id: resolveUserId(currentUser),
-      role: effectiveRole
+      role: effectiveRole,
+      email: currentUser.email,
+      username: currentUser.username
     };
 
     const suspension = getActiveSuspension(currentUser);
