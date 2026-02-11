@@ -11,7 +11,9 @@ import {
   voteInTournament,
   getTournamentBrackets,
   advanceMatch,
-  getAvailableCharacters
+  getAvailableCharacters,
+  getTournamentLoadoutOptions,
+  getTournamentLoadoutCatalog
 } from '../controllers/tournamentController.js';
 import auth from '../middleware/auth.js';
 
@@ -27,6 +29,11 @@ router.get('/', getAllTournaments);
 // @access  Private
 router.post('/', auth, createTournament);
 
+// @route   GET api/tournaments/loadout-catalog
+// @desc    Get full catalog for choose-your-weapon mode
+// @access  Public
+router.get('/loadout-catalog', getTournamentLoadoutCatalog);
+
 // @route   GET api/tournaments/:id
 // @desc    Get tournament by ID
 // @access  Public
@@ -41,6 +48,11 @@ router.get('/:id/brackets', getTournamentBrackets);
 // @desc    Get available characters for tournament
 // @access  Public
 router.get('/:id/available-characters', getAvailableCharacters);
+
+// @route   GET api/tournaments/:id/loadout-options
+// @desc    Get available loadout options for choose-your-weapon tournament
+// @access  Public
+router.get('/:id/loadout-options', getTournamentLoadoutOptions);
 
 // @route   POST api/tournaments/:id/join
 // @desc    Join tournament

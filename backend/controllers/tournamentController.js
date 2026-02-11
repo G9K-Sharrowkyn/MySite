@@ -7,6 +7,16 @@ import {
   withDb
 } from '../repositories/index.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
+import {
+  getChooseYourWeaponCatalog,
+  getCatalogOptionMap,
+  groupCatalogOptionsByCategory
+} from '../data/chooseYourWeaponCatalog.js';
+
+const TOURNAMENT_MODE_CHARACTER = 'character';
+const TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON = 'choose_your_weapon';
+const LOADOUT_TYPE_POWERS = 'powers';
+const LOADOUT_TYPE_WEAPONS = 'weapons';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -15,6 +25,91 @@ const findUserById = (users, userId) =>
 
 const findCharacterById = (characters, characterId) =>
   (characters || []).find((entry) => entry.id === characterId);
+
+const normalizeTournamentMode = (value) => {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON || raw === 'choose-your-weapon') {
+    return TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON;
+  }
+  return TOURNAMENT_MODE_CHARACTER;
+};
+
+const normalizeLoadoutType = (value) => {
+  const raw = String(value || '').trim().toLowerCase();
+  if (raw === LOADOUT_TYPE_WEAPONS || raw === 'weapon') return LOADOUT_TYPE_WEAPONS;
+  return LOADOUT_TYPE_POWERS;
+};
+
+const toPositiveInt = (value, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } = {}) => {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  if (parsed < min) return min;
+  if (parsed > max) return max;
+  return parsed;
+};
+
+const toBoolean = (value, fallback = false) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const raw = value.trim().toLowerCase();
+    if (raw === 'true' || raw === '1') return true;
+    if (raw === 'false' || raw === '0') return false;
+  }
+  if (typeof value === 'number') return value === 1;
+  return fallback;
+};
+
+const toStringArray = (value) => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((entry) => String(entry || '').trim())
+    .filter(Boolean);
+};
+
+const getTournamentSettings = (tournament = {}) => {
+  const settings = tournament.settings || {};
+  return {
+    ...settings,
+    mode: normalizeTournamentMode(settings.mode || tournament.mode),
+    teamSize: toPositiveInt(settings.teamSize, 1, { min: 1, max: 10 }),
+    allowedTiers: Array.isArray(settings.allowedTiers) ? settings.allowedTiers : [],
+    excludedCharacters: Array.isArray(settings.excludedCharacters)
+      ? settings.excludedCharacters
+      : [],
+    voteVisibility: normalizeVoteVisibility(settings.voteVisibility),
+    loadoutType: normalizeLoadoutType(settings.loadoutType),
+    budget: toPositiveInt(settings.budget, 10, { min: 1, max: 1000 }),
+    allowAllLoadoutOptions: toBoolean(settings.allowAllLoadoutOptions, true),
+    allowedLoadoutOptionIds: toStringArray(settings.allowedLoadoutOptionIds)
+  };
+};
+
+const isChooseYourWeaponTournament = (tournament) =>
+  getTournamentSettings(tournament).mode === TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON;
+
+const resolveLoadoutOptionsForTournament = (tournament) => {
+  const settings = getTournamentSettings(tournament);
+  const catalog = getChooseYourWeaponCatalog(settings.loadoutType);
+  const optionMap = getCatalogOptionMap(settings.loadoutType);
+
+  if (settings.allowAllLoadoutOptions) {
+    return {
+      settings,
+      catalog,
+      optionMap,
+      options: catalog.options
+    };
+  }
+
+  const allowedSet = new Set(settings.allowedLoadoutOptionIds);
+  const options = catalog.options.filter((option) => allowedSet.has(option.id));
+  return {
+    settings,
+    catalog,
+    optionMap,
+    options
+  };
+};
 
 const normalizeVoteVisibility = (value) => {
   const raw = String(value || '').trim().toLowerCase();
@@ -54,12 +149,25 @@ const buildParticipant = (context, participant) => {
     ? findCharacterById(characters, participant.characterId)
     : null;
 
-  return {
+  const normalizedParticipant = {
     ...participant,
     username: participant.username || user?.username || 'Unknown',
     profilePicture: user?.profile?.profilePicture || user?.profile?.avatar || '',
     characterName: participant.characterName || character?.name || ''
   };
+
+  if (normalizedParticipant.loadout?.selectedOptions) {
+    normalizedParticipant.loadout = {
+      ...normalizedParticipant.loadout,
+      totalCost: toPositiveInt(
+        normalizedParticipant.loadout.totalCost,
+        0,
+        { min: 0, max: 10000 }
+      )
+    };
+  }
+
+  return normalizedParticipant;
 };
 
 // Helper function to generate tournament brackets
@@ -195,16 +303,27 @@ const buildTournamentResponse = (context, tournament) => {
     buildParticipant(context, p)
   );
   const createdBy = findUserById(context?.users || [], tournament.createdBy);
+  const settings = getTournamentSettings(tournament);
 
   return {
     ...tournament,
+    settings,
     participants,
     createdBy: tournament.createdBy,
     createdByUsername: createdBy?.username || 'Unknown',
+    mode: settings.mode,
+    teamSize: settings.teamSize,
+    allowedTiers: settings.allowedTiers,
+    excludedCharacters: settings.excludedCharacters,
+    voteVisibility: settings.voteVisibility,
+    loadoutType: settings.loadoutType,
+    budget: settings.budget,
+    allowAllLoadoutOptions: settings.allowAllLoadoutOptions,
+    allowedLoadoutOptionIds: settings.allowedLoadoutOptionIds,
     participantCount: participants.length,
     isFull: participants.length >= tournament.maxParticipants,
     canJoin:
-      tournament.status === 'upcoming' &&
+      tournament.status === 'recruiting' &&
       participants.length < tournament.maxParticipants
   };
 };
@@ -274,7 +393,14 @@ export const createTournament = async (req, res) => {
     userTimezone,        // User's timezone (e.g., 'America/New_York')
     teamSize,            // 1, 2, 3, or more
     showOnFeed,          // Boolean: show battles on main feed
-    voteVisibility       // 'live' or 'final'
+    voteVisibility,      // 'live' or 'final'
+    mode,
+    tournamentMode,
+    loadoutType,
+    chooseYourWeaponType,
+    budget,
+    allowAllLoadoutOptions,
+    allowedLoadoutOptionIds
   } = req.body;
 
   try {
@@ -286,6 +412,42 @@ export const createTournament = async (req, res) => {
     // Validate that the date is in the future
     if (recruitmentEnd <= new Date()) {
       return res.status(400).json({ msg: 'Battle time must be in the future' });
+    }
+
+    const normalizedMode = normalizeTournamentMode(
+      mode || tournamentMode
+    );
+    const normalizedLoadoutType = normalizeLoadoutType(
+      loadoutType || chooseYourWeaponType
+    );
+    const normalizedBudget = toPositiveInt(budget, 10, { min: 1, max: 1000 });
+    const normalizedAllowAllLoadoutOptions = toBoolean(
+      allowAllLoadoutOptions,
+      true
+    );
+    const normalizedAllowedLoadoutOptionIds = toStringArray(allowedLoadoutOptionIds);
+    const normalizedTeamSize =
+      normalizedMode === TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON
+        ? 1
+        : toPositiveInt(teamSize, 1, { min: 1, max: 10 });
+
+    const catalogOptionMap = getCatalogOptionMap(normalizedLoadoutType);
+    const safeAllowedLoadoutOptionIds = normalizedAllowedLoadoutOptionIds.filter((id) =>
+      catalogOptionMap.has(id)
+    );
+    const effectiveAllowAllLoadoutOptions =
+      normalizedMode === TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON
+        ? normalizedAllowAllLoadoutOptions
+        : true;
+
+    if (
+      normalizedMode === TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON &&
+      !effectiveAllowAllLoadoutOptions &&
+      safeAllowedLoadoutOptionIds.length === 0
+    ) {
+      return res.status(400).json({
+        msg: 'Pick at least one allowed option or enable all options'
+      });
     }
 
     let createdTournament;
@@ -330,9 +492,16 @@ export const createTournament = async (req, res) => {
           battleTime: battleTime || '18:00', // Keep for display purposes
           battleTimeUTC: recruitmentEnd.toISOString(), // Actual UTC time
           userTimezone: userTimezone || 'UTC', // Creator's timezone for reference
-          teamSize: teamSize || 1,
+          mode: normalizedMode,
+          teamSize: normalizedTeamSize,
           showOnFeed: showOnFeed !== undefined ? showOnFeed : false,
           voteVisibility: normalizeVoteVisibility(voteVisibility),
+          loadoutType: normalizedLoadoutType,
+          budget: normalizedBudget,
+          allowAllLoadoutOptions: effectiveAllowAllLoadoutOptions,
+          allowedLoadoutOptionIds: effectiveAllowAllLoadoutOptions
+            ? []
+            : safeAllowedLoadoutOptionIds,
           publicJoin: true,
           votingDuration: 24,
           requireApproval: false
@@ -391,7 +560,7 @@ export const startTournament = async (req, res) => {
         throw error;
       }
 
-      if (tournament.status !== 'upcoming') {
+      if (tournament.status !== 'recruiting') {
         const error = new Error('Tournament cannot be started');
         error.code = 'INVALID_STATUS';
         throw error;
@@ -705,7 +874,7 @@ export const updateTournament = async (req, res) => {
 
 export const joinTournament = async (req, res) => {
   const { id } = req.params;
-  const { characterIds } = req.body; // Now accepts array of character IDs for team
+  const { characterIds, selectionIds } = req.body;
 
   try {
     let updatedTournament;
@@ -746,48 +915,92 @@ export const joinTournament = async (req, res) => {
         throw error;
       }
 
-      const teamSize = tournament.settings?.teamSize || 1;
-      if (!characterIds || characterIds.length !== teamSize) {
-        const error = new Error(`You must select exactly ${teamSize} character(s)`);
-        error.code = 'INVALID_TEAM_SIZE';
-        throw error;
-      }
-
-      // Check if any selected characters are excluded
-      const excludedChars = tournament.settings?.excludedCharacters || [];
-      const hasExcluded = characterIds.some(id => excludedChars.includes(id));
-      if (hasExcluded) {
-        const error = new Error('One or more selected characters are not allowed');
-        error.code = 'EXCLUDED_CHARACTER';
-        throw error;
-      }
-
-      // Check if characters are already taken by other participants
-      const takenCharacters = tournament.participants.flatMap(p => p.characterIds || []);
-      const alreadyTaken = characterIds.some(id => takenCharacters.includes(id));
-      if (alreadyTaken) {
-        const error = new Error('One or more characters are already taken');
-        error.code = 'CHARACTER_TAKEN';
-        throw error;
-      }
+      const settings = getTournamentSettings(tournament);
+      const isLoadoutMode = settings.mode === TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON;
 
       const user = await usersRepo.findOne(
         (entry) => resolveUserId(entry) === req.user.id,
         { db }
       );
-      const allCharacters = await charactersRepo.getAll({ db });
-      const characters = characterIds.map((entryId) => {
-        const char = findCharacterById(allCharacters, entryId);
-        return { id: entryId, name: char?.name || 'Unknown' };
-      });
 
-      tournament.participants.push({
-        userId: req.user.id,
-        username: user?.username || 'Unknown',
-        characterIds: characterIds,
-        characters: characters,
-        joinedAt: new Date().toISOString()
-      });
+      if (isLoadoutMode) {
+        const requestedSelectionIds = Array.from(new Set(toStringArray(selectionIds)));
+        const { options } = resolveLoadoutOptionsForTournament(tournament);
+        const optionMap = new Map(options.map((option) => [option.id, option]));
+
+        const invalidSelection = requestedSelectionIds.find((entryId) => !optionMap.has(entryId));
+        if (invalidSelection) {
+          const error = new Error('One or more selected options are not allowed');
+          error.code = 'INVALID_LOADOUT_OPTION';
+          throw error;
+        }
+
+        const selectedOptions = requestedSelectionIds.map((entryId) => optionMap.get(entryId));
+        const totalCost = selectedOptions.reduce((sum, option) => sum + (option.cost || 0), 0);
+
+        if (totalCost > settings.budget) {
+          const error = new Error(
+            `Budget exceeded (${totalCost}/${settings.budget})`
+          );
+          error.code = 'BUDGET_EXCEEDED';
+          throw error;
+        }
+
+        tournament.participants.push({
+          userId: req.user.id,
+          username: user?.username || 'Unknown',
+          characterIds: [],
+          characters: [],
+          loadout: {
+            type: settings.loadoutType,
+            budget: settings.budget,
+            totalCost,
+            selectedOptionIds: requestedSelectionIds,
+            selectedOptions,
+            joinedAt: new Date().toISOString()
+          },
+          joinedAt: new Date().toISOString()
+        });
+      } else {
+        const teamSize = settings.teamSize || 1;
+        const safeCharacterIds = Array.from(new Set(toStringArray(characterIds)));
+
+        if (safeCharacterIds.length !== teamSize) {
+          const error = new Error(`You must select exactly ${teamSize} character(s)`);
+          error.code = 'INVALID_TEAM_SIZE';
+          throw error;
+        }
+
+        const excludedChars = settings.excludedCharacters || [];
+        const hasExcluded = safeCharacterIds.some((entryId) => excludedChars.includes(entryId));
+        if (hasExcluded) {
+          const error = new Error('One or more selected characters are not allowed');
+          error.code = 'EXCLUDED_CHARACTER';
+          throw error;
+        }
+
+        const takenCharacters = tournament.participants.flatMap((p) => p.characterIds || []);
+        const alreadyTaken = safeCharacterIds.some((entryId) => takenCharacters.includes(entryId));
+        if (alreadyTaken) {
+          const error = new Error('One or more characters are already taken');
+          error.code = 'CHARACTER_TAKEN';
+          throw error;
+        }
+
+        const allCharacters = await charactersRepo.getAll({ db });
+        const characters = safeCharacterIds.map((entryId) => {
+          const char = findCharacterById(allCharacters, entryId);
+          return { id: entryId, name: char?.name || 'Unknown' };
+        });
+
+        tournament.participants.push({
+          userId: req.user.id,
+          username: user?.username || 'Unknown',
+          characterIds: safeCharacterIds,
+          characters,
+          joinedAt: new Date().toISOString()
+        });
+      }
 
       if (user) {
         user.activity = user.activity || {
@@ -810,7 +1023,16 @@ export const joinTournament = async (req, res) => {
     if (err.code === 'NOT_FOUND') {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
-    if (err.code === 'INVALID_STATUS' || err.code === 'ALREADY_JOINED' || err.code === 'FULL') {
+    if (
+      err.code === 'INVALID_STATUS' ||
+      err.code === 'ALREADY_JOINED' ||
+      err.code === 'FULL' ||
+      err.code === 'INVALID_TEAM_SIZE' ||
+      err.code === 'EXCLUDED_CHARACTER' ||
+      err.code === 'CHARACTER_TAKEN' ||
+      err.code === 'INVALID_LOADOUT_OPTION' ||
+      err.code === 'BUDGET_EXCEEDED'
+    ) {
       return res.status(400).json({ msg: err.message });
     }
     console.error(err.message);
@@ -835,7 +1057,7 @@ export const leaveTournament = async (req, res) => {
         throw error;
       }
 
-      if (tournament.status !== 'upcoming') {
+      if (tournament.status !== 'recruiting') {
         const error = new Error('Tournament cannot be left');
         error.code = 'INVALID_STATUS';
         throw error;
@@ -898,8 +1120,15 @@ export const getAvailableCharacters = async (req, res) => {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
 
-    const allowedTiers = tournament.settings?.allowedTiers || ['all'];
-    const excludedCharacters = tournament.settings?.excludedCharacters || [];
+    if (isChooseYourWeaponTournament(tournament)) {
+      return res.status(400).json({
+        msg: 'This tournament uses choose-your-weapon mode. Use /loadout-options.'
+      });
+    }
+
+    const settings = getTournamentSettings(tournament);
+    const allowedTiers = settings.allowedTiers || ['all'];
+    const excludedCharacters = settings.excludedCharacters || [];
     
     // Get all taken characters from participants
     const takenCharacters = tournament.participants?.flatMap(p => p.characterIds || []) || [];
@@ -939,8 +1168,66 @@ export const getAvailableCharacters = async (req, res) => {
       characters: availableCharacters,
       takenCount: takenCharacters.length,
       availableCount: availableCharacters.length,
-      teamSize: tournament.settings?.teamSize || 1,
+      teamSize: settings.teamSize || 1,
       allowedTiers: allowedTiers
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+export const getTournamentLoadoutOptions = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const db = await readDb();
+    const tournament = await tournamentsRepo.findOne(
+      (entry) => entry.id === id,
+      { db }
+    );
+
+    if (!tournament) {
+      return res.status(404).json({ msg: 'Tournament not found' });
+    }
+
+    if (!isChooseYourWeaponTournament(tournament)) {
+      return res.status(400).json({
+        msg: 'This tournament uses character mode. Use /available-characters.'
+      });
+    }
+
+    const { settings, catalog, options } = resolveLoadoutOptionsForTournament(tournament);
+    const optionsByCategory = groupCatalogOptionsByCategory(options);
+
+    res.json({
+      tournamentId: tournament.id,
+      mode: settings.mode,
+      loadoutType: settings.loadoutType,
+      budget: settings.budget,
+      allowAllLoadoutOptions: settings.allowAllLoadoutOptions,
+      allowedLoadoutOptionIds: settings.allowedLoadoutOptionIds,
+      optionCount: options.length,
+      options,
+      optionsByCategory,
+      catalogLabel: catalog.label
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).send('Server Error');
+  }
+};
+
+export const getTournamentLoadoutCatalog = async (req, res) => {
+  try {
+    const loadoutType = normalizeLoadoutType(req.query?.type);
+    const catalog = getChooseYourWeaponCatalog(loadoutType);
+    res.json({
+      loadoutType,
+      catalogLabel: catalog.label,
+      optionCount: catalog.options.length,
+      options: catalog.options,
+      optionsByCategory: groupCatalogOptionsByCategory(catalog.options)
     });
   } catch (err) {
     console.error(err.message);

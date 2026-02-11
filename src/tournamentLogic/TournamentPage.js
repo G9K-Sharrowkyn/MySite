@@ -108,6 +108,13 @@ const TournamentPage = () => {
     }
   };
 
+  const getModeLabel = (tournament) => {
+    if (tournament?.mode === 'choose_your_weapon') {
+      return `Choose your weapon (${tournament?.loadoutType || 'powers'})`;
+    }
+    return 'Character';
+  };
+
   const getTimeRemaining = (recruitmentEndDate) => {
     const now = new Date();
     const end = new Date(recruitmentEndDate);
@@ -221,6 +228,10 @@ const TournamentPage = () => {
                   
                   <div className="tournament-meta">
                     <div className="meta-item">
+                      <span className="meta-label">Mode:</span>
+                      <span className="meta-value">{getModeLabel(tournament)}</span>
+                    </div>
+                    <div className="meta-item">
                       <span className="meta-label">Participants:</span>
                       <span className="meta-value">{tournament.participants?.length || 0}/{tournament.maxParticipants}</span>
                     </div>
@@ -228,6 +239,12 @@ const TournamentPage = () => {
                       <span className="meta-label">Team Size:</span>
                       <span className="meta-value">{tournament.teamSize}</span>
                     </div>
+                    {tournament.mode === 'choose_your_weapon' && (
+                      <div className="meta-item">
+                        <span className="meta-label">Budget:</span>
+                        <span className="meta-value">${tournament.budget}</span>
+                      </div>
+                    )}
                     {tournament.status === 'recruiting' && tournament.recruitmentEndDate && (
                       <>
                         <div className="meta-item">
@@ -248,7 +265,7 @@ const TournamentPage = () => {
                     )}
                   </div>
 
-                  {tournament.allowedTiers && tournament.allowedTiers.length > 0 && (
+                  {tournament.mode !== 'choose_your_weapon' && tournament.allowedTiers && tournament.allowedTiers.length > 0 && (
                     <div className="tournament-tiers">
                       <span className="tiers-label">Allowed Tiers:</span>
                       <div className="tiers-list">
@@ -330,6 +347,16 @@ const TournamentPage = () => {
               <span className="detail-value">{selectedTournament.teamSize}</span>
             </div>
             <div className="detail-card">
+              <span className="detail-label">Mode</span>
+              <span className="detail-value">{getModeLabel(selectedTournament)}</span>
+            </div>
+            {selectedTournament.mode === 'choose_your_weapon' && (
+              <div className="detail-card">
+                <span className="detail-label">Budget</span>
+                <span className="detail-value">${selectedTournament.budget}</span>
+              </div>
+            )}
+            <div className="detail-card">
               <span className="detail-label">Battle Time</span>
               <span className="detail-value">{selectedTournament.battleTime}</span>
             </div>
@@ -341,7 +368,9 @@ const TournamentPage = () => {
             )}
           </div>
 
-          {selectedTournament.allowedTiers && selectedTournament.allowedTiers.length > 0 && (
+          {selectedTournament.mode !== 'choose_your_weapon' &&
+            selectedTournament.allowedTiers &&
+            selectedTournament.allowedTiers.length > 0 && (
             <div className="allowed-tiers-section">
               <h3>Allowed Tiers</h3>
               <div className="tiers-list">
@@ -352,7 +381,9 @@ const TournamentPage = () => {
             </div>
           )}
 
-          {selectedTournament.excludedCharacters && selectedTournament.excludedCharacters.length > 0 && (
+          {selectedTournament.mode !== 'choose_your_weapon' &&
+            selectedTournament.excludedCharacters &&
+            selectedTournament.excludedCharacters.length > 0 && (
             <div className="excluded-characters-section">
               <h3>Excluded Characters ({selectedTournament.excludedCharacters.length})</h3>
               <p className="excluded-note">These characters cannot be selected in this tournament</p>
@@ -367,11 +398,24 @@ const TournamentPage = () => {
               {selectedTournament.participants?.map(participant => (
                 <div key={participant.userId} className="participant-card">
                   <div className="participant-name">{participant.username}</div>
-                  <div className="participant-characters">
-                    {participant.characters?.map(char => (
-                      <span key={char.id} className="character-badge">{char.name}</span>
-                    ))}
-                  </div>
+                  {selectedTournament.mode === 'choose_your_weapon' ? (
+                    <div className="participant-characters">
+                      {(participant.loadout?.selectedOptions || []).map((option) => (
+                        <span key={option.id} className="character-badge">
+                          {option.name} (${option.cost})
+                        </span>
+                      ))}
+                      {!participant.loadout?.selectedOptions?.length && (
+                        <span className="character-badge">No picks</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="participant-characters">
+                      {participant.characters?.map((char) => (
+                        <span key={char.id} className="character-badge">{char.name}</span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
