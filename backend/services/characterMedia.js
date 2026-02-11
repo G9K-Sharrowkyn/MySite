@@ -1,8 +1,15 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import axios from 'axios';
 import { getMongoDb } from './mongoDb.js';
 
 const COLLECTION = 'characterMedia';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const LOCAL_PUBLIC_CHARACTERS_DIR = path.join(REPO_ROOT, 'public', 'characters');
 
 const sanitizeCharacterId = (value) => String(value || '').trim();
 
@@ -36,6 +43,23 @@ const resolveSourceUrl = (rawImage, options = {}) => {
     return apiOrigin ? `${apiOrigin}${withSlash}` : withSlash;
   }
   return frontendOrigin ? `${frontendOrigin}${withSlash}` : withSlash;
+};
+
+const tryReadLocalCharacterFile = async (rawImagePath) => {
+  const source = normalizeImageSource(rawImagePath);
+  if (!source.startsWith('/characters/')) return null;
+  const relative = source.replace(/^\/characters\//, '');
+  if (!relative || relative.includes('..')) return null;
+  const absolutePath = path.join(LOCAL_PUBLIC_CHARACTERS_DIR, relative);
+  const data = await fs.readFile(absolutePath).catch(() => null);
+  if (!data || !Buffer.isBuffer(data) || data.length === 0) {
+    return null;
+  }
+  return {
+    buffer: data,
+    contentType: guessContentType(source, ''),
+    source: `file:${absolutePath}`
+  };
 };
 
 const ensureIndexes = async (collection) => {
@@ -119,6 +143,22 @@ export const ingestCharacterMediaFromSource = async ({
   if (!id) {
     return { ok: false, reason: 'missing_character_id' };
   }
+  const localFile = await tryReadLocalCharacterFile(image);
+  if (localFile) {
+    const stored = await upsertCharacterMedia({
+      characterId: id,
+      buffer: localFile.buffer,
+      contentType: localFile.contentType,
+      source: localFile.source
+    });
+    return {
+      ok: true,
+      sourceUrl: localFile.source,
+      mediaPath: buildCharacterMediaPath(id),
+      ...stored
+    };
+  }
+
   const sourceUrl = resolveSourceUrl(image, { frontendOrigin, apiOrigin });
   if (!sourceUrl) {
     return { ok: false, reason: 'missing_or_unsupported_image_source' };

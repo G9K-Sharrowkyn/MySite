@@ -1,15 +1,26 @@
 import dotenv from 'dotenv';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { charactersRepo } from '../repositories/index.js';
 import { updateCollection } from '../services/jsonDb.js';
 import { closeMongo } from '../services/mongoDb.js';
 import {
   buildCharacterMediaPath,
-  ingestCharacterMediaFromSource
+  ingestCharacterMediaFromSource,
+  upsertCharacterMedia
 } from '../services/characterMedia.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env.production') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '..', '.env.production') });
 dotenv.config();
 
 const normalize = (value) => String(value || '').trim();
+const PLACEHOLDER_FILE = path.resolve(__dirname, '..', '..', 'public', 'placeholder-character.png');
 
 const isApiMediaPath = (value) =>
   normalize(value).toLowerCase().startsWith('/api/media/characters/');
@@ -24,7 +35,9 @@ const run = async () => {
   let migrated = 0;
   let unchanged = 0;
   let failed = 0;
+  let placeholderApplied = 0;
   const updatesById = new Map();
+  const placeholderBuffer = await fs.readFile(PLACEHOLDER_FILE);
 
   for (const character of list) {
     const id = normalize(character?.id);
@@ -56,10 +69,21 @@ const run = async () => {
     }));
 
     if (!ingested?.ok) {
-      failed += 1;
-      console.warn(
-        `Failed to migrate image for ${id} (${normalize(character?.name)}): ${ingested?.reason || 'unknown_error'}`
-      );
+      try {
+        await upsertCharacterMedia({
+          characterId: id,
+          buffer: placeholderBuffer,
+          contentType: 'image/png',
+          source: `file:${PLACEHOLDER_FILE}`
+        });
+        updatesById.set(id, buildCharacterMediaPath(id));
+        placeholderApplied += 1;
+      } catch (placeholderError) {
+        failed += 1;
+        console.warn(
+          `Failed to migrate image for ${id} (${normalize(character?.name)}): ${ingested?.reason || 'unknown_error'}; placeholder_error=${placeholderError?.message || 'unknown'}`
+        );
+      }
       continue;
     }
 
@@ -85,9 +109,20 @@ const run = async () => {
     );
   }
 
-  console.log(
-    `Character image migration complete. processed=${processed} migrated=${migrated} unchanged=${unchanged} failed=${failed}`
+  const afterCharacters = await charactersRepo.getAll();
+  const remainingStatic = (Array.isArray(afterCharacters) ? afterCharacters : []).filter(
+    (entry) => normalize(entry?.image).startsWith('/characters/')
   );
+
+  console.log(
+    `Character image migration complete. processed=${processed} migrated=${migrated} placeholderApplied=${placeholderApplied} unchanged=${unchanged} failed=${failed}`
+  );
+
+  if (failed > 0 || remainingStatic.length > 0) {
+    throw new Error(
+      `Mongo media migration is incomplete. failed=${failed}, remainingStatic=${remainingStatic.length}`
+    );
+  }
 };
 
 run()

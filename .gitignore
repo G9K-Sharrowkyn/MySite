@@ -16,6 +16,7 @@
 
 # e2e
 /backend/.tmp
+/backend/backups/
 
 # misc
 .DS_Store
