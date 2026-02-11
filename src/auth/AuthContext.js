@@ -3,6 +3,11 @@ import axios from 'axios';
 
 export const AuthContext = createContext();
 const DEFAULT_AVATAR = '/logo192.png';
+const PRIMARY_ADMIN_EMAIL = 'ak4maaru@gmail.com';
+
+const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+const isPrimaryAdminUser = (data) =>
+  normalizeEmail(data?.email) === PRIMARY_ADMIN_EMAIL;
 
 const normalizeUser = (data, fallbackId) => {
   if (!data) {
@@ -20,7 +25,7 @@ const normalizeUser = (data, fallbackId) => {
       data.profile?.profilePicture ||
       data.profile?.avatar ||
       DEFAULT_AVATAR,
-    role: data.role || 'user'
+    role: isPrimaryAdminUser(data) ? 'admin' : (data.role || 'user')
   };
 };
 
