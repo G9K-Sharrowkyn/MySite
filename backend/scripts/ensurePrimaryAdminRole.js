@@ -1,4 +1,5 @@
 import { usersRepo, withDb } from '../repositories/index.js';
+import { closeMongo } from '../services/mongoDb.js';
 import {
   ensurePrimaryAdminRole as enforceAdminRole,
   normalizeEmail
@@ -39,7 +40,12 @@ const run = async () => {
   console.log(`Primary admin role sync complete. target=${targetEmail} found=${found} updated=${updated}`);
 };
 
-run().catch((error) => {
-  console.error('Failed to sync primary admin role:', error);
-  process.exitCode = 1;
-});
+run()
+  .catch((error) => {
+    console.error('Failed to sync primary admin role:', error);
+    process.exitCode = 1;
+  })
+  .finally(async () => {
+    // Prevent hanging Node process in CI when Mongo connection remains open.
+    await closeMongo().catch(() => null);
+  });
