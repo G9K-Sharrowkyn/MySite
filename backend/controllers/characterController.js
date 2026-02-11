@@ -1,26 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import {
   charactersRepo,
   characterSuggestionsRepo
 } from '../repositories/index.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const STATIC_CHARACTERS_PATH = path.join(__dirname, '..', 'scripts', 'characters.json');
-
-let staticCharactersCache = null;
-const loadStaticCharacters = async () => {
-  if (Array.isArray(staticCharactersCache)) {
-    return staticCharactersCache;
-  }
-  const raw = await fs.readFile(STATIC_CHARACTERS_PATH, 'utf-8');
-  const parsed = JSON.parse(raw);
-  staticCharactersCache = Array.isArray(parsed) ? parsed : [];
-  return staticCharactersCache;
-};
 
 const resolveCharacterImage = (character) =>
   String(
@@ -51,55 +33,12 @@ const deriveBaseName = (name) => {
   return (index > 0 ? safe.slice(0, index) : safe).trim();
 };
 
-const normalizeCharacterKey = (character) => {
-  // Prefer ID so admin edits (including renames) override static entries reliably.
-  const id = typeof character?.id === 'string' ? character.id.trim() : '';
-  if (id) return `id:${id.toLowerCase()}`;
-  const name = typeof character?.name === 'string' ? character.name.trim().toLowerCase() : '';
-  if (name) return `name:${name}`;
-  return `idx:${Math.random().toString(16).slice(2)}`;
-};
-
-const getMergedCharacters = async () => {
+const getMongoCharacters = async () => {
   const dbCharactersRaw = await charactersRepo.getAll();
   const dbCharacters = Array.isArray(dbCharactersRaw) ? dbCharactersRaw : [];
-
-  // Always keep the large static catalog available, even if the DB contains only
-  // moderator-approved additions. Otherwise a single approved suggestion would
-  // hide the whole catalog in production.
-  const staticCharacters = await loadStaticCharacters();
-
-  let characters = staticCharacters;
-
-  if (dbCharacters.length > 0) {
-    const byName = new Map();
-    const deletedNames = new Set(
-      dbCharacters
-        .filter((entry) => String(entry?.status || '').toLowerCase() === 'deleted')
-        .map((entry) => String(entry?.name || '').trim().toLowerCase())
-        .filter(Boolean)
-    );
-
-    for (const c of staticCharacters) {
-      const lowerName = String(c?.name || '').trim().toLowerCase();
-      if (lowerName && deletedNames.has(lowerName)) {
-        continue;
-      }
-      byName.set(normalizeCharacterKey(c), c);
-    }
-    for (const c of dbCharacters) {
-      byName.set(normalizeCharacterKey(c), c); // DB overrides static if same name.
-    }
-
-    characters = Array.from(byName.values());
-  }
-
-  // Hide hard-deleted entries represented by DB tombstones.
-  characters = characters.filter(
+  return dbCharacters.filter(
     (character) => String(character?.status || 'active').toLowerCase() !== 'deleted'
   );
-
-  return characters;
 };
 
 // @desc    Get all characters
@@ -107,7 +46,7 @@ const getMergedCharacters = async () => {
 // @access  Public
 export const getCharacters = async (req, res) => {
   try {
-    const characters = await getMergedCharacters();
+    const characters = await getMongoCharacters();
 
     // Avoid stale list right after moderation/admin edits.
     if (req.header('x-auth-token')) {
@@ -135,7 +74,7 @@ export const searchCharacters = async (req, res) => {
     const limitRaw = Number(req.query.limit || 12);
     const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(30, limitRaw)) : 12;
 
-    const characters = await getMergedCharacters();
+    const characters = await getMongoCharacters();
     const results = characters
       .filter((character) => {
         const name = String(character?.name || '').toLowerCase();
@@ -232,7 +171,7 @@ export const updateCharacter = async (req, res) => {
     const existing = await charactersRepo.findById(id);
 
     if (!existing) {
-      // Upsert: allow overriding static catalog entries by writing an entry into DB.
+      // Upsert: allow creating a character if a specific ID does not exist yet.
       const created = {
         id,
         name: resolvedName || id,
@@ -344,11 +283,7 @@ export const deleteCharacter = async (req, res) => {
     }
 
     const dbCharacters = await charactersRepo.getAll();
-    const staticCharacters = await loadStaticCharacters();
-    const dbEntry = dbCharacters.find((entry) => String(entry?.id || '') === String(id));
-    const staticEntry = staticCharacters.find((entry) => String(entry?.id || '') === String(id));
-
-    const target = dbEntry || staticEntry;
+    const target = dbCharacters.find((entry) => String(entry?.id || '') === String(id));
     if (!target) {
       return res.status(404).json({ msg: 'Character not found.' });
     }
@@ -362,33 +297,7 @@ export const deleteCharacter = async (req, res) => {
       return res.status(400).json({ msg: 'Character name confirmation does not match.' });
     }
 
-    // Remove all DB entries that match this character name (including prior duplicates).
-    const loweredName = expectedName.toLowerCase();
-    const dbEntriesToRemove = dbCharacters.filter(
-      (entry) => String(entry?.name || '').trim().toLowerCase() === loweredName
-    );
-    for (const entry of dbEntriesToRemove) {
-      if (entry?.id) {
-        await charactersRepo.removeById(String(entry.id));
-      }
-    }
-
-    // If this character exists in static catalog, write a tombstone override in DB
-    // so merged output will keep it hidden.
-    if (staticEntry) {
-      const tombstone = {
-        id: `deleted:${uuidv4()}`,
-        name: expectedName,
-        baseName: deriveBaseName(expectedName),
-        universe: staticEntry.universe || 'Other',
-        tags: normalizeTags(staticEntry.tags),
-        image: staticEntry.image || '/logo512.png',
-        status: 'deleted',
-        deletedAt: new Date().toISOString(),
-        deletedBy: req.user?.id || null
-      };
-      await charactersRepo.insert(tombstone);
-    }
+    await charactersRepo.removeById(String(id));
 
     return res.json({ msg: `Character "${expectedName}" deleted successfully.` });
   } catch (error) {

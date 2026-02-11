@@ -105,21 +105,6 @@ const normalizeCharacterKey = (value) =>
     .trim();
 
 let cachedIndexHtml = null;
-let cachedStaticCharacters = null;
-
-const loadStaticCharacters = async () => {
-  if (Array.isArray(cachedStaticCharacters)) return cachedStaticCharacters;
-  try {
-    const filePath = path.join(__dirname, 'scripts', 'characters.json');
-    const raw = await readFile(filePath, 'utf-8');
-    const parsed = JSON.parse(raw);
-    cachedStaticCharacters = Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.warn('Failed to load static characters:', error?.message || error);
-    cachedStaticCharacters = [];
-  }
-  return cachedStaticCharacters;
-};
 
 const findCharacterImage = (name, characters = []) => {
   if (!name) return '';
@@ -320,11 +305,7 @@ const fetchImageDataUri = async (url) => {
 const resolveCharacterImageByName = async (name, db) => {
   if (!name) return '';
   const dbCharacters = Array.isArray(db?.characters) ? db.characters : [];
-  let image = findCharacterImage(name, dbCharacters);
-  if (!image) {
-    const staticCharacters = await loadStaticCharacters();
-    image = findCharacterImage(name, staticCharacters);
-  }
+  const image = findCharacterImage(name, dbCharacters);
   return normalizeCharacterAssetPath(image || '');
 };
 
@@ -691,10 +672,6 @@ const resolvePostImage = async (post, db, baseUrlOrOptions) => {
   if (teams.length) {
     const dbCharacters = Array.isArray(db?.characters) ? db.characters : [];
     characterImage = findCharacterImage(teams[0], dbCharacters);
-    if (!characterImage) {
-      const staticCharacters = await loadStaticCharacters();
-      characterImage = findCharacterImage(teams[0], staticCharacters);
-    }
   }
 
   const fallback = '/logo512.png';
