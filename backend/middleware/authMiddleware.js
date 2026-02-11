@@ -34,6 +34,18 @@ export default async function authMiddleware(req, res, next) {
       (entry) => resolveUserId(entry) === resolveUserId(req.user),
       { db }
     );
+
+    if (!currentUser) {
+      return res.status(401).json({ msg: 'User account was not found.' });
+    }
+
+    // Keep role in sync with DB even when client holds an older token.
+    req.user = {
+      ...req.user,
+      id: resolveUserId(currentUser),
+      role: currentUser.role
+    };
+
     const suspension = getActiveSuspension(currentUser);
     if (suspension) {
       return res.status(403).json({
