@@ -174,34 +174,7 @@ jobs:
 
           if [ -n "${PRIMARY_ADMIN_EMAIL}" ]; then
             cd "$(dirname "${ENVFILE}")"
-            PRIMARY_ADMIN_EMAIL="${PRIMARY_ADMIN_EMAIL}" node --input-type=module <<'NODE'
-            import { usersRepo, withDb } from './repositories/index.js';
-
-            const targetEmail = String(process.env.PRIMARY_ADMIN_EMAIL || '').trim().toLowerCase();
-            if (!targetEmail) {
-              console.log('PRIMARY_ADMIN_EMAIL missing, skipping admin role sync.');
-              process.exit(0);
-            }
-
-            let updated = 0;
-            await withDb(async (db) => {
-              await usersRepo.updateAll((users) => {
-                for (const user of users) {
-                  const email = String(user.email || '').trim().toLowerCase();
-                  if (email !== targetEmail) continue;
-                  if (user.role !== 'admin') {
-                    user.role = 'admin';
-                    user.updatedAt = new Date().toISOString();
-                    updated += 1;
-                  }
-                }
-                return users;
-              }, { db });
-              return db;
-            });
-
-            console.log(`Primary admin role sync complete. target=${targetEmail} updated=${updated}`);
-            NODE
+            PRIMARY_ADMIN_EMAIL="${PRIMARY_ADMIN_EMAIL}" node ./scripts/ensurePrimaryAdminRole.js
           fi
           SH
 
