@@ -79,7 +79,16 @@ jobs:
           VPS_BACKEND_DIR: ${{ secrets.VPS_BACKEND_DIR }}
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "mkdir -p '${VPS_BACKEND_DIR}'"
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "${VPS_PORT}" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o ServerAliveInterval=20 \
+            -o ServerAliveCountMax=12 \
+            -o TCPKeepAlive=yes \
+            "${VPS_USER}@${VPS_HOST}" \
+            "mkdir -p '${VPS_BACKEND_DIR}'"
 
       - name: Deploy backend/ to VPS via rsync over SSH
         shell: bash
@@ -98,7 +107,7 @@ jobs:
             --exclude=/npm-debug.log* \
             --exclude=/.DS_Store \
             --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r \
-            -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o StrictHostKeyChecking=yes" \
+            -e "ssh -i ~/.ssh/deploy_key -p ${VPS_PORT} -o StrictHostKeyChecking=yes -o BatchMode=yes -o ConnectTimeout=20 -o ServerAliveInterval=20 -o ServerAliveCountMax=12 -o TCPKeepAlive=yes" \
             backend/ "${VPS_USER}@${VPS_HOST}:${VPS_BACKEND_DIR%/}/"
 
       - name: Configure backend env (optional)
@@ -123,7 +132,15 @@ jobs:
           mongo_uri_b64="$(printf '%s' "${VPS_MONGO_URI}" | base64 -w0)"
           mongo_db_b64="$(printf '%s' "${VPS_MONGO_DB_NAME:-}" | base64 -w0)"
           primary_admin_email_b64="$(printf '%s' "${effective_primary_admin_email}" | base64 -w0)"
-          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" \
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "${VPS_PORT}" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o ServerAliveInterval=20 \
+            -o ServerAliveCountMax=12 \
+            -o TCPKeepAlive=yes \
+            "${VPS_USER}@${VPS_HOST}" \
             "ENVFILE='${remote_dir}/.env.production' MONGO_URI_B64='${mongo_uri_b64}' MONGO_DB_NAME_B64='${mongo_db_b64}' PRIMARY_ADMIN_EMAIL_B64='${primary_admin_email_b64}' bash -se" <<'SH'
           set -euo pipefail
           umask 077
@@ -190,7 +207,15 @@ jobs:
           VPS_BACKEND_DIR: ${{ secrets.VPS_BACKEND_DIR }}
         run: |
           set -euo pipefail
-          ssh -i ~/.ssh/deploy_key -p "${VPS_PORT}" -o BatchMode=yes "${VPS_USER}@${VPS_HOST}" "bash -se" <<SH
+          ssh \
+            -i ~/.ssh/deploy_key \
+            -p "${VPS_PORT}" \
+            -o BatchMode=yes \
+            -o ConnectTimeout=20 \
+            -o ServerAliveInterval=20 \
+            -o ServerAliveCountMax=12 \
+            -o TCPKeepAlive=yes \
+            "${VPS_USER}@${VPS_HOST}" "bash -se" <<SH
           set -euo pipefail
           cd '${VPS_BACKEND_DIR%/}'
           if [ -f ./.env.production ]; then
