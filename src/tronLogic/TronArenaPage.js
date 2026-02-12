@@ -82,9 +82,16 @@ const TronArenaPage = () => {
   const [roomInput, setRoomInput] = useState(DEFAULT_ROOM_ID);
   const [activeRoomId, setActiveRoomId] = useState(DEFAULT_ROOM_ID);
   const [arenaState, setArenaState] = useState(initialArenaState);
+  const activeRoomIdRef = useRef(DEFAULT_ROOM_ID);
+  const displayNameRef = useRef('');
 
   const displayName =
     user?.displayName || user?.username || user?.email || guestNameRef.current;
+  displayNameRef.current = displayName;
+
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId;
+  }, [activeRoomId]);
 
   const clearSceneObjects = useCallback(() => {
     for (const mesh of trailMeshesRef.current.values()) {
@@ -337,8 +344,8 @@ const TronArenaPage = () => {
       setConnectionState('connected');
       setSocketId(socket.id);
       socket.emit('tron:join', {
-        roomId: activeRoomId,
-        username: displayName
+        roomId: activeRoomIdRef.current,
+        username: displayNameRef.current
       });
     });
 
@@ -370,7 +377,7 @@ const TronArenaPage = () => {
       socketRef.current = null;
       setArenaState(initialArenaState);
     };
-  }, [activeRoomId, displayName, token]);
+  }, [token]);
 
   useEffect(() => {
     const onKeyDown = (event) => {
@@ -397,6 +404,16 @@ const TronArenaPage = () => {
       const nextRoomId = sanitizeRoomId(roomInput);
       setRoomInput(nextRoomId);
       setActiveRoomId(nextRoomId);
+      activeRoomIdRef.current = nextRoomId;
+      setError('');
+
+      const socket = socketRef.current;
+      if (socket?.connected) {
+        socket.emit('tron:join', {
+          roomId: nextRoomId,
+          username: displayNameRef.current
+        });
+      }
     },
     [roomInput]
   );
