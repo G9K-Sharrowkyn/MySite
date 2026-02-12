@@ -48,6 +48,13 @@ const toWorldPos = (x, y, gridSize) => {
   };
 };
 
+const lerpAngle = (current, target, alpha) => {
+  let diff = target - current;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  return current + diff * alpha;
+};
+
 const initialArenaState = {
   roomId: DEFAULT_ROOM_ID,
   gridSize: FALLBACK_GRID_SIZE,
@@ -124,6 +131,63 @@ const TronArenaPage = () => {
       trailMaterialRef.current.dispose();
       trailMaterialRef.current = null;
     }
+  }, []);
+
+  const createBikeRoot = useCallback((scene, playerId, material) => {
+    const root = BABYLON.MeshBuilder.CreateBox(
+      `tron-rider-root-${playerId}`,
+      { width: 0.2, height: 0.2, depth: 0.2 },
+      scene
+    );
+    root.isVisible = false;
+    root.isPickable = false;
+
+    const chassis = BABYLON.MeshBuilder.CreateBox(
+      `tron-rider-chassis-${playerId}`,
+      { width: 0.58, height: 0.22, depth: 1.02 },
+      scene
+    );
+    chassis.position.set(0, 0.3, 0);
+    chassis.material = material;
+    chassis.parent = root;
+
+    const nose = BABYLON.MeshBuilder.CreateBox(
+      `tron-rider-nose-${playerId}`,
+      { width: 0.3, height: 0.16, depth: 0.45 },
+      scene
+    );
+    nose.position.set(0, 0.32, 0.67);
+    nose.material = material;
+    nose.parent = root;
+
+    const fin = BABYLON.MeshBuilder.CreateBox(
+      `tron-rider-fin-${playerId}`,
+      { width: 0.08, height: 0.3, depth: 0.26 },
+      scene
+    );
+    fin.position.set(0, 0.44, -0.5);
+    fin.material = material;
+    fin.parent = root;
+
+    const leftRail = BABYLON.MeshBuilder.CreateBox(
+      `tron-rider-left-rail-${playerId}`,
+      { width: 0.05, height: 0.1, depth: 0.9 },
+      scene
+    );
+    leftRail.position.set(-0.28, 0.2, 0);
+    leftRail.material = material;
+    leftRail.parent = root;
+
+    const rightRail = BABYLON.MeshBuilder.CreateBox(
+      `tron-rider-right-rail-${playerId}`,
+      { width: 0.05, height: 0.1, depth: 0.9 },
+      scene
+    );
+    rightRail.position.set(0.28, 0.2, 0);
+    rightRail.material = material;
+    rightRail.parent = root;
+
+    return root;
   }, []);
 
   const ensureArena = useCallback((scene, gridSize) => {
@@ -240,25 +304,37 @@ const TronArenaPage = () => {
       if (!playerId) continue;
       nextPlayers.add(playerId);
 
-      let mesh = playerMeshesRef.current.get(playerId);
-      if (!mesh) {
-        mesh = BABYLON.MeshBuilder.CreateBox(
-          `tron-rider-${playerId}`,
-          { width: 0.74, depth: 0.74, height: 0.5 },
-          scene
+      let root = playerMeshesRef.current.get(playerId);
+      if (!root) {
+        root = createBikeRoot(
+          scene,
+          playerId,
+          ensurePlayerMaterial(scene, playerId, player.color)
         );
-        mesh.material = ensurePlayerMaterial(scene, playerId, player.color);
-        playerMeshesRef.current.set(playerId, mesh);
+        playerMeshesRef.current.set(playerId, root);
       }
 
       const hasCoords = Number.isFinite(player?.x) && Number.isFinite(player?.y);
-      mesh.isVisible = hasCoords;
+      root.setEnabled(hasCoords);
       if (!hasCoords) continue;
 
       const world = toWorldPos(Number(player.x), Number(player.y), gridSize);
-      mesh.position.set(world.x, player.alive ? 0.35 : 0.24, world.z);
-      mesh.rotation.y = getDirectionRotation(player.dir);
-      mesh.scaling.setAll(player.alive ? 1 : 0.76);
+      const nextPos = new BABYLON.Vector3(world.x, player.alive ? 0.35 : 0.24, world.z);
+      const nextRotY = getDirectionRotation(player.dir);
+      const nextScale = player.alive ? 1 : 0.76;
+      const hadMeta = Boolean(root.metadata?.targetPosition);
+      root.metadata = {
+        ...(root.metadata || {}),
+        targetPosition: nextPos,
+        targetRotationY: nextRotY,
+        targetScale: nextScale
+      };
+
+      if (!hadMeta) {
+        root.position.copyFrom(nextPos);
+        root.rotation.y = nextRotY;
+        root.scaling.setAll(nextScale);
+      }
     }
 
     for (const [playerId, mesh] of playerMeshesRef.current.entries()) {
@@ -271,7 +347,7 @@ const TronArenaPage = () => {
         playerMaterialRef.current.delete(playerId);
       }
     }
-  }, [ensureArena, ensurePlayerMaterial, ensureTrailMaterial]);
+  }, [createBikeRoot, ensureArena, ensurePlayerMaterial, ensureTrailMaterial]);
 
   useEffect(() => {
     if (!canvasRef.current) return undefined;
@@ -289,16 +365,16 @@ const TronArenaPage = () => {
 
     const camera = new BABYLON.FollowCamera(
       'tron-follow-camera',
-      new BABYLON.Vector3(0, 14, -14),
+      new BABYLON.Vector3(0, 6, -9),
       scene
     );
-    camera.radius = 16;
-    camera.heightOffset = 10;
+    camera.radius = 7.5;
+    camera.heightOffset = 4.2;
     camera.rotationOffset = 180;
-    camera.cameraAcceleration = 0.18;
-    camera.maxCameraSpeed = 2.6;
-    camera.lowerRadiusLimit = 13;
-    camera.upperRadiusLimit = 20;
+    camera.cameraAcceleration = 0.35;
+    camera.maxCameraSpeed = 5.5;
+    camera.lowerRadiusLimit = 6;
+    camera.upperRadiusLimit = 11;
     cameraRef.current = camera;
 
     const hemi = new BABYLON.HemisphericLight(
@@ -316,6 +392,30 @@ const TronArenaPage = () => {
     fill.intensity = 0.7;
 
     scene.onBeforeRenderObservable.add(() => {
+      const dt = scene.getEngine().getDeltaTime() / 1000;
+      const posAlpha = Math.min(1, dt * 16);
+      const rotAlpha = Math.min(1, dt * 20);
+      const scaleAlpha = Math.min(1, dt * 14);
+
+      for (const mesh of playerMeshesRef.current.values()) {
+        const targetPosition = mesh.metadata?.targetPosition;
+        if (targetPosition) {
+          mesh.position = BABYLON.Vector3.Lerp(mesh.position, targetPosition, posAlpha);
+        }
+
+        const targetRotationY = mesh.metadata?.targetRotationY;
+        if (Number.isFinite(targetRotationY)) {
+          mesh.rotation.y = lerpAngle(mesh.rotation.y, targetRotationY, rotAlpha);
+        }
+
+        const targetScale = mesh.metadata?.targetScale;
+        if (Number.isFinite(targetScale)) {
+          const currentScale = mesh.scaling.x || 1;
+          const nextScale = BABYLON.Scalar.Lerp(currentScale, targetScale, scaleAlpha);
+          mesh.scaling.setAll(nextScale);
+        }
+      }
+
       const followCamera = cameraRef.current;
       if (!followCamera) return;
 
@@ -331,7 +431,7 @@ const TronArenaPage = () => {
       } else {
         followCamera.lockedTarget = null;
         followCamera.setTarget(BABYLON.Vector3.Zero());
-        followCamera.position.copyFromFloats(0, 18, -18);
+        followCamera.position.copyFromFloats(0, 7, -10);
       }
     });
 
