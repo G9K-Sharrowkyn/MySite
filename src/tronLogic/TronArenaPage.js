@@ -488,6 +488,12 @@ const TronArenaPage = () => {
                 <strong>spectator</strong>
               </div>
             )}
+            {arenaState.phase === 'waiting' && arenaState.players.length < 2 ? (
+              <div>
+                <span>Runda:</span>
+                <strong>czeka na min. 2 graczy</strong>
+              </div>
+            ) : null}
           </div>
 
           {arenaState.winner ? (

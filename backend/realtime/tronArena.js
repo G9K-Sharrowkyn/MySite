@@ -127,7 +127,7 @@ const serializeRoom = (room) => {
       y: player.y,
       dir: player.dir,
       alive: player.alive,
-      spectator: !player.inRound,
+      spectator: Boolean(player.isSpectator),
       wins: player.wins
     }));
 
@@ -179,6 +179,7 @@ const assignRoundSpawns = (room) => {
       player.y = null;
       player.dir = 'up';
       player.pendingDir = null;
+      player.isSpectator = true;
       return;
     }
 
@@ -189,6 +190,7 @@ const assignRoundSpawns = (room) => {
     player.y = spawn.y;
     player.dir = spawn.dir;
     player.pendingDir = null;
+    player.isSpectator = false;
     room.trails.add(cellKey(spawn.x, spawn.y));
   });
 };
@@ -205,6 +207,7 @@ const beginWaitingPhase = (namespace, room) => {
     player.x = null;
     player.y = null;
     player.pendingDir = null;
+    player.isSpectator = false;
   }
   emitRoomState(namespace, room);
 };
@@ -424,6 +427,7 @@ export const initTronNamespace = (io) => {
         pendingDir: null,
         alive: false,
         inRound: false,
+        isSpectator: false,
         wins: 0,
         joinedAt: Date.now()
       });
