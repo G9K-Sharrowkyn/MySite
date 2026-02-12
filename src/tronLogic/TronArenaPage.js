@@ -28,15 +28,15 @@ const sanitizeRoomId = (value) => {
 const getDirectionRotation = (direction) => {
   switch (direction) {
     case 'up':
-      return 0;
+      return Math.PI;
     case 'right':
       return Math.PI / 2;
     case 'down':
-      return Math.PI;
+      return 0;
     case 'left':
       return -Math.PI / 2;
     default:
-      return 0;
+      return Math.PI;
   }
 };
 
@@ -66,12 +66,15 @@ const TronArenaPage = () => {
   const socketRef = useRef(null);
   const sceneRef = useRef(null);
   const engineRef = useRef(null);
+  const cameraRef = useRef(null);
   const arenaMeshesRef = useRef([]);
   const arenaGridRef = useRef(0);
   const trailMeshesRef = useRef(new Map());
   const playerMeshesRef = useRef(new Map());
   const playerMaterialRef = useRef(new Map());
   const trailMaterialRef = useRef(null);
+  const arenaStateRef = useRef(initialArenaState);
+  const socketIdRef = useRef('');
   const guestNameRef = useRef(
     `Guest-${Math.random().toString(36).slice(2, 7).toUpperCase()}`
   );
@@ -92,6 +95,14 @@ const TronArenaPage = () => {
   useEffect(() => {
     activeRoomIdRef.current = activeRoomId;
   }, [activeRoomId]);
+
+  useEffect(() => {
+    arenaStateRef.current = arenaState;
+  }, [arenaState]);
+
+  useEffect(() => {
+    socketIdRef.current = socketId;
+  }, [socketId]);
 
   const clearSceneObjects = useCallback(() => {
     for (const mesh of trailMeshesRef.current.values()) {
@@ -276,18 +287,19 @@ const TronArenaPage = () => {
     scene.clearColor = new BABYLON.Color4(0.01, 0.015, 0.04, 1);
     sceneRef.current = scene;
 
-    const camera = new BABYLON.ArcRotateCamera(
-      'tron-camera',
-      -Math.PI / 2,
-      1.05,
-      42,
-      new BABYLON.Vector3(0, 0, 0),
+    const camera = new BABYLON.FollowCamera(
+      'tron-follow-camera',
+      new BABYLON.Vector3(0, 14, -14),
       scene
     );
-    camera.lowerRadiusLimit = 22;
-    camera.upperRadiusLimit = 120;
-    camera.wheelDeltaPercentage = 0.01;
-    camera.attachControl(canvasRef.current, true);
+    camera.radius = 16;
+    camera.heightOffset = 10;
+    camera.rotationOffset = 180;
+    camera.cameraAcceleration = 0.18;
+    camera.maxCameraSpeed = 2.6;
+    camera.lowerRadiusLimit = 13;
+    camera.upperRadiusLimit = 20;
+    cameraRef.current = camera;
 
     const hemi = new BABYLON.HemisphericLight(
       'tron-hemi',
@@ -302,6 +314,26 @@ const TronArenaPage = () => {
       scene
     );
     fill.intensity = 0.7;
+
+    scene.onBeforeRenderObservable.add(() => {
+      const followCamera = cameraRef.current;
+      if (!followCamera) return;
+
+      const currentSocketId = socketIdRef.current;
+      const state = arenaStateRef.current;
+      const myPlayer = Array.isArray(state?.players)
+        ? state.players.find((player) => player.socketId === currentSocketId)
+        : null;
+      const myMesh = currentSocketId ? playerMeshesRef.current.get(currentSocketId) : null;
+
+      if (myPlayer && myMesh && Number.isFinite(myPlayer.x) && Number.isFinite(myPlayer.y)) {
+        followCamera.lockedTarget = myMesh;
+      } else {
+        followCamera.lockedTarget = null;
+        followCamera.setTarget(BABYLON.Vector3.Zero());
+        followCamera.position.copyFromFloats(0, 18, -18);
+      }
+    });
 
     ensureArena(scene, FALLBACK_GRID_SIZE);
 
@@ -322,6 +354,7 @@ const TronArenaPage = () => {
       engine.dispose();
       sceneRef.current = null;
       engineRef.current = null;
+      cameraRef.current = null;
       arenaMeshesRef.current = [];
       arenaGridRef.current = 0;
     };

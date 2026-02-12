@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 
 const GRID_SIZE = 48;
 const MAX_PLAYERS = 8;
-const TICK_MS = 120;
+const TICK_MS = 70;
 const ROUND_COUNTDOWN_MS = 2500;
 const ROUND_END_DELAY_MS = 3000;
 const DEFAULT_ROOM_ID = 'public';
