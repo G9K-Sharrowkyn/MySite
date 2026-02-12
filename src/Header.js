@@ -248,6 +248,7 @@ const Header = () => {
             </div>
             <div className="nav-row nav-row-bottom">
               <Link to="/tournaments" className="nav-link pre-ccg">{t('tournaments')}</Link>
+              <Link to="/tron-arena" className="nav-link pre-ccg">TRON</Link>
               {isModerator ? (
                 <Link to="/speed-racing" className="nav-link pre-ccg">{t('speedRacing')}</Link>
               ) : (
@@ -740,6 +741,7 @@ const Header = () => {
             <Link to="/divisions" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('divisions')}</Link>
             <Link to="/leaderboard" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('leaderboard')}</Link>
             <Link to="/tournaments" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('tournaments')}</Link>
+            <Link to="/tron-arena" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>TRON</Link>
             {isModerator ? (
               <Link to="/speed-racing" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('speedRacing')}</Link>
             ) : (

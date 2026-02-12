@@ -28,6 +28,7 @@ import GlobalChatSystem from './chat/GlobalChatSystem';
 import FeedbackButton from './shared/FeedbackButton';
 import CcgApp from './ccg/App';
 import SpeedRacingPage from './speedRacing/SpeedRacingPage';
+import TronArenaPage from './tronLogic/TronArenaPage';
 import CookieConsent from './legal/CookieConsent';
 import LegalPolicyPage from './legal/LegalPolicyPage';
 import HelpPage from './legal/HelpPage';
@@ -161,6 +162,10 @@ function AppContent() {
               <SpeedRacingPage />
             </ModeratorRoute>
           )}
+        />
+        <Route
+          path="/tron-arena"
+          element={isLoggedIn ? <TronArenaPage /> : <Navigate to="/login" replace />}
         />
       </Routes>
       {/* Global Chat System - only show when logged in */}

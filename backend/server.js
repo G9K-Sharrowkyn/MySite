@@ -70,6 +70,7 @@ import { readDb } from './repositories/index.js';
 import { readDb as warmupReadDb } from './services/jsonDb.js';
 import { getMongoConfig } from './services/mongoDb.js';
 import { getCharacterMediaById } from './services/characterMedia.js';
+import { initTronNamespace } from './realtime/tronArena.js';
 
 const chatStore = {
   getRecentMessages: getLocalRecentMessages,
@@ -1085,6 +1086,8 @@ app.get('/api/media/characters/:id', async (req, res) => {
     return res.status(500).json({ msg: 'Server error' });
   }
 });
+
+initTronNamespace(io);
 
 // Make io accessible to routes
 app.use((req, res, next) => {
