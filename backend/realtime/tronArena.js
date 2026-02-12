@@ -231,7 +231,7 @@ const finishRound = (namespace, room) => {
 
   room.finishTimeout = setTimeout(() => {
     room.finishTimeout = null;
-    if (room.players.size >= 2) {
+    if (room.players.size >= 1) {
       startRoundCountdown(namespace, room);
       return;
     }
@@ -243,7 +243,11 @@ const tickRoom = (namespace, room) => {
   if (room.phase !== 'running') return;
 
   const alivePlayers = getAlivePlayers(room);
-  if (alivePlayers.length <= 1) {
+  const roundPlayersCount = getRoundPlayers(room).length;
+  const shouldFinish =
+    (roundPlayersCount > 1 && alivePlayers.length <= 1) ||
+    (roundPlayersCount <= 1 && alivePlayers.length === 0);
+  if (shouldFinish) {
     finishRound(namespace, room);
     return;
   }
@@ -308,7 +312,11 @@ const tickRoom = (namespace, room) => {
 
   emitRoomState(namespace, room);
 
-  if (getAlivePlayers(room).length <= 1) {
+  const remainingAlive = getAlivePlayers(room).length;
+  const shouldFinishAfterTick =
+    (roundPlayersCount > 1 && remainingAlive <= 1) ||
+    (roundPlayersCount <= 1 && remainingAlive === 0);
+  if (shouldFinishAfterTick) {
     finishRound(namespace, room);
   }
 };
@@ -335,7 +343,7 @@ const startRoundCountdown = (namespace, room) => {
 
   room.countdownTimeout = setTimeout(() => {
     room.countdownTimeout = null;
-    if (room.players.size < 2) {
+    if (room.players.size < 1) {
       beginWaitingPhase(namespace, room);
       return;
     }
@@ -345,7 +353,7 @@ const startRoundCountdown = (namespace, room) => {
 
 const maybeStartRound = (namespace, room) => {
   if (room.phase !== 'waiting') return;
-  if (room.players.size < 2) return;
+  if (room.players.size < 1) return;
   startRoundCountdown(namespace, room);
 };
 
@@ -372,7 +380,7 @@ const leaveRoom = (namespace, rooms, socket, roomId) => {
     return;
   }
 
-  if (room.phase === 'countdown' && room.players.size < 2) {
+  if (room.phase === 'countdown' && room.players.size < 1) {
     beginWaitingPhase(namespace, room);
     return;
   }

@@ -491,7 +491,7 @@ const TronArenaPage = () => {
             {arenaState.phase === 'waiting' && arenaState.players.length < 2 ? (
               <div>
                 <span>Runda:</span>
-                <strong>czeka na min. 2 graczy</strong>
+                <strong>dolacz do pokoju, aby wystartowac</strong>
               </div>
             ) : null}
           </div>
