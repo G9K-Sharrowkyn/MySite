@@ -21,6 +21,15 @@ Optional:
   Examples:
   - `pm2 restart versusversevault-backend`
   - `systemctl restart your-backend.service`
+- `VPS_FRONTEND_URL`: exact public HTTPS frontend origin.
+- `VPS_API_ORIGIN`: exact public HTTPS API origin.
+- `VPS_CCG_API_URL`: normally `https://api.example.com/api/ccg`.
+- `VPS_CCG_SOCKET_URL`: normally `https://api.example.com/ccg`.
+- `VPS_GOOGLE_CLIENT_ID` and `VPS_VAPID_PUBLIC_KEY`: matching frontend
+  credentials when those optional integrations are enabled.
+- `VPS_MONGO_URI`, `VPS_MONGO_DB_NAME` and `VPS_PRIMARY_ADMIN_EMAIL`: values
+  which the backend workflow can safely upsert into the server-only
+  `.env.production`.
 
 ## 2) Webuzo: point domain to the correct docroot
 
@@ -60,4 +69,3 @@ If a GitHub Actions deploy fails, the most common causes are:
 - `VPS_SSH_KEY` is missing/invalid.
 - `VPS_FRONTEND_DIR` / `VPS_BACKEND_DIR` point to a path that does not exist or is not writable for `VPS_USER`.
 - SSH is blocked by firewall or uses a non-standard port (update `VPS_PORT`).
-

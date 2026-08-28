@@ -80,16 +80,10 @@ const CookieConsent = () => {
 
   const saveConsent = async (consentPreferences) => {
     const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
     
     const consentData = {
-      userId: userId || 'anonymous',
       preferences: consentPreferences,
-      timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      ipAddress: 'client-side', // Will be set by server
-      gdprCompliant: true,
-      ccpaCompliant: true
+      timestamp: new Date().toISOString()
     };
 
     if (token) {
@@ -208,7 +202,8 @@ const CookieConsent = () => {
               <h2>Cookie Consent</h2>
               <p>
                 We use cookies to enhance your experience, analyze site traffic, and personalize content. 
-                By continuing to use our site, you consent to our use of cookies.
+                Choose whether optional cookie categories may be used. Essential
+                storage remains enabled because it is required for sign-in and security.
               </p>
             </div>
 

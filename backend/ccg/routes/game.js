@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.post('/room', protect, createRoom);
 router.post('/room/:roomId/join', protect, joinRoom);
+router.get('/room/:roomId', protect, getRoomState);
 
 // Matchmaking routes
 router.post('/play-vs-bot', protect, playVsBot);

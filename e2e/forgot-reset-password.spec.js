@@ -31,17 +31,29 @@ test('user can request password reset and set a new password', async ({ page }) 
 
   await page.goto('/forgot-password');
   await page.getByPlaceholder('your.email@example.com').fill(email);
+  const resetRequestPromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/forgot-password') &&
+      response.request().method() === 'POST'
+  );
   await page.getByRole('button', { name: 'Send Reset Link' }).click();
 
-  const token = await waitForResetToken(email);
+  const resetRequest = await resetRequestPromise;
+  const resetData = await resetRequest.json();
+  const token = resetData.testResetToken || await waitForResetToken(email);
   expect(token).toBeTruthy();
 
   await page.goto(`/reset-password?token=${token}`);
   await page.locator('input[name="password"]').fill(newPassword);
   await page.locator('input[name="confirmPassword"]').fill(newPassword);
+  const passwordResetPromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/reset-password') &&
+      response.request().method() === 'POST'
+  );
   await page.getByRole('button', { name: 'Reset Password' }).click();
 
-  await expect(page.locator('.toast-message')).toContainText('Password reset successful');
+  expect((await passwordResetPromise).ok()).toBeTruthy();
   await page.waitForURL(/\/login/, { timeout: 5000 });
 
   await loginViaUi(page, email, newPassword);

@@ -30,6 +30,21 @@ export const isMongoMode = () => {
   return mode === 'mongo' || mode === 'mongodb';
 };
 
+export const assertProductionDatabaseConfiguration = () => {
+  if (process.env.NODE_ENV === 'production' && !isMongoMode()) {
+    throw new Error(
+      'Production requires MongoDB. Set DATABASE=mongo and provide a MongoDB connection string.'
+    );
+  }
+};
+
+export const verifyProductionDatabaseCapabilities = async () => {
+  if (process.env.NODE_ENV !== 'production') return;
+  assertProductionDatabaseConfiguration();
+  const { verifyMongoTransactions } = await loadMongoApi();
+  await verifyMongoTransactions();
+};
+
 let mongoApi;
 const loadMongoApi = async () => {
   if (!mongoApi) {
@@ -82,3 +97,9 @@ export const updateCollection = async (...args) => {
 
 export const getDbPath = () =>
   (isMongoMode() ? 'mongo' : getLocalDbPath());
+
+export const closeDb = async () => {
+  if (!isMongoMode()) return;
+  const { closeMongo } = await loadMongoApi();
+  await closeMongo();
+};

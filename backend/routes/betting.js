@@ -673,9 +673,10 @@ router.post('/place/:fightId', auth, async (req, res) => {
 });
 
 // POST /api/betting/place-bet (EnhancedBettingSystem)
-router.post('/place-bet', async (req, res) => {
+router.post('/place-bet', auth, async (req, res) => {
   try {
-    const { userId, fightId, prediction, amount } = req.body;
+    const { fightId, prediction, amount } = req.body;
+    const userId = req.user.id;
     const betAmount = Number(amount);
     const normalizedPrediction = normalizeOutcome(prediction);
 
@@ -912,9 +913,10 @@ router.post('/parlay', auth, async (req, res) => {
 });
 
 // POST /api/betting/place-parlay (EnhancedBettingSystem)
-router.post('/place-parlay', async (req, res) => {
+router.post('/place-parlay', auth, async (req, res) => {
   try {
-    const { userId, bets, totalAmount } = req.body;
+    const { bets, totalAmount } = req.body;
+    const userId = req.user.id;
     const betAmount = Number(totalAmount);
 
     if (!userId || !Array.isArray(bets) || bets.length < 2) {
@@ -1056,8 +1058,11 @@ router.get('/my-bets', auth, async (req, res) => {
 });
 
 // GET /api/betting/history/:userId
-router.get('/history/:userId', async (req, res) => {
+router.get('/history/:userId', auth, async (req, res) => {
   try {
+    if (req.params.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     const db = await readDb();
     const bets = (db.bets || []).filter((bet) => bet.userId === req.params.userId);
     res.json(
@@ -1075,8 +1080,11 @@ router.get('/history/:userId', async (req, res) => {
 });
 
 // GET /api/betting/active-bets/:userId
-router.get('/active-bets/:userId', async (req, res) => {
+router.get('/active-bets/:userId', auth, async (req, res) => {
   try {
+    if (req.params.userId !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
     const db = await readDb();
     const activeBets = (db.bets || []).filter(
       (bet) => bet.userId === req.params.userId && bet.status === 'pending'

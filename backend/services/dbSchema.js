@@ -34,6 +34,7 @@ export const DEFAULT_DB = {
   feedback: [],
   nicknameChangeLogs: [],
   moderatorActionLogs: [],
+  swoopRuns: [],
   emailVerificationTokens: [],
   authChallenges: []
 };

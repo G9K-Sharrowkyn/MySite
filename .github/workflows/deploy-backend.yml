@@ -15,6 +15,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install and test backend
+        working-directory: backend
+        run: |
+          npm ci
+          npm audit --omit=dev --audit-level=high
+          npm test -- --runInBand
+
       - name: Ensure restart trigger file exists
         run: |
           mkdir -p backend/tmp
@@ -104,6 +118,11 @@ jobs:
             --exclude=/node_modules/ \
             --exclude=/.env \
             --exclude=/.env.* \
+            --exclude=/uploads/ \
+            --exclude=/backups/ \
+            --exclude=/.tmp/ \
+            --exclude=/db.json \
+            --exclude=/ccg/data/users.json \
             --exclude=/npm-debug.log* \
             --exclude=/.DS_Store \
             --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r \
@@ -120,11 +139,16 @@ jobs:
           VPS_MONGO_URI: ${{ secrets.VPS_MONGO_URI }}
           VPS_MONGO_DB_NAME: ${{ secrets.VPS_MONGO_DB_NAME }}
           VPS_PRIMARY_ADMIN_EMAIL: ${{ secrets.VPS_PRIMARY_ADMIN_EMAIL }}
+          VPS_FRONTEND_URL: ${{ secrets.VPS_FRONTEND_URL }}
+          VPS_API_ORIGIN: ${{ secrets.VPS_API_ORIGIN }}
         run: |
           set -euo pipefail
-          effective_primary_admin_email="${VPS_PRIMARY_ADMIN_EMAIL:-ak4maaru@gmail.com}"
-          if [ -z "${VPS_MONGO_URI:-}" ] && [ -z "${effective_primary_admin_email:-}" ]; then
-            echo "No optional backend env provided (Mongo/Admin), skipping env config."
+          effective_primary_admin_email="${VPS_PRIMARY_ADMIN_EMAIL:-}"
+          if [ -z "${VPS_MONGO_URI:-}" ] && \
+             [ -z "${effective_primary_admin_email:-}" ] && \
+             [ -z "${VPS_FRONTEND_URL:-}" ] && \
+             [ -z "${VPS_API_ORIGIN:-}" ]; then
+            echo "No optional backend env provided, skipping env config."
             exit 0
           fi
 
@@ -132,6 +156,8 @@ jobs:
           mongo_uri_b64="$(printf '%s' "${VPS_MONGO_URI}" | base64 -w0)"
           mongo_db_b64="$(printf '%s' "${VPS_MONGO_DB_NAME:-}" | base64 -w0)"
           primary_admin_email_b64="$(printf '%s' "${effective_primary_admin_email}" | base64 -w0)"
+          frontend_url_b64="$(printf '%s' "${VPS_FRONTEND_URL:-}" | base64 -w0)"
+          api_origin_b64="$(printf '%s' "${VPS_API_ORIGIN:-}" | base64 -w0)"
           ssh \
             -i ~/.ssh/deploy_key \
             -p "${VPS_PORT}" \
@@ -141,7 +167,7 @@ jobs:
             -o ServerAliveCountMax=12 \
             -o TCPKeepAlive=yes \
             "${VPS_USER}@${VPS_HOST}" \
-            "ENVFILE='${remote_dir}/.env.production' MONGO_URI_B64='${mongo_uri_b64}' MONGO_DB_NAME_B64='${mongo_db_b64}' PRIMARY_ADMIN_EMAIL_B64='${primary_admin_email_b64}' bash -se" <<'SH'
+            "ENVFILE='${remote_dir}/.env.production' MONGO_URI_B64='${mongo_uri_b64}' MONGO_DB_NAME_B64='${mongo_db_b64}' PRIMARY_ADMIN_EMAIL_B64='${primary_admin_email_b64}' FRONTEND_URL_B64='${frontend_url_b64}' API_ORIGIN_B64='${api_origin_b64}' bash -se" <<'SH'
           set -euo pipefail
           umask 077
           touch "${ENVFILE}"
@@ -158,6 +184,8 @@ jobs:
           mongo_uri = base64.b64decode(os.environ.get("MONGO_URI_B64") or b"").decode("utf-8", "ignore").strip()
           mongo_db = base64.b64decode(os.environ.get("MONGO_DB_NAME_B64") or b"").decode("utf-8", "ignore").strip()
           primary_admin_email = base64.b64decode(os.environ.get("PRIMARY_ADMIN_EMAIL_B64") or b"").decode("utf-8", "ignore").strip().lower()
+          frontend_url = base64.b64decode(os.environ.get("FRONTEND_URL_B64") or b"").decode("utf-8", "ignore").strip()
+          api_origin = base64.b64decode(os.environ.get("API_ORIGIN_B64") or b"").decode("utf-8", "ignore").strip()
 
           raw = envfile.read_text("utf-8", errors="ignore") if envfile.exists() else ""
           lines = [line for line in raw.splitlines() if line.strip()]
@@ -184,6 +212,10 @@ jobs:
             lines = upsert(lines, "MONGO_DB_NAME", mongo_db)
           if primary_admin_email:
             lines = upsert(lines, "PRIMARY_ADMIN_EMAIL", primary_admin_email)
+          if frontend_url:
+            lines = upsert(lines, "FRONTEND_URL", frontend_url)
+          if api_origin:
+            lines = upsert(lines, "API_ORIGIN", api_origin)
 
           envfile.write_text("\n".join(lines).rstrip() + "\n", "utf-8")
           print("Updated", str(envfile))
@@ -191,10 +223,7 @@ jobs:
 
           if [ -n "${PRIMARY_ADMIN_EMAIL}" ]; then
             cd "$(dirname "${ENVFILE}")"
-            set -a
-            . "${ENVFILE}"
-            set +a
-            PRIMARY_ADMIN_EMAIL="${PRIMARY_ADMIN_EMAIL}" node ./scripts/ensurePrimaryAdminRole.js
+          PRIMARY_ADMIN_EMAIL="${PRIMARY_ADMIN_EMAIL}" node ./scripts/ensurePrimaryAdminRole.js
           fi
           SH
 
@@ -218,17 +247,18 @@ jobs:
             "${VPS_USER}@${VPS_HOST}" "bash -se" <<SH
           set -euo pipefail
           cd '${VPS_BACKEND_DIR%/}'
-          if [ -f ./.env.production ]; then
-            set -a
-            . ./.env.production
-            set +a
-          fi
+          npm ci --omit=dev
+          npm run preflight:production
           node ./scripts/importStaticCharactersToMongo.js
           node ./scripts/migrateCharacterImagesToMongo.js
           export LD_LIBRARY_PATH='${VPS_BACKEND_DIR%/}/node_modules/@img/sharp-libvips-linux-x64/lib'
           if command -v pm2 >/dev/null 2>&1; then
-            pm2 delete versusversevault-backend || true
-            pm2 start server.js --name versusversevault-backend --update-env
+            if pm2 describe versusversevault-backend >/dev/null 2>&1; then
+              pm2 restart versusversevault-backend --update-env
+            else
+              pm2 start server.js --name versusversevault-backend --update-env
+            fi
+            npm run verify:deployment
             pm2 save || true
           else
             echo "pm2 missing"

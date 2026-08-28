@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from './utils/placeholderImage';
 import { useLanguage } from './i18n/LanguageContext';
 import './Home.css';

@@ -1,13 +1,14 @@
 # Dockerfile (for frontend in project root)
-FROM node:18
+FROM node:24
 
 WORKDIR /usr/src/app
 
 COPY package*.json ./
-RUN npm install
+COPY SR/package*.json ./SR/
+RUN npm ci
 
 COPY . .
 
 EXPOSE 3000
 
-CMD ["npm", "start"] 
+CMD ["npm", "start"]

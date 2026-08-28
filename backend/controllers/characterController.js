@@ -5,8 +5,11 @@ import {
 } from '../repositories/index.js';
 import {
   buildCharacterMediaPath,
+  deleteCharacterMediaById,
   ingestCharacterMediaFromSource
 } from '../services/characterMedia.js';
+import { normalizeSafeImageSource } from '../utils/imageSecurity.js';
+import { removeManagedUpload } from '../utils/uploadFiles.js';
 
 const resolveCharacterImage = (character) =>
   String(
@@ -163,6 +166,11 @@ export const addCharacter = async (req, res) => {
     };
 
     created = await charactersRepo.insert(newCharacter);
+    if (String(image).startsWith('/uploads/characters/')) {
+      await removeManagedUpload(String(image)).catch((error) => {
+        console.warn('Could not remove imported character upload:', error.message);
+      });
+    }
 
     res.status(201).json(created);
   } catch (error) {
@@ -190,15 +198,16 @@ export const updateCharacter = async (req, res) => {
         : (resolvedName ? deriveBaseName(resolvedName) : '');
 
     const existing = await charactersRepo.findById(id);
+    const requestedImage =
+      typeof image === 'string' && image.trim() ? image.trim() : '';
+    const existingImage = String(existing?.image || '').trim();
     let nextImagePath =
-      typeof image === 'string' && image.trim()
-        ? image.trim()
-        : String(existing?.image || '').trim();
+      requestedImage || existingImage;
 
-    if (typeof image === 'string' && image.trim()) {
+    if (requestedImage && requestedImage !== existingImage) {
       const ingested = await ingestCharacterMediaFromSource({
         characterId: id,
-        image,
+        image: requestedImage,
         frontendOrigin: process.env.FRONTEND_URL,
         apiOrigin: process.env.API_ORIGIN || process.env.FRONTEND_URL
       }).catch((error) => ({
@@ -286,6 +295,15 @@ export const updateCharacter = async (req, res) => {
       error.code = 'CHARACTER_NOT_FOUND';
       throw error;
     }
+    if (
+      requestedImage &&
+      requestedImage !== existingImage &&
+      requestedImage.startsWith('/uploads/characters/')
+    ) {
+      await removeManagedUpload(requestedImage).catch((error) => {
+        console.warn('Could not remove imported character upload:', error.message);
+      });
+    }
 
     res.json(updated);
   } catch (error) {
@@ -303,13 +321,22 @@ export const updateCharacter = async (req, res) => {
 export const suggestCharacter = async (req, res) => {
   try {
     const { name, photo, universe, powerTier } = req.body;
+    const safeName = String(name || '').trim().slice(0, 120);
+    const safePhoto = normalizeSafeImageSource(photo);
+    const safeUniverse = String(universe || '').trim().slice(0, 80);
+    const safePowerTier = String(powerTier || '').trim().slice(0, 80);
+    if (!safeName || !safePhoto) {
+      return res.status(400).json({
+        msg: 'A valid character name and uploaded site image are required'
+      });
+    }
 
     await characterSuggestionsRepo.insert({
       id: uuidv4(),
-      name,
-      photo,
-      universe,
-      powerTier,
+      name: safeName,
+      photo: safePhoto,
+      universe: safeUniverse,
+      powerTier: safePowerTier,
       suggestedBy: req.user?.id || null,
       createdAt: new Date().toISOString()
     });
@@ -350,6 +377,9 @@ export const deleteCharacter = async (req, res) => {
     }
 
     await charactersRepo.removeById(String(id));
+    if (resolveCharacterImage(target).startsWith('/api/media/characters/')) {
+      await deleteCharacterMediaById(String(id));
+    }
 
     return res.json({ msg: `Character "${expectedName}" deleted successfully.` });
   } catch (error) {

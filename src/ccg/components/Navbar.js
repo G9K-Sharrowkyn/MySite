@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import { CCG_BASE_PATH } from '../utils/paths';
 
 const Navbar = ({ user }) => (

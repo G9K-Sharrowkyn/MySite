@@ -16,10 +16,9 @@ import cors from 'cors';
 import compression from 'compression';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import morgan from 'morgan';
 import hpp from 'hpp';
 import http from 'http';
-import axios from 'axios';
+import { randomInt } from 'crypto';
 import { readFile } from 'fs/promises';
 import { Server } from 'socket.io';
 import jwt from 'jsonwebtoken';
@@ -63,14 +62,31 @@ import translateRoutes from './routes/translate.js';
 import ccgRoutes from './routes/ccg.js';
 import friendsRoutes from './routes/friends.js';
 import blocksRoutes from './routes/blocks.js';
+import swoopRoutes from './routes/swoop.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
 import { notificationsRepo } from './repositories/index.js';
 import { usersRepo } from './repositories/index.js';
 import { readDb } from './repositories/index.js';
-import { readDb as warmupReadDb } from './services/jsonDb.js';
-import { getMongoConfig } from './services/mongoDb.js';
+import {
+  assertProductionDatabaseConfiguration,
+  closeDb,
+  readDb as warmupReadDb,
+  verifyProductionDatabaseCapabilities
+} from './services/jsonDb.js';
 import { getCharacterMediaById } from './services/characterMedia.js';
 import { initTronNamespace } from './realtime/tronArena.js';
+import { assertEmailConfiguration } from './services/emailService.js';
+import { getAuthCookieToken } from './utils/authCookie.js';
+import { assertProductionLegalConfiguration } from './config/legalConfig.js';
+import { assertProductionRuntimeConfiguration } from './config/runtimeConfig.js';
+import authMiddleware from './middleware/authMiddleware.js';
+import {
+  decodeSafeDataImage,
+  fetchTrustedImageBuffer,
+  MAX_IMAGE_INPUT_PIXELS,
+  normalizeSafeImageSource,
+  renderSafeImageDataUri
+} from './utils/imageSecurity.js';
 
 const chatStore = {
   getRecentMessages: getLocalRecentMessages,
@@ -80,6 +96,10 @@ const chatStore = {
 };
 const app = express();
 const PORT = process.env.PORT || 5000;
+assertEmailConfiguration();
+assertProductionDatabaseConfiguration();
+assertProductionLegalConfiguration();
+assertProductionRuntimeConfiguration();
 const shouldTrustProxy =
   process.env.TRUST_PROXY === 'true' || process.env.NODE_ENV === 'production';
 if (shouldTrustProxy) {
@@ -237,8 +257,11 @@ const normalizeCharacterNameForShare = (value) =>
 
 const resolveAssetUrl = (raw, options = {}) => {
   if (!raw) return '';
-  if (/^data:/i.test(raw)) return raw;
-  if (/^https?:\/\//i.test(raw)) return raw;
+  const allowedOrigins = [options.imageBaseUrl, options.apiBaseUrl, options.baseUrl]
+    .filter(Boolean);
+  if (/^(data:|https?:\/\/)/i.test(raw)) {
+    return normalizeSafeImageSource(raw, { allowedOrigins }) || '';
+  }
   const normalized = raw.startsWith('/') ? raw : `/${raw}`;
   const base =
     normalized.startsWith('/uploads/') ||
@@ -246,19 +269,11 @@ const resolveAssetUrl = (raw, options = {}) => {
     normalized.startsWith('/api/media/')
       ? normalizeBaseUrl(options.apiBaseUrl)
       : normalizeBaseUrl(options.imageBaseUrl || options.baseUrl);
-  if (!base) return normalized;
-  return buildAbsoluteUrl(base, normalized);
-};
-
-const guessImageType = (url, contentType) => {
-  if (contentType && contentType.startsWith('image/')) return contentType;
-  const lower = String(url || '').toLowerCase();
-  if (lower.endsWith('.png')) return 'image/png';
-  if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
-  if (lower.endsWith('.webp')) return 'image/webp';
-  if (lower.endsWith('.gif')) return 'image/gif';
-  if (lower.endsWith('.svg')) return 'image/svg+xml';
-  return 'image/png';
+  if (!base) {
+    return normalizeSafeImageSource(normalized, { allowedOrigins }) || '';
+  }
+  const resolved = buildAbsoluteUrl(base, normalized);
+  return normalizeSafeImageSource(resolved, { allowedOrigins }) || '';
 };
 
 const buildFallbackSvgDataUri = (label) => {
@@ -274,33 +289,22 @@ const buildFallbackSvgDataUri = (label) => {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 };
 
-const fetchImageDataUri = async (url) => {
-  if (!url) return null;
+const fetchImageDataUri = async (source, allowedOrigins = []) => {
+  if (!source) return null;
   try {
-    const response = await axios.get(url, {
-      responseType: 'arraybuffer',
-      timeout: 5000,
-      validateStatus: (status) => status >= 200 && status < 300
-    });
-    const contentType = response.headers?.['content-type'] || '';
-    const buffer = Buffer.from(response.data);
-    if (!buffer.length) return null;
-    const mime = guessImageType(url, contentType);
+    const normalized = normalizeSafeImageSource(source, { allowedOrigins });
+    if (!normalized) return null;
 
-    // Social preview image is rendered by converting an SVG to PNG via sharp. Some SVG rasterizers
-    // are unreliable with embedded WebP/AVIF. Only normalize those formats to PNG to keep rendering fast.
-    if (mime === 'image/webp' || mime === 'image/avif') {
-      try {
-        const png = await sharp(buffer).png().toBuffer();
-        if (png?.length) {
-          return `data:image/png;base64,${png.toString('base64')}`;
-        }
-      } catch (_error) {
-        // Fall back to original bytes below.
-      }
+    const embedded = decodeSafeDataImage(normalized);
+    if (embedded) {
+      return await renderSafeImageDataUri(embedded.buffer);
     }
 
-    return `data:${mime};base64,${buffer.toString('base64')}`;
+    const fetched = await fetchTrustedImageBuffer(normalized, {
+      allowedOrigins,
+      allowPrivateNetwork: process.env.NODE_ENV !== 'production'
+    });
+    return fetched ? await renderSafeImageDataUri(fetched.buffer) : null;
   } catch (_error) {
     return null;
   }
@@ -380,16 +384,21 @@ const buildShareImageSvg = async (post, db, options = {}) => {
   }
 
   const fallbackImageUrl = resolveAssetUrl('/logo512.png', { imageBaseUrl, apiBaseUrl });
+  const trustedImageOrigins = [imageBaseUrl, apiBaseUrl].filter(Boolean);
   const leftData =
-    (await fetchImageDataUri(leftImageUrl)) ||
-    (leftFullImageUrl ? await fetchImageDataUri(leftFullImageUrl) : null) ||
-    (await fetchImageDataUri(fallbackImageUrl)) ||
+    (await fetchImageDataUri(leftImageUrl, trustedImageOrigins)) ||
+    (leftFullImageUrl
+      ? await fetchImageDataUri(leftFullImageUrl, trustedImageOrigins)
+      : null) ||
+    (await fetchImageDataUri(fallbackImageUrl, trustedImageOrigins)) ||
     buildFallbackSvgDataUri(leftName);
   const rightData =
     isFight
-      ? (await fetchImageDataUri(rightImageUrl)) ||
-        (rightFullImageUrl ? await fetchImageDataUri(rightFullImageUrl) : null) ||
-        (await fetchImageDataUri(fallbackImageUrl)) ||
+      ? (await fetchImageDataUri(rightImageUrl, trustedImageOrigins)) ||
+        (rightFullImageUrl
+          ? await fetchImageDataUri(rightFullImageUrl, trustedImageOrigins)
+          : null) ||
+        (await fetchImageDataUri(fallbackImageUrl, trustedImageOrigins)) ||
         buildFallbackSvgDataUri(rightName)
       : leftData;
 
@@ -681,19 +690,21 @@ const resolvePostImage = async (post, db, baseUrlOrOptions) => {
   const fallback = '/logo512.png';
   const raw = photoUrl || normalizeCharacterAssetPath(characterImage) || fallback;
   if (!raw) return '';
-  if (/^data:/i.test(raw)) return raw;
-  if (/^https?:\/\//i.test(raw)) return encodeURI(raw);
+  const allowedOrigins = [imageBaseUrl, apiBaseUrl].filter(Boolean);
+  if (/^(data:|https?:\/\/)/i.test(raw)) {
+    return normalizeSafeImageSource(raw, { allowedOrigins }) || '';
+  }
 
   const normalizedRaw = raw.startsWith('/') ? raw : `/${raw}`;
   const prefersApi =
     normalizedRaw.startsWith('/uploads/') || normalizedRaw.startsWith('/api/uploads/');
   const baseForRelative = prefersApi ? apiBaseUrl : imageBaseUrl;
   const resolved = buildAbsoluteUrl(baseForRelative || apiBaseUrl, normalizedRaw);
-  return encodeURI(resolved);
+  return normalizeSafeImageSource(resolved, { allowedOrigins }) || '';
 };
 
 const buildShareMetaTags = async (req, post, db, options = {}) => {
-  const apiBaseUrl = normalizeBaseUrl(options.apiBaseUrl || `${req.protocol}://${req.get('host')}`);
+  const apiBaseUrl = normalizeBaseUrl(options.apiBaseUrl || resolveApiOrigin(req));
   const frontendOrigin = normalizeBaseUrl(
     options.frontendOrigin || resolveFrontendOrigin(req)
   );
@@ -754,7 +765,9 @@ const buildShareMetaTags = async (req, post, db, options = {}) => {
 };
 
 const resolveFrontendOrigin = (req) => {
-  const explicit = String(process.env.FRONTEND_ORIGIN || '').trim();
+  const explicit = String(
+    process.env.FRONTEND_URL || process.env.FRONTEND_ORIGIN || ''
+  ).trim();
   if (explicit) return explicit.replace(/\/$/, '');
   const host = req.get('host');
   if (!host) {
@@ -766,6 +779,12 @@ const resolveFrontendOrigin = (req) => {
   return `${req.protocol}://${host}`;
 };
 
+const resolveApiOrigin = (req) => {
+  const explicit = String(process.env.API_ORIGIN || '').trim();
+  if (explicit) return explicit.replace(/\/$/, '');
+  return `${req.protocol}://${req.get('host')}`;
+};
+
 const buildShareHtml = (meta, redirectUrl, canonicalUrl) => `
   <!doctype html>
   <html lang="en">
@@ -773,13 +792,11 @@ const buildShareHtml = (meta, redirectUrl, canonicalUrl) => `
       <meta charset="utf-8" />
       ${meta || ''}
       <link rel="canonical" href="${escapeHtml(canonicalUrl || redirectUrl)}" />
+      <meta http-equiv="refresh" content="0;url=${escapeHtml(redirectUrl)}" />
     </head>
     <body>
       <p>Redirecting to post...</p>
       <p><a href="${escapeHtml(redirectUrl)}">Open post</a></p>
-      <script>
-        window.location.replace(${JSON.stringify(redirectUrl)});
-      </script>
     </body>
   </html>
 `;
@@ -797,8 +814,7 @@ const normalizeOrigin = (value) => {
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   process.env.RENDER_EXTERNAL_URL,
-  'http://localhost:3000',
-  'http://127.0.0.1:3000'
+  ...(isDev ? ['http://localhost:3000', 'http://127.0.0.1:3000'] : [])
 ]
   .filter(Boolean)
   .map(normalizeOrigin);
@@ -831,7 +847,7 @@ const logAuthDebug = (req, res, label, extra = {}) => {
 
 // Configure Socket.io
 const io = new Server(server, {
-  maxHttpBufferSize: 5e6,
+  maxHttpBufferSize: 256 * 1024,
   cors: {
     origin: (origin, callback) => {
       if (isDev || isOriginAllowed(origin)) {
@@ -848,6 +864,64 @@ const io = new Server(server, {
 const activeUsers = new Map(); // Track active users in global chat
 const userSocketMap = new Map(); // Map userId to socketId for private messages
 
+const authenticateSocket = async (socket, next) => {
+  const authToken = socket.handshake?.auth?.token;
+  const authHeader =
+    socket.handshake?.headers?.authorization ||
+    socket.handshake?.headers?.Authorization;
+  const bearerToken =
+    typeof authHeader === 'string' && authHeader.startsWith('Bearer ')
+      ? authHeader.slice(7).trim()
+      : null;
+  const token =
+    getAuthCookieToken(socket.handshake?.headers?.cookie) ||
+    authToken ||
+    bearerToken;
+
+  if (!token || typeof token !== 'string') {
+    return next(new Error('Authentication required'));
+  }
+
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const tokenUser = payload?.user || payload;
+    const userId = tokenUser?.id || tokenUser?._id || payload?.userId;
+    if (!userId) {
+      return next(new Error('Invalid authentication token'));
+    }
+
+    const db = await readDb();
+    const storedUser = (db.users || []).find(
+      (entry) => (entry?.id || entry?._id) === userId
+    );
+    if (!storedUser) {
+      return next(new Error('User account was not found'));
+    }
+    if (
+      Number(tokenUser?.tokenVersion || 0) !==
+      Number(storedUser.tokenVersion || 0)
+    ) {
+      return next(new Error('Session is no longer valid'));
+    }
+
+    socket.user = {
+      id: userId,
+      username: storedUser.username,
+      role: storedUser.role || 'user',
+      profilePicture:
+        storedUser.profile?.profilePicture ||
+        storedUser.profile?.avatar ||
+        storedUser.profilePicture ||
+        ''
+    };
+    return next();
+  } catch (_error) {
+    return next(new Error('Invalid authentication token'));
+  }
+};
+
+io.use(authenticateSocket);
+
 io.engine.on('connection_error', (err) => {
   console.error('Engine.IO connection error:', err.code, err.message);
   if (err.context) {
@@ -857,32 +931,83 @@ io.engine.on('connection_error', (err) => {
 
 // CCG namespace socket handling
 const ccgNamespace = io.of('/ccg');
+ccgNamespace.use(authenticateSocket);
 const ccgRoomPlayers = {};
 const ccgCardsPath = path.join(__dirname, 'ccg', 'data', 'cards.json');
+const secureShuffle = (items) => {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomInt(index + 1);
+    [shuffled[index], shuffled[swapIndex]] = [
+      shuffled[swapIndex],
+      shuffled[index]
+    ];
+  }
+  return shuffled;
+};
 
 ccgNamespace.on('connection', (socket) => {
-  socket.on('joinRoom', ({ roomId, user }) => {
-    socket.join(roomId);
-    if (!ccgRoomPlayers[roomId]) {
-      ccgRoomPlayers[roomId] = {};
+  socket.on('joinRoom', ({ roomId } = {}) => {
+    const normalizedRoomId =
+      typeof roomId === 'string' ? roomId.trim() : '';
+    if (!/^[a-z0-9_-]{1,100}$/i.test(normalizedRoomId)) {
+      return;
     }
-    ccgRoomPlayers[roomId][socket.id] = { id: user.id, username: user.username };
-    const players = Object.values(ccgRoomPlayers[roomId]);
-    ccgNamespace.to(roomId).emit('playersUpdate', players);
+    const joinedCcgRooms = [...socket.rooms].filter(
+      (joinedRoomId) => joinedRoomId !== socket.id
+    );
+    if (!joinedCcgRooms.includes(normalizedRoomId) && joinedCcgRooms.length >= 3) {
+      socket.emit('gameError', { message: 'Too many joined rooms.' });
+      return;
+    }
+    if (!ccgRoomPlayers[normalizedRoomId]) {
+      ccgRoomPlayers[normalizedRoomId] = {};
+    }
+    const existingPlayers = Object.values(ccgRoomPlayers[normalizedRoomId]);
+    if (ccgRoomPlayers[normalizedRoomId][socket.id]) {
+      socket.emit('playersUpdate', existingPlayers);
+      return;
+    }
+    const alreadyJoined = existingPlayers.some(
+      (player) => player.id === socket.user.id
+    );
+    if (alreadyJoined) {
+      socket.emit('gameError', {
+        message: 'This account already joined the room.'
+      });
+      return;
+    }
+    if (!alreadyJoined && existingPlayers.length >= 2) {
+      socket.emit('gameError', { message: 'Room is full.' });
+      return;
+    }
+    socket.join(normalizedRoomId);
+    ccgRoomPlayers[normalizedRoomId][socket.id] = {
+      id: socket.user.id,
+      username: socket.user.username
+    };
+    const players = Object.values(ccgRoomPlayers[normalizedRoomId]);
+    ccgNamespace.to(normalizedRoomId).emit('playersUpdate', players);
   });
 
-  socket.on('startGame', async ({ roomId }) => {
+  socket.on('startGame', async ({ roomId } = {}) => {
+    if (!ccgRoomPlayers[roomId]?.[socket.id]) return;
+    if (Object.keys(ccgRoomPlayers[roomId]).length !== 2) {
+      socket.emit('gameError', { message: 'Two players are required.' });
+      return;
+    }
     try {
       const raw = await readFile(ccgCardsPath, 'utf-8');
       const fullDeck = JSON.parse(raw);
-      const shuffled = fullDeck.sort(() => 0.5 - Math.random()).slice(0, 40);
+      const shuffled = secureShuffle(fullDeck).slice(0, 40);
       ccgNamespace.to(roomId).emit('gameStart', { deck: shuffled });
     } catch (err) {
       console.error('Error loading CCG cards.json:', err);
     }
   });
 
-  socket.on('playMove', ({ roomId, move }) => {
+  socket.on('playMove', ({ roomId, move } = {}) => {
+    if (!ccgRoomPlayers[roomId]?.[socket.id]) return;
     socket.to(roomId).emit('opponentMove', move);
   });
 
@@ -890,10 +1015,12 @@ ccgNamespace.on('connection', (socket) => {
     for (const roomId of socket.rooms) {
       if (ccgRoomPlayers[roomId]) {
         delete ccgRoomPlayers[roomId][socket.id];
+        const players = Object.values(ccgRoomPlayers[roomId]);
         ccgNamespace.to(roomId).emit(
           'playersUpdate',
-          Object.values(ccgRoomPlayers[roomId])
+          players
         );
+        if (players.length === 0) delete ccgRoomPlayers[roomId];
       }
     }
   });
@@ -901,7 +1028,38 @@ ccgNamespace.on('connection', (socket) => {
 
 // Security Middleware
 app.use(helmet({
-  contentSecurityPolicy: false, // Disable for development, enable in production
+  contentSecurityPolicy: isDev
+    ? false
+    : {
+        directives: {
+          defaultSrc: ["'self'"],
+          baseUri: ["'self'"],
+          objectSrc: ["'none'"],
+          frameAncestors: ["'self'"],
+          formAction: ["'self'"],
+          scriptSrc: [
+            "'self'",
+            'https://accounts.google.com',
+            'https://apis.google.com'
+          ],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://fonts.googleapis.com'
+          ],
+          fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
+          imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+          mediaSrc: ["'self'", 'blob:', 'https:'],
+          connectSrc: [
+            "'self'",
+            ...allowedOrigins,
+            'https://accounts.google.com',
+            'https://oauth2.googleapis.com'
+          ],
+          frameSrc: ["'self'", 'https://accounts.google.com'],
+          workerSrc: ["'self'", 'blob:']
+        }
+      },
   crossOriginEmbedderPolicy: false,
   crossOriginResourcePolicy: isDev ? false : { policy: 'cross-origin' },
   crossOriginOpenerPolicy: isDev ? false : undefined
@@ -910,19 +1068,22 @@ app.use(helmet({
 // Rate limiting
 const apiLimitMax =
   Number(process.env.API_RATE_LIMIT_MAX) ||
-  (isDev ? 2000 : 5000);
+  (isDev ? 2000 : 300);
 const loginAuthLimitMax =
   Number(process.env.LOGIN_RATE_LIMIT_MAX) ||
-  (isDev ? 120 : 30);
+  (isDev ? 120 : 15);
 const registerAuthLimitMax =
   Number(process.env.REGISTER_RATE_LIMIT_MAX) ||
-  (isDev ? 120 : 60);
+  (isDev ? 120 : 20);
 const passwordAuthLimitMax =
   Number(process.env.AUTH_RATE_LIMIT_MAX) ||
-  (isDev ? 120 : 30);
+  (isDev ? 120 : 5);
 const googleAuthLimitMax =
   Number(process.env.GOOGLE_AUTH_RATE_LIMIT_MAX) ||
-  (isDev ? 600 : 400);
+  (isDev ? 600 : 30);
+const shareRenderLimitMax =
+  Number(process.env.SHARE_RENDER_RATE_LIMIT_MAX) ||
+  (isDev ? 300 : 30);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -997,12 +1158,24 @@ const passwordAuthLimiter = rateLimit({
   skipSuccessfulRequests: true
 });
 
+const shareRenderLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: shareRenderLimitMax,
+  message: 'Too many share preview requests. Please try again later.',
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
 app.use('/api/', limiter);
 app.use('/api/auth/login', loginAuthLimiter);
 app.use('/api/auth/register', registerAuthLimiter);
 app.use('/api/auth/google', googleAuthLimiter);
 app.use('/api/auth/forgot-password', passwordAuthLimiter);
 app.use('/api/auth/reset-password', passwordAuthLimiter);
+app.use('/api/auth/resend-verification', passwordAuthLimiter);
+app.use('/api/auth/verify-email', passwordAuthLimiter);
+app.use('/api/auth/verify-2fa', passwordAuthLimiter);
+app.use(['/share/post', '/api/share/post'], shareRenderLimiter);
 
 // Prevent HTTP Parameter Pollution
 app.use(hpp());
@@ -1027,8 +1200,8 @@ app.use(cors({
 }));
 
 // Body parser
-app.use(express.json({ limit: '50mb' })); // Increase JSON payload limit
-app.use(express.urlencoded({ limit: '50mb', extended: true })); // Increase URL-encoded payload limit
+app.use(express.json({ limit: '12mb' }));
+app.use(express.urlencoded({ limit: '2mb', extended: true }));
 
 app.use((req, res, next) => {
   if (!authDebugLogsEnabled) return next();
@@ -1131,12 +1304,14 @@ app.use('/api/feedback', feedbackRoutes);
 app.use('/api/moderation', moderationRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
+app.use('/api/swoop', swoopRoutes);
 
 // Share preview endpoint for social cards
 const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-8';
 const SHARE_IMAGE_CACHE_MAX = 25;
 const SHARE_IMAGE_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
 const shareImageCache = new Map(); // key -> { buffer: Buffer, ts: number }
+const shareImageInflight = new Map();
 
 const getShareImageCache = (key) => {
   const entry = shareImageCache.get(key);
@@ -1159,6 +1334,24 @@ const setShareImageCache = (key, buffer) => {
     shareImageCache.delete(oldestKey);
   }
 };
+
+const renderShareImageOnce = async (key, renderer) => {
+  const existing = shareImageInflight.get(key);
+  if (existing) return existing;
+  const promise = Promise.resolve()
+    .then(renderer)
+    .finally(() => shareImageInflight.delete(key));
+  shareImageInflight.set(key, promise);
+  return promise;
+};
+
+const requireShareSnapshotStaff = (req, res, next) => {
+  if (req.user?.role !== 'admin' && req.user?.role !== 'moderator') {
+    return res.status(403).json({ msg: 'Staff access required' });
+  }
+  return next();
+};
+
 app.get([
   '/share/post/:id/image',
   '/share/post/:id/image.png',
@@ -1173,8 +1366,11 @@ app.get([
     const post =
       (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
       null;
+    if (!post) {
+      return res.status(404).send('Post not found.');
+    }
     const wantsJpeg = /\.jpg(\?|$)/i.test(String(req.originalUrl || req.url || ''));
-    const cacheToken = String(req.query.v || req.query.t || post?.updatedAt || post?.createdAt || '').trim();
+    const cacheToken = String(post.updatedAt || post.createdAt || '').slice(0, 100);
     const cacheKey = `${postId}:${cacheToken}:${wantsJpeg ? 'jpg' : 'png'}:${SHARE_IMAGE_RENDER_VERSION}`;
     const cached = getShareImageCache(cacheKey);
     if (cached) {
@@ -1184,20 +1380,24 @@ app.get([
       return res.send(cached);
     }
     const frontendOrigin = resolveFrontendOrigin(req);
-    const apiOrigin = `${req.protocol}://${req.get('host')}`;
-    const svg = await buildShareImageSvg(
-      post || { id: postId, title: 'Post', content: '' },
-      db,
-      {
+    const apiOrigin = resolveApiOrigin(req);
+    const buffer = await renderShareImageOnce(cacheKey, async () => {
+      const svg = await buildShareImageSvg(post, db, {
         imageBaseUrl: frontendOrigin,
         apiBaseUrl: apiOrigin,
         frontendOrigin
-      }
-    );
-    const rendered = sharp(Buffer.from(svg));
-    const buffer = wantsJpeg
-      ? await rendered.flatten({ background: '#0b0f16' }).jpeg({ quality: 86, mozjpeg: true }).toBuffer()
-      : await rendered.png().toBuffer();
+      });
+      const rendered = sharp(Buffer.from(svg), {
+        failOn: 'error',
+        limitInputPixels: MAX_IMAGE_INPUT_PIXELS
+      });
+      return wantsJpeg
+        ? rendered
+            .flatten({ background: '#0b0f16' })
+            .jpeg({ quality: 86, mozjpeg: true })
+            .toBuffer()
+        : rendered.png().toBuffer();
+    });
     setShareImageCache(cacheKey, buffer);
     res.setHeader('Content-Type', wantsJpeg ? 'image/jpeg' : 'image/png');
     res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
@@ -1210,15 +1410,22 @@ app.get([
 });
 
 // Downloadable snapshot for moderators/admins (feed-like proportions, not 16:9).
-app.get(['/share/post/:id/snapshot.jpg', '/api/share/post/:id/snapshot.jpg'], async (req, res) => {
+app.get(
+  ['/share/post/:id/snapshot.jpg', '/api/share/post/:id/snapshot.jpg'],
+  authMiddleware,
+  requireShareSnapshotStaff,
+  async (req, res) => {
   try {
     const db = await readDb();
     const postId = req.params.id;
     const post =
       (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
       null;
+    if (!post) {
+      return res.status(404).send('Post not found.');
+    }
 
-    const cacheToken = String(req.query.v || req.query.t || post?.updatedAt || post?.createdAt || '').trim();
+    const cacheToken = String(post.updatedAt || post.createdAt || '').slice(0, 100);
     const cacheKey = `${postId}:${cacheToken}:snapshot:jpg:${SHARE_IMAGE_RENDER_VERSION}`;
     const cached = getShareImageCache(cacheKey);
     if (cached) {
@@ -1232,24 +1439,24 @@ app.get(['/share/post/:id/snapshot.jpg', '/api/share/post/:id/snapshot.jpg'], as
     }
 
     const frontendOrigin = resolveFrontendOrigin(req);
-    const apiOrigin = `${req.protocol}://${req.get('host')}`;
-    const svg = await buildShareImageSvg(
-      post || { id: postId, title: 'Post', content: '' },
-      db,
-      {
+    const apiOrigin = resolveApiOrigin(req);
+    const buffer = await renderShareImageOnce(cacheKey, async () => {
+      const svg = await buildShareImageSvg(post, db, {
         variant: 'snapshot',
         width: 1200,
         height: 1200,
         imageBaseUrl: frontendOrigin,
         apiBaseUrl: apiOrigin,
         frontendOrigin
-      }
-    );
-
-    const buffer = await sharp(Buffer.from(svg))
-      .flatten({ background: '#0b0f16' })
-      .jpeg({ quality: 86, mozjpeg: true })
-      .toBuffer();
+      });
+      return sharp(Buffer.from(svg), {
+        failOn: 'error',
+        limitInputPixels: MAX_IMAGE_INPUT_PIXELS
+      })
+        .flatten({ background: '#0b0f16' })
+        .jpeg({ quality: 86, mozjpeg: true })
+        .toBuffer();
+    });
 
     setShareImageCache(cacheKey, buffer);
     res.setHeader('Content-Type', 'image/jpeg');
@@ -1272,9 +1479,12 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
     const post =
       (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
       null;
+    if (!post) {
+      return res.status(404).send('Post not found.');
+    }
     const frontendOrigin = resolveFrontendOrigin(req);
-    const apiOrigin = `${req.protocol}://${req.get('host')}`;
-    const versionParam = String(req.query.v || req.query.t || '').trim();
+    const apiOrigin = resolveApiOrigin(req);
+    const versionParam = String(req.query.v || req.query.t || '').trim().slice(0, 100);
     const cacheTokenBase =
       versionParam || post?.updatedAt || post?.createdAt || String(Date.now());
     // Include render version so social platforms treat card meta as changed after deployments.
@@ -1284,7 +1494,7 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
     const imageUrl = `${apiOrigin}/share/post/${postId}/image.jpg?v=${encodeURIComponent(cacheToken)}&rv=${encodeURIComponent(SHARE_IMAGE_RENDER_VERSION)}`;
     const meta = await buildShareMetaTags(
       req,
-      post || { id: postId, title: 'Post', content: '' },
+      post,
       db,
       {
         url: postUrl,
@@ -1310,51 +1520,24 @@ app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
 
 // Lightweight health endpoints for uptime checks
 app.get(['/healthz', '/api/health'], (req, res) => {
-  const mongoUriPresent = Boolean(
-    process.env.MONGO_URI ||
-      process.env.MONGODB_URI ||
-      process.env.MONGO_URL ||
-      process.env.DATABASE_URL
-  );
-  const explicitDatabaseMode = String(process.env.DATABASE || process.env.Database || '').trim();
-  const databaseModeRaw = explicitDatabaseMode || (mongoUriPresent ? 'mongo' : 'local');
-  const databaseMode = databaseModeRaw.toLowerCase();
-  const databaseLabel =
-    databaseMode === 'mongo' || databaseMode === 'mongodb' ? 'mongo' : 'local';
-
-  const mongoConfig = mongoUriPresent ? getMongoConfig() : null;
-  const googleAuthConfigured = Boolean(
-    String(
-      process.env.GOOGLE_CLIENT_ID ||
-        process.env.GOOGLE_CLIENT_IDS ||
-        process.env.REACT_APP_GOOGLE_CLIENT_ID ||
-        ''
-    ).trim()
-  );
-
   res.status(200).json({
     ok: true,
     service: 'versusversevault-backend',
-    env: process.env.NODE_ENV || 'development',
-    database: databaseLabel,
-    mongoUriPresent,
-    mongoDbName: mongoConfig?.dbName || null,
-    mongoDbNameSource: mongoConfig?.dbNameSource || null,
-    mongoHost: mongoConfig?.host || null,
-    googleAuthConfigured,
     uptimeSec: Math.round(process.uptime()),
     timestamp: new Date().toISOString()
   });
-});
+  }
+);
 
 // Division seasons scheduler (auto + manual trigger support)
 const DIVISION_SCHEDULER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
+let divisionSchedulerTimer = null;
 const startDivisionScheduler = () => {
   runDivisionSeasonScheduler().catch((error) => {
     console.error('Initial division scheduler error:', error);
   });
 
-  setInterval(() => {
+  divisionSchedulerTimer = setInterval(() => {
     runDivisionSeasonScheduler().catch((error) => {
       console.error('Recurring division scheduler error:', error);
     });
@@ -1406,7 +1589,7 @@ if (process.env.NODE_ENV === 'production') {
 
       const html = await getIndexHtml();
       const frontendOrigin = resolveFrontendOrigin(req);
-      const apiOrigin = `${req.protocol}://${req.get('host')}`;
+      const apiOrigin = resolveApiOrigin(req);
       const meta = post
         ? await buildShareMetaTags(req, post, db, {
             url: `${frontendOrigin}/post/${postId}`,
@@ -1447,39 +1630,59 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+app.use((error, _req, res, _next) => {
+  const status =
+    error?.type === 'entity.too.large' || error?.code === 'LIMIT_FILE_SIZE'
+      ? 413
+      : error instanceof SyntaxError && error?.status === 400
+        ? 400
+        : Number(error?.status || error?.statusCode || 500);
+  if (status >= 500) {
+    console.error('Unhandled request error:', error);
+  }
+  if (res.headersSent) return;
+  res.status(status).json({
+    message:
+      status === 413
+        ? 'Request payload is too large'
+        : status === 400
+          ? 'Invalid request'
+          : status < 500 && typeof error?.message === 'string'
+            ? error.message
+            : 'Server error'
+  });
+});
+
 // Socket.io chat functionality
 io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
-
-  const resolveSocketAuthUser = () => {
-    const token = socket.handshake?.auth?.token;
-    if (!token || typeof token !== 'string') return null;
-    try {
-      const payload = jwt.verify(token, process.env.JWT_SECRET);
-      const userId = payload?.user?.id || payload?.userId || payload?.id;
-      if (!userId) return null;
-      return { id: userId, role: payload?.user?.role || payload?.role || 'user' };
-    } catch (_error) {
-      return null;
+  const authUser = socket.user;
+  socket.join(`user:${authUser.id}`);
+  userSocketMap.set(authUser.id, socket.id);
+  const socketRateBuckets = new Map();
+  const consumeSocketAllowance = (key, limit, windowMs) => {
+    const now = Date.now();
+    const recent = (socketRateBuckets.get(key) || []).filter(
+      (timestamp) => now - timestamp < windowMs
+    );
+    if (recent.length >= limit) {
+      socketRateBuckets.set(key, recent);
+      return false;
     }
+    recent.push(now);
+    socketRateBuckets.set(key, recent);
+    return true;
   };
-  const authUser = resolveSocketAuthUser();
 
   socket.conn.on('upgradeError', (err) => {
     console.error('Socket upgrade error:', err?.message || err);
   });
 
   // User joins the global chat
-  socket.on('join-chat', async (userData) => {
-    if (!userData || !userData.userId) {
-      console.error('Invalid user data for join-chat');
-      return;
-    }
-
-    // Prefer server-trusted identity/profile data when available.
-    const trustedUserId = authUser?.id || userData.userId;
-    let trustedUsername = userData.username;
-    let trustedProfilePicture = userData.profilePicture;
+  socket.on('join-chat', async () => {
+    const trustedUserId = authUser.id;
+    let trustedUsername = authUser.username;
+    let trustedProfilePicture = authUser.profilePicture;
     try {
       // NOTE: repositories default to local JSON snapshots unless a db context is provided.
       // On production we run on MongoDB, so read the active DB first.
@@ -1562,22 +1765,25 @@ io.on('connection', (socket) => {
 
   // User joins a private conversation
   socket.on('join-conversation', (data) => {
-    console.log('Received join-conversation event:', data);
-    if (!data || !data.userId) {
-      console.error('Invalid data for join-conversation:', data);
+    if (data?.userId && data.userId !== authUser.id) {
+      console.warn(`Rejected socket identity mismatch for ${socket.id}`);
       return;
     }
-    
-    // Map userId to socketId
-    userSocketMap.set(data.userId, socket.id);
-    console.log(`User ${data.userId} joined with socket ${socket.id}`);
-    console.log('Current userSocketMap:', Array.from(userSocketMap.entries()));
+    userSocketMap.set(authUser.id, socket.id);
   });
 
   // Handle sending messages
   socket.on('send-message', async (messageData) => {
-    if (!messageData || !messageData.text || !activeUsers.has(socket.id)) {
-      console.error('Invalid message data');
+    const text =
+      typeof messageData?.text === 'string' ? messageData.text.trim() : '';
+    if (!text || text.length > 2000 || !activeUsers.has(socket.id)) {
+      socket.emit('chat-error', { message: 'Invalid chat message.' });
+      return;
+    }
+    if (!consumeSocketAllowance('chat-message', 20, 60 * 1000)) {
+      socket.emit('chat-error', {
+        message: 'You are sending messages too quickly.'
+      });
       return;
     }
 
@@ -1588,7 +1794,7 @@ io.on('connection', (socket) => {
         userId: user.userId,
         username: user.username,
         profilePicture: user.profilePicture,
-        text: messageData.text
+        text
       });
 
       // Trim messages older than 24 hours
@@ -1612,7 +1818,19 @@ io.on('connection', (socket) => {
 
   // Handle reactions
   socket.on('add-reaction', async (data) => {
-    if (!data || !data.messageId || !data.emoji || !activeUsers.has(socket.id)) {
+    const messageId =
+      typeof data?.messageId === 'string' ? data.messageId.trim() : '';
+    const emoji = typeof data?.emoji === 'string' ? data.emoji.trim() : '';
+    if (
+      !messageId ||
+      messageId.length > 100 ||
+      !emoji ||
+      emoji.length > 16 ||
+      !activeUsers.has(socket.id)
+    ) {
+      return;
+    }
+    if (!consumeSocketAllowance('chat-reaction', 60, 60 * 1000)) {
       return;
     }
 
@@ -1620,10 +1838,10 @@ io.on('connection', (socket) => {
 
     try {
       const reactionUpdate = await chatStore.addReaction({
-        messageId: data.messageId,
+        messageId,
         userId: user.userId,
         username: user.username,
-        emoji: data.emoji
+        emoji
       });
 
       if (reactionUpdate) {
@@ -1643,12 +1861,13 @@ io.on('connection', (socket) => {
   // User typing indicator
   socket.on('typing', (isTyping) => {
     if (!activeUsers.has(socket.id)) return;
+    if (!consumeSocketAllowance('typing', 30, 10 * 1000)) return;
     
     const user = activeUsers.get(socket.id);
     socket.broadcast.emit('user-typing', {
       userId: user.userId,
       username: user.username,
-      isTyping
+      isTyping: Boolean(isTyping)
     });
   });
 
@@ -1692,6 +1911,15 @@ io.on('connection', (socket) => {
   }
 })();
 
+// Refuse traffic until production storage is reachable and transaction-safe.
+let startupDatabaseWarmupMs = null;
+if (process.env.NODE_ENV === 'production') {
+  const warmupStartedAt = Date.now();
+  await warmupReadDb();
+  await verifyProductionDatabaseCapabilities();
+  startupDatabaseWarmupMs = Date.now() - warmupStartedAt;
+}
+
 // Start the server
 server.listen(PORT, () => {
   const mongoUriPresent = Boolean(
@@ -1709,8 +1937,12 @@ server.listen(PORT, () => {
   console.log(`Database mode: ${databaseLabel}`);
   console.log(`Server is running on port ${PORT}`);
 
-  // Prime Mongo cache once on startup to reduce first-request latency in production.
-  if (databaseLabel === 'mongo') {
+  if (startupDatabaseWarmupMs !== null) {
+    console.log(
+      `Mongo startup verification completed in ${startupDatabaseWarmupMs}ms`
+    );
+  } else if (databaseLabel === 'mongo') {
+    // Development convenience; production has already passed the mandatory check.
     const warmupStartedAt = Date.now();
     warmupReadDb()
       .then(() => {
@@ -1721,5 +1953,41 @@ server.listen(PORT, () => {
       });
   }
 });
+
+let shuttingDown = false;
+const gracefulShutdown = async (signal) => {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`Received ${signal}; shutting down gracefully.`);
+  if (divisionSchedulerTimer) {
+    clearInterval(divisionSchedulerTimer);
+    divisionSchedulerTimer = null;
+  }
+
+  const forceExitTimer = setTimeout(() => {
+    console.error('Graceful shutdown timed out.');
+    process.exit(1);
+  }, 15000);
+  forceExitTimer.unref();
+
+  try {
+    await new Promise((resolve) => io.close(resolve));
+    if (server.listening) {
+      await new Promise((resolve, reject) => {
+        server.close((error) => (error ? reject(error) : resolve()));
+      });
+    }
+    await closeDb();
+    clearTimeout(forceExitTimer);
+    process.exit(0);
+  } catch (error) {
+    console.error('Graceful shutdown failed:', error);
+    clearTimeout(forceExitTimer);
+    process.exit(1);
+  }
+};
+
+process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.once('SIGINT', () => gracefulShutdown('SIGINT'));
 
 export { io };

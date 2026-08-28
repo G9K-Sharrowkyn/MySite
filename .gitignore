@@ -13,10 +13,16 @@
 
 # production
 /build
+/public/swoop-racing/
 
 # e2e
 /backend/.tmp
 /backend/backups/
+/backend/db.json
+/backend/ccg/data/users.json
+/backup/
+*.backup.json
+*.backup.gz
 
 # misc
 .DS_Store
@@ -25,6 +31,9 @@
 .env.test.local
 .env.production.local
 /backend/.env
+/backend/.env.*
+!/backend/.env.example
+.env
 build.zip
 backend.zip
 src/buildInfo.generated.js

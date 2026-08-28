@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import './OnboardingChecklist.css';
 
 const DEFAULT_AVATAR = '/logo192.png';

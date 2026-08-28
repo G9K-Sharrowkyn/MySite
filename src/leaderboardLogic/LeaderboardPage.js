@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef, memo } from 'react';
 import { useLanguage } from '../i18n/LanguageContext';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import './LeaderboardPage.css';
 
 // Memoized leaderboard row component for better performance

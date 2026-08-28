@@ -16,6 +16,7 @@ This document captures the minimum tests to run before public launch.
 - Notification appears for a reply to a comment.
 - Moderator panel access.
 - Admin panel access (including divisions admin).
+- Tournament creation and a second user's join flow.
 
 Run:
 ```bash
@@ -40,9 +41,11 @@ Notes:
 Note: the E2E suite now covers messaging, notifications, and fight voting flows.
 
 ## Release checklist (short)
-- Verify env vars for production (`JWT_SECRET`, `FRONTEND_URL`, email SMTP).
+- Complete the repository-root `PRELAUNCH_CHECKLIST.md`.
+- Run frontend lint/unit/build, backend unit tests, both production dependency
+  audits and `backend/npm run preflight:production`.
 - Run `npm run build` and smoke-test the built site.
-- Backup production data before deploy.
+- Back up production data and prove that the backup restores.
 - Clear test data (`backend/.tmp/db.e2e.json`) after test runs.
 
 ## Logs and evidence

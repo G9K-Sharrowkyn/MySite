@@ -4,6 +4,12 @@ import { useLanguage } from '../i18n/LanguageContext';
 import './FeedbackButton.css';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const SAFE_IMAGE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif'
+]);
 
 const FeedbackButton = () => {
   const { t } = useLanguage();
@@ -53,8 +59,10 @@ const FeedbackButton = () => {
       return;
     }
 
-    if (!String(file.type || '').startsWith('image/')) {
-      setErrorMessage(t('invalidFileType') || 'Please upload an image file');
+    if (!SAFE_IMAGE_TYPES.has(String(file.type || '').toLowerCase())) {
+      setErrorMessage(
+        t('invalidFileType') || 'Please upload a PNG, JPEG, WebP or GIF image'
+      );
       return;
     }
 
@@ -233,7 +241,7 @@ const FeedbackButton = () => {
                 <div className="file-upload-section">
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
                     onChange={handleImageFileChange}
                     className="feedback-file-input"
                     id="character-image-file"
@@ -294,4 +302,3 @@ const FeedbackButton = () => {
 };
 
 export default FeedbackButton;
-

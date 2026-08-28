@@ -102,7 +102,7 @@ const MessagingSystem = ({ user }) => {
 
   const fetchMessages = async (conversationId) => {
     try {
-      const response = await axios.get(`/api/messages/conversation/${conversationId}`);
+      const response = await axios.get(`/api/messages/conversations/${conversationId}/messages`);
       setMessages(response.data || []);
       
       // Mark messages as read

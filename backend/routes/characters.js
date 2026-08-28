@@ -14,6 +14,12 @@ import {
 } from '../controllers/characterController.js';
 import auth from '../middleware/auth.js';
 import authorize from '../middleware/roleMiddleware.js';
+import {
+  isAllowedImageMimeType,
+  isUnsafeImageError,
+  isValidUploadedImage,
+  MAX_IMAGE_INPUT_PIXELS
+} from '../utils/imageSecurity.js';
 
 const router = express.Router();
 
@@ -25,7 +31,7 @@ const imageUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (String(file.mimetype || '').startsWith('image/')) {
+    if (isAllowedImageMimeType(file.mimetype)) {
       cb(null, true);
       return;
     }
@@ -37,7 +43,12 @@ const saveOptimizedImage = async (file, targetDir, { maxWidth, maxHeight, qualit
   const filename = `${Date.now()}-${Math.random().toString(16).slice(2)}.jpg`;
   const outputPath = path.join(targetDir, filename);
 
-  await sharp(file.buffer)
+  await sharp(file.buffer, {
+    failOn: 'error',
+    limitInputPixels: MAX_IMAGE_INPUT_PIXELS,
+    sequentialRead: true,
+    animated: false
+  })
     .rotate()
     .resize({
       width: maxWidth,
@@ -74,6 +85,9 @@ router.post(
       if (!req.file) {
         return res.status(400).json({ msg: 'No image uploaded' });
       }
+      if (!isValidUploadedImage(req.file)) {
+        return res.status(400).json({ msg: 'Invalid or unsupported image file' });
+      }
 
       const filename = await saveOptimizedImage(req.file, characterUploadDir, {
         maxWidth: 1400,
@@ -88,6 +102,9 @@ router.post(
       }
       if (error.message === 'Only image uploads are allowed') {
         return res.status(400).json({ msg: error.message });
+      }
+      if (isUnsafeImageError(error)) {
+        return res.status(400).json({ msg: 'Invalid image dimensions or content' });
       }
       console.error('Error uploading character image:', error);
       return res.status(500).json({ msg: 'Server error' });

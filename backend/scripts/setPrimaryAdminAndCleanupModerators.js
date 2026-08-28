@@ -1,6 +1,6 @@
 import { usersRepo, withDb } from '../repositories/index.js';
 
-const TARGET_ADMIN_EMAIL = (process.env.PRIMARY_ADMIN_EMAIL || 'ak4maaru@gmail.com').trim().toLowerCase();
+const TARGET_ADMIN_EMAIL = String(process.env.PRIMARY_ADMIN_EMAIL || '').trim().toLowerCase();
 
 const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
 const isLegacyModeratorAccount = (user) => {
@@ -12,6 +12,9 @@ const isLegacyModeratorAccount = (user) => {
 };
 
 const run = async () => {
+  if (!TARGET_ADMIN_EMAIL) {
+    throw new Error('PRIMARY_ADMIN_EMAIL is required.');
+  }
   await withDb(async (db) => {
     await usersRepo.updateAll((users) => {
       let adminFound = false;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import axios from 'axios';
 import Modal from '../Modal/Modal';
 import { useLanguage } from '../i18n/LanguageContext';

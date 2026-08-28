@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './PWAConfiguration.css';
 
 const PWAConfiguration = () => {
@@ -10,6 +10,20 @@ const PWAConfiguration = () => {
   const [vapidPublicKey, setVapidPublicKey] = useState(
     process.env.REACT_APP_VAPID_PUBLIC_KEY || ''
   );
+
+  const fetchVapidPublicKey = useCallback(async () => {
+    if (vapidPublicKey) return vapidPublicKey;
+    try {
+      const response = await fetch('/api/push/vapid-public-key');
+      const data = await response.json();
+      const publicKey = data?.publicKey || '';
+      if (publicKey) setVapidPublicKey(publicKey);
+      return publicKey;
+    } catch (error) {
+      console.error('Unable to fetch VAPID public key:', error);
+      return '';
+    }
+  }, [vapidPublicKey]);
 
   useEffect(() => {
     // Check if app is installed
@@ -31,8 +45,6 @@ const PWAConfiguration = () => {
 
     // Register service worker
     registerServiceWorker();
-    fetchVapidPublicKey();
-
     // Initialize push notifications
     initializePushNotifications();
 
@@ -43,6 +55,10 @@ const PWAConfiguration = () => {
     };
   }, []);
 
+  useEffect(() => {
+    fetchVapidPublicKey();
+  }, [fetchVapidPublicKey]);
+
   const registerServiceWorker = async () => {
     if ('serviceWorker' in navigator) {
       try {
@@ -51,21 +67,6 @@ const PWAConfiguration = () => {
       } catch (registrationError) {
         console.log('SW registration failed: ', registrationError);
       }
-    }
-  };
-
-  const fetchVapidPublicKey = async () => {
-    if (vapidPublicKey) {
-      return;
-    }
-    try {
-      const response = await fetch('/api/push/vapid-public-key');
-      const data = await response.json();
-      if (data?.publicKey) {
-        setVapidPublicKey(data.publicKey);
-      }
-    } catch (error) {
-      console.error('Unable to fetch VAPID public key:', error);
     }
   };
 
@@ -115,10 +116,8 @@ const PWAConfiguration = () => {
 
   const subscribeToPushNotifications = async () => {
     try {
-      if (!vapidPublicKey) {
-        await fetchVapidPublicKey();
-      }
-      if (!vapidPublicKey) {
+      const publicKey = vapidPublicKey || await fetchVapidPublicKey();
+      if (!publicKey) {
         console.warn('Missing VAPID public key, push disabled.');
         return;
       }
@@ -128,7 +127,7 @@ const PWAConfiguration = () => {
       
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
       });
 
       setPushSubscription(subscription);
@@ -156,9 +155,12 @@ const PWAConfiguration = () => {
         // Remove subscription from server
         await fetch('/api/push/unsubscribe', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('token')
+            ? { 'x-auth-token': localStorage.getItem('token') }
+            : {}),
+        },
           body: JSON.stringify({ subscription: pushSubscription }),
         });
       }
@@ -181,7 +183,7 @@ const PWAConfiguration = () => {
         <div className="feature-card">
           <div className="feature-icon">🏠</div>
           <h3>Home Screen Installation</h3>
-          <p>Add Fight Zone to your device's home screen for quick access</p>
+          <p>Add VersusVerseVault to your device's home screen for quick access</p>
           {!isInstalled && installPrompt && (
             <button onClick={installApp} className="install-btn">
               📲 Install App
@@ -395,7 +397,7 @@ const PWAConfiguration = () => {
       
       <div className="pwa-header">
         <h1>📱 Mobile App Experience</h1>
-        <p>Transform Fight Zone into a native-like mobile app experience</p>
+        <p>Transform VersusVerseVault into a native-like mobile app experience</p>
       </div>
 
       <PWAFeatures />

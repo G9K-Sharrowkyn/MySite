@@ -19,12 +19,48 @@ const LOADOUT_TYPE_POWERS = 'powers';
 const LOADOUT_TYPE_WEAPONS = 'weapons';
 
 const resolveUserId = (user) => user?.id || user?._id;
+const isStaff = (user) => user?.role === 'moderator' || user?.role === 'admin';
 
 const findUserById = (users, userId) =>
   (users || []).find((entry) => resolveUserId(entry) === userId);
 
 const findCharacterById = (characters, characterId) =>
   (characters || []).find((entry) => entry.id === characterId);
+
+const CHARACTER_POWER_LEVELS = new Set([
+  'regularPeople',
+  'metahuman',
+  'planetBusters',
+  'godTier',
+  'universalThreat'
+]);
+const CHARACTER_FRANCHISES = new Set(['star-wars', 'dragon-ball', 'dc', 'marvel']);
+
+const normalizeUniverse = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+
+const isCharacterAllowedByTiers = (character, allowedTiers = []) => {
+  if (!Array.isArray(allowedTiers) || allowedTiers.length === 0 || allowedTiers.includes('all')) {
+    return true;
+  }
+
+  const selectedPowerLevels = allowedTiers.filter((tier) =>
+    CHARACTER_POWER_LEVELS.has(tier)
+  );
+  const selectedFranchises = allowedTiers.filter((tier) =>
+    CHARACTER_FRANCHISES.has(tier)
+  );
+  const matchesPowerLevel =
+    selectedPowerLevels.length === 0 || selectedPowerLevels.includes(character?.division);
+  const matchesFranchise =
+    selectedFranchises.length === 0 ||
+    selectedFranchises.includes(normalizeUniverse(character?.universe));
+
+  return matchesPowerLevel && matchesFranchise;
+};
 
 const normalizeTournamentMode = (value) => {
   const raw = String(value || '').trim().toLowerCase();
@@ -61,9 +97,13 @@ const toBoolean = (value, fallback = false) => {
 
 const toStringArray = (value) => {
   if (!Array.isArray(value)) return [];
-  return value
-    .map((entry) => String(entry || '').trim())
-    .filter(Boolean);
+  return Array.from(
+    new Set(
+      value
+        .map((entry) => String(entry || '').trim().slice(0, 100))
+        .filter(Boolean)
+    )
+  ).slice(0, 100);
 };
 
 const getTournamentSettings = (tournament = {}) => {
@@ -376,14 +416,9 @@ export const createTournament = async (req, res) => {
   const {
     title,
     description,
-    startDate,
-    endDate,
     maxParticipants,
     rules,
-    tournamentType,
     divisionId,
-    prizePool,
-    entryFee,
     // New fields
     allowedTiers,        // Array of tier names: ['streetLevel', 'godTier', etc.]
     excludedCharacters,  // Array of character IDs to exclude
@@ -404,14 +439,54 @@ export const createTournament = async (req, res) => {
   } = req.body;
 
   try {
+    const normalizedTitle = typeof title === 'string' ? title.trim() : '';
+    const normalizedDescription =
+      typeof description === 'string' ? description.trim() : '';
+    const normalizedRules = typeof rules === 'string' ? rules.trim() : '';
+    if (!normalizedTitle || normalizedTitle.length > 120) {
+      return res.status(400).json({
+        msg: 'Title must be between 1 and 120 characters'
+      });
+    }
+    if (normalizedDescription.length > 3000 || normalizedRules.length > 5000) {
+      return res.status(400).json({
+        msg: 'Tournament description or rules are too long'
+      });
+    }
+
     // Calculate recruitment end date in UTC
     // battleDate comes from frontend as ISO string in user's local time
     // We parse it and store as UTC
     const recruitmentEnd = new Date(battleDate);
     
     // Validate that the date is in the future
-    if (recruitmentEnd <= new Date()) {
+    if (
+      !Number.isFinite(recruitmentEnd.getTime()) ||
+      recruitmentEnd <= new Date()
+    ) {
       return res.status(400).json({ msg: 'Battle time must be in the future' });
+    }
+    const normalizedMaxParticipants = toPositiveInt(maxParticipants, 32, {
+      min: 2,
+      max: 128
+    });
+    const normalizedAllowedTiers = toStringArray(allowedTiers);
+    const normalizedExcludedCharacters = toStringArray(excludedCharacters);
+    const normalizedRecruitmentDays = toPositiveInt(recruitmentDays, 2, {
+      min: 1,
+      max: 30
+    });
+    const normalizedBattleTime = /^\d{2}:\d{2}$/.test(String(battleTime || ''))
+      ? String(battleTime)
+      : '18:00';
+    let normalizedTimezone = 'UTC';
+    if (typeof userTimezone === 'string' && userTimezone.length <= 64) {
+      try {
+        new Intl.DateTimeFormat('en-US', { timeZone: userTimezone });
+        normalizedTimezone = userTimezone;
+      } catch (_error) {
+        normalizedTimezone = 'UTC';
+      }
     }
 
     const normalizedMode = normalizeTournamentMode(
@@ -467,17 +542,18 @@ export const createTournament = async (req, res) => {
 
       const newTournament = {
         id: uuidv4(),
-        name: title,
-        title,
-        description,
+        name: normalizedTitle,
+        title: normalizedTitle,
+        description: normalizedDescription,
         startDate: recruitmentEnd.toISOString(),
-        endDate,
-        maxParticipants: maxParticipants || 32,
-        rules: rules || '',
-        tournamentType: tournamentType || 'single_elimination',
-        divisionId: divisionId || null,
-        prizePool: prizePool || 0,
-        entryFee: entryFee || 0,
+        endDate: null,
+        maxParticipants: normalizedMaxParticipants,
+        rules: normalizedRules,
+        tournamentType: 'single_elimination',
+        divisionId:
+          typeof divisionId === 'string' ? divisionId.trim().slice(0, 100) : null,
+        prizePool: 0,
+        entryFee: 0,
         createdBy: req.user.id,
         creatorId: req.user.id,
         creatorName: user.username || 'Unknown',
@@ -486,15 +562,16 @@ export const createTournament = async (req, res) => {
         fights: [],
         // New settings
         settings: {
-          allowedTiers: allowedTiers || ['all'],
-          excludedCharacters: excludedCharacters || [],
-          recruitmentDays: recruitmentDays || 2,
-          battleTime: battleTime || '18:00', // Keep for display purposes
+          allowedTiers:
+            normalizedAllowedTiers.length > 0 ? normalizedAllowedTiers : ['all'],
+          excludedCharacters: normalizedExcludedCharacters,
+          recruitmentDays: normalizedRecruitmentDays,
+          battleTime: normalizedBattleTime,
           battleTimeUTC: recruitmentEnd.toISOString(), // Actual UTC time
-          userTimezone: userTimezone || 'UTC', // Creator's timezone for reference
+          userTimezone: normalizedTimezone,
           mode: normalizedMode,
           teamSize: normalizedTeamSize,
-          showOnFeed: showOnFeed !== undefined ? showOnFeed : false,
+          showOnFeed: toBoolean(showOnFeed, false),
           voteVisibility: normalizeVoteVisibility(voteVisibility),
           loadoutType: normalizedLoadoutType,
           budget: normalizedBudget,
@@ -523,7 +600,7 @@ export const createTournament = async (req, res) => {
       return db;
     });
 
-    res.json(createdTournament);
+    res.status(201).json(createdTournament);
   } catch (err) {
     if (err.code === 'USER_NOT_AUTHENTICATED') {
       return res.status(401).json({ msg: 'User not authenticated' });
@@ -544,7 +621,7 @@ export const startTournament = async (req, res) => {
         (entry) => resolveUserId(entry) === req.user.id,
         { db }
       );
-      if (!user || user.role !== 'moderator') {
+      if (!isStaff(user)) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
@@ -639,7 +716,7 @@ export const advanceMatch = async (req, res) => {
         (entry) => resolveUserId(entry) === req.user.id,
         { db }
       );
-      if (!user || user.role !== 'moderator') {
+      if (!isStaff(user)) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
@@ -658,6 +735,30 @@ export const advanceMatch = async (req, res) => {
       if (tournament.status !== 'active') {
         const error = new Error('Tournament is not active');
         error.code = 'INVALID_STATUS';
+        throw error;
+      }
+
+      const [roundIndex, matchIndex] = String(matchId || '')
+        .split('-')
+        .map(Number);
+      const match = tournament.brackets?.[roundIndex]?.matches?.[matchIndex];
+      if (!match) {
+        const error = new Error('Match not found');
+        error.code = 'MATCH_NOT_FOUND';
+        throw error;
+      }
+      if (match.status === 'completed') {
+        const error = new Error('Match is already completed');
+        error.code = 'INVALID_STATUS';
+        throw error;
+      }
+      const validWinnerIds = [
+        match.player1?.userId,
+        match.player2?.userId
+      ].filter(Boolean);
+      if (!validWinnerIds.includes(winnerId)) {
+        const error = new Error('Winner must be one of the match players');
+        error.code = 'INVALID_WINNER';
         throw error;
       }
 
@@ -681,6 +782,12 @@ export const advanceMatch = async (req, res) => {
     }
     if (err.code === 'NOT_FOUND') {
       return res.status(404).json({ msg: 'Tournament not found' });
+    }
+    if (err.code === 'MATCH_NOT_FOUND') {
+      return res.status(404).json({ msg: err.message });
+    }
+    if (err.code === 'INVALID_WINNER') {
+      return res.status(400).json({ msg: err.message });
     }
     if (err.code === 'INVALID_STATUS') {
       return res.status(400).json({ msg: err.message });
@@ -716,12 +823,23 @@ export const voteInTournament = async (req, res) => {
         throw error;
       }
 
-      const [roundIndex, matchIndex] = matchId.split('-').map(Number);
+      const [roundIndex, matchIndex] = String(matchId || '')
+        .split('-')
+        .map(Number);
       const round = tournament.brackets?.[roundIndex];
       const match = round?.matches?.[matchIndex];
       if (!match) {
         const error = new Error('Match not found');
         error.code = 'MATCH_NOT_FOUND';
+        throw error;
+      }
+      const validWinnerIds = [
+        match.player1?.userId,
+        match.player2?.userId
+      ].filter(Boolean);
+      if (!validWinnerIds.includes(winnerId)) {
+        const error = new Error('Vote target must be one of the match players');
+        error.code = 'INVALID_WINNER';
         throw error;
       }
 
@@ -775,7 +893,12 @@ export const voteInTournament = async (req, res) => {
     if (err.code === 'MATCH_NOT_FOUND') {
       return res.status(404).json({ msg: 'Match not found' });
     }
-    if (err.code === 'INVALID_STATUS' || err.code === 'MATCH_INACTIVE' || err.code === 'ALREADY_VOTED') {
+    if (
+      err.code === 'INVALID_STATUS' ||
+      err.code === 'MATCH_INACTIVE' ||
+      err.code === 'ALREADY_VOTED' ||
+      err.code === 'INVALID_WINNER'
+    ) {
       return res.status(400).json({ msg: err.message });
     }
     console.error(err.message);
@@ -833,7 +956,7 @@ export const updateTournament = async (req, res) => {
         (entry) => resolveUserId(entry) === req.user.id,
         { db }
       );
-      if (!user || user.role !== 'moderator') {
+      if (!isStaff(user)) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
@@ -849,11 +972,44 @@ export const updateTournament = async (req, res) => {
         throw error;
       }
 
-      Object.keys(updates || {}).forEach((key) => {
-        if (updates[key] !== undefined && key !== 'id' && key !== 'createdBy') {
-          tournament[key] = updates[key];
+      if (updates?.title !== undefined) {
+        const title = String(updates.title || '').trim();
+        if (!title || title.length > 120) {
+          const error = new Error('Invalid tournament title');
+          error.code = 'INVALID_UPDATE';
+          throw error;
         }
-      });
+        tournament.title = title;
+        tournament.name = title;
+      }
+      if (updates?.description !== undefined) {
+        const description = String(updates.description || '').trim();
+        if (description.length > 3000) {
+          const error = new Error('Tournament description is too long');
+          error.code = 'INVALID_UPDATE';
+          throw error;
+        }
+        tournament.description = description;
+      }
+      if (updates?.rules !== undefined) {
+        const rules = String(updates.rules || '').trim();
+        if (rules.length > 5000) {
+          const error = new Error('Tournament rules are too long');
+          error.code = 'INVALID_UPDATE';
+          throw error;
+        }
+        tournament.rules = rules;
+      }
+      if (updates?.showOnFeed !== undefined) {
+        tournament.settings = tournament.settings || {};
+        tournament.settings.showOnFeed = Boolean(updates.showOnFeed);
+      }
+      if (updates?.voteVisibility !== undefined) {
+        tournament.settings = tournament.settings || {};
+        tournament.settings.voteVisibility = normalizeVoteVisibility(
+          updates.voteVisibility
+        );
+      }
       tournament.updatedAt = new Date().toISOString();
       updated = tournament;
       return db;
@@ -866,6 +1022,9 @@ export const updateTournament = async (req, res) => {
     }
     if (err.code === 'NOT_FOUND') {
       return res.status(404).json({ msg: 'Tournament not found' });
+    }
+    if (err.code === 'INVALID_UPDATE') {
+      return res.status(400).json({ msg: err.message });
     }
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -928,6 +1087,12 @@ export const joinTournament = async (req, res) => {
         const { options } = resolveLoadoutOptionsForTournament(tournament);
         const optionMap = new Map(options.map((option) => [option.id, option]));
 
+        if (requestedSelectionIds.length === 0) {
+          const error = new Error('Select at least one loadout option');
+          error.code = 'INVALID_LOADOUT_OPTION';
+          throw error;
+        }
+
         const invalidSelection = requestedSelectionIds.find((entryId) => !optionMap.has(entryId));
         if (invalidSelection) {
           const error = new Error('One or more selected options are not allowed');
@@ -988,16 +1153,37 @@ export const joinTournament = async (req, res) => {
         }
 
         const allCharacters = await charactersRepo.getAll({ db });
-        const characters = safeCharacterIds.map((entryId) => {
-          const char = findCharacterById(allCharacters, entryId);
-          return { id: entryId, name: char?.name || 'Unknown' };
-        });
+        const characterMap = new Map(allCharacters.map((character) => [character.id, character]));
+        const characters = safeCharacterIds.map((entryId) => characterMap.get(entryId));
+
+        if (characters.some((character) => !character)) {
+          const error = new Error('One or more selected characters do not exist');
+          error.code = 'CHARACTER_NOT_FOUND';
+          throw error;
+        }
+
+        if (
+          characters.some(
+            (character) => !isCharacterAllowedByTiers(character, settings.allowedTiers)
+          )
+        ) {
+          const error = new Error(
+            'One or more selected characters do not match the tournament restrictions'
+          );
+          error.code = 'CHARACTER_NOT_ALLOWED';
+          throw error;
+        }
+
+        const participantCharacters = characters.map((character) => ({
+          id: character.id,
+          name: character.name
+        }));
 
         tournament.participants.push({
           userId: req.user.id,
           username: user?.username || 'Unknown',
           characterIds: safeCharacterIds,
-          characters,
+          characters: participantCharacters,
           joinedAt: new Date().toISOString()
         });
       }
@@ -1030,6 +1216,8 @@ export const joinTournament = async (req, res) => {
       err.code === 'INVALID_TEAM_SIZE' ||
       err.code === 'EXCLUDED_CHARACTER' ||
       err.code === 'CHARACTER_TAKEN' ||
+      err.code === 'CHARACTER_NOT_FOUND' ||
+      err.code === 'CHARACTER_NOT_ALLOWED' ||
       err.code === 'INVALID_LOADOUT_OPTION' ||
       err.code === 'BUDGET_EXCEEDED'
     ) {
@@ -1142,26 +1330,7 @@ export const getAvailableCharacters = async (req, res) => {
       // Check if already taken
       if (takenCharacters.includes(char.id)) return false;
       
-      // Check tier restriction
-      // If no tiers selected OR 'all' is selected, allow all characters
-      if (allowedTiers.length === 0 || allowedTiers.includes('all')) return true;
-      
-      // Separate power levels and franchises
-      const powerLevels = ['regularPeople', 'metahuman', 'planetBusters', 'godTier', 'universalThreat'];
-      const franchises = ['star-wars', 'dragon-ball', 'dc', 'marvel'];
-      
-      const selectedPowerLevels = allowedTiers.filter(tier => powerLevels.includes(tier));
-      const selectedFranchises = allowedTiers.filter(tier => franchises.includes(tier));
-      
-      // Normalize universe name to match tier format
-      const normalizedUniverse = char.universe ? char.universe.toLowerCase().replace(/\s+/g, '-') : '';
-      
-      // Check matches
-      const matchesPowerLevel = selectedPowerLevels.length === 0 || selectedPowerLevels.includes(char.division);
-      const matchesFranchise = selectedFranchises.length === 0 || selectedFranchises.includes(normalizedUniverse);
-      
-      // Both must match (AND logic)
-      return matchesPowerLevel && matchesFranchise;
+      return isCharacterAllowedByTiers(char, allowedTiers);
     });
 
     res.json({

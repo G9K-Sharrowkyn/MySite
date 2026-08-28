@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import axios from 'axios';
 import io from 'socket.io-client';
 import { AuthContext } from '../auth/AuthContext';
@@ -230,6 +230,7 @@ const GlobalChatSystem = () => {
     // Connect to Socket.io server
     const newSocket = io(resolveSocketUrl(), {
       auth: { token },
+      withCredentials: true,
       transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionAttempts: 5,

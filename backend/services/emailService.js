@@ -1,9 +1,24 @@
 import nodemailer from 'nodemailer';
 
 const APP_NAME = 'VersusVerseVault';
+const hasEmailConfiguration = () =>
+  Boolean(
+    process.env.EMAIL_HOST &&
+    process.env.EMAIL_USER &&
+    process.env.EMAIL_PASS &&
+    process.env.EMAIL_FROM
+  );
+
+export const assertEmailConfiguration = () => {
+  if (process.env.NODE_ENV === 'production' && !hasEmailConfiguration()) {
+    throw new Error(
+      'Production email is not configured. EMAIL_HOST, EMAIL_USER, EMAIL_PASS and EMAIL_FROM are required.'
+    );
+  }
+};
 
 const createTransporter = () => {
-  if (process.env.EMAIL_HOST && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  if (hasEmailConfiguration()) {
     return nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
       port: Number(process.env.EMAIL_PORT || 587),
@@ -15,11 +30,12 @@ const createTransporter = () => {
     });
   }
 
+  assertEmailConfiguration();
   return {
     sendMail: async (mailOptions) => {
       console.log('[email:dev] to:', mailOptions.to);
       console.log('[email:dev] subject:', mailOptions.subject);
-      console.log('[email:dev] html:', mailOptions.html);
+      console.log('[email:dev] delivery skipped; configure SMTP to send this message.');
       return { messageId: `dev-${Date.now()}` };
     }
   };

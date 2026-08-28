@@ -1,23 +1,24 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { recommendationEventsRepo } from '../repositories/index.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
 // POST /api/recommendations/track
-router.post('/track', async (req, res) => {
+router.post('/track', auth, async (req, res) => {
   try {
-    const { userId, characterId, category, timestamp } = req.body;
-    if (!userId || !characterId) {
+    const { characterId, category } = req.body;
+    if (!characterId) {
       return res.status(400).json({ message: 'Missing tracking data' });
     }
 
     await recommendationEventsRepo.insert({
       id: uuidv4(),
-      userId,
+      userId: req.user.id,
       characterId,
-      category: category || 'unknown',
-      timestamp: timestamp || new Date().toISOString(),
+      category: String(category || 'unknown').slice(0, 100),
+      timestamp: new Date().toISOString(),
       createdAt: new Date().toISOString()
     });
 

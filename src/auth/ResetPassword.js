@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router';
 import Toast from '../tournamentLogic/Toast';
 import './ResetPassword.css';
 
@@ -36,8 +36,15 @@ const ResetPassword = () => {
       return;
     }
 
-    if (formData.password.length < 6) {
-      setToast({ message: 'Password must be at least 6 characters', type: 'error' });
+    if (
+      formData.password.length < 10 ||
+      !/[A-Za-z]/.test(formData.password) ||
+      !/\d/.test(formData.password)
+    ) {
+      setToast({
+        message: 'Password must be at least 10 characters and contain a letter and a number',
+        type: 'error'
+      });
       return;
     }
 
@@ -118,7 +125,8 @@ const ResetPassword = () => {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="Enter new password (min 6 characters)"
+                placeholder="At least 10 characters, with a letter and number"
+                minLength="10"
                 disabled={loading}
               />
             </div>
@@ -132,6 +140,7 @@ const ResetPassword = () => {
                 onChange={handleChange}
                 required
                 placeholder="Confirm new password"
+                minLength="10"
                 disabled={loading}
               />
             </div>

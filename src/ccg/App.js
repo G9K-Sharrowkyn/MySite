@@ -1,5 +1,5 @@
 import React, { useContext, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router';
 import { AuthContext } from '../auth/AuthContext';
 import { setAuthToken } from './api';
 import Profile from './pages/Profile';

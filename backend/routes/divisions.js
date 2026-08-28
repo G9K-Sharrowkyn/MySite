@@ -1569,10 +1569,11 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
 });
 
 // Register team (DivisionSystem)
-router.post('/register-team', async (req, res) => {
+router.post('/register-team', auth, async (req, res) => {
   try {
-    const { userId, divisionId, fighters } = req.body;
-    if (!userId || !divisionId || !Array.isArray(fighters) || fighters.length < 2) {
+    const { divisionId, fighters } = req.body;
+    const userId = req.user.id;
+    if (!divisionId || !Array.isArray(fighters) || fighters.length < 2) {
       return res.status(400).json({ msg: 'Invalid team data' });
     }
 
@@ -1620,7 +1621,7 @@ router.post('/register-team', async (req, res) => {
 });
 
 // Create fight (DivisionSystem)
-router.post('/create-fight', async (req, res) => {
+router.post('/create-fight', [auth, moderatorAuth], async (req, res) => {
   try {
     const { team1, team2, divisionId, isTitle, duration } = req.body;
     if (!team1 || !team2 || !divisionId) {
@@ -1652,7 +1653,7 @@ router.post('/create-fight', async (req, res) => {
         team1: normalizedTeam1,
         team2: normalizedTeam2,
         description: req.body.description,
-        createdBy: null,
+        createdBy: req.user.id,
         durationHours: duration,
         voteVisibility: req.body.voteVisibility
       });
@@ -1676,7 +1677,7 @@ router.post('/create-fight', async (req, res) => {
 });
 
 // Create official fight (PowerTierDivisions)
-router.post('/create-official-fight', async (req, res) => {
+router.post('/create-official-fight', [auth, moderatorAuth], async (req, res) => {
   try {
     const {
       team1Id,
@@ -1719,7 +1720,7 @@ router.post('/create-official-fight', async (req, res) => {
         team1,
         team2,
         description: req.body.description,
-        createdBy: null,
+        createdBy: req.user.id,
         durationHours: fightDuration,
         bettingPeriodHours: bettingPeriod,
         voteVisibility: req.body.voteVisibility
@@ -1744,7 +1745,7 @@ router.post('/create-official-fight', async (req, res) => {
 });
 
 // Lock expired fights (moderator panel helper)
-router.post('/lock-expired-fights', async (_req, res) => {
+router.post('/lock-expired-fights', [auth, moderatorAuth], async (_req, res) => {
   try {
     const now = new Date();
     let lockedCount = 0;

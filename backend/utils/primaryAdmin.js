@@ -1,5 +1,3 @@
-const FALLBACK_PRIMARY_ADMIN_EMAIL = 'ak4maaru@gmail.com';
-
 export const normalizeEmail = (value) =>
   String(value || '').trim().toLowerCase();
 
@@ -11,9 +9,7 @@ const parseCsv = (value) =>
 
 export const getPrimaryAdminEmails = () => {
   const configured = parseCsv(process.env.PRIMARY_ADMIN_EMAIL || '');
-  const emails = new Set(configured);
-  emails.add(FALLBACK_PRIMARY_ADMIN_EMAIL);
-  return emails;
+  return new Set(configured);
 };
 
 export const isPrimaryAdminEmail = (email) => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import './FightCard.css';
 
 const FightCard = ({ fight }) => {

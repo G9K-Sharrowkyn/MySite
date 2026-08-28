@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { parsePagination } from '../utils/pagination.js';
 import { notificationsRepo } from '../repositories/index.js';
 import { sendPushToUser } from '../services/pushService.js';
 
@@ -20,9 +21,11 @@ const normalizeNotification = (notification) => ({
 // @access  Private
 export const getNotifications = async (req, res) => {
   try {
-    const { page = 1, limit = 20, type } = req.query;
-    const pageNumber = Number(page) || 1;
-    const limitNumber = Number(limit) || 20;
+    const { type } = req.query;
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 20,
+      maxLimit: 100
+    });
 
     const notifications = await notificationsRepo.getAll();
 

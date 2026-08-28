@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import API from '../api';
 import { CCG_BASE_PATH } from '../utils/paths';
 

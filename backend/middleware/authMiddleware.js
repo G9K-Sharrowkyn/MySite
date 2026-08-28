@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { readDb, usersRepo } from '../repositories/index.js';
 import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
+import { getAuthCookieToken } from '../utils/authCookie.js';
 
 const resolveUserId = (user) => user?.id || user?._id || null;
 
@@ -20,7 +21,11 @@ export default async function authMiddleware(req, res, next) {
   const bearerToken = authHeader?.startsWith('Bearer ')
     ? authHeader.slice(7).trim()
     : null;
-  const token = bearerToken || req.header('x-auth-token');
+  const presentedToken = bearerToken || req.header('x-auth-token');
+  const token =
+    presentedToken && presentedToken !== 'cookie-session'
+      ? presentedToken
+      : getAuthCookieToken(req.headers.cookie);
 
   if (!token) {
     return res.status(401).json({ msg: 'Authentication token is required.' });
@@ -38,6 +43,14 @@ export default async function authMiddleware(req, res, next) {
 
     if (!currentUser) {
       return res.status(401).json({ msg: 'User account was not found.' });
+    }
+    if (
+      Number(req.user?.tokenVersion || 0) !==
+      Number(currentUser.tokenVersion || 0)
+    ) {
+      return res.status(401).json({
+        msg: 'This session is no longer valid. Please sign in again.'
+      });
     }
 
     // Keep role in sync with DB even when client holds an older token.

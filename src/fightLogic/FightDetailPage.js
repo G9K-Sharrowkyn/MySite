@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { useParams, Link, useNavigate } from 'react-router';
 import axios from 'axios';
 import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
+import { createIdempotencyKey } from '../utils/idempotencyKey';
 import './FightDetailPage.css';
 
 const FightDetailPage = () => {
@@ -14,6 +15,9 @@ const FightDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const commentSubmitRef = useRef(false);
+  const commentKeyRef = useRef(null);
   const navigate = useNavigate();
 
   const fetchFight = useCallback(async () => {
@@ -113,20 +117,32 @@ const FightDetailPage = () => {
       return;
     }
 
-    if (!newComment.trim()) return;
+    if (!newComment.trim() || commentSubmitRef.current) return;
 
+    commentSubmitRef.current = true;
+    setIsCommentSubmitting(true);
+    if (!commentKeyRef.current) {
+      commentKeyRef.current = createIdempotencyKey('fight-comment');
+    }
     try {
       await axios.post(`/api/comments/fight/${fightId}`, {
         text: newComment
       }, {
-        headers: { 'x-auth-token': token }
+        headers: {
+          'x-auth-token': token,
+          'Idempotency-Key': commentKeyRef.current
+        }
       });
 
+      commentKeyRef.current = null;
       setNewComment('');
       fetchComments();
     } catch (error) {
       console.error('Error posting comment:', error);
       alert('Błąd podczas dodawania komentarza');
+    } finally {
+      commentSubmitRef.current = false;
+      setIsCommentSubmitting(false);
     }
   };
 
@@ -324,10 +340,15 @@ const FightDetailPage = () => {
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Dodaj komentarz do tej walki..."
                 rows="3"
+                disabled={isCommentSubmitting}
               />
             </div>
-            <button type="submit" className="btn btn-primary" disabled={!newComment.trim()}>
-              Dodaj komentarz
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!newComment.trim() || isCommentSubmitting}
+            >
+              {isCommentSubmitting ? 'Dodawanie...' : 'Dodaj komentarz'}
             </button>
           </form>
         )}

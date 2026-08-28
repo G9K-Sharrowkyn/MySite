@@ -5,14 +5,19 @@
   "main": "index.js",
   "scripts": {
     "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test:ci": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js --runInBand",
+    "test:regression": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js tests/postController.test.js tests/commentController.test.js --runInBand",
     "seed:characters": "node scripts/seedCharacters.js",
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "preflight:production": "node scripts/preflightProduction.js",
+    "verify:deployment": "node scripts/verifyDeployment.js",
     "migrate:mongo": "node scripts/migrateToMongo.js",
     "migrate:characters:mongo": "node scripts/importStaticCharactersToMongo.js",
     "migrate:character-images:mongo": "node scripts/migrateCharacterImagesToMongo.js",
     "migrate:avatars": "node scripts/migrateDefaultAvatars.js",
     "migrate:display-names": "node scripts/migrateDisplayNames.js",
+    "migrate:ccg-users": "node scripts/migrateCcgUsersToMainDb.js --apply",
     "backup:db": "node scripts/backupDb.js",
     "restore:db": "node scripts/restoreDb.js",
     "export:json": "node scripts/exportToJson.js",
@@ -25,6 +30,9 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "engines": {
+    "node": ">=22.22.0"
+  },
   "dependencies": {
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
@@ -39,15 +47,13 @@
     "hpp": "^0.2.3",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.19.0",
-    "morgan": "^1.10.1",
     "multer": "^2.0.1",
     "node-cron": "^4.2.1",
-    "nodemailer": "^7.0.12",
-    "sharp": "^0.34.4",
+    "nodemailer": "^9.0.3",
+    "sharp": "^0.35.3",
     "socket.io": "^4.8.1",
-    "web-push": "^3.6.7",
-    "uuid": "^11.1.0",
-    "xss-clean": "^0.1.4"
+    "uuid": "^14.0.1",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "jest": "^30.0.4",

@@ -1,7 +1,7 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { pushSubscriptionsRepo } from '../repositories/index.js';
-import { optionalAuth } from '../middleware/optionalAuth.js';
+import auth from '../middleware/auth.js';
 import { getVapidPublicKey } from '../services/pushService.js';
 
 const router = express.Router();
@@ -11,13 +11,13 @@ router.get('/vapid-public-key', (_req, res) => {
 });
 
 // POST /api/push/subscribe
-router.post('/subscribe', optionalAuth, async (req, res) => {
+router.post('/subscribe', auth, async (req, res) => {
   try {
-    const { subscription, userId } = req.body || {};
-    if (!subscription) {
+    const { subscription } = req.body || {};
+    if (!subscription?.endpoint || !subscription?.keys) {
       return res.status(400).json({ message: 'Subscription is required' });
     }
-    const resolvedUserId = req.user?.id || userId || null;
+    const resolvedUserId = req.user.id;
 
     await pushSubscriptionsRepo.updateAll((subscriptions) => {
       const existing = subscriptions.find(
@@ -45,7 +45,7 @@ router.post('/subscribe', optionalAuth, async (req, res) => {
 });
 
 // POST /api/push/unsubscribe
-router.post('/unsubscribe', async (req, res) => {
+router.post('/unsubscribe', auth, async (req, res) => {
   try {
     const { subscription } = req.body || {};
     if (!subscription) {
@@ -54,7 +54,9 @@ router.post('/unsubscribe', async (req, res) => {
 
     await pushSubscriptionsRepo.updateAll((subscriptions) =>
       subscriptions.filter(
-        (entry) => entry.subscription?.endpoint !== subscription.endpoint
+        (entry) =>
+          entry.subscription?.endpoint !== subscription.endpoint ||
+          entry.userId !== req.user.id
       )
     );
 

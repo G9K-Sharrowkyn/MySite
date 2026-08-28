@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router';
 import {
   replacePlaceholderUrl,
   placeholderImages,
@@ -14,6 +14,7 @@ import ProfileBackgroundUpload from './ProfileBackgroundUpload';
 import UserBadges from './UserBadges';
 import PostCard from '../postLogic/PostCard';
 import UserHoverMenu from '../shared/UserHoverMenu';
+import { createIdempotencyKey } from '../utils/idempotencyKey';
 import './ProfilePage.css';
 
 const ProfilePage = () => {
@@ -34,6 +35,9 @@ const ProfilePage = () => {
   const [profile, setProfile] = useState(initialProfile);
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const commentSubmitRef = useRef(false);
+  const commentKeyRef = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [description, setDescription] = useState(
     normalizeDescription(initialProfile?.description)
@@ -224,6 +228,12 @@ const handleCommentSubmit = async (e) => {
     console.error('Musisz być zalogowany, aby dodać komentarz.');
     return;
   }
+  if (!newComment.trim() || commentSubmitRef.current) return;
+  commentSubmitRef.current = true;
+  setIsCommentSubmitting(true);
+  if (!commentKeyRef.current) {
+    commentKeyRef.current = createIdempotencyKey('profile-comment');
+  }
   try {
     await axios.post(`/api/comments/user/${resolvedUserId}`, 
       { 
@@ -233,13 +243,18 @@ const handleCommentSubmit = async (e) => {
       {
         headers: {
           'x-auth-token': token,
+          'Idempotency-Key': commentKeyRef.current
           },
         }
     );
+    commentKeyRef.current = null;
     setNewComment('');
     await fetchComments(resolvedUserId);
   } catch (err) {
     console.error('Błąd podczas dodawania komentarza:', err.response?.data);
+  } finally {
+    commentSubmitRef.current = false;
+    setIsCommentSubmitting(false);
   }
 };
 
@@ -860,13 +875,20 @@ const handleCommentSubmit = async (e) => {
               placeholder={t('addCommentPlaceholder') || 'Add a comment...'}
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
+              disabled={isCommentSubmitting}
               required
               maxLength={500}
             ></textarea>
             <div className="comment-controls">
               <span className="char-count">{newComment.length}/500</span>
-              <button type="submit" className="btn-primary" disabled={!newComment.trim()}>
-                {t('addComment') || 'Add Comment'}
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={!newComment.trim() || isCommentSubmitting}
+              >
+                {isCommentSubmitting
+                  ? (t('loading') || 'Adding...')
+                  : (t('addComment') || 'Add Comment')}
               </button>
             </div>
           </form>

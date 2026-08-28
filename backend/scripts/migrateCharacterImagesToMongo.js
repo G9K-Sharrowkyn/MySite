@@ -7,6 +7,7 @@ import { updateCollection } from '../services/jsonDb.js';
 import { closeMongo } from '../services/mongoDb.js';
 import {
   buildCharacterMediaPath,
+  getCharacterMediaById,
   ingestCharacterMediaFromSource,
   upsertCharacterMedia
 } from '../services/characterMedia.js';
@@ -73,20 +74,35 @@ const run = async () => {
 
     processed += 1;
 
-    if (isApiMediaPath(sourceImage)) {
-      unchanged += 1;
-      continue;
-    }
-
-    const ingested = await ingestCharacterMediaFromSource({
-      characterId: id,
-      image: sourceImage,
-      frontendOrigin,
-      apiOrigin
-    }).catch((error) => ({
-      ok: false,
-      reason: error?.message || 'ingest_failed'
-    }));
+    const ingested = isApiMediaPath(sourceImage)
+      ? await (async () => {
+          const currentSafe = await getCharacterMediaById(id);
+          if (currentSafe?.data?.length) {
+            return { ok: true, unchanged: true };
+          }
+          const legacy = await getCharacterMediaById(id, { allowLegacy: true });
+          if (!legacy?.data?.length) {
+            return { ok: false, reason: 'missing_existing_media' };
+          }
+          const stored = await upsertCharacterMedia({
+            characterId: id,
+            buffer: legacy.data,
+            source: legacy.source || 'migration:existing-media'
+          });
+          return { ok: true, ...stored };
+        })().catch((error) => ({
+          ok: false,
+          reason: error?.message || 'existing_media_sanitize_failed'
+        }))
+      : await ingestCharacterMediaFromSource({
+          characterId: id,
+          image: sourceImage,
+          frontendOrigin,
+          apiOrigin
+        }).catch((error) => ({
+          ok: false,
+          reason: error?.message || 'ingest_failed'
+        }));
 
     if (!ingested?.ok) {
       try {
@@ -109,7 +125,11 @@ const run = async () => {
 
     const mediaPath = buildCharacterMediaPath(id);
     updatesById.set(id, mediaPath);
-    migrated += 1;
+    if (ingested.unchanged) {
+      unchanged += 1;
+    } else {
+      migrated += 1;
+    }
   }
 
   if (updatesById.size > 0) {

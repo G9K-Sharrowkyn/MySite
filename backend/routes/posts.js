@@ -23,6 +23,8 @@ import {
 import auth from '../middleware/auth.js';
 import { optionalAuth } from '../middleware/optionalAuth.js';
 import { readDb } from '../repositories/index.js';
+import { postUpdateValidation, postValidation } from '../middleware/validation.js';
+import { parseLimit, parsePagination } from '../utils/pagination.js';
 
 const router = express.Router();
 
@@ -74,14 +76,14 @@ router.get('/user/:userId', optionalAuth, getPostsByUser);
 // @route   POST api/posts
 // @desc    Create a new post
 // @access  Private
-router.post('/', auth, createPost);
+router.post('/', auth, postValidation, createPost);
 
 // @route   GET api/posts/official
 // @desc    Get all official posts
 // @access  Public
 router.get('/official', optionalAuth, async (req, res) => {
   try {
-    const { limit = 20, page = 1, sortBy = 'createdAt' } = req.query;
+    const { sortBy = 'createdAt' } = req.query;
     const viewerUserId = req.user?.id || null;
 
     // Build sort object
@@ -98,8 +100,10 @@ router.get('/official', optionalAuth, async (req, res) => {
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
-    const limitNumber = Number(limit);
-    const pageNumber = Number(page);
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 20,
+      maxLimit: 50
+    });
     const paged = sorted.slice(
       (pageNumber - 1) * limitNumber,
       pageNumber * limitNumber
@@ -127,7 +131,7 @@ router.get('/official', optionalAuth, async (req, res) => {
 // @access  Public
 router.get('/tags/popular', async (req, res) => {
   try {
-    const limit = Number(req.query.limit || 10);
+    const limit = parseLimit(req.query.limit, { fallback: 10, max: 50 });
     const db = await readDb();
     const tags = collectTags(
       (db.posts || []).filter((post) => !isPostSoftDeleted(post))
@@ -172,7 +176,7 @@ router.get('/search-users', auth, searchUsersForChallenge);
 // @route   POST api/posts/user-challenge
 // @desc    Create a user-vs-user challenge
 // @access  Private
-router.post('/user-challenge', auth, createUserChallenge);
+router.post('/user-challenge', auth, postValidation, createUserChallenge);
 
 // @route   GET api/posts/deleted
 // @desc    Get soft-deleted posts (staff only)
@@ -207,7 +211,7 @@ router.post('/:id/poll-vote', auth, voteInPoll);
 // @route   PUT api/posts/:id
 // @desc    Update post
 // @access  Private
-router.put('/:id', auth, updatePost);
+router.put('/:id', auth, postUpdateValidation, updatePost);
 
 // @route   DELETE api/posts/:id
 // @desc    Delete post

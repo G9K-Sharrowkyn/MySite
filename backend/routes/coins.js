@@ -1,6 +1,8 @@
 import express from 'express';
 import { coinTransactionsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { ensureCoinAccount } from '../utils/coinBonus.js';
+import auth from '../middleware/auth.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const router = express.Router();
 
@@ -9,8 +11,15 @@ const resolveUserId = (user) => user?.id || user?._id;
 const findUserById = (db, userId) =>
   (db.users || []).find((entry) => resolveUserId(entry) === userId);
 
+const requireSelf = (req, res, next) => {
+  if (req.params.userId !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+  return next();
+};
+
 // GET /api/coins/balance/:userId
-router.get('/balance/:userId', async (req, res) => {
+router.get('/balance/:userId', auth, requireSelf, async (req, res) => {
   try {
     let balance = 0;
     await withDb(async (db) => {
@@ -39,10 +48,12 @@ router.get('/balance/:userId', async (req, res) => {
 });
 
 // GET /api/coins/transactions/:userId
-router.get('/transactions/:userId', async (req, res) => {
+router.get('/transactions/:userId', auth, requireSelf, async (req, res) => {
   try {
-    const page = Number(req.query.page || 1);
-    const limit = Number(req.query.limit || 20);
+    const { page, limit } = parsePagination(req.query, {
+      defaultLimit: 20,
+      maxLimit: 100
+    });
     let response;
     await withDb(async (db) => {
       const user = await usersRepo.findOne(
@@ -79,7 +90,7 @@ router.get('/transactions/:userId', async (req, res) => {
 });
 
 // GET /api/coins/stats/:userId
-router.get('/stats/:userId', async (req, res) => {
+router.get('/stats/:userId', auth, requireSelf, async (req, res) => {
   try {
     let stats;
     await withDb(async (db) => {

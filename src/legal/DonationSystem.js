@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { getOptimizedImageProps } from '../utils/placeholderImage';
 import axios from 'axios';
 import './DonationSystem.css';
 
@@ -16,13 +15,17 @@ const DonationSystem = () => {
   const [donationAmount, setDonationAmount] = useState(5);
   const [customAmount, setCustomAmount] = useState('');
   const [donationMessage, setDonationMessage] = useState('');
-  const [selectedPlatform, setSelectedPlatform] = useState('buymeacoffee');
+  const [selectedPlatform, setSelectedPlatform] = useState('');
+  const [paymentProviders, setPaymentProviders] = useState([]);
+  const [donationCurrency, setDonationCurrency] = useState('USD');
+  const [donationNotice, setDonationNotice] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const presetAmounts = [1, 3, 5, 10, 25, 50];
 
   useEffect(() => {
     fetchDonationStats();
+    fetchDonationConfig();
   }, []);
 
   const fetchDonationStats = async () => {
@@ -34,28 +37,57 @@ const DonationSystem = () => {
     }
   };
 
+  const fetchDonationConfig = async () => {
+    try {
+      const response = await axios.get('/api/donations/config');
+      const providers = Array.isArray(response.data?.providers)
+        ? response.data.providers
+        : [];
+      setPaymentProviders(providers);
+      setSelectedPlatform(providers[0]?.id || '');
+      setDonationCurrency(
+        /^[A-Z]{3}$/.test(response.data?.currency)
+          ? response.data.currency
+          : 'USD'
+      );
+    } catch (error) {
+      console.error('Error fetching donation configuration:', error);
+      setPaymentProviders([]);
+    }
+  };
+
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: donationCurrency,
+      maximumFractionDigits: 2
+    }).format(Number(amount) || 0);
+
   const handleDonation = async () => {
     setIsLoading(true);
     
     try {
       const amount = customAmount ? parseFloat(customAmount) : donationAmount;
       
-      if (!amount || amount <= 0) {
-        alert('Please enter a valid donation amount.');
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 100000) {
+        setDonationNotice('Please enter a valid donation amount.');
         return;
       }
 
-      // Record donation in backend
-      await axios.post('/api/donations/record', {
-        amount,
-        message: donationMessage,
-        platform: selectedPlatform,
-        timestamp: new Date().toISOString()
-      });
-
-      // Redirect to payment platform
       const paymentUrl = getPaymentUrl(amount, donationMessage);
-      window.open(paymentUrl, '_blank');
+      if (!paymentUrl) {
+        setDonationNotice('No verified payment provider is configured yet.');
+        return;
+      }
+      const paymentWindow = window.open(
+        paymentUrl,
+        '_blank',
+        'noopener,noreferrer'
+      );
+      if (!paymentWindow) {
+        setDonationNotice('Allow pop-ups for this site to open the payment provider.');
+        return;
+      }
 
       // Reset form
       setDonationAmount(5);
@@ -63,35 +95,38 @@ const DonationSystem = () => {
       setDonationMessage('');
       setShowDonationModal(false);
       
-      // Refresh stats
-      fetchDonationStats();
-      
-      alert('Thank you for your donation! You will be redirected to complete the payment.');
+      setDonationNotice(
+        'Payment provider opened. The donation is counted only after staff verifies its confirmation.'
+      );
     } catch (error) {
       console.error('Error processing donation:', error);
-      alert('Error processing donation. Please try again.');
+      setDonationNotice('Unable to open the payment provider. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const getPaymentUrl = (amount, message) => {
-    const encodedMessage = encodeURIComponent(message || 'Support for Fight Zone');
-    
-    if (selectedPlatform === 'buymeacoffee') {
-      return `https://www.buymeacoffee.com/fightzone?amount=${amount}&message=${encodedMessage}`;
-    } else if (selectedPlatform === 'paypal') {
-      return `https://www.paypal.com/donate/?hosted_button_id=YOUR_PAYPAL_BUTTON_ID&amount=${amount}&currency_code=USD&message=${encodedMessage}`;
+    const provider = paymentProviders.find(
+      (entry) => entry.id === selectedPlatform
+    );
+    if (!provider?.url) return '';
+    try {
+      const url = new URL(provider.url);
+      url.searchParams.set('amount', String(amount));
+      url.searchParams.set('currency_code', donationCurrency);
+      url.searchParams.set('message', message || 'Support for VersusVerseVault');
+      return url.toString();
+    } catch (_error) {
+      return '';
     }
-    
-    return '#';
   };
 
   const DonationModal = () => (
     <div className="donation-modal-overlay" onClick={() => setShowDonationModal(false)}>
       <div className="donation-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>💝 Support Fight Zone</h2>
+          <h2>💝 Support VersusVerseVault</h2>
           <button 
             className="close-btn"
             onClick={() => setShowDonationModal(false)}
@@ -113,7 +148,7 @@ const DonationSystem = () => {
                     setCustomAmount('');
                   }}
                 >
-                  ${amount}
+                  {formatCurrency(amount)}
                 </button>
               ))}
             </div>
@@ -149,55 +184,57 @@ const DonationSystem = () => {
           <div className="payment-platform">
             <h3>Payment Method</h3>
             <div className="platform-options">
-              <label className="platform-option">
-                <input
-                  type="radio"
-                  name="platform"
-                  value="buymeacoffee"
-                  checked={selectedPlatform === 'buymeacoffee'}
-                  onChange={(e) => setSelectedPlatform(e.target.value)}
-                />
-                <div className="platform-info">
-                  <img {...getOptimizedImageProps("/buymeacoffee-logo.png", { size: 32 })} alt="Buy Me a Coffee" />
-                  <span>Buy Me a Coffee</span>
-                </div>
-              </label>
-              
-              <label className="platform-option">
-                <input
-                  type="radio"
-                  name="platform"
-                  value="paypal"
-                  checked={selectedPlatform === 'paypal'}
-                  onChange={(e) => setSelectedPlatform(e.target.value)}
-                />
-                <div className="platform-info">
-                  <img {...getOptimizedImageProps("/paypal-logo.png", { size: 32 })} alt="PayPal" />
-                  <span>PayPal</span>
-                </div>
-              </label>
+              {paymentProviders.map((provider) => (
+                <label className="platform-option" key={provider.id}>
+                  <input
+                    type="radio"
+                    name="platform"
+                    value={provider.id}
+                    checked={selectedPlatform === provider.id}
+                    onChange={(e) => setSelectedPlatform(e.target.value)}
+                  />
+                  <div className="platform-info">
+                    <span>{provider.name}</span>
+                  </div>
+                </label>
+              ))}
+              {paymentProviders.length === 0 && (
+                <p>Donations are temporarily unavailable.</p>
+              )}
             </div>
           </div>
 
           <div className="donation-summary">
             <div className="summary-item">
               <span>Amount:</span>
-              <span className="amount">${customAmount || donationAmount}</span>
+              <span className="amount">
+                {formatCurrency(customAmount || donationAmount)}
+              </span>
             </div>
             <div className="summary-item">
               <span>Platform:</span>
-              <span className="platform">{selectedPlatform === 'buymeacoffee' ? 'Buy Me a Coffee' : 'PayPal'}</span>
+              <span className="platform">
+                {paymentProviders.find((entry) => entry.id === selectedPlatform)?.name ||
+                  'Unavailable'}
+              </span>
             </div>
           </div>
+          {donationNotice && (
+            <p className="donation-notice" role="status">
+              {donationNotice}
+            </p>
+          )}
         </div>
 
         <div className="modal-actions">
           <button 
             className="donate-btn"
             onClick={handleDonation}
-            disabled={isLoading}
+            disabled={isLoading || paymentProviders.length === 0}
           >
-            {isLoading ? 'Processing...' : `Donate $${customAmount || donationAmount}`}
+            {isLoading
+              ? 'Processing...'
+              : `Donate ${formatCurrency(customAmount || donationAmount)}`}
           </button>
           <button 
             className="cancel-btn"
@@ -216,7 +253,9 @@ const DonationSystem = () => {
       <div className="stat-card">
         <div className="stat-icon">💰</div>
         <div className="stat-info">
-          <span className="stat-number">${donationStats.totalAmount.toLocaleString()}</span>
+          <span className="stat-number">
+            {formatCurrency(donationStats.totalAmount)}
+          </span>
           <span className="stat-label">Total Raised</span>
         </div>
       </div>
@@ -254,7 +293,10 @@ const DonationSystem = () => {
       <div className="monthly-goal">
         <div className="goal-header">
           <h3>🎯 Monthly Goal</h3>
-          <span className="goal-amount">${donationStats.monthlyProgress} / ${donationStats.monthlyGoal}</span>
+          <span className="goal-amount">
+            {formatCurrency(donationStats.monthlyProgress)} /{' '}
+            {formatCurrency(donationStats.monthlyGoal)}
+          </span>
         </div>
         
         <div className="progress-bar">
@@ -265,7 +307,7 @@ const DonationSystem = () => {
         </div>
         
         <p className="goal-description">
-          Help us reach our monthly goal to keep Fight Zone running and add new features!
+          Help us reach our monthly goal to keep VersusVerseVault running and add new features!
         </p>
       </div>
     );
@@ -285,7 +327,9 @@ const DonationSystem = () => {
             </div>
             <div className="supporter-info">
               <span className="supporter-name">{donor.name}</span>
-              <span className="supporter-amount">${donor.totalAmount}</span>
+              <span className="supporter-amount">
+                {formatCurrency(donor.totalAmount)}
+              </span>
             </div>
             <div className="supporter-badge">
               {donor.badge}
@@ -304,7 +348,9 @@ const DonationSystem = () => {
           <div key={donation.id} className="donation-item">
             <div className="donation-info">
               <span className="donor-name">{donation.donorName}</span>
-              <span className="donation-amount">${donation.amount}</span>
+              <span className="donation-amount">
+                {formatCurrency(donation.amount)}
+              </span>
             </div>
             {donation.message && (
               <p className="donation-message">"{donation.message}"</p>
@@ -321,17 +367,27 @@ const DonationSystem = () => {
   return (
     <div className="donation-system">
       <div className="donation-header">
-        <h1>💝 Support Fight Zone</h1>
+        <h1>💝 Support VersusVerseVault</h1>
         <p>
-          Help us keep Fight Zone running and add amazing new features! 
+          Help us keep VersusVerseVault running and add amazing new features!
           Your support makes this community possible.
         </p>
         <button 
           className="donate-now-btn"
-          onClick={() => setShowDonationModal(true)}
+          onClick={() => {
+            setDonationNotice('');
+            setShowDonationModal(true);
+          }}
+          disabled={paymentProviders.length === 0}
         >
           💝 Donate Now
         </button>
+        {donationNotice && <p className="donation-notice">{donationNotice}</p>}
+        {paymentProviders.length === 0 && (
+          <p className="donation-notice">
+            Donations are disabled until a verified provider is configured.
+          </p>
+        )}
       </div>
 
       <DonationStats />
@@ -339,7 +395,7 @@ const DonationSystem = () => {
 
       <div className="donation-content">
         <div className="content-section">
-          <h2>Why Support Fight Zone?</h2>
+          <h2>Why Support VersusVerseVault?</h2>
           <div className="reasons-grid">
             <div className="reason-card">
               <div className="reason-icon">🚀</div>
@@ -368,31 +424,22 @@ const DonationSystem = () => {
         </div>
 
         <div className="content-section">
-          <h2>What You Get</h2>
+          <h2>Donation transparency</h2>
           <div className="benefits-grid">
             <div className="benefit-item">
-              <span className="benefit-icon">🎖️</span>
-              <span className="benefit-text">Supporter Badge on Profile</span>
+              <span className="benefit-text">
+                Payment is completed on the selected provider's website.
+              </span>
             </div>
             <div className="benefit-item">
-              <span className="benefit-icon">💬</span>
-              <span className="benefit-text">Exclusive Discord Role</span>
+              <span className="benefit-text">
+                Public totals include only donations verified by staff.
+              </span>
             </div>
             <div className="benefit-item">
-              <span className="benefit-icon">🎯</span>
-              <span className="benefit-text">Early Access to Features</span>
-            </div>
-            <div className="benefit-item">
-              <span className="benefit-icon">💎</span>
-              <span className="benefit-text">Special Profile Themes</span>
-            </div>
-            <div className="benefit-item">
-              <span className="benefit-icon">🏆</span>
-              <span className="benefit-text">Recognition on Leaderboard</span>
-            </div>
-            <div className="benefit-item">
-              <span className="benefit-icon">❤️</span>
-              <span className="benefit-text">Our Eternal Gratitude</span>
+              <span className="benefit-text">
+                A donation does not purchase in-app advantages or guaranteed rewards.
+              </span>
             </div>
           </div>
         </div>

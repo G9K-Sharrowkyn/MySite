@@ -1,3 +1,6 @@
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { usersRepo, withDb } from '../repositories/index.js';
 import { closeMongo } from '../services/mongoDb.js';
 import {
@@ -5,8 +8,12 @@ import {
   normalizeEmail
 } from '../utils/primaryAdmin.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, '..', '.env') });
+dotenv.config({ path: path.resolve(__dirname, '..', '.env.production') });
+
 const targetEmail = normalizeEmail(
-  process.env.PRIMARY_ADMIN_EMAIL || 'ak4maaru@gmail.com'
+  process.env.PRIMARY_ADMIN_EMAIL
 );
 
 const run = async () => {

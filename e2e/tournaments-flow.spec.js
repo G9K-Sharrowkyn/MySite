@@ -28,7 +28,7 @@ test('tournament creation and multi-user join flow', async ({ page, request }) =
   await loginViaUi(page, users[0].email, users[0].password);
   await page.goto('/tournaments');
 
-  await page.locator('.tournaments-header .create-tournament-btn').click();
+  await page.locator('.tournaments-header .create-tournament-btn').first().click();
   const form = page.locator('.create-tournament-form');
   await expect(form).toBeVisible();
   await form.locator('input[name="title"]').fill(tournamentTitle);

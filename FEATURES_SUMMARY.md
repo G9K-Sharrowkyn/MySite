@@ -101,13 +101,8 @@ npm run dev
 
 ## 🎯 **Test Accounts**
 
-**Moderator Account:**
-- Username: `moderator`
-- Password: `mod1234`
-
-**Regular User:**
-- Username: `testuser`  
-- Password: `password123`
+Create disposable test accounts during automated test setup. The repository
+does not ship reusable usernames or passwords.
 
 ---
 

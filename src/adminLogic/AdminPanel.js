@@ -1,13 +1,9 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import axios from 'axios';
 import { AuthContext } from '../auth/AuthContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './AdminPanel.css';
-
-const PRIMARY_ADMIN_EMAIL = 'ak4maaru@gmail.com';
-const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
-const isPrimaryAdmin = (email) => normalizeEmail(email) === PRIMARY_ADMIN_EMAIL;
 
 const AdminPanel = () => {
   const { user, token } = useContext(AuthContext);
@@ -48,7 +44,7 @@ const AdminPanel = () => {
         return;
       }
 
-      if (user?.role === 'admin' || isPrimaryAdmin(user?.email)) {
+      if (user?.role === 'admin') {
         if (!cancelled) {
           setAdminAccess(true);
           setAdminCheckLoading(false);
@@ -64,9 +60,7 @@ const AdminPanel = () => {
         const response = await axios.get('/api/profile/me', {
           headers: { 'x-auth-token': token }
         });
-        const isAdmin =
-          response?.data?.role === 'admin' ||
-          isPrimaryAdmin(response?.data?.email);
+        const isAdmin = response?.data?.role === 'admin';
         if (!cancelled) {
           setAdminAccess(Boolean(isAdmin));
         }

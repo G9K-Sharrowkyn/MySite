@@ -8,6 +8,7 @@ import {
   withDb
 } from '../repositories/index.js';
 import { syncRankFromPoints } from '../utils/rankSystem.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -218,7 +219,7 @@ export const createFight = async (req, res) => {
 // @access  Public
 export const getFights = async (req, res) => {
   try {
-    const { type, category, status, page = 1, limit = 10 } = req.query;
+    const { type, category, status } = req.query;
     const db = await readDb();
     const fights = await fightsRepo.getAll({ db });
     const users = await usersRepo.getAll({ db });
@@ -235,8 +236,10 @@ export const getFights = async (req, res) => {
     });
 
     const totalFights = filtered.length;
-    const pageNumber = Number(page) || 1;
-    const limitNumber = Number(limit) || 10;
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 10,
+      maxLimit: 50
+    });
     const sorted = [...filtered].sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );

@@ -75,7 +75,7 @@ Make sure `server.js`, `package.json`, and all backend files are inside that fol
 1) Open **Setup Node.js App**.
 2) Click **Create Application**.
 3) Use these values:
-   - **Node.js version**: 18+ (or the newest available)
+   - **Node.js version**: 24
    - **Application mode**: production
    - **Application root**: `backend`
    - **Application URL**: `https://api.versusversevault.com`
@@ -88,7 +88,8 @@ Make sure `server.js`, `package.json`, and all backend files are inside that fol
 
 ## 5) Set backend environment variables (cPanel)
 
-In the same Node.js App screen, add env vars:
+In the same Node.js App screen, configure every value documented in
+`backend/.env.example`. The abbreviated list below is not sufficient by itself:
 
 ```
 NODE_ENV=production
@@ -98,10 +99,14 @@ MONGO_URI=your_atlas_uri_here
 MONGO_DB_NAME=versusversevault
 JWT_SECRET=your_long_random_secret
 FRONTEND_URL=https://versusversevault.com
-MONGO_CACHE_TTL_MS=300000
+API_ORIGIN=https://api.versusversevault.com
+MONGO_CACHE_TTL_MS=0
 ```
 
-Save, then **Restart** the Node.js app.
+Use a randomly generated JWT secret of at least 32 characters. Configure SMTP,
+the legal operator/contact values and the primary administrator, then run
+`npm run preflight:production`. Save and **Restart** only after the preflight
+passes.
 
 ---
 
@@ -109,14 +114,16 @@ Save, then **Restart** the Node.js app.
 
 Make sure Atlas allows your hosting server IP:
 - Atlas > Network Access > Add IP address
-- Add your hosting server IP (or 0.0.0.0/0 for quick testing)
+- Add only the fixed outbound IP address of your hosting server. Do not expose
+  the database to `0.0.0.0/0`.
 
 ---
 
 ## 7) Verify
 
 - Frontend: https://versusversevault.com
-- Backend: https://api.versusversevault.com (should show "API is running..." or respond to /api)
+- Backend: https://api.versusversevault.com/healthz (must return JSON with
+  `"ok": true`)
 - Check cPanel Node.js logs if something fails.
 
 ---

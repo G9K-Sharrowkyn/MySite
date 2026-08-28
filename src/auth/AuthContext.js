@@ -1,13 +1,9 @@
-import React, { createContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 
 export const AuthContext = createContext();
 const DEFAULT_AVATAR = '/logo192.png';
-const PRIMARY_ADMIN_EMAIL = 'ak4maaru@gmail.com';
-
-const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
-const isPrimaryAdminUser = (data) =>
-  normalizeEmail(data?.email) === PRIMARY_ADMIN_EMAIL;
+const SESSION_MARKER = 'cookie-session';
 
 const normalizeUser = (data, fallbackId) => {
   if (!data) {
@@ -25,16 +21,18 @@ const normalizeUser = (data, fallbackId) => {
       data.profile?.profilePicture ||
       data.profile?.avatar ||
       DEFAULT_AVATAR,
-    role: isPrimaryAdminUser(data) ? 'admin' : (data.role || 'user')
+    role: data.role || 'user'
   };
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const sessionGeneration = useRef(0);
 
-  const logout = useCallback(() => {
+  const clearSession = useCallback(() => {
+    sessionGeneration.current += 1;
     localStorage.removeItem('token');
     localStorage.removeItem('userId');
     setToken(null);
@@ -42,37 +40,41 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  const logout = useCallback(() => {
+    axios.post('/api/auth/logout').catch(() => {});
+    clearSession();
+  }, [clearSession]);
+
   const fetchUser = useCallback(
-    async (authToken) => {
-      if (!authToken) {
-        setLoading(false);
-        return;
-      }
-
+    async (expectedGeneration = sessionGeneration.current) => {
       try {
-        const response = await axios.get('/api/profile/me', {
-          headers: { 'x-auth-token': authToken }
-        });
-
-        setUser(normalizeUser(response.data, response.data?.id));
+        const response = await axios.get('/api/profile/me');
+        if (expectedGeneration !== sessionGeneration.current) return null;
+        const normalized = normalizeUser(response.data, response.data?.id);
+        setUser(normalized);
+        localStorage.setItem('token', SESSION_MARKER);
+        if (normalized?.id) localStorage.setItem('userId', normalized.id);
+        setToken(SESSION_MARKER);
         setLoading(false);
+        return normalized;
       } catch (error) {
-        console.error('Error fetching user:', error);
-        if (error.response?.status === 401) {
-          logout();
-        } else {
-          setLoading(false);
+        if (expectedGeneration !== sessionGeneration.current) return null;
+        if (error.response?.status !== 401) {
+          console.error('Error fetching user:', error);
         }
+        clearSession();
+        return null;
       }
     },
-    [logout]
+    [clearSession]
   );
 
   const login = useCallback(
-    (authToken, userId, userData) => {
-      localStorage.setItem('token', authToken);
+    (_authToken, userId, userData) => {
+      sessionGeneration.current += 1;
+      localStorage.setItem('token', SESSION_MARKER);
       localStorage.setItem('userId', userId);
-      setToken(authToken);
+      setToken(SESSION_MARKER);
 
       const normalized = normalizeUser(userData, userId);
       if (normalized) {
@@ -80,7 +82,7 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       } else {
         setUser(null);
-        fetchUser(authToken);
+        fetchUser();
       }
     },
     [fetchUser]
@@ -91,15 +93,24 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false);
-      setUser(null);
-      return;
-    }
-
-    // Always refresh from backend for the active token to avoid stale role/UI state.
-    fetchUser(token);
-  }, [fetchUser, token]);
+    const bootstrapSession = async () => {
+      const generation = sessionGeneration.current;
+      const legacyToken = localStorage.getItem('token');
+      try {
+        if (legacyToken && legacyToken !== SESSION_MARKER) {
+          await axios.post(
+            '/api/auth/session',
+            {},
+            { headers: { 'x-auth-token': legacyToken } }
+          );
+        }
+        await fetchUser(generation);
+      } catch (_error) {
+        if (generation === sessionGeneration.current) clearSession();
+      }
+    };
+    bootstrapSession();
+  }, [clearSession, fetchUser]);
 
   const value = {
     user,

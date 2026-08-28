@@ -13,15 +13,25 @@ describe('Auth endpoints', () => {
     const email = `test_${timestamp}@example.com`;
     const username = `test_${timestamp}`;
 
+    const password = 'pass12345678';
     const resReg = await request(server)
       .post('/api/auth/register')
-      .send({ username, email, password: 'pass123' })
+      .send({
+        username,
+        email,
+        password,
+        consent: {
+          termsOfService: true,
+          privacyPolicy: true,
+          minimumAgeConfirmed: true
+        }
+      })
       .expect(201);
     expect(resReg.body).toHaveProperty('token');
 
     const resLog = await request(server)
       .post('/api/auth/login')
-      .send({ username, password: 'pass123' })
+      .send({ email, password })
       .expect(200);
     expect(resLog.body).toHaveProperty('token');
   });

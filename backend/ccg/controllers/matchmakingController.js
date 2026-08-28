@@ -1,25 +1,10 @@
 // SYSTEM MATCHMAKINGU - GOTOWY DO UŻYCIA
 // System lokalnej gry z botem
 
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dataDir = path.join(__dirname, '..', 'data');
-const usersFile = path.join(dataDir, 'users.json');
-const matchmakingFile = path.join(dataDir, 'matchmaking.json');
+import { randomUUID } from 'crypto';
+import { getCcgUser } from '../services/profileService.js';
 
 // Funkcja do ładowania użytkowników
-async function loadUsers() {
-  try {
-    const data = await fs.readFile(usersFile, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return [];
-  }
-}
-
 // Kolejka matchmakingu
 let matchmakingQueue = [];
 let activeMatches = new Map();
@@ -32,19 +17,6 @@ const GAME_MODES = {
 };
 
 // Funkcje pomocnicze
-async function loadMatchmakingData() {
-  try {
-    const data = await fs.readFile(matchmakingFile, 'utf-8');
-    return JSON.parse(data);
-  } catch {
-    return { queue: [], matches: [] };
-  }
-}
-
-async function saveMatchmakingData(data) {
-  await fs.writeFile(matchmakingFile, JSON.stringify(data, null, 2));
-}
-
 // Oblicza różnicę w rankingu między graczami
 function calculateRankDifference(rank1, rank2) {
   const rankValues = {
@@ -87,6 +59,9 @@ function findOpponent(player, queue) {
 export const joinQueue = async (req, res) => {
   const { gameMode = GAME_MODES.CASUAL } = req.body;
   const user = req.user;
+  if (!Object.values(GAME_MODES).includes(gameMode)) {
+    return res.status(400).json({ message: 'Nieprawidłowy tryb gry' });
+  }
   
   // Sprawdź czy gracz już jest w kolejce
   const existingIndex = matchmakingQueue.findIndex(p => p.userId === user.id);
@@ -95,8 +70,7 @@ export const joinQueue = async (req, res) => {
   }
   
   // Pobierz dane gracza (ranking, talia itp.)
-  const users = await loadUsers();
-  const playerData = users.find(u => u.id === user.id);
+  const playerData = await getCcgUser(user.id);
   if (!playerData) {
     return res.status(404).json({ message: 'Dane gracza nie znalezione' });
   }
@@ -123,7 +97,7 @@ export const joinQueue = async (req, res) => {
     const opponent = match.opponent;
     matchmakingQueue.splice(match.index, 1);
     
-    const matchId = `match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const matchId = `match_${randomUUID()}`;
     const gameMatch = {
       id: matchId,
       players: [player, opponent],
@@ -193,15 +167,17 @@ export const getQueueStatus = async (req, res) => {
 export const playVsBot = async (req, res) => {
   const { difficulty = 'medium' } = req.body;
   const user = req.user;
+  if (!['easy', 'medium', 'hard'].includes(difficulty)) {
+    return res.status(400).json({ message: 'Nieprawidłowy poziom trudności' });
+  }
   
   // Sprawdź czy gracz ma aktywną talię
-  const users = await loadUsers();
-  const playerData = users.find(u => u.id === user.id);
+  const playerData = await getCcgUser(user.id);
   if (!playerData || !playerData.activeDeck) {
     return res.status(400).json({ message: 'Musisz ustawić aktywną talię' });
   }
   
-  const matchId = `bot_match_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const matchId = `bot_match_${randomUUID()}`;
   
   const botMatch = {
     id: matchId,
@@ -265,4 +241,5 @@ export const cleanupOldMatches = () => {
 };
 
 // Uruchom czyszczenie co 5 minut
-setInterval(cleanupOldMatches, 5 * 60 * 1000); 
+const cleanupTimer = setInterval(cleanupOldMatches, 5 * 60 * 1000);
+cleanupTimer.unref();

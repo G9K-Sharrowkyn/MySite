@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import io from 'socket.io-client';
 import { placeholderImages, getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
@@ -79,12 +79,18 @@ const MessagesPage = () => {
   useEffect(() => {
     if (!token || !currentUserId) return;
 
-    const socketUrl = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5000'
-      : window.location.origin;
+    const configuredSocketUrl = String(
+      process.env.REACT_APP_SOCKET_URL || ''
+    ).trim();
+    const socketUrl = configuredSocketUrl || (
+      window.location.hostname === 'localhost'
+        ? 'http://localhost:5000'
+        : window.location.origin
+    );
     
     const socket = io(socketUrl, {
-      auth: { token }
+      auth: { token },
+      withCredentials: true
     });
 
     socket.on('connect', () => {

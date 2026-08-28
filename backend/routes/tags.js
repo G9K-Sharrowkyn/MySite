@@ -3,6 +3,9 @@ import { readDb, withDb } from '../repositories/index.js';
 import { autoTagPost, getBaseTags } from '../utils/tagging.js';
 import { normalizePostForResponse } from '../controllers/postController.js';
 import { optionalAuth } from '../middleware/optionalAuth.js';
+import auth from '../middleware/auth.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+import { parseLimit, parsePagination } from '../utils/pagination.js';
 
 const router = express.Router();
 
@@ -184,7 +187,7 @@ router.get('/search', async (req, res) => {
 // GET /api/tags/trending - trending tags
 router.get('/trending', async (req, res) => {
   try {
-    const limit = Number(req.query.limit || 10);
+    const limit = parseLimit(req.query.limit, { fallback: 10, max: 50 });
     const db = await readDb();
     const index = buildTagIndex(db.posts || []);
     const tags = CATEGORY_KEYS.flatMap((category) =>
@@ -265,8 +268,10 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
       return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
     });
 
-    const pageNumber = Number(page);
-    const limitNumber = Number(limit);
+    const { page: pageNumber, limit: limitNumber } = parsePagination(
+      { page, limit },
+      { defaultLimit: 10, maxLimit: 50 }
+    );
     const paged = sorted.slice(
       (pageNumber - 1) * limitNumber,
       pageNumber * limitNumber
@@ -295,7 +300,7 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
 });
 
 // POST /api/tags/auto-tag - generate tags from content
-router.post('/auto-tag', async (req, res) => {
+router.post('/auto-tag', auth, async (req, res) => {
   try {
     const db = await readDb();
     const tagged = autoTagPost(db, req.body || {});
@@ -307,7 +312,7 @@ router.post('/auto-tag', async (req, res) => {
 });
 
 // POST /api/tags/initialize - seed base tags
-router.post('/initialize', async (_req, res) => {
+router.post('/initialize', auth, roleMiddleware(['moderator', 'admin']), async (_req, res) => {
   try {
     const baseTags = getBaseTags();
     let created = [];
@@ -379,7 +384,7 @@ router.get('/stats', async (_req, res) => {
 });
 
 // PUT /api/tags/:id - update stored tag metadata
-router.put('/:id', async (req, res) => {
+router.put('/:id', auth, roleMiddleware(['moderator', 'admin']), async (req, res) => {
   try {
     let updated;
     await withDb((db) => {
@@ -420,7 +425,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/tags/:id - delete stored tag
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', auth, roleMiddleware(['moderator', 'admin']), async (req, res) => {
   try {
     let removed = false;
     await withDb((db) => {

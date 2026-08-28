@@ -4,6 +4,7 @@ import { useLanguage } from '../i18n/LanguageContext';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import { splitFightTeamMembers } from '../utils/fightTeams';
 import CharacterSelector from '../feedLogic/CharacterSelector';
+import { createIdempotencyKey } from '../utils/idempotencyKey';
 import './CreatePost.css';
 
 const getApiBaseUrl = () => {
@@ -68,6 +69,8 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
   const [characters, setCharacters] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initialFightResolvedRef = React.useRef(null);
+  const submitInFlightRef = React.useRef(false);
+  const submitKeyRef = React.useRef(null);
 
   // User-vs-user challenge state
   const [fightMode, setFightMode] = useState('community'); // 'community' or 'user_vs_user'
@@ -447,8 +450,17 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!token || !validateForm()) return;
+    if (!token || !validateForm() || submitInFlightRef.current) return;
 
+    submitInFlightRef.current = true;
+    const isCreating = !initialData?.id;
+    if (isCreating && !submitKeyRef.current) {
+      submitKeyRef.current = createIdempotencyKey();
+    }
+    const requestHeaders = {
+      'x-auth-token': token,
+      ...(isCreating ? { 'Idempotency-Key': submitKeyRef.current } : {})
+    };
     setIsSubmitting(true);
     try {
       // Handle user-vs-user challenge separately
@@ -464,7 +476,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
           group: postData.group || null,
           photos: postData.photos.map(p => p.url)
         }, {
-          headers: { 'x-auth-token': token }
+          headers: requestHeaders
         });
 
         if (onPostCreated) {
@@ -488,6 +500,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         setSelectedOpponent(null);
         setOpponentSearch('');
         setIsExpanded(false);
+        submitKeyRef.current = null;
         return;
       }
 
@@ -533,7 +546,7 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
       } else {
         // Create new post
         await axios.post('/api/posts', submitData, {
-          headers: { 'x-auth-token': token }
+          headers: requestHeaders
         });
         if (onPostCreated) {
           onPostCreated();
@@ -558,10 +571,12 @@ const CreatePost = ({ onPostCreated, initialData, onPostUpdated, onCancel }) => 
         setSelectedOpponent(null);
         setOpponentSearch('');
         setIsExpanded(false);
+        submitKeyRef.current = null;
       }
     } catch (error) {
       console.error('Error submitting post:', error);
     } finally {
+      submitInFlightRef.current = false;
       setIsSubmitting(false);
     }
   };

@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { MongoClient } from 'mongodb';
+import { randomUUID } from 'crypto';
 import { COLLECTION_KEYS, normalizeDb } from './dbSchema.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -30,8 +31,7 @@ const getAutoBackupCollections = () => {
   if (configured.length > 0) {
     return new Set(configured);
   }
-  // Safe default: protect the most painful-to-recreate data.
-  return new Set(['characters', 'users', 'posts']);
+  return new Set(COLLECTION_KEYS);
 };
 
 const getAutoBackupMinIntervalMs = () =>
@@ -186,12 +186,13 @@ const getMongoDbName = () => resolveMongoDbName().dbName;
 const getMongoConnectTimeoutMs = () =>
   Number.parseInt(process.env.MONGO_CONNECT_TIMEOUT_MS || '10000', 10);
 const getMongoCacheTtlMs = () =>
-  Number.parseInt(process.env.MONGO_CACHE_TTL_MS || '300000', 10);
+  Number.parseInt(process.env.MONGO_CACHE_TTL_MS || '0', 10);
 
 let client;
 let clientPromise;
 let dbCache;
 let dbCacheTimestamp = 0;
+let dbCacheRevision = 0;
 const collectionCache = new Map();
 let indexesReadyPromise;
 
@@ -248,19 +249,65 @@ const ensureIndexes = async (db) => {
   if (indexesReadyPromise) return indexesReadyPromise;
 
   indexesReadyPromise = (async () => {
+    await db.collection('_app_meta').updateOne(
+      { _id: 'db_revision' },
+      { $setOnInsert: { revision: 0, createdAt: new Date() } },
+      { upsert: true }
+    );
+
+    const uniqueId = {
+      key: { id: 1 },
+      options: {
+        unique: true,
+        partialFilterExpression: { id: { $type: 'string' } }
+      }
+    };
     const specs = [
-      ['users', [{ key: { id: 1 } }, { key: { username: 1 } }, { key: { email: 1 } }, { key: { role: 1 } }]],
-      ['posts', [{ key: { id: 1 } }, { key: { authorId: 1 } }, { key: { createdAt: -1 } }, { key: { type: 1 } }, { key: { category: 1 } }]],
-      ['comments', [{ key: { id: 1 } }, { key: { postId: 1 } }, { key: { targetId: 1 } }, { key: { authorId: 1 } }, { key: { type: 1 } }, { key: { createdAt: -1 } }]],
-      ['messages', [{ key: { id: 1 } }, { key: { senderId: 1, recipientId: 1, createdAt: -1 } }, { key: { recipientId: 1, read: 1, deleted: 1 } }]],
-      ['notifications', [{ key: { id: 1 } }, { key: { userId: 1, read: 1, createdAt: -1 } }]],
-      ['friendRequests', [{ key: { id: 1 } }, { key: { fromUserId: 1, toUserId: 1, status: 1 } }, { key: { toUserId: 1, status: 1, createdAt: -1 } }]],
-      ['friendships', [{ key: { id: 1 } }, { key: { userId1: 1, userId2: 1 } }, { key: { userId1: 1 } }, { key: { userId2: 1 } }]],
-      ['blocks', [{ key: { id: 1 } }, { key: { blockerId: 1, blockedId: 1 } }, { key: { blockerId: 1 } }]],
-      ['feedback', [{ key: { id: 1 } }, { key: { status: 1, createdAt: -1 } }, { key: { type: 1 } }]],
-      ['tournaments', [{ key: { id: 1 } }, { key: { status: 1, createdAt: -1 } }]],
+      ['users', [
+        uniqueId,
+        {
+          key: { username: 1 },
+          options: {
+            unique: true,
+            collation: { locale: 'en', strength: 2 },
+            partialFilterExpression: { username: { $type: 'string' } }
+          }
+        },
+        {
+          key: { email: 1 },
+          options: {
+            unique: true,
+            collation: { locale: 'en', strength: 2 },
+            partialFilterExpression: { email: { $type: 'string' } }
+          }
+        },
+        { key: { role: 1 } }
+      ]],
+      ['posts', [uniqueId, { key: { authorId: 1 } }, { key: { createdAt: -1 } }, { key: { type: 1 } }, { key: { category: 1 } }]],
+      ['comments', [uniqueId, { key: { postId: 1 } }, { key: { targetId: 1 } }, { key: { authorId: 1 } }, { key: { type: 1 } }, { key: { createdAt: -1 } }]],
+      ['messages', [uniqueId, { key: { senderId: 1, recipientId: 1, createdAt: -1 } }, { key: { recipientId: 1, read: 1, deleted: 1 } }]],
+      ['notifications', [uniqueId, { key: { userId: 1, read: 1, createdAt: -1 } }]],
+      ['friendRequests', [uniqueId, { key: { fromUserId: 1, toUserId: 1, status: 1 } }, { key: { toUserId: 1, status: 1, createdAt: -1 } }]],
+      ['friendships', [uniqueId, { key: { userId1: 1, userId2: 1 } }, { key: { userId1: 1 } }, { key: { userId2: 1 } }]],
+      ['blocks', [uniqueId, { key: { blockerId: 1, blockedId: 1 } }, { key: { blockerId: 1 } }]],
+      ['feedback', [uniqueId, { key: { status: 1, createdAt: -1 } }, { key: { type: 1 } }]],
+      ['tournaments', [uniqueId, { key: { status: 1, createdAt: -1 } }]],
       ['nicknameChangeLogs', [{ key: { userId: 1, changedAt: -1 } }, { key: { username: 1, changedAt: -1 } }]],
-      ['moderatorActionLogs', [{ key: { createdAt: -1 } }, { key: { actorId: 1, createdAt: -1 } }, { key: { targetType: 1, createdAt: -1 } }]]
+      ['moderatorActionLogs', [uniqueId, { key: { createdAt: -1 } }, { key: { actorId: 1, createdAt: -1 } }, { key: { targetType: 1, createdAt: -1 } }]],
+      ['swoopRuns', [
+        uniqueId,
+        { key: { trackId: 1, timeMs: 1, collisions: 1 } },
+        {
+          key: { userId: 1, trackId: 1 },
+          options: {
+            unique: true,
+            partialFilterExpression: {
+              userId: { $type: 'string' },
+              trackId: { $type: 'string' }
+            }
+          }
+        }
+      ]]
     ];
 
     for (const [collectionName, indexes] of specs) {
@@ -274,7 +321,18 @@ const ensureIndexes = async (db) => {
         }
       } catch (error) {
         console.error(`Index ensure failed for ${collectionName}:`, error?.message || error);
+        if (process.env.NODE_ENV === 'production') {
+          throw error;
+        }
       }
+    }
+
+    for (const collectionName of COLLECTION_KEYS) {
+      if (specs.some(([name]) => name === collectionName)) continue;
+      await db.collection(collectionName).createIndex(
+        { id: 1 },
+        uniqueId.options
+      );
     }
   })();
 
@@ -303,11 +361,18 @@ const getClient = async () => {
     serverSelectionTimeoutMS: timeoutMs
   });
 
-  clientPromise = client.connect().then(async () => {
-    const db = client.db(getMongoDbName());
-    await ensureIndexes(db);
-    return client;
-  });
+  clientPromise = client
+    .connect()
+    .then(async () => {
+      const db = client.db(getMongoDbName());
+      await ensureIndexes(db);
+      return client;
+    })
+    .catch((error) => {
+      clientPromise = undefined;
+      client = undefined;
+      throw error;
+    });
   return clientPromise;
 };
 
@@ -317,6 +382,26 @@ const getDb = async () => {
 };
 
 export const getMongoDb = async () => getDb();
+
+export const verifyMongoTransactions = async () => {
+  const db = await getDb();
+  const activeClient = await getClient();
+  const session = activeClient.startSession();
+  try {
+    await session.withTransaction(async () => {
+      await db
+        .collection('_app_meta')
+        .findOne({ _id: 'db_revision' }, { session });
+    });
+  } catch (error) {
+    throw new Error(
+      `MongoDB transactions are unavailable. Production requires a replica set or sharded cluster: ${error?.message || error}`,
+      { cause: error }
+    );
+  } finally {
+    await session.endSession();
+  }
+};
 
 const stripMongoId = (doc) => {
   if (!doc || typeof doc !== 'object') {
@@ -337,7 +422,16 @@ const sanitizeDoc = (doc) => {
   return copy;
 };
 
-const replaceCollection = async (db, key, items) => {
+const normalizeItemsWithIds = (items) =>
+  items.map((item) => {
+    const sanitized = sanitizeDoc(item);
+    if (!sanitized.id || typeof sanitized.id !== 'string') {
+      sanitized.id = randomUUID();
+    }
+    return sanitized;
+  });
+
+const replaceCollection = async (db, key, items, { session } = {}) => {
   try {
     await maybeAutoBackupCollection(db, key, { reason: 'replace_collection' });
   } catch (error) {
@@ -349,11 +443,25 @@ const replaceCollection = async (db, key, items) => {
   }
 
   const collection = db.collection(key);
-  await collection.deleteMany({});
-  if (items.length > 0) {
-    const docs = items.map(sanitizeDoc);
-    await collection.insertMany(docs, { ordered: false });
+  const docs = normalizeItemsWithIds(items);
+  if (docs.length > 0) {
+    await collection.bulkWrite(
+      docs.map((doc) => ({
+        replaceOne: {
+          filter: { id: doc.id },
+          replacement: doc,
+          upsert: true
+        }
+      })),
+      { ordered: false, session }
+    );
   }
+  const ids = docs.map((doc) => doc.id);
+  await collection.deleteMany(
+    ids.length > 0 ? { id: { $nin: ids } } : {},
+    { session }
+  );
+  return docs;
 };
 
 let writeChain = Promise.resolve();
@@ -386,22 +494,33 @@ const enqueueWrite = async (task) => {
   return result;
 };
 
+const loadDbSnapshot = async () => {
+  const db = await getDb();
+  const [entries, revisionRecord] = await Promise.all([
+    Promise.all(
+      COLLECTION_KEYS.map(async (key) => {
+        const docs = await db.collection(key).find({}).toArray();
+        return [key, docs.map(stripMongoId)];
+      })
+    ),
+    db.collection('_app_meta').findOne({ _id: 'db_revision' })
+  ]);
+  const data = Object.fromEntries(entries);
+  return {
+    data: normalizeDb(data),
+    revision: Number(revisionRecord?.revision || 0)
+  };
+};
+
 export const readDb = async () => {
   if (hasFreshCache()) {
     return cloneData(dbCache);
   }
 
-  const db = await getDb();
-  const entries = await Promise.all(
-    COLLECTION_KEYS.map(async (key) => {
-      const docs = await db.collection(key).find({}).toArray();
-      return [key, docs.map(stripMongoId)];
-    })
-  );
-
-  const data = Object.fromEntries(entries);
-  const normalized = normalizeDb(data);
+  const snapshot = await loadDbSnapshot();
+  const normalized = snapshot.data;
   setCache(normalized);
+  dbCacheRevision = snapshot.revision;
   for (const key of COLLECTION_KEYS) {
     setCollectionCache(key, normalized[key] || []);
   }
@@ -427,16 +546,51 @@ export const readCollection = async (collectionKey) => {
 export const writeDb = async (data) => {
   const normalized = normalizeDb(data);
   const db = await getDb();
-
-  await Promise.all(
-    COLLECTION_KEYS.map((key) => replaceCollection(db, key, normalized[key]))
+  const snapshot = await loadDbSnapshot();
+  const committed = await commitCollections(
+    db,
+    COLLECTION_KEYS.map((key) => [key, normalized[key]]),
+    snapshot.revision
   );
 
-  setCache(normalized);
+  setCache(committed);
   for (const key of COLLECTION_KEYS) {
     setCollectionCache(key, normalized[key] || []);
   }
-  return cloneData(normalized);
+  return cloneData(committed);
+};
+
+const commitCollections = async (db, entries, expectedRevision) => {
+  const activeClient = await getClient();
+  const session = activeClient.startSession();
+  const committed = {};
+  try {
+    await session.withTransaction(async () => {
+      const revisionUpdate = await db.collection('_app_meta').updateOne(
+        { _id: 'db_revision', revision: expectedRevision },
+        { $inc: { revision: 1 }, $set: { updatedAt: new Date() } },
+        { session }
+      );
+      if (revisionUpdate.modifiedCount !== 1) {
+        const error = new Error('Concurrent database update detected');
+        error.code = 'WRITE_CONFLICT';
+        throw error;
+      }
+
+      for (const [key, items] of entries) {
+        committed[key] = await replaceCollection(db, key, items, { session });
+      }
+    });
+    dbCacheRevision = expectedRevision + 1;
+    return committed;
+  } catch (error) {
+    if (error?.code === 11000) {
+      error.code = 'WRITE_CONFLICT';
+    }
+    throw error;
+  } finally {
+    await session.endSession();
+  }
 };
 
 export const updateCollection = async (collectionKey, mutator) => {
@@ -445,65 +599,67 @@ export const updateCollection = async (collectionKey, mutator) => {
   }
 
   return enqueueWrite(async () => {
-    const current = await readCollection(collectionKey);
-    const working = [...current];
-    const next = mutator(working);
-    const resolved = Array.isArray(next) ? next : working;
-    const db = await getDb();
-    await replaceCollection(db, collectionKey, resolved);
-    clearCollectionCache(collectionKey);
-    if (dbCache && typeof dbCache === 'object') {
-      dbCache[collectionKey] = resolved;
-      dbCacheTimestamp = Date.now();
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const snapshot = await loadDbSnapshot();
+      const working = [...(snapshot.data[collectionKey] || [])];
+      const next = await mutator(working);
+      const resolved = Array.isArray(next) ? next : working;
+      const db = await getDb();
+      try {
+        const committed = await commitCollections(
+          db,
+          [[collectionKey, resolved]],
+          snapshot.revision
+        );
+        const result = committed[collectionKey];
+        clearCollectionCache(collectionKey);
+        dbCache = undefined;
+        dbCacheTimestamp = 0;
+        return cloneData(result);
+      } catch (error) {
+        if (error.code !== 'WRITE_CONFLICT' || attempt === 3) throw error;
+      }
     }
-    return cloneData(resolved);
+    throw new Error('Database update retry limit reached');
   });
 };
 
 export const updateDb = async (mutator) => {
   return enqueueWrite(async () => {
-    const data = await readDb();
-    const beforeSnapshots = new Map();
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      const snapshot = await loadDbSnapshot();
+      const data = snapshot.data;
+      const beforeSnapshots = new Map(
+        COLLECTION_KEYS.map((key) => [key, JSON.stringify(data[key] || [])])
+      );
 
-    for (const key of COLLECTION_KEYS) {
-      beforeSnapshots.set(key, JSON.stringify(data[key] || []));
-    }
+      await mutator(data);
+      const updated = normalizeDb(data);
+      const changedKeys = COLLECTION_KEYS.filter(
+        (key) => beforeSnapshots.get(key) !== JSON.stringify(updated[key] || [])
+      );
+      if (changedKeys.length === 0) {
+        return cloneData(updated);
+      }
 
-    // Mutators in this codebase are expected to mutate `data` in-place.
-    // Never trust the return value here, because returning a partial object (e.g. `{ ok: true }`)
-    // would normalize into DEFAULT_DB and could wipe collections in Mongo.
-    await mutator(data);
-    const updated = normalizeDb(data);
-    const db = await getDb();
-
-    const writes = [];
-    const changedKeys = [];
-    for (const key of COLLECTION_KEYS) {
-      const before = beforeSnapshots.get(key);
-      const after = JSON.stringify(updated[key] || []);
-      if (before !== after) {
-        writes.push(replaceCollection(db, key, updated[key] || []));
-        changedKeys.push(key);
+      const db = await getDb();
+      try {
+        const committed = await commitCollections(
+          db,
+          changedKeys.map((key) => [key, updated[key] || []]),
+          snapshot.revision
+        );
+        for (const key of changedKeys) {
+          updated[key] = committed[key];
+          clearCollectionCache(key);
+        }
+        setCache(updated);
+        return cloneData(updated);
+      } catch (error) {
+        if (error.code !== 'WRITE_CONFLICT' || attempt === 3) throw error;
       }
     }
-
-    if (writes.length === 0) {
-      setCache(updated);
-      // Keep per-collection cache coherent with the db-level cache.
-      for (const key of COLLECTION_KEYS) {
-        setCollectionCache(key, updated[key] || []);
-      }
-      return cloneData(updated);
-    }
-
-    await Promise.all(writes);
-    setCache(updated);
-    // Clear/update per-collection caches for any collections we modified.
-    for (const key of changedKeys) {
-      clearCollectionCache(key);
-      setCollectionCache(key, updated[key] || []);
-    }
-    return cloneData(updated);
+    throw new Error('Database update retry limit reached');
   });
 };
 
@@ -515,6 +671,7 @@ export const closeMongo = async () => {
   }
   dbCache = undefined;
   dbCacheTimestamp = 0;
+  dbCacheRevision = 0;
   collectionCache.clear();
   indexesReadyPromise = undefined;
 };

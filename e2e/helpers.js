@@ -26,7 +26,14 @@ const waitForBackend = async (page, timeoutMs = 15000) => {
 
 const registerUserViaApi = async (request, user) => {
   const response = await request.post(`${BACKEND_BASE_URL}/api/auth/register`, {
-    data: user
+    data: {
+      ...user,
+      consent: {
+        termsOfService: true,
+        privacyPolicy: true,
+        minimumAgeConfirmed: true
+      }
+    }
   });
   return response;
 };
@@ -40,17 +47,36 @@ const loginViaApi = async (request, email, password) => {
 };
 
 const loginViaUi = async (page, email, password) => {
+  await page.context().clearCookies();
   await page.goto('/login');
-  await page.getByPlaceholder('Email address').fill(email);
+  const emailInput = page.getByPlaceholder('Email address');
+  await emailInput.waitFor({ state: 'visible' });
+  await emailInput.fill(email);
   await page.getByPlaceholder('Password').fill(password);
+  const loginResponsePromise = page.waitForResponse(
+    (response) =>
+      response.url().includes('/api/auth/login') &&
+      response.request().method() === 'POST'
+  );
   await page.locator('input[type="submit"]').click();
+  const loginResponse = await loginResponsePromise;
+  const loginData = await loginResponse.json();
+
+  if (loginData.requires2FA) {
+    if (!loginData.testTwoFactorCode) {
+      throw new Error('E2E login requires a test-only two-factor code.');
+    }
+    await page.getByPlaceholder('6-digit security code').fill(loginData.testTwoFactorCode);
+    await page.getByRole('button', { name: 'Verify code' }).click();
+  }
+
   await page.waitForFunction(() => Boolean(localStorage.getItem('token')), null, {
     timeout: 15000
   });
 };
 
 const openUserMenu = async (page) => {
-  const userButton = page.locator('.user-button');
+  const userButton = page.locator('.user-button').first();
   await userButton.waitFor({ state: 'visible' });
   await userButton.click();
 };

@@ -1,48 +1,40 @@
 import bcrypt from 'bcryptjs';
 import { usersRepo } from '../repositories/index.js';
 
-const resetAdminPasswords = async () => {
-  try {
-    const newPassword = 'Admin123!';
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
-    
-    await usersRepo.updateAll((users) => {
-      // Reset admin password
-      const admin = users.find(
-        (u) => u.username === 'admin' || u.email === 'admin@site.local'
-      );
-      if (admin) {
-        admin.password = hashedPassword;
-        console.log('✅ Admin password reset!');
-      }
+const targetEmail = String(process.env.ADMIN_EMAIL || '').trim().toLowerCase();
+const newPassword = String(process.env.ADMIN_NEW_PASSWORD || '');
 
-      // Reset moderator password
-      const moderator = users.find(
-        (u) => u.username === 'moderator' || u.email === 'moderator@site.local'
-      );
-      if (moderator) {
-        moderator.password = hashedPassword;
-        console.log('✅ Moderator password reset!');
-      }
+if (!targetEmail) {
+  throw new Error('Set ADMIN_EMAIL to the exact account whose password should change.');
+}
+if (
+  newPassword.length < 12 ||
+  !/[A-Za-z]/.test(newPassword) ||
+  !/\d/.test(newPassword)
+) {
+  throw new Error(
+    'ADMIN_NEW_PASSWORD must contain at least 12 characters, a letter, and a number.'
+  );
+}
 
-      return users;
-    });
-    
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔐 NEW CREDENTIALS');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('\n📧 ADMIN:');
-    console.log('   Email: admin@site.local');
-    console.log('   Password: Admin123!');
-    console.log('\n📧 MODERATOR:');
-    console.log('   Email: moderator@site.local');
-    console.log('   Password: Admin123!');
-    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-    
-  } catch (error) {
-    console.error('Error resetting passwords:', error);
+let changed = false;
+const hashedPassword = await bcrypt.hash(newPassword, 12);
+await usersRepo.updateAll((users) => {
+  for (const user of users) {
+    if (String(user.email || '').trim().toLowerCase() !== targetEmail) continue;
+    if (user.role !== 'admin' && user.role !== 'moderator') {
+      throw new Error('The target account is not a staff account.');
+    }
+    user.password = hashedPassword;
+    user.tokenVersion = Number(user.tokenVersion || 0) + 1;
+    user.passwordChangedAt = new Date().toISOString();
+    user.updatedAt = new Date().toISOString();
+    changed = true;
   }
-};
+  return users;
+});
 
-resetAdminPasswords();
+if (!changed) {
+  throw new Error('Staff account was not found.');
+}
+console.log(`Password changed and existing sessions revoked for ${targetEmail}.`);

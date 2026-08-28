@@ -4,6 +4,7 @@ import auth from '../middleware/auth.js';
 import { readDb, withDb } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { commentValidation } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -124,8 +125,11 @@ router.get('/:id/votes', async (req, res) => {
 // @route   GET api/fights/:id/user-vote/:userId
 // @desc    Get user vote for fight (VotingSystem)
 // @access  Public
-router.get('/:id/user-vote/:userId', async (req, res) => {
+router.get('/:id/user-vote/:userId', auth, async (req, res) => {
   try {
+    if (req.params.userId !== req.user.id) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
     const db = await readDb();
     const vote = (db.votes || []).find(
       (entry) => entry.fightId === req.params.id && entry.userId === req.params.userId
@@ -145,9 +149,10 @@ router.get('/:id/user-vote/:userId', async (req, res) => {
 // @route   POST api/fights/:id/vote
 // @desc    Vote on fight (VotingSystem)
 // @access  Public
-router.post('/:id/vote', async (req, res) => {
+router.post('/:id/vote', auth, async (req, res) => {
   try {
-    const { userId, characterChoice } = req.body || {};
+    const { characterChoice } = req.body || {};
+    const userId = req.user.id;
     const choice = mapVoteChoice(characterChoice);
     if (!userId || !choice) {
       return res.status(400).json({ message: 'Invalid vote data' });
@@ -205,10 +210,11 @@ router.get('/:id/comments', async (req, res) => {
 // @route   POST api/fights/:id/comments
 // @desc    Add comment to fight (VotingSystem)
 // @access  Public
-router.post('/:id/comments', async (req, res) => {
+router.post('/:id/comments', auth, commentValidation, async (req, res) => {
   try {
-    const { userId, content } = req.body || {};
-    if (!userId || !content) {
+    const { content } = req.body || {};
+    const userId = req.user.id;
+    if (!content) {
       return res.status(400).json({ message: 'Invalid comment data' });
     }
 

@@ -9,9 +9,27 @@ module.exports = defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 2 : 0,
+  forbidOnly: Boolean(process.env.CI),
+  reporter: process.env.CI
+    ? [
+        ['line'],
+        ['html', { outputFolder: 'playwright-report', open: 'never' }],
+        ['junit', { outputFile: 'test-results/playwright-junit.xml' }]
+      ]
+    : 'list',
+  outputDir: 'test-results/playwright-artifacts',
   use: {
     baseURL,
-    trace: 'retain-on-failure',
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: baseURL,
+          localStorage: [{ name: 'cookie-consent', value: 'necessary' }]
+        }
+      ]
+    },
+    trace: process.env.CI ? 'retain-on-failure-and-retries' : 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure'
   },
@@ -23,7 +41,11 @@ module.exports = defineConfig({
     timeout: 120000,
     env: {
       BROWSER: 'none',
-      JSON_DB_PATH: '.tmp/db.e2e.json'
+      DATABASE: 'local',
+      JSON_DB_PATH: '.tmp/db.e2e.json',
+      JWT_SECRET: 'playwright-only-secret-not-for-production',
+      REQUIRE_EMAIL_VERIFICATION: 'false',
+      E2E_TEST_MODE: 'true'
     }
   },
   projects: [

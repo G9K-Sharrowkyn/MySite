@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router';
 import axios from 'axios';
 import { useLanguage } from './i18n/LanguageContext';
 import { replacePlaceholderUrl, placeholderImages, getOptimizedImageProps } from './utils/placeholderImage';
@@ -249,14 +249,7 @@ const Header = () => {
             <div className="nav-row nav-row-bottom">
               <Link to="/tournaments" className="nav-link pre-ccg">{t('tournaments')}</Link>
               <Link to="/tron-arena" className="nav-link pre-ccg">TRON</Link>
-              {isModerator ? (
-                <Link to="/speed-racing" className="nav-link pre-ccg">{t('speedRacing')}</Link>
-              ) : (
-                <span className="nav-link nav-link-disabled pre-ccg" aria-disabled="true" title="DostÄ™p tylko dla moderatorĂłw">
-                  {t('speedRacing')}
-                  <span className="nav-link-soon">(Soon!)</span>
-                </span>
-              )}
+              <Link to="/swoop-racing" className="nav-link pre-ccg">{t('speedRacing')}</Link>
               {isModerator ? (
                 <Link to="/ccg" className="nav-link pre-ccg">CCG</Link>
               ) : (
@@ -742,11 +735,7 @@ const Header = () => {
             <Link to="/leaderboard" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('leaderboard')}</Link>
             <Link to="/tournaments" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('tournaments')}</Link>
             <Link to="/tron-arena" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>TRON</Link>
-            {isModerator ? (
-              <Link to="/speed-racing" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('speedRacing')}</Link>
-            ) : (
-              <span className="mobile-nav-link disabled">{t('speedRacing')} <span className="nav-link-soon">(Soon!)</span></span>
-            )}
+            <Link to="/swoop-racing" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('speedRacing')}</Link>
             {isModerator ? (
               <Link to="/ccg" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>CCG</Link>
             ) : (

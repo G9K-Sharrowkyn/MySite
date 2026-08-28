@@ -88,7 +88,7 @@
       "id": "e2e-mod-1",
       "username": "moderator",
       "email": "moderator@site.local",
-      "password": "$2b$10$rhloSnuZ4Fk43vTTKwHlWepPaLh1vnPnex3IHBIw.OIO.6HtMyGVi",
+      "password": "$2b$12$hMhI6x9TYzr/mntrWyt.8u98Fegx86nta9iDV0mMNLnHCskWHIsi6",
       "role": "moderator",
       "profile": {
         "bio": "",
@@ -172,7 +172,7 @@
       "id": "e2e-admin-1",
       "username": "admin",
       "email": "admin@site.local",
-      "password": "$2b$10$rhloSnuZ4Fk43vTTKwHlWepPaLh1vnPnex3IHBIw.OIO.6HtMyGVi",
+      "password": "$2b$12$hMhI6x9TYzr/mntrWyt.8u98Fegx86nta9iDV0mMNLnHCskWHIsi6",
       "role": "admin",
       "profile": {
         "bio": "",

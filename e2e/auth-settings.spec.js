@@ -36,7 +36,9 @@ test('user can change password and log in with new credentials', async ({ page }
 
   await expect(page.locator('.settings-container')).toBeVisible({ timeout: 20000 });
 
-  const passwordSection = page.locator('.settings-section').first();
+  const passwordSection = page.locator('.settings-section', {
+    has: page.locator('input[name="currentPassword"]')
+  });
   await passwordSection.locator('input[name="currentPassword"]').fill(password);
   await passwordSection.locator('input[name="newPassword"]').fill(newPassword);
   await passwordSection.locator('input[name="confirmPassword"]').fill(newPassword);

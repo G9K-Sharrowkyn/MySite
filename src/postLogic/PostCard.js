@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext, useCallback, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link } from 'react-router';
 import {
   replacePlaceholderUrl,
   placeholderImages,
@@ -22,9 +22,12 @@ import './PostCard.css';
 import { useLanguage } from '../i18n/LanguageContext';
 import FightTimer from './FightTimer';
 import { AuthContext } from '../auth/AuthContext';
+import { createIdempotencyKey } from '../utils/idempotencyKey';
 
 let cachedCharacters = null;
 let cachedCharactersPromise = null;
+let cachedTranslationConfig = null;
+let cachedTranslationConfigPromise = null;
 
 const loadCharactersOnce = async () => {
   if (cachedCharacters) {
@@ -43,6 +46,23 @@ const loadCharactersOnce = async () => {
       });
   }
   return cachedCharactersPromise;
+};
+
+const loadTranslationConfigOnce = async () => {
+  if (cachedTranslationConfig) return cachedTranslationConfig;
+  if (!cachedTranslationConfigPromise) {
+    cachedTranslationConfigPromise = axios
+      .get('/api/translate/config')
+      .then((response) => {
+        cachedTranslationConfig = response.data || { enabled: false };
+        return cachedTranslationConfig;
+      })
+      .catch(() => {
+        cachedTranslationConfig = { enabled: false };
+        return cachedTranslationConfig;
+      });
+  }
+  return cachedTranslationConfigPromise;
 };
 
 const normalizeTag = (value) => {
@@ -90,6 +110,12 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [expandedThreads, setExpandedThreads] = useState({});
   const [replyingTo, setReplyingTo] = useState(null);
   const [replyText, setReplyText] = useState('');
+  const [isCommentSubmitting, setIsCommentSubmitting] = useState(false);
+  const [isReplySubmitting, setIsReplySubmitting] = useState(false);
+  const commentSubmitRef = useRef(false);
+  const replySubmitRef = useRef(false);
+  const commentKeyRef = useRef(null);
+  const replyKeyRef = useRef(null);
   const [userVote, setUserVote] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const { currentLanguage, t } = useLanguage();
@@ -97,9 +123,14 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [isTranslating, setIsTranslating] = useState(false);
   const [translatedComments, setTranslatedComments] = useState({});
   const [translatingComments, setTranslatingComments] = useState({});
+  const [translationConfig, setTranslationConfig] = useState(
+    cachedTranslationConfig || { enabled: false, privacyNotice: '' }
+  );
   const [showReactionMenu, setShowReactionMenu] = useState(false);
-  const [userReaction, setUserReaction] = useState(null);
+  const [userReaction, setUserReaction] = useState(post.userReaction || null);
   const [commentReactionTarget, setCommentReactionTarget] = useState(null);
+  const [isReactionSubmitting, setIsReactionSubmitting] = useState(false);
+  const reactionSubmitRef = useRef(false);
   const reactionSeed =
     Array.isArray(post.reactionsSummary) && post.reactionsSummary.length > 0
       ? post.reactionsSummary
@@ -109,6 +140,8 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   );
   const [characters, setCharacters] = useState(cachedCharacters || []);
   const [pollVote, setPollVote] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const deleteSubmitRef = useRef(false);
 
   const getGroupLabel = (groupId) => {
     const key = String(groupId || '').trim().toLowerCase();
@@ -159,6 +192,16 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   useEffect(() => {
     shareVersionRef.current = null;
   }, [post?.id]);
+
+  useEffect(() => {
+    let active = true;
+    loadTranslationConfigOnce().then((config) => {
+      if (active) setTranslationConfig(config);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useLayoutEffect(() => {
     if (!isMultiTeamFight) {
@@ -420,6 +463,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   }, [post.id, post.reactionsSummary, post.reactions]);
 
   useEffect(() => {
+    setUserReaction(post.userReaction || null);
+  }, [post.id, post.userReaction]);
+
+  useEffect(() => {
     let isMounted = true;
     if (cachedCharacters && cachedCharacters.length) {
       setCharacters(cachedCharacters);
@@ -495,7 +542,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get(`/api/comments/post/${post.id}`);
+      const response = await axios.get(`/api/comments/post/${post.id}`, {
+        headers: token ? { 'x-auth-token': token } : {}
+      });
       const payload = Array.isArray(response.data)
         ? response.data
         : response.data?.comments || [];
@@ -598,30 +647,47 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const handleReplyCancel = () => {
+    if (replySubmitRef.current) return;
     setReplyingTo(null);
     setReplyText('');
+    replyKeyRef.current = null;
   };
 
   const handleReplySubmit = async (e, threadId, fallbackParentId) => {
     e.preventDefault();
-    if (!token || !replyText.trim()) return;
+    if (!token || !replyText.trim() || replySubmitRef.current) return;
 
     const parentId =
       replyingTo && replyingTo.threadId === threadId
         ? replyingTo.id
         : fallbackParentId;
 
+    replySubmitRef.current = true;
+    setIsReplySubmitting(true);
+    if (!replyKeyRef.current) {
+      replyKeyRef.current = createIdempotencyKey('reply');
+    }
+
     try {
       await axios.post(
         `/api/comments/post/${post.id}`,
         { text: replyText, parentId },
-        { headers: { 'x-auth-token': token } }
+        {
+          headers: {
+            'x-auth-token': token,
+            'Idempotency-Key': replyKeyRef.current
+          }
+        }
       );
+      replyKeyRef.current = null;
       setReplyText('');
       setReplyingTo(null);
       fetchComments();
     } catch (error) {
       console.error('Error adding reply:', error);
+    } finally {
+      replySubmitRef.current = false;
+      setIsReplySubmitting(false);
     }
   };
 
@@ -631,18 +697,25 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const handleCommentReactionSelect = async (reaction) => {
-    if (!token || !commentReactionTarget) return;
+    if (!token || !commentReactionTarget || reactionSubmitRef.current) return;
 
+    reactionSubmitRef.current = true;
+    setIsReactionSubmitting(true);
     try {
-      const response = await axios.post(
-        `/api/comments/${commentReactionTarget}/reaction`,
-        {
-          reactionId: reaction.id,
-          reactionIcon: reaction.icon,
-          reactionName: reaction.name
-        },
-        { headers: { 'x-auth-token': token } }
+      const targetComment = comments.find(
+        (comment) => comment.id === commentReactionTarget
       );
+      const isRemoving = targetComment?.userReaction?.id === reaction.id;
+      const response = isRemoving
+        ? await axios.delete(
+            `/api/comments/${commentReactionTarget}/reaction/${encodeURIComponent(reaction.id)}`,
+            { headers: { 'x-auth-token': token } }
+          )
+        : await axios.post(
+            `/api/comments/${commentReactionTarget}/reaction`,
+            { reactionId: reaction.id },
+            { headers: { 'x-auth-token': token } }
+          );
 
       setComments((prev) =>
         prev.map((comment) =>
@@ -650,14 +723,17 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
             ? {
                 ...comment,
                 reactions: response.data.reactions || [],
-                userReaction: reaction
+                userReaction: isRemoving ? null : reaction
               }
             : comment
         )
       );
       setCommentReactionTarget(null);
     } catch (error) {
-      console.error('Error adding comment reaction:', error);
+      console.error('Error updating comment reaction:', error);
+    } finally {
+      reactionSubmitRef.current = false;
+      setIsReactionSubmitting(false);
     }
   };
 
@@ -1218,18 +1294,33 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!token || !newComment.trim()) return;
-    
+    if (!token || !newComment.trim() || commentSubmitRef.current) return;
+
+    commentSubmitRef.current = true;
+    setIsCommentSubmitting(true);
+    if (!commentKeyRef.current) {
+      commentKeyRef.current = createIdempotencyKey('comment');
+    }
+
     try {
       await axios.post(`/api/comments/post/${post.id}`, 
         { text: newComment }, 
-        { headers: { 'x-auth-token': token } }
+        {
+          headers: {
+            'x-auth-token': token,
+            'Idempotency-Key': commentKeyRef.current
+          }
+        }
       );
-      
+
+      commentKeyRef.current = null;
       setNewComment('');
       fetchComments();
     } catch (error) {
       console.error('Error adding comment:', error);
+    } finally {
+      commentSubmitRef.current = false;
+      setIsCommentSubmitting(false);
     }
   };
 
@@ -1247,8 +1338,10 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   const handleDeleteConfirm = async () => {
-    if (!token) return;
+    if (!token || deleteSubmitRef.current) return;
 
+    deleteSubmitRef.current = true;
+    setIsDeleting(true);
     try {
       await axios.delete(`/api/posts/${post.id}`, {
         headers: { 'x-auth-token': token }
@@ -1259,6 +1352,9 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
       setShowDeleteModal(false);
     } catch (error) {
       console.error('Error deleting post:', error);
+    } finally {
+      deleteSubmitRef.current = false;
+      setIsDeleting(false);
     }
   };
 
@@ -1267,6 +1363,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const handleDeleteCancel = () => {
+    if (deleteSubmitRef.current) return;
     setShowDeleteModal(false);
   };
 
@@ -1331,11 +1428,18 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
 
   const handleTranslate = async () => {
     setIsTranslating(true);
-    // Simulate translation (replace with real API call)
-    setTimeout(() => {
-      setTranslatedContent(`[${t('translated') || 'Translated'}] ${post.content}`);
+    try {
+      const response = await axios.post('/api/translate', { text: post.content });
+      setTranslatedContent(
+        response.data?.translatedText ||
+          `[${t('translationFailed') || 'Translation failed'}]`
+      );
+    } catch (error) {
+      console.error('Translation error:', error);
+      setTranslatedContent(`[${t('translationFailed') || 'Translation failed'}]`);
+    } finally {
       setIsTranslating(false);
-    }, 1000);
+    }
   };
 
 
@@ -1370,22 +1474,31 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
   };
 
   const handleReactionSelect = async (reaction) => {
-    if (!token) return;
-    
+    if (!token || reactionSubmitRef.current) return;
+
+    reactionSubmitRef.current = true;
+    setIsReactionSubmitting(true);
     try {
-      const response = await axios.post(`/api/posts/${post.id}/reaction`, { 
-        reactionId: reaction.id,
-        reactionIcon: reaction.icon,
-        reactionName: reaction.name
-      }, {
-        headers: { 'x-auth-token': token }
-      });
-      
-      setUserReaction(reaction);
+      const isRemoving = userReaction?.id === reaction.id;
+      const response = isRemoving
+        ? await axios.delete(
+            `/api/posts/${post.id}/react/${encodeURIComponent(reaction.id)}`,
+            { headers: { 'x-auth-token': token } }
+          )
+        : await axios.post(
+            `/api/posts/${post.id}/reaction`,
+            { reactionId: reaction.id },
+            { headers: { 'x-auth-token': token } }
+          );
+
+      setUserReaction(isRemoving ? null : reaction);
       setReactions(response.data.reactions);
       setShowReactionMenu(false);
     } catch (error) {
-      console.error('Error adding reaction:', error);
+      console.error('Error updating reaction:', error);
+    } finally {
+      reactionSubmitRef.current = false;
+      setIsReactionSubmitting(false);
     }
   };
 
@@ -1465,8 +1578,13 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
           </h3>
         </Link>
         <p className="post-text">{post.content}</p>
-        {needsTranslation() && (
-          <button className="translate-btn" onClick={handleTranslate} disabled={isTranslating}>
+        {translationConfig.enabled && needsTranslation() && (
+          <button
+            className="translate-btn"
+            onClick={handleTranslate}
+            disabled={isTranslating}
+            title={translationConfig.privacyNotice || ''}
+          >
             {isTranslating ? t('loading') : t('translate') || 'Translate'}
           </button>
         )}
@@ -1539,6 +1657,7 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
         <button 
           className={`action-btn react-btn ${userReaction ? 'reacted' : ''}`}
           onClick={handleReactionClick}
+          disabled={isReactionSubmitting}
         >
           <span className="action-icon">{userReaction ? userReaction.icon : '😀'}</span>
           <span className="action-text">{t('react')}</span>
@@ -1663,8 +1782,20 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                   <h3>{t('confirmDelete')}</h3>
                   <p>{t('confirmDeletePost')}</p>
                   <div className="modal-actions">
-                    <button className="btn btn-cancel" onClick={handleDeleteCancel}>{t('cancel')}</button>
-                    <button className="btn btn-delete" onClick={handleDeleteConfirm}>{t('delete')}</button>
+                    <button
+                      className="btn btn-cancel"
+                      onClick={handleDeleteCancel}
+                      disabled={isDeleting}
+                    >
+                      {t('cancel')}
+                    </button>
+                    <button
+                      className="btn btn-delete"
+                      onClick={handleDeleteConfirm}
+                      disabled={isDeleting}
+                    >
+                      {isDeleting ? (t('loading') || 'Deleting...') : t('delete')}
+                    </button>
                   </div>
                 </div>
               </div>,
@@ -1697,9 +1828,14 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder={t('writeComment')}
                 className="comment-input"
+                disabled={isCommentSubmitting}
               />
-              <button type="submit" className="comment-submit">
-                {t('send') || 'Send'}
+              <button
+                type="submit"
+                className="comment-submit"
+                disabled={isCommentSubmitting}
+              >
+                {isCommentSubmitting ? (t('loading') || 'Sending...') : (t('send') || 'Send')}
               </button>
             </form>
           )}
@@ -1783,18 +1919,19 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                         )}
                         <span className="comment-action-text">{t('react') || 'React'}</span>
                       </button>
-                      <button
+                      {translationConfig.enabled && <button
                         className="comment-action comment-translate-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleTranslateComment(root.id, root.text);
                         }}
                         disabled={translatingComments[root.id]}
+                        title={translationConfig.privacyNotice || ''}
                       >
                         {translatingComments[root.id]
                           ? t('loading')
                           : t('translate') || 'Translate'}
-                      </button>
+                      </button>}
                       {replyCount > 0 && (
                         <button
                           className="comment-action comment-toggle"
@@ -1883,18 +2020,19 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                                 {t('react') || 'React'}
                               </span>
                             </button>
-                            <button
+                            {translationConfig.enabled && <button
                               className="comment-action comment-translate-btn"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleTranslateComment(reply.id, reply.text);
                               }}
                               disabled={translatingComments[reply.id]}
+                              title={translationConfig.privacyNotice || ''}
                             >
                               {translatingComments[reply.id]
                                 ? t('loading')
                                 : t('translate') || 'Translate'}
-                            </button>
+                            </button>}
                           </div>
                         </div>
                       ))}
@@ -1913,15 +2051,21 @@ const PostCard = ({ post, onUpdate, eagerImages = false, prefetchImages = false 
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder={`Reply to ${replyingTo.username || 'comment'}`}
                         className="comment-input"
+                        disabled={isReplySubmitting}
                       />
                       <div className="comment-reply-actions">
-                        <button type="submit" className="comment-reply-submit">
-                          {t('reply') || 'Reply'}
+                        <button
+                          type="submit"
+                          className="comment-reply-submit"
+                          disabled={isReplySubmitting}
+                        >
+                          {isReplySubmitting ? (t('loading') || 'Sending...') : (t('reply') || 'Reply')}
                         </button>
                         <button
                           type="button"
                           className="comment-reply-cancel"
                           onClick={handleReplyCancel}
+                          disabled={isReplySubmitting}
                         >
                           {t('cancel') || 'Cancel'}
                         </button>

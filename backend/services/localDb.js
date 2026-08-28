@@ -1,6 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { randomUUID } from 'crypto';
 import { DEFAULT_DB, normalizeDb } from './dbSchema.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -42,12 +43,31 @@ const enqueueWrite = async (task) => {
 
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 
+const atomicWriteFile = async (targetPath, contents) => {
+  const tempPath = `${targetPath}.${process.pid}.${randomUUID()}.tmp`;
+  let handle;
+  try {
+    handle = await fs.open(tempPath, 'wx');
+    await handle.writeFile(contents, 'utf8');
+    await handle.sync();
+    await handle.close();
+    handle = null;
+    await fs.rename(tempPath, targetPath);
+  } catch (error) {
+    if (handle) {
+      await handle.close().catch(() => {});
+    }
+    await fs.unlink(tempPath).catch(() => {});
+    throw error;
+  }
+};
+
 const ensureDbFile = async () => {
   try {
     await fs.access(DB_PATH);
   } catch (error) {
     if (error.code === 'ENOENT') {
-      await fs.writeFile(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2), 'utf8');
+      await atomicWriteFile(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2));
     } else {
       throw error;
     }
@@ -68,7 +88,7 @@ export const readDb = async () => {
 export const writeDb = async (data) => {
   const normalized = normalizeDb(data);
   await enqueueWrite(() =>
-    fs.writeFile(DB_PATH, JSON.stringify(normalized, null, 2), 'utf8')
+    atomicWriteFile(DB_PATH, JSON.stringify(normalized, null, 2))
   );
   return normalized;
 };
@@ -80,7 +100,7 @@ export const updateDb = async (mutator) => {
     // Ignoring the return value prevents accidental partial returns from wiping keys.
     await mutator(data);
     const updated = normalizeDb(data);
-    await fs.writeFile(DB_PATH, JSON.stringify(updated, null, 2), 'utf8');
+    await atomicWriteFile(DB_PATH, JSON.stringify(updated, null, 2));
     return updated;
   });
 };

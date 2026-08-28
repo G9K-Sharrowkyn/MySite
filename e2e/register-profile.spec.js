@@ -19,6 +19,8 @@ test('user can register and reach their profile', async ({ page }) => {
   await page.getByPlaceholder('Email address').fill(email);
   await page.locator('input[name="password"]').fill(password);
   await page.locator('input[name="password2"]').fill(password);
+  await page.getByText('I accept the', { exact: false }).click();
+  await page.getByText('I confirm that I meet', { exact: false }).click();
 
   await waitForBackend(page);
   await page.locator('input[type="submit"]').click();

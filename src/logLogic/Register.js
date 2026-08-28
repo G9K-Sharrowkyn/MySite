@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router';
 import Notification from '../notificationLogic/Notification';
 import { AuthContext } from '../auth/AuthContext';
 import GoogleSignInButton from './GoogleSignInButton';
@@ -31,6 +31,8 @@ const Register = () => {
   const [notification, setNotification] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState('');
+  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  const [minimumAgeConfirmed, setMinimumAgeConfirmed] = useState(false);
   const navigate = useNavigate();
 
   const { username, email, password, password2 } = formData;
@@ -66,6 +68,20 @@ const Register = () => {
       showNotification('Passwords do not match.', 'error');
       return;
     }
+    if (password.length < 10 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      showNotification(
+        'Password must be at least 10 characters and contain a letter and a number.',
+        'error'
+      );
+      return;
+    }
+    if (!acceptedLegal || !minimumAgeConfirmed) {
+      showNotification(
+        'Accept the Terms and Privacy Policy and confirm the minimum age requirement.',
+        'error'
+      );
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -75,7 +91,12 @@ const Register = () => {
         {
           username: username.trim(),
           email,
-          password
+          password,
+          consent: {
+            termsOfService: acceptedLegal,
+            privacyPolicy: acceptedLegal,
+            minimumAgeConfirmed
+          }
         },
         {
           headers: { 'Content-Type': 'application/json' }
@@ -94,12 +115,12 @@ const Register = () => {
         return;
       }
 
-      if (!response.data?.token || !response.data?.userId) {
+      if (!response.data?.authenticated || !response.data?.userId) {
         showNotification('Unexpected response from the server.', 'error');
         return;
       }
 
-      login(response.data.token, response.data.userId, response.data.user);
+      login(null, response.data.userId, response.data.user);
       showNotification('Registration successful!', 'success');
 
       setTimeout(() => {
@@ -147,11 +168,26 @@ const Register = () => {
       return;
     }
 
+    if (!acceptedLegal || !minimumAgeConfirmed) {
+      showNotification(
+        'Accept the Terms and Privacy Policy and confirm the minimum age requirement before creating a Google account.',
+        'error'
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const response = await axios.post(
         '/api/auth/google',
-        { idToken },
+        {
+          idToken,
+          consent: {
+            termsOfService: acceptedLegal,
+            privacyPolicy: acceptedLegal,
+            minimumAgeConfirmed
+          }
+        },
         { headers: { 'Content-Type': 'application/json' } }
       );
 
@@ -163,12 +199,12 @@ const Register = () => {
         return;
       }
 
-      if (!response.data?.token || !response.data?.userId) {
+      if (!response.data?.authenticated || !response.data?.userId) {
         showNotification('Unexpected response from the server.', 'error');
         return;
       }
 
-      login(response.data.token, response.data.userId, response.data.user);
+      login(null, response.data.userId, response.data.user);
       showNotification(
         response.data?.isNewUser
           ? 'Google account linked and registered!'
@@ -230,7 +266,7 @@ const Register = () => {
             name="password"
             value={password}
             onChange={onChange}
-            minLength="6"
+            minLength="10"
             required
             autoComplete="new-password"
             disabled={isSubmitting}
@@ -243,12 +279,35 @@ const Register = () => {
             name="password2"
             value={password2}
             onChange={onChange}
-            minLength="6"
+            minLength="10"
             required
             autoComplete="new-password"
             disabled={isSubmitting}
           />
         </div>
+        <label className="auth-consent-row">
+          <input
+            type="checkbox"
+            checked={acceptedLegal}
+            onChange={(event) => setAcceptedLegal(event.target.checked)}
+            disabled={isSubmitting}
+            required
+          />
+          <span>
+            I accept the <Link to="/terms">Terms of Service</Link> and acknowledge
+            the <Link to="/privacy-policy">Privacy Policy</Link>.
+          </span>
+        </label>
+        <label className="auth-consent-row">
+          <input
+            type="checkbox"
+            checked={minimumAgeConfirmed}
+            onChange={(event) => setMinimumAgeConfirmed(event.target.checked)}
+            disabled={isSubmitting}
+            required
+          />
+          <span>I confirm that I meet the minimum age stated in the Terms.</span>
+        </label>
         <input
           type="submit"
           value={isSubmitting ? 'Creating account...' : 'Create account'}

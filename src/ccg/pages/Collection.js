@@ -19,11 +19,6 @@ const Collection = () => {
 
   useEffect(() => { fetchCollection(); }, []);
 
-  const addCard = async (name) => {
-    await API.post('/users/collection', { cardId: name });
-    setMyCollection(prev => [...prev, name]);
-  };
-
   const openPack = async (type) => {
     setError('');
     setOpening(true);
@@ -75,11 +70,9 @@ const Collection = () => {
           <div key={card.name} className="bg-gray-700 p-2 rounded">
             <Card card={card} size="large" showStats />
             <p className="text-center mt-2">{card.name}</p>
-            {myCollection.includes(card.name) ? (
-              <button className="w-full bg-gray-500 py-1 rounded mt-2" disabled>Posiadasz</button>
-            ) : (
-              <button className="w-full bg-blue-600 py-1 rounded mt-2" onClick={() => addCard(card.name)}>Dodaj</button>
-            )}
+            <button className="w-full bg-gray-500 py-1 rounded mt-2" disabled>
+              {myCollection.includes(card.name) ? 'Posiadasz' : 'Do zdobycia w paczce lub craftingu'}
+            </button>
           </div>
         ))}
       </div>

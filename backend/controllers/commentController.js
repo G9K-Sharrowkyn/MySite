@@ -3,6 +3,7 @@ import {
   commentsRepo,
   fightsRepo,
   postsRepo,
+  readDb,
   usersRepo,
   withDb
 } from '../repositories/index.js';
@@ -12,10 +13,47 @@ import { addRankPoints, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '..
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
 import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { parsePagination } from '../utils/pagination.js';
+import { getReaction } from '../config/reactionCatalog.js';
+import { getIdempotencyKey } from '../utils/idempotency.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveCommentId = (comment) => comment?.id || comment?._id;
 const resolveRole = (user) => user?.role || 'user';
+const isPostSoftDeleted = (post) =>
+  Boolean(post?.moderation?.deleted?.isDeleted);
+
+const assertPostActive = (post) => {
+  if (!post || isPostSoftDeleted(post)) {
+    const error = new Error('Post not found');
+    error.code = 'POST_NOT_FOUND';
+    throw error;
+  }
+};
+
+const assertCommentTargetActive = async (comment, db) => {
+  if (comment?.type === 'user_profile') return;
+  if (comment?.type === 'fight') {
+    const fightId = comment?.fightId || comment?.targetId;
+    const standaloneFight = await fightsRepo.findById(fightId, { db });
+    if (standaloneFight) return;
+    const fightPost = await postsRepo.findOne(
+      (entry) =>
+        (entry.id || entry._id) === fightId &&
+        entry.type === 'fight',
+      { db }
+    );
+    assertPostActive(fightPost);
+    return;
+  }
+  const postId = comment?.postId || comment?.targetId;
+  if (!postId) return;
+  const post = await postsRepo.findOne(
+    (entry) => (entry.id || entry._id) === postId,
+    { db }
+  );
+  assertPostActive(post);
+};
 
 const buildAuthorAvatar = (user) => {
   const profile = user.profile || {};
@@ -98,16 +136,28 @@ const shouldNotifyReply = (recipient, senderId) => {
   return true;
 };
 
-const normalizeComment = (comment) => {
+const normalizeComment = (comment, viewerUserId = null) => {
   const commentId = resolveCommentId(comment);
   const threadId = comment.threadId || comment.parentId || commentId;
+  const viewerReaction = viewerUserId
+    ? (comment.reactions || []).find((reaction) => reaction.userId === viewerUserId)
+    : null;
+  const normalized = { ...comment };
+  delete normalized.idempotencyKey;
   return {
-    ...comment,
+    ...normalized,
     id: commentId,
     authorDisplayName: comment.authorDisplayName || comment.authorUsername || 'User',
     parentId: comment.parentId || null,
     threadId,
     reactions: buildReactionSummary(comment.reactions || []),
+    userReaction: viewerReaction
+      ? {
+          id: viewerReaction.reactionId,
+          icon: viewerReaction.reactionIcon,
+          name: viewerReaction.reactionName
+        }
+      : null,
     timestamp: comment.timestamp || comment.createdAt
   };
 };
@@ -130,7 +180,9 @@ export const addPostComment = async (req, res) => {
   }
 
   try {
+    const idempotencyKey = getIdempotencyKey(req);
     let createdComment;
+    let idempotencyReplay = false;
 
     await withDb(async (db) => {
       const post = await postsRepo.findOne(
@@ -142,6 +194,7 @@ export const addPostComment = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       const author = await usersRepo.findOne(
         (user) => resolveUserId(user) === req.user.id,
@@ -151,6 +204,21 @@ export const addPostComment = async (req, res) => {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
+      }
+
+      if (idempotencyKey) {
+        const existingComment = await commentsRepo.findOne(
+          (comment) =>
+            comment.authorId === req.user.id &&
+            comment.postId === postId &&
+            comment.idempotencyKey === idempotencyKey,
+          { db }
+        );
+        if (existingComment) {
+          createdComment = existingComment;
+          idempotencyReplay = true;
+          return db;
+        }
       }
 
       const parentComment = parentId
@@ -190,7 +258,8 @@ export const addPostComment = async (req, res) => {
         updatedAt: now,
         likes: 0,
         likedBy: [],
-        reactions: []
+        reactions: [],
+        ...(idempotencyKey ? { idempotencyKey } : {})
       };
 
       await commentsRepo.insert(createdComment, { db });
@@ -258,7 +327,10 @@ export const addPostComment = async (req, res) => {
       return db;
     });
 
-    res.json(normalizeComment(createdComment));
+    if (idempotencyReplay) {
+      res.set('Idempotency-Replayed', 'true');
+    }
+    res.json(normalizeComment(createdComment, req.user.id));
   } catch (error) {
     if (error.code === 'POST_NOT_FOUND') {
       return res.status(404).json({ msg: 'Post not found' });
@@ -268,6 +340,9 @@ export const addPostComment = async (req, res) => {
     }
     if (error.code === 'PARENT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Parent comment not found' });
+    }
+    if (error.code === 'INVALID_IDEMPOTENCY_KEY') {
+      return res.status(400).json({ msg: error.message });
     }
     console.error('Error adding post comment:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -279,24 +354,34 @@ export const addPostComment = async (req, res) => {
 // @access  Public
 export const getPostComments = async (req, res) => {
   const postId = req.params.postId || req.params.id;
-  const { page = 1, limit = 50 } = req.query;
-
   try {
-    const filtered = await commentsRepo.filter((comment) => {
+    const db = await readDb();
+    const post = (db.posts || []).find(
+      (entry) => (entry.id || entry._id) === postId
+    );
+    assertPostActive(post);
+    const filtered = (db.comments || []).filter((comment) => {
       const isPostComment = comment?.type === 'post' || !comment?.type;
       return isPostComment && comment.postId === postId;
     });
     const sorted = filtered.sort(
       (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
     );
-    const pageNumber = Number(page);
-    const limitNumber = Number(limit);
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
     const paged = sorted.slice(
       (pageNumber - 1) * limitNumber,
       pageNumber * limitNumber
     );
-    res.json(paged.map(normalizeComment));
+    res.json(
+      paged.map((comment) => normalizeComment(comment, req.user?.id || null))
+    );
   } catch (error) {
+    if (error.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
     console.error('Error fetching comments:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -306,20 +391,22 @@ export const getPostComments = async (req, res) => {
 // @route   PUT /api/comments/:id
 // @access  Private
 export const updateComment = async (req, res) => {
-  const { text } = req.body;
+  const text = req.body?.text ?? req.body?.content;
 
   try {
     let updatedComment;
 
-    await commentsRepo.updateAll((comments) => {
-      const comment = comments.find(
-        (entry) => resolveCommentId(entry) === req.params.id
+    await withDb(async (db) => {
+      const comment = await commentsRepo.findOne(
+        (entry) => resolveCommentId(entry) === req.params.id,
+        { db }
       );
       if (!comment) {
         const error = new Error('Comment not found');
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
+      await assertCommentTargetActive(comment, db);
 
       if (comment.authorId !== req.user.id) {
         const error = new Error('Access denied');
@@ -331,16 +418,22 @@ export const updateComment = async (req, res) => {
       comment.updatedAt = new Date().toISOString();
       comment.edited = true;
       updatedComment = comment;
-      return comments;
+      return db;
     });
 
-    res.json({ msg: 'Comment updated', comment: normalizeComment(updatedComment) });
+    res.json({
+      msg: 'Comment updated',
+      comment: normalizeComment(updatedComment, req.user.id)
+    });
   } catch (error) {
     if (error.code === 'COMMENT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Comment not found' });
     }
     if (error.code === 'ACCESS_DENIED') {
       return res.status(403).json({ msg: 'Access denied' });
+    }
+    if (error.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error updating comment:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -441,15 +534,17 @@ export const toggleCommentLike = async (req, res) => {
     let likes = 0;
     let liked = false;
 
-    await commentsRepo.updateAll((comments) => {
-      const comment = comments.find(
-        (entry) => resolveCommentId(entry) === req.params.id
+    await withDb(async (db) => {
+      const comment = await commentsRepo.findOne(
+        (entry) => resolveCommentId(entry) === req.params.id,
+        { db }
       );
       if (!comment) {
         const error = new Error('Comment not found');
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
+      await assertCommentTargetActive(comment, db);
 
       comment.likedBy = Array.isArray(comment.likedBy) ? comment.likedBy : [];
       comment.likes = comment.likes || 0;
@@ -467,7 +562,7 @@ export const toggleCommentLike = async (req, res) => {
 
       likes = comment.likes;
       comment.updatedAt = new Date().toISOString();
-      return comments;
+      return db;
     });
 
     res.json({
@@ -478,6 +573,9 @@ export const toggleCommentLike = async (req, res) => {
   } catch (error) {
     if (error.code === 'COMMENT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Comment not found' });
+    }
+    if (error.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error toggling comment like:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -496,7 +594,9 @@ export const addUserComment = async (req, res) => {
   }
 
   try {
+    const idempotencyKey = getIdempotencyKey(req);
     let createdComment;
+    let idempotencyReplay = false;
 
     await withDb(async (db) => {
       const targetUser = await usersRepo.findOne(
@@ -517,6 +617,22 @@ export const addUserComment = async (req, res) => {
         const error = new Error('Author not found');
         error.code = 'AUTHOR_NOT_FOUND';
         throw error;
+      }
+
+      if (idempotencyKey) {
+        const existingComment = await commentsRepo.findOne(
+          (comment) =>
+            comment.authorId === req.user.id &&
+            comment.type === 'user_profile' &&
+            comment.targetId === userId &&
+            comment.idempotencyKey === idempotencyKey,
+          { db }
+        );
+        if (existingComment) {
+          createdComment = existingComment;
+          idempotencyReplay = true;
+          return db;
+        }
       }
 
       const parentComment = parentId
@@ -557,7 +673,8 @@ export const addUserComment = async (req, res) => {
         updatedAt: now,
         likes: 0,
         likedBy: [],
-        reactions: []
+        reactions: [],
+        ...(idempotencyKey ? { idempotencyKey } : {})
       };
 
       await commentsRepo.insert(createdComment, { db });
@@ -598,13 +715,19 @@ export const addUserComment = async (req, res) => {
       return db;
     });
 
-    res.json(normalizeComment(createdComment));
+    if (idempotencyReplay) {
+      res.set('Idempotency-Replayed', 'true');
+    }
+    res.json(normalizeComment(createdComment, req.user.id));
   } catch (error) {
     if (error.code === 'USER_NOT_FOUND' || error.code === 'AUTHOR_NOT_FOUND') {
       return res.status(404).json({ msg: 'User not found' });
     }
     if (error.code === 'PARENT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Parent comment not found' });
+    }
+    if (error.code === 'INVALID_IDEMPOTENCY_KEY') {
+      return res.status(400).json({ msg: error.message });
     }
     console.error('Error adding user profile comment:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -621,7 +744,7 @@ export const getUserComments = async (req, res) => {
     const comments = (await commentsRepo.filter(
       (comment) => comment.type === 'user_profile' && comment.targetId === userId
     )).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
-    res.json(comments.map(normalizeComment));
+    res.json(comments.map((comment) => normalizeComment(comment)));
   } catch (error) {
     console.error('Error fetching user comments:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -640,7 +763,9 @@ export const addFightComment = async (req, res) => {
   }
 
   try {
+    const idempotencyKey = getIdempotencyKey(req);
     let createdComment;
+    let idempotencyReplay = false;
 
     await withDb(async (db) => {
       const fight = await fightsRepo.findById(fightId, { db });
@@ -655,6 +780,9 @@ export const addFightComment = async (req, res) => {
         error.code = 'FIGHT_NOT_FOUND';
         throw error;
       }
+      if (fightPost) {
+        assertPostActive(fightPost);
+      }
 
       const author = await usersRepo.findOne(
         (user) => resolveUserId(user) === req.user.id,
@@ -664,6 +792,22 @@ export const addFightComment = async (req, res) => {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
+      }
+
+      if (idempotencyKey) {
+        const existingComment = await commentsRepo.findOne(
+          (comment) =>
+            comment.authorId === req.user.id &&
+            comment.type === 'fight' &&
+            comment.fightId === fightId &&
+            comment.idempotencyKey === idempotencyKey,
+          { db }
+        );
+        if (existingComment) {
+          createdComment = existingComment;
+          idempotencyReplay = true;
+          return db;
+        }
       }
 
       const parentComment = parentId
@@ -706,7 +850,8 @@ export const addFightComment = async (req, res) => {
         updatedAt: now,
         likes: 0,
         likedBy: [],
-        reactions: []
+        reactions: [],
+        ...(idempotencyKey ? { idempotencyKey } : {})
       };
 
       await commentsRepo.insert(createdComment, { db });
@@ -747,7 +892,10 @@ export const addFightComment = async (req, res) => {
       return db;
     });
 
-    res.json(normalizeComment(createdComment));
+    if (idempotencyReplay) {
+      res.set('Idempotency-Replayed', 'true');
+    }
+    res.json(normalizeComment(createdComment, req.user.id));
   } catch (error) {
     if (error.code === 'FIGHT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Fight not found' });
@@ -757,6 +905,12 @@ export const addFightComment = async (req, res) => {
     }
     if (error.code === 'PARENT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Parent comment not found' });
+    }
+    if (error.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    if (error.code === 'INVALID_IDEMPOTENCY_KEY') {
+      return res.status(400).json({ msg: error.message });
     }
     console.error('Error adding fight comment:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -768,24 +922,39 @@ export const addFightComment = async (req, res) => {
 // @access  Public
 export const getFightComments = async (req, res) => {
   const { fightId } = req.params;
-  const { page = 1, limit = 50 } = req.query;
-
   try {
-    const filtered = await commentsRepo.filter(
+    const db = await readDb();
+    const standaloneFight = (db.fights || []).find(
+      (fight) => (fight.id || fight._id) === fightId
+    );
+    const fightPost = (db.posts || []).find(
+      (post) =>
+        (post.id || post._id) === fightId &&
+        post.type === 'fight'
+    );
+    if (!standaloneFight) {
+      assertPostActive(fightPost);
+    }
+    const filtered = (db.comments || []).filter(
       (comment) => comment.type === 'fight' && comment.fightId === fightId
     );
     const sorted = filtered.sort(
       (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
     );
-    const pageNumber = Number(page);
-    const limitNumber = Number(limit);
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
     const paged = sorted.slice(
       (pageNumber - 1) * limitNumber,
       pageNumber * limitNumber
     );
-    const formatted = paged.map(normalizeComment);
+    const formatted = paged.map((comment) => normalizeComment(comment));
     res.json({ comments: formatted, length: filtered.length });
   } catch (error) {
+    if (error.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Fight not found' });
+    }
     console.error('Error fetching fight comments:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
@@ -795,7 +964,13 @@ export const getFightComments = async (req, res) => {
 // @route   POST /api/comments/:id/reaction
 // @access  Private
 export const addCommentReaction = async (req, res) => {
-  const { reactionId, reactionIcon, reactionName } = req.body;
+  const reaction = getReaction(req.body?.reactionId);
+  if (!reaction) {
+    return res.status(400).json({ msg: 'Invalid reaction' });
+  }
+  const reactionId = reaction.id;
+  const reactionIcon = reaction.icon;
+  const reactionName = reaction.name;
 
   try {
     let reactionsSummary = [];
@@ -811,6 +986,7 @@ export const addCommentReaction = async (req, res) => {
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
+      await assertCommentTargetActive(comment, db);
 
       comment.reactions = Array.isArray(comment.reactions) ? comment.reactions : [];
       const existingReactionIndex = comment.reactions.findIndex(
@@ -869,13 +1045,70 @@ export const addCommentReaction = async (req, res) => {
     res.json({
       msg: 'Reaction added successfully',
       reactions: reactionsSummary,
-      comment: normalizeComment(updatedComment)
+      comment: normalizeComment(updatedComment, req.user.id)
     });
   } catch (error) {
     if (error.code === 'COMMENT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Comment not found' });
     }
+    if (error.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
     console.error('Error adding comment reaction:', error.message);
     res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Remove the current user's reaction from a comment
+// @route   DELETE /api/comments/:id/reaction/:reactionId
+// @access  Private
+export const removeCommentReaction = async (req, res) => {
+  try {
+    let reactionsSummary = [];
+    let removed = false;
+
+    await withDb(async (db) => {
+      const comment = await commentsRepo.findOne(
+        (entry) => resolveCommentId(entry) === req.params.id,
+        { db }
+      );
+      if (!comment) {
+        const error = new Error('Comment not found');
+        error.code = 'COMMENT_NOT_FOUND';
+        throw error;
+      }
+      await assertCommentTargetActive(comment, db);
+
+      comment.reactions = Array.isArray(comment.reactions) ? comment.reactions : [];
+      const beforeCount = comment.reactions.length;
+      comment.reactions = comment.reactions.filter(
+        (reaction) =>
+          reaction.userId !== req.user.id ||
+          reaction.reactionId !== req.params.reactionId
+      );
+      removed = comment.reactions.length !== beforeCount;
+      reactionsSummary = buildReactionSummary(comment.reactions);
+      if (removed) {
+        comment.updatedAt = new Date().toISOString();
+      }
+      return db;
+    });
+
+    if (!removed) {
+      return res.status(404).json({ msg: 'Reaction not found' });
+    }
+    return res.json({
+      msg: 'Reaction removed successfully',
+      reactions: reactionsSummary
+    });
+  } catch (error) {
+    if (error.code === 'COMMENT_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Comment not found' });
+    }
+    if (error.code === 'POST_NOT_FOUND') {
+      return res.status(404).json({ msg: 'Post not found' });
+    }
+    console.error('Error removing comment reaction:', error.message);
+    return res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

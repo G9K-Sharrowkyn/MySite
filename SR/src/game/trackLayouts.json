@@ -1,0 +1,2738 @@
+{
+  "version": 1,
+  "tracks": {
+    "taris": [
+      {
+        "distance": 13,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 23,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 48,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 65,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 88,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 111,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 140,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 186,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 238,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 261,
+        "type": "mine",
+        "x": 0.4
+      },
+      {
+        "distance": 306,
+        "type": "mine",
+        "x": 2.4
+      },
+      {
+        "distance": 321,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 351,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 366,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 396,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 422,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 451,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 511,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 542,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 604,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 626,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 661,
+        "type": "boost",
+        "x": 1
+      },
+      {
+        "distance": 696,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 726,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 800,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 806,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 826,
+        "type": "boost",
+        "x": 1.4
+      },
+      {
+        "distance": 879,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 901,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 946,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 981,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 1001,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1056,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1111,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 1146,
+        "type": "mine",
+        "x": 1
+      },
+      {
+        "distance": 1196,
+        "type": "boost",
+        "x": -1.6
+      },
+      {
+        "distance": 1237,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 1266,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 1306,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1336,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1365,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 1406,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 1456,
+        "type": "boulder",
+        "x": 1.6
+      },
+      {
+        "distance": 1503,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 1526,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1566,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 1611,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1642,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 1666,
+        "type": "mine",
+        "x": -0.8
+      },
+      {
+        "distance": 1696,
+        "type": "boulder",
+        "x": 1.6
+      },
+      {
+        "distance": 1731,
+        "type": "boost",
+        "x": -1.6
+      },
+      {
+        "distance": 1791,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1801,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1851,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 1896,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 1939,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 1956,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2001,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 2056,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 2088,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2116,
+        "type": "boulder",
+        "x": 0.2
+      },
+      {
+        "distance": 2166,
+        "type": "boulder",
+        "x": 2.2
+      },
+      {
+        "distance": 2201,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2237,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2276,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2311,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 2341,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 2381,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2401,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2446,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 2491,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2535,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2591,
+        "type": "mine",
+        "x": -1
+      }
+    ],
+    "tatooine": [
+      {
+        "distance": 13,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 22,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 46,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 62,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 84,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 106,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 134,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 179,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 230,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 252,
+        "type": "mine",
+        "x": -0.4
+      },
+      {
+        "distance": 296,
+        "type": "mine",
+        "x": -2.4
+      },
+      {
+        "distance": 310,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 339,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 353,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 382,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 407,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 435,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 494,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 524,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 585,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 606,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 640,
+        "type": "boost",
+        "x": -1
+      },
+      {
+        "distance": 674,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 703,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 776,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 781,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 800,
+        "type": "boost",
+        "x": -1.4
+      },
+      {
+        "distance": 852,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 873,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 917,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 951,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 970,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1024,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1078,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 1112,
+        "type": "mine",
+        "x": -1
+      },
+      {
+        "distance": 1161,
+        "type": "boost",
+        "x": 1.6
+      },
+      {
+        "distance": 1201,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 1229,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 1268,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1297,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1325,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 1365,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 1414,
+        "type": "boulder",
+        "x": -1.6
+      },
+      {
+        "distance": 1460,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 1482,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1521,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 1565,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1595,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 1618,
+        "type": "mine",
+        "x": 0.8
+      },
+      {
+        "distance": 1647,
+        "type": "boulder",
+        "x": -1.6
+      },
+      {
+        "distance": 1681,
+        "type": "boost",
+        "x": 1.6
+      },
+      {
+        "distance": 1740,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1749,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1798,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 1842,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 1884,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 1900,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1944,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1998,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 2029,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2056,
+        "type": "boulder",
+        "x": -0.2
+      },
+      {
+        "distance": 2105,
+        "type": "boulder",
+        "x": -2.2
+      },
+      {
+        "distance": 2139,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2174,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2212,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2246,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 2275,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 2314,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 2333,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 2377,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 2421,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2464,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2519,
+        "type": "mine",
+        "x": 1
+      },
+      {
+        "distance": 2553,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2562,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2586,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 2602,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2624,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 2646,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2674,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 2719,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2770,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2792,
+        "type": "mine",
+        "x": 0.4
+      },
+      {
+        "distance": 2836,
+        "type": "mine",
+        "x": 2.4
+      },
+      {
+        "distance": 2850,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2879,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 2893,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2922,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2947,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 2975,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 3034,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 3064,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 3125,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 3146,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 3180,
+        "type": "boost",
+        "x": 1
+      },
+      {
+        "distance": 3214,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3243,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 3316,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3321,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 3340,
+        "type": "boost",
+        "x": 1.4
+      },
+      {
+        "distance": 3392,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 3413,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3457,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 3491,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 3510,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 3564,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3618,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 3652,
+        "type": "mine",
+        "x": 1
+      },
+      {
+        "distance": 3701,
+        "type": "boost",
+        "x": -1.6
+      },
+      {
+        "distance": 3741,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 3769,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 3808,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3837,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 3865,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 3905,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 3954,
+        "type": "boulder",
+        "x": 1.6
+      },
+      {
+        "distance": 4000,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 4022,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4061,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 4105,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 4135,
+        "type": "boost",
+        "x": 0
+      }
+    ],
+    "manaan": [
+      {
+        "distance": 13,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 21,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 44,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 59,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 80,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 101,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 128,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 172,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 222,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 243,
+        "type": "mine",
+        "x": 0.4
+      },
+      {
+        "distance": 286,
+        "type": "mine",
+        "x": 2.4
+      },
+      {
+        "distance": 299,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 327,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 340,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 368,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 392,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 419,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 477,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 506,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 566,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 586,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 619,
+        "type": "boost",
+        "x": 1
+      },
+      {
+        "distance": 652,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 680,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 752,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 756,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 774,
+        "type": "boost",
+        "x": 1.4
+      },
+      {
+        "distance": 825,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 845,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 888,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 921,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 939,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 992,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1045,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 1078,
+        "type": "mine",
+        "x": 1
+      },
+      {
+        "distance": 1126,
+        "type": "boost",
+        "x": -1.6
+      },
+      {
+        "distance": 1165,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 1192,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 1230,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1258,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1285,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 1324,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 1372,
+        "type": "boulder",
+        "x": 1.6
+      },
+      {
+        "distance": 1417,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 1438,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1476,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 1519,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1548,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 1570,
+        "type": "mine",
+        "x": -0.8
+      },
+      {
+        "distance": 1598,
+        "type": "boulder",
+        "x": 1.6
+      },
+      {
+        "distance": 1631,
+        "type": "boost",
+        "x": -1.6
+      },
+      {
+        "distance": 1689,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1697,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1745,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 1788,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 1829,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 1844,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1887,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1940,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 1970,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1996,
+        "type": "boulder",
+        "x": 0.2
+      },
+      {
+        "distance": 2044,
+        "type": "boulder",
+        "x": 2.2
+      },
+      {
+        "distance": 2077,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2111,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2148,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2181,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 2209,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 2247,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2265,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2308,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 2351,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2393,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2447,
+        "type": "mine",
+        "x": -1
+      },
+      {
+        "distance": 2480,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2488,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2511,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 2526,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2547,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 2568,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2595,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 2639,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2689,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2710,
+        "type": "mine",
+        "x": -0.4
+      },
+      {
+        "distance": 2753,
+        "type": "mine",
+        "x": -2.4
+      },
+      {
+        "distance": 2766,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2794,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 2807,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 2835,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 2859,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 2886,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 2944,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 2973,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 3033,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 3053,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 3086,
+        "type": "boost",
+        "x": -1
+      },
+      {
+        "distance": 3119,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3147,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 3219,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3223,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 3241,
+        "type": "boost",
+        "x": -1.4
+      },
+      {
+        "distance": 3292,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 3312,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3355,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 3388,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 3406,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 3459,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3512,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 3545,
+        "type": "mine",
+        "x": -1
+      },
+      {
+        "distance": 3593,
+        "type": "boost",
+        "x": 1.6
+      },
+      {
+        "distance": 3632,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 3659,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 3697,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3725,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 3752,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 3791,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 3839,
+        "type": "boulder",
+        "x": -1.6
+      },
+      {
+        "distance": 3884,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 3905,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3943,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 3986,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 4015,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 4037,
+        "type": "mine",
+        "x": 0.8
+      },
+      {
+        "distance": 4065,
+        "type": "boulder",
+        "x": -1.6
+      },
+      {
+        "distance": 4098,
+        "type": "boost",
+        "x": 1.6
+      },
+      {
+        "distance": 4156,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 4164,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4212,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 4255,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 4296,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 4311,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4354,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 4407,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 4437,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4463,
+        "type": "boulder",
+        "x": -0.2
+      },
+      {
+        "distance": 4511,
+        "type": "boulder",
+        "x": -2.2
+      },
+      {
+        "distance": 4544,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4578,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 4615,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4648,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 4676,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 4714,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 4732,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 4775,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 4818,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4860,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 4914,
+        "type": "mine",
+        "x": 1
+      },
+      {
+        "distance": 4947,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 4955,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4978,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 4993,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 5014,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 5035,
+        "type": "boost",
+        "x": -1.8
+      }
+    ],
+    "korriban": [
+      {
+        "distance": 13,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 20,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 42,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 56,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 76,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 96,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 122,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 165,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 214,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 234,
+        "type": "mine",
+        "x": -0.4
+      },
+      {
+        "distance": 276,
+        "type": "mine",
+        "x": -2.4
+      },
+      {
+        "distance": 288,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 315,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 327,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 354,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 377,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 403,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 460,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 488,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 547,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 566,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 598,
+        "type": "boost",
+        "x": -1
+      },
+      {
+        "distance": 630,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 657,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 728,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 731,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 748,
+        "type": "boost",
+        "x": -1.4
+      },
+      {
+        "distance": 798,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 817,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 859,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 891,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 908,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 960,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1012,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 1044,
+        "type": "mine",
+        "x": -1
+      },
+      {
+        "distance": 1091,
+        "type": "boost",
+        "x": 1.6
+      },
+      {
+        "distance": 1129,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 1155,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 1192,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1219,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1245,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 1283,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 1330,
+        "type": "boulder",
+        "x": -1.6
+      },
+      {
+        "distance": 1374,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 1394,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1431,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 1473,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1501,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 1522,
+        "type": "mine",
+        "x": 0.8
+      },
+      {
+        "distance": 1549,
+        "type": "boulder",
+        "x": -1.6
+      },
+      {
+        "distance": 1581,
+        "type": "boost",
+        "x": 1.6
+      },
+      {
+        "distance": 1638,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 1645,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1692,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 1734,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 1774,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 1788,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1830,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 1882,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 1911,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 1936,
+        "type": "boulder",
+        "x": -0.2
+      },
+      {
+        "distance": 1983,
+        "type": "boulder",
+        "x": -2.2
+      },
+      {
+        "distance": 2015,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2048,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2084,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2116,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 2143,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 2180,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 2197,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 2239,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 2281,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2322,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2375,
+        "type": "mine",
+        "x": 1
+      },
+      {
+        "distance": 2407,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2414,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2436,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 2450,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2470,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 2490,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2516,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 2559,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 2608,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 2628,
+        "type": "mine",
+        "x": 0.4
+      },
+      {
+        "distance": 2670,
+        "type": "mine",
+        "x": 2.4
+      },
+      {
+        "distance": 2682,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2709,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 2721,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2748,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 2771,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 2797,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 2854,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 2882,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 2941,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 2960,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 2992,
+        "type": "boost",
+        "x": 1
+      },
+      {
+        "distance": 3024,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3051,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 3122,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3125,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 3142,
+        "type": "boost",
+        "x": 1.4
+      },
+      {
+        "distance": 3192,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 3211,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3253,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 3285,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 3302,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 3354,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3406,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 3438,
+        "type": "mine",
+        "x": 1
+      },
+      {
+        "distance": 3485,
+        "type": "boost",
+        "x": -1.6
+      },
+      {
+        "distance": 3523,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 3549,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 3586,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3613,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 3639,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 3677,
+        "type": "mine",
+        "x": -1.6
+      },
+      {
+        "distance": 3724,
+        "type": "boulder",
+        "x": 1.6
+      },
+      {
+        "distance": 3768,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 3788,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 3825,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 3867,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 3895,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 3916,
+        "type": "mine",
+        "x": -0.8
+      },
+      {
+        "distance": 3943,
+        "type": "boulder",
+        "x": 1.6
+      },
+      {
+        "distance": 3975,
+        "type": "boost",
+        "x": -1.6
+      },
+      {
+        "distance": 4032,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 4039,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4086,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 4128,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 4168,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 4182,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4224,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 4276,
+        "type": "mine",
+        "x": -1.2
+      },
+      {
+        "distance": 4305,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4330,
+        "type": "boulder",
+        "x": 0.2
+      },
+      {
+        "distance": 4377,
+        "type": "boulder",
+        "x": 2.2
+      },
+      {
+        "distance": 4409,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4442,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 4478,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4510,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 4537,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 4574,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 4591,
+        "type": "boulder",
+        "x": 1.8
+      },
+      {
+        "distance": 4633,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 4675,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4716,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 4769,
+        "type": "mine",
+        "x": -1
+      },
+      {
+        "distance": 4801,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 4808,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 4830,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 4844,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 4864,
+        "type": "mine",
+        "x": -0.2
+      },
+      {
+        "distance": 4884,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 4910,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 4953,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 5002,
+        "type": "boost",
+        "x": -1.8
+      },
+      {
+        "distance": 5022,
+        "type": "mine",
+        "x": -0.4
+      },
+      {
+        "distance": 5064,
+        "type": "mine",
+        "x": -2.4
+      },
+      {
+        "distance": 5076,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 5103,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 5115,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 5142,
+        "type": "boulder",
+        "x": -1.8
+      },
+      {
+        "distance": 5165,
+        "type": "boost",
+        "x": 0
+      },
+      {
+        "distance": 5191,
+        "type": "boulder",
+        "x": 0
+      },
+      {
+        "distance": 5248,
+        "type": "mine",
+        "x": 1.2
+      },
+      {
+        "distance": 5276,
+        "type": "gate",
+        "x": 0,
+        "width": 2.2
+      },
+      {
+        "distance": 5335,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 5354,
+        "type": "wall",
+        "x": 0,
+        "side": "left"
+      },
+      {
+        "distance": 5386,
+        "type": "boost",
+        "x": -1
+      },
+      {
+        "distance": 5418,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 5445,
+        "type": "wall",
+        "x": 0,
+        "side": "right"
+      },
+      {
+        "distance": 5516,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 5519,
+        "type": "mine",
+        "x": 0.2
+      },
+      {
+        "distance": 5536,
+        "type": "boost",
+        "x": -1.4
+      },
+      {
+        "distance": 5586,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 5605,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 5647,
+        "type": "mine",
+        "x": 0
+      },
+      {
+        "distance": 5679,
+        "type": "mine",
+        "x": 1.6
+      },
+      {
+        "distance": 5696,
+        "type": "wall",
+        "x": 0,
+        "side": "center"
+      },
+      {
+        "distance": 5748,
+        "type": "lowBarrier",
+        "x": 0
+      },
+      {
+        "distance": 5800,
+        "type": "boost",
+        "x": 1.8
+      },
+      {
+        "distance": 5832,
+        "type": "mine",
+        "x": -1
+      },
+      {
+        "distance": 5879,
+        "type": "boost",
+        "x": 1.6
+      },
+      {
+        "distance": 5917,
+        "type": "boulder",
+        "x": 0
+      }
+    ]
+  }
+}

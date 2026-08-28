@@ -1,25 +1,30 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { legalConsentsRepo, usersRepo, withDb } from '../repositories/index.js';
+import auth from '../middleware/auth.js';
+import { getLegalConfig } from '../config/legalConfig.js';
 
 const router = express.Router();
 
 // POST /api/legal/consent
-router.post('/consent', async (req, res) => {
+router.post('/consent', auth, async (req, res) => {
   try {
-    const { userId, analytics, marketing, functional } = req.body || {};
-    if (!userId) {
-      return res.status(400).json({ message: 'User ID is required' });
-    }
+    const { preferences = {}, analytics, marketing, functional } = req.body || {};
+    const userId = req.user.id;
+    const normalized = {
+      necessary: true,
+      analytics: Boolean(preferences.analytics ?? analytics),
+      marketing: Boolean(preferences.marketing ?? marketing),
+      functional: (preferences.functional ?? functional) !== false
+    };
 
     await withDb(async (db) => {
       await legalConsentsRepo.insert(
         {
           id: uuidv4(),
           userId,
-          analytics: Boolean(analytics),
-          marketing: Boolean(marketing),
-          functional: functional !== false,
+          ...normalized,
+          policyVersion: getLegalConfig().policyVersion,
           createdAt: new Date().toISOString()
         },
         { db }
@@ -33,9 +38,7 @@ router.post('/consent', async (req, res) => {
         user.privacy = user.privacy || {};
         user.privacy.cookieConsent = {
           given: true,
-          analytics: Boolean(analytics),
-          marketing: Boolean(marketing),
-          functional: functional !== false,
+          ...normalized,
           date: new Date().toISOString()
         };
       }

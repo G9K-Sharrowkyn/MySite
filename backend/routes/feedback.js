@@ -1,12 +1,20 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import { submitFeedback, getFeedback, updateFeedbackStatus, deleteFeedback, approveCharacterSuggestion } from '../controllers/feedbackController.js';
 import { optionalAuth } from '../middleware/optionalAuth.js';
 import authMiddleware from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+const feedbackSubmissionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { msg: 'Too many feedback submissions. Please try again later.' }
+});
 
 // Submit feedback (authenticated or anonymous)
-router.post('/', optionalAuth, submitFeedback);
+router.post('/', feedbackSubmissionLimiter, optionalAuth, submitFeedback);
 
 // Get all feedback (admin only)
 router.get('/', authMiddleware, getFeedback);

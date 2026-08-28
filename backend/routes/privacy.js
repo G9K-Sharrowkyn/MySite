@@ -2,6 +2,9 @@
 import bcrypt from 'bcryptjs';
 import auth from '../middleware/auth.js';
 import { readDb, withDb } from '../repositories/index.js';
+import { clearAuthCookie } from '../utils/authCookie.js';
+import { getLegalConfig } from '../config/legalConfig.js';
+import { removeManagedUploads } from '../utils/uploadFiles.js';
 
 const router = express.Router();
 
@@ -10,40 +13,238 @@ const resolveUserId = (user) => user?.id || user?._id;
 const findUserById = (db, userId) =>
   (db.users || []).find((entry) => resolveUserId(entry) === userId);
 
+const sanitizeAccountForExport = (user) => {
+  const copy = structuredClone(user);
+  [
+    'password',
+    'resetPasswordToken',
+    'resetPasswordTokenHash',
+    'resetPasswordExpiry',
+    'tokenVersion'
+  ].forEach((key) => delete copy[key]);
+  return copy;
+};
+
+const participantMatches = (participant, userId) =>
+  participant === userId ||
+  participant?.id === userId ||
+  participant?._id === userId ||
+  participant?.userId === userId;
+
+const normalizeFightVoteTeam = (value) => {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw === 'draw' || raw === 'tie') return 'draw';
+  if (['a', 'teama', 'team a', 'fighter1', 'fighterone'].includes(raw)) return '0';
+  if (['b', 'teamb', 'team b', 'fighter2', 'fightertwo'].includes(raw)) return '1';
+  return /^\d+$/.test(raw) ? String(Number(raw)) : null;
+};
+
+const removeUserFromPostInteractions = (post, userId) => {
+  const next = {
+    ...post,
+    likes: (post.likes || []).filter((id) => id !== userId),
+    reactions: (post.reactions || []).filter(
+      (reaction) => reaction.userId !== userId
+    )
+  };
+
+  if (next.poll?.votes?.voters) {
+    next.poll = {
+      ...next.poll,
+      votes: {
+        ...next.poll.votes,
+        voters: next.poll.votes.voters.filter((vote) => vote.userId !== userId)
+      }
+    };
+  }
+
+  if (next.fight?.votes?.voters) {
+    const voters = next.fight.votes.voters.filter((vote) => vote.userId !== userId);
+    const teamCount = Math.max(
+      Array.isArray(next.fight.teams) ? next.fight.teams.length : 0,
+      Array.isArray(next.fight.votes.teams) ? next.fight.votes.teams.length : 0,
+      2
+    );
+    const teams = new Array(teamCount).fill(0);
+    let draw = 0;
+    voters.forEach((vote) => {
+      const normalizedTeam = normalizeFightVoteTeam(vote.team);
+      if (normalizedTeam === 'draw') {
+        draw += 1;
+        return;
+      }
+      const index = Number.parseInt(normalizedTeam, 10);
+      if (Number.isInteger(index) && index >= 0 && index < teams.length) {
+        teams[index] += 1;
+      }
+    });
+    next.fight = {
+      ...next.fight,
+      votes: {
+        ...next.fight.votes,
+        voters,
+        teams,
+        teamA: teams[0] || 0,
+        teamB: teams[1] || 0,
+        draw
+      }
+    };
+  }
+
+  return next;
+};
+
+const anonymizeTournamentPlayer = (player, userId) => {
+  if (!participantMatches(player, userId)) return player;
+  return {
+    ...player,
+    userId: null,
+    id: null,
+    _id: null,
+    username: 'Deleted user',
+    displayName: 'Deleted user',
+    profilePicture: ''
+  };
+};
+
+const removeUserFromTournament = (tournament, userId) => ({
+  ...tournament,
+  participants: (tournament.participants || []).filter(
+    (participant) => !participantMatches(participant, userId)
+  ),
+  brackets: (tournament.brackets || []).map((round) => ({
+    ...round,
+    matches: (round.matches || []).map((match) => ({
+      ...match,
+      player1: anonymizeTournamentPlayer(match.player1, userId),
+      player2: anonymizeTournamentPlayer(match.player2, userId),
+      winner: anonymizeTournamentPlayer(match.winner, userId),
+      voters: (match.voters || []).filter((vote) => vote.userId !== userId)
+    }))
+  })),
+  winner: anonymizeTournamentPlayer(tournament.winner, userId)
+});
+
+const recordReferencesUser = (record, userId, username = '', email = '') => {
+  if (!record || typeof record !== 'object') return false;
+  const directKeys = [
+    'userId',
+    'authorId',
+    'senderId',
+    'recipientId',
+    'createdBy',
+    'submittedById',
+    'fromUserId',
+    'toUserId',
+    'blockerId',
+    'blockedId',
+    'userId1',
+    'userId2',
+    'actorId',
+    'targetUserId'
+  ];
+  if (directKeys.some((key) => record[key] === userId)) return true;
+  if (
+    username &&
+    ['submittedBy', 'authorUsername', 'username'].some(
+      (key) => String(record[key] || '').toLowerCase() === username.toLowerCase()
+    )
+  ) {
+    return true;
+  }
+  if (
+    email &&
+    ['email', 'userEmail'].some(
+      (key) => String(record[key] || '').toLowerCase() === email.toLowerCase()
+    )
+  ) {
+    return true;
+  }
+  if ((record.participants || []).some((entry) => participantMatches(entry, userId))) {
+    return true;
+  }
+  if ((record.members || []).some((entry) => participantMatches(entry, userId))) {
+    return true;
+  }
+  return (
+    record.team1?.userId === userId ||
+    record.team2?.userId === userId ||
+    record.owner?.userId === userId ||
+    record.user?.id === userId ||
+    record.user?._id === userId ||
+    record.data?.userId === userId ||
+    record.metadata?.userId === userId
+  );
+};
+
+const USER_EXPORT_COLLECTIONS = [
+  'posts',
+  'comments',
+  'notifications',
+  'messages',
+  'chatMessages',
+  'friendRequests',
+  'friendships',
+  'blocks',
+  'divisionFights',
+  'fights',
+  'votes',
+  'tournaments',
+  'userBadges',
+  'bets',
+  'conversations',
+  'coinTransactions',
+  'storePurchases',
+  'communityDiscussions',
+  'pushSubscriptions',
+  'legalConsents',
+  'challengeProgress',
+  'recommendationEvents',
+  'characterSuggestions',
+  'feedback',
+  'nicknameChangeLogs',
+  'moderatorActionLogs'
+];
+
 /**
  * Get Privacy Policy
  * @route GET /api/privacy/policy
  * @access Public
  */
 router.get('/policy', (req, res) => {
+  const legal = getLegalConfig();
   const privacyPolicy = {
-    lastUpdated: new Date('2025-01-01'),
+    version: legal.policyVersion,
+    lastUpdated: new Date('2026-07-28'),
     content: `
 # Privacy Policy
 
 ## 1. Information We Collect
 We collect information you provide directly to us, including:
-- Email address and password (encrypted)
+- Email address and a one-way password hash (we do not store your plain password)
 - Username and profile information
-- User-generated content (posts, comments, votes)
-- Usage data and analytics
+- User-generated content (posts, comments, votes, messages and reactions)
+- Technical logs, security events and the device information sent with requests
 
 ## 2. How We Use Your Information
 We use the information we collect to:
 - Provide, maintain, and improve our services
 - Process your transactions and manage your account
 - Send you technical notices and support messages
-- Monitor and analyze trends and usage
+- Operate requested features and diagnose reliability problems
 - Detect and prevent fraud and abuse
 
 ## 3. Data Sharing and Disclosure
-We do not sell your personal information. We may share your information:
+We do not sell your personal information. We disclose only what is necessary:
+- To hosting, email, database and other processors used to operate the service
+- If optional translation is enabled, text is sent to MyMemory only when you
+  explicitly press a Translate button
 - With your consent
 - To comply with legal obligations
 - To protect our rights and prevent fraud
 
-## 4. Your Rights (GDPR & CCPA)
-You have the right to:
+## 4. Your Privacy Rights
+Depending on the law that applies to you, you may have the right to:
 - Access your personal data
 - Correct inaccurate data
 - Request deletion of your data
@@ -52,13 +253,17 @@ You have the right to:
 - Withdraw consent at any time
 
 ## 5. Data Retention
-We retain your information for as long as your account is active or as needed to provide services.
+Account and content data are retained while your account is active. Security logs,
+backup copies and records required by law may be retained for a limited additional
+period. You can export or delete your account from Account Settings.
 
 ## 6. Security
-We implement appropriate security measures to protect your data.
+We use password hashing, access controls, encrypted transport, session revocation
+and operational backups. No online service can guarantee absolute security.
 
 ## 7. Cookies
-We use cookies to improve your experience. You can control cookie preferences in your browser.
+The authentication cookie is required to keep you signed in. Optional categories
+are disabled until you select them in the consent dialog.
 
 ## 8. International Data Transfers
 Your data may be transferred to and processed in countries other than your own.
@@ -67,7 +272,8 @@ Your data may be transferred to and processed in countries other than your own.
 We may update this policy from time to time. We will notify you of significant changes.
 
 ## 10. Contact Us
-For privacy-related inquiries, contact us at privacy@example.com
+The service operator is ${legal.operatorName}. For privacy requests, contact
+${legal.privacyEmail || 'the privacy address configured by the operator before launch'}.
     `.trim()
   };
 
@@ -80,8 +286,10 @@ For privacy-related inquiries, contact us at privacy@example.com
  * @access Public
  */
 router.get('/terms', (req, res) => {
+  const legal = getLegalConfig();
   const termsOfService = {
-    lastUpdated: new Date('2025-01-01'),
+    version: legal.policyVersion,
+    lastUpdated: new Date('2026-07-28'),
     content: `
 # Terms of Service
 
@@ -89,7 +297,7 @@ router.get('/terms', (req, res) => {
 By accessing and using this service, you accept and agree to be bound by these Terms of Service.
 
 ## 2. User Accounts
-- You must be at least 13 years old to use this service
+- You must be at least ${legal.minimumAge} years old, or older if local law requires it
 - You are responsible for maintaining the security of your account
 - You must not share your account credentials
 - One person may not maintain multiple accounts
@@ -124,13 +332,15 @@ We reserve the right to suspend or terminate your account for violations of thes
 We are not liable for any indirect, incidental, or consequential damages.
 
 ## 9. Governing Law
-These terms are governed by applicable international laws.
+These terms are governed by the laws of ${legal.jurisdiction}, subject to
+mandatory consumer protections that apply where you live.
 
 ## 10. Changes to Terms
 We may modify these terms at any time. Continued use constitutes acceptance.
 
 ## 11. Contact
-For questions about these terms, contact us at support@example.com
+The service operator is ${legal.operatorName}. For questions, contact
+${legal.supportEmail || 'the support address configured by the operator before launch'}.
     `.trim()
   };
 
@@ -143,8 +353,10 @@ For questions about these terms, contact us at support@example.com
  * @access Public
  */
 router.get('/cookies', (req, res) => {
+  const legal = getLegalConfig();
   const cookiePolicy = {
-    lastUpdated: new Date('2025-01-01'),
+    version: legal.policyVersion,
+    lastUpdated: new Date('2026-07-28'),
     content: `
 # Cookie Policy
 
@@ -159,11 +371,10 @@ Required for the website to function properly:
 - Session management
 - Security features
 
-### Analytics Cookies
-Help us understand how visitors use our site:
-- Page views and navigation
-- User interactions
-- Performance metrics
+### Optional Analytics or Marketing
+These categories remain disabled unless you enable them. If the operator later
+configures a provider, this policy and the consent screen must identify it before
+those tools are activated.
 
 ### Preference Cookies
 Remember your settings and preferences:
@@ -172,9 +383,8 @@ Remember your settings and preferences:
 - Display settings
 
 ## Third-Party Cookies
-We may use third-party services that set cookies:
-- Analytics providers
-- Payment processors
+Infrastructure or payment providers may process request data when you use their
+features. They are not permitted to use the authentication cookie as an advertising cookie.
 
 ## Managing Cookies
 You can control cookies through your browser settings:
@@ -183,13 +393,14 @@ You can control cookies through your browser settings:
 - Allow cookies from specific sites
 
 ## Consent
-By using our website, you consent to our use of cookies as described in this policy.
+Your choice in the consent dialog controls optional categories. Rejecting optional
+categories does not prevent use of the core service.
 
 ## Updates
 We may update this cookie policy. Check this page periodically for changes.
 
 ## Contact
-Questions about cookies? Contact us at privacy@example.com
+Questions about cookies? Contact ${legal.privacyEmail || 'the privacy address configured by the operator before launch'}.
     `.trim()
   };
 
@@ -248,17 +459,23 @@ router.post('/export-data', auth, async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    const sanitizedUser = { ...user };
-    delete sanitizedUser.password;
-
     const userData = {
-      profile: sanitizedUser,
-      posts: (db.posts || []).filter((post) => post.authorId === req.user.id),
-      comments: (db.comments || []).filter((comment) => comment.authorId === req.user.id),
-      votes: (db.votes || []).filter((vote) => vote.userId === req.user.id),
+      account: sanitizeAccountForExport(user),
+      data: Object.fromEntries(
+        USER_EXPORT_COLLECTIONS.map((collection) => [
+          collection,
+          (db[collection] || []).filter((record) =>
+            recordReferencesUser(
+              record,
+              req.user.id,
+              user.username,
+              user.email
+            )
+          )
+        ])
+      ),
       exportDate: new Date().toISOString(),
-      format: 'JSON',
-      gdprCompliant: true
+      format: 'JSON'
     };
 
     res.json({
@@ -284,9 +501,10 @@ router.delete('/delete-account', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Please type DELETE to confirm account deletion' });
     }
 
-    let deletionDate = new Date().toISOString();
+    const deletionDate = new Date().toISOString();
+    let profileUploads = [];
 
-    await withDb((db) => {
+    await withDb(async (db) => {
       const user = findUserById(db, req.user.id);
       if (!user) {
         const error = new Error('User not found');
@@ -294,25 +512,107 @@ router.delete('/delete-account', auth, async (req, res) => {
         throw error;
       }
 
-      const isMatch = bcrypt.compareSync(password || '', user.password || '');
+      const requiresPassword = user.authProvider !== 'google';
+      const isMatch =
+        !requiresPassword || await bcrypt.compare(password || '', user.password || '');
       if (!isMatch) {
         const error = new Error('Incorrect password');
         error.code = 'BAD_PASSWORD';
         throw error;
       }
 
-      user.email = `deleted_${req.user.id}@deleted.local`;
-      user.username = `deleted_user_${req.user.id}`;
-      user.password = 'DELETED';
-      user.profile = {};
-      user.privacy = user.privacy || {};
-      user.privacy.accountDeleted = true;
-      user.privacy.deletionDate = deletionDate;
+      const userId = req.user.id;
+      profileUploads = [
+        user.profile?.profilePicture,
+        user.profile?.avatar,
+        user.profile?.backgroundImage
+      ];
+      const authoredPostIds = new Set(
+        (db.posts || [])
+          .filter((post) => post.authorId === userId)
+          .map((post) => post.id || post._id)
+      );
+
+      db.users = (db.users || []).filter(
+        (entry) => resolveUserId(entry) !== userId
+      );
+      db.posts = (db.posts || [])
+        .filter((post) => post.authorId !== userId)
+        .map((post) => removeUserFromPostInteractions(post, userId));
+      db.comments = (db.comments || [])
+        .filter(
+          (comment) =>
+            comment.authorId !== userId &&
+            !authoredPostIds.has(comment.postId)
+        )
+        .map((comment) => ({
+          ...comment,
+          likedBy: (comment.likedBy || []).filter((id) => id !== userId),
+          reactions: (comment.reactions || []).filter(
+            (reaction) => reaction.userId !== userId
+          )
+        }));
+
+      const removeReferencedRecords = [
+        'notifications',
+        'messages',
+        'chatMessages',
+        'friendRequests',
+        'friendships',
+        'blocks',
+        'divisionFights',
+        'fights',
+        'votes',
+        'userBadges',
+        'bets',
+        'conversations',
+        'coinTransactions',
+        'storePurchases',
+        'communityDiscussions',
+        'pushSubscriptions',
+        'legalConsents',
+        'challengeProgress',
+        'recommendationEvents',
+        'characterSuggestions',
+        'feedback',
+        'nicknameChangeLogs',
+        'emailVerificationTokens',
+        'authChallenges'
+      ];
+      removeReferencedRecords.forEach((collection) => {
+        db[collection] = (db[collection] || []).filter(
+          (record) =>
+            !recordReferencesUser(record, userId, user.username, user.email)
+        );
+      });
+
+      db.tournaments = (db.tournaments || [])
+        .filter(
+          (tournament) =>
+            tournament.createdBy !== userId && tournament.creatorId !== userId
+        )
+        .map((tournament) => removeUserFromTournament(tournament, userId));
+      db.moderatorActionLogs = (db.moderatorActionLogs || []).map((entry) => {
+        if (entry.actorId !== userId && entry.targetUserId !== userId) return entry;
+        return {
+          ...entry,
+          actorId: entry.actorId === userId ? null : entry.actorId,
+          actorUsername:
+            entry.actorId === userId ? 'Deleted user' : entry.actorUsername,
+          targetUserId:
+            entry.targetUserId === userId ? null : entry.targetUserId,
+          personalDataErasedAt: deletionDate
+        };
+      });
       return db;
     });
 
+    await removeManagedUploads(profileUploads).catch((error) => {
+      console.warn('Account data was erased, but a profile upload could not be removed:', error.message);
+    });
+    clearAuthCookie(res);
     res.json({
-      msg: 'Account deletion request processed. Your account has been anonymized.',
+      msg: 'Account and associated personal data were deleted.',
       deletionDate
     });
   } catch (error) {

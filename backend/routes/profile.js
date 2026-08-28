@@ -18,6 +18,14 @@ import { readDb, withDb } from '../repositories/index.js';
 import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
+import { profileUpdateValidation } from '../middleware/validation.js';
+import { removeManagedUpload } from '../utils/uploadFiles.js';
+import {
+  isAllowedImageMimeType,
+  isUnsafeImageError,
+  isValidUploadedImage,
+  MAX_IMAGE_INPUT_PIXELS
+} from '../utils/imageSecurity.js';
 
 const router = express.Router();
 
@@ -31,7 +39,7 @@ const imageUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (String(file.mimetype || '').startsWith('image/')) {
+    if (isAllowedImageMimeType(file.mimetype)) {
       cb(null, true);
       return;
     }
@@ -43,7 +51,12 @@ const saveOptimizedImage = async (file, targetDir, { maxWidth, maxHeight, qualit
   const filename = `${Date.now()}-${Math.random().toString(16).slice(2)}.jpg`;
   const outputPath = path.join(targetDir, filename);
 
-  await sharp(file.buffer)
+  await sharp(file.buffer, {
+    failOn: 'error',
+    limitInputPixels: MAX_IMAGE_INPUT_PIXELS,
+    sequentialRead: true,
+    animated: false
+  })
     .rotate()
     .resize({
       width: maxWidth,
@@ -116,20 +129,24 @@ router.get('/nickname-logs', auth, getNicknameChangeLogs);
 // @route   PUT api/profile
 // @desc    Update current user's profile
 // @access  Private
-router.put('/', auth, updateProfile);
+router.put('/', auth, profileUpdateValidation, updateProfile);
 
 // @route   PUT api/profile/me
 // @desc    Update current user's profile (alias for root route)
 // @access  Private
-router.put('/me', auth, updateProfile);
+router.put('/me', auth, profileUpdateValidation, updateProfile);
 
 // @route   POST api/profile/avatar
 // @desc    Upload profile avatar
 // @access  Private
 router.post('/avatar', auth, imageUpload.single('avatar'), async (req, res) => {
+  let avatarPath = '';
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No avatar file uploaded' });
+    }
+    if (!isValidUploadedImage(req.file)) {
+      return res.status(400).json({ message: 'Invalid or unsupported image file' });
     }
 
     const avatarFilename = await saveOptimizedImage(req.file, avatarDir, {
@@ -137,7 +154,8 @@ router.post('/avatar', auth, imageUpload.single('avatar'), async (req, res) => {
       maxHeight: 640,
       quality: 82
     });
-    const avatarPath = `/uploads/avatars/${avatarFilename}`;
+    avatarPath = `/uploads/avatars/${avatarFilename}`;
+    let previousAvatar = '';
     await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
@@ -149,19 +167,31 @@ router.post('/avatar', auth, imageUpload.single('avatar'), async (req, res) => {
       }
 
       user.profile = user.profile || {};
+      previousAvatar = user.profile.profilePicture || user.profile.avatar || '';
       user.profile.profilePicture = avatarPath;
       user.profile.avatar = avatarPath;
       user.updatedAt = new Date().toISOString();
       return db;
     });
+    if (previousAvatar && previousAvatar !== avatarPath) {
+      await removeManagedUpload(previousAvatar).catch((error) => {
+        console.warn('Could not remove previous avatar:', error.message);
+      });
+    }
 
     res.json({ avatar: avatarPath, profilePicture: avatarPath });
   } catch (error) {
+    if (avatarPath) {
+      await removeManagedUpload(avatarPath).catch(() => {});
+    }
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ message: 'Image must be 8 MB or smaller' });
     }
     if (error.message === 'Only image uploads are allowed') {
       return res.status(400).json({ message: error.message });
+    }
+    if (isUnsafeImageError(error)) {
+      return res.status(400).json({ message: 'Invalid image dimensions or content' });
     }
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ message: 'User not found' });
@@ -175,9 +205,13 @@ router.post('/avatar', auth, imageUpload.single('avatar'), async (req, res) => {
 // @desc    Upload profile background
 // @access  Private
 router.post('/background-upload', auth, imageUpload.single('background'), async (req, res) => {
+  let backgroundPath = '';
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No background file uploaded' });
+    }
+    if (!isValidUploadedImage(req.file)) {
+      return res.status(400).json({ message: 'Invalid or unsupported image file' });
     }
 
     const backgroundFilename = await saveOptimizedImage(req.file, uploadDir, {
@@ -185,7 +219,8 @@ router.post('/background-upload', auth, imageUpload.single('background'), async 
       maxHeight: 1080,
       quality: 80
     });
-    const backgroundPath = `/uploads/backgrounds/${backgroundFilename}`;
+    backgroundPath = `/uploads/backgrounds/${backgroundFilename}`;
+    let previousBackground = '';
     await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
@@ -197,18 +232,30 @@ router.post('/background-upload', auth, imageUpload.single('background'), async 
       }
 
       user.profile = user.profile || {};
+      previousBackground = user.profile.backgroundImage || '';
       user.profile.backgroundImage = backgroundPath;
       user.updatedAt = new Date().toISOString();
       return db;
     });
+    if (previousBackground && previousBackground !== backgroundPath) {
+      await removeManagedUpload(previousBackground).catch((error) => {
+        console.warn('Could not remove previous background:', error.message);
+      });
+    }
 
     res.json({ backgroundPath });
   } catch (error) {
+    if (backgroundPath) {
+      await removeManagedUpload(backgroundPath).catch(() => {});
+    }
     if (error.code === 'LIMIT_FILE_SIZE') {
       return res.status(400).json({ message: 'Image must be 8 MB or smaller' });
     }
     if (error.message === 'Only image uploads are allowed') {
       return res.status(400).json({ message: error.message });
+    }
+    if (isUnsafeImageError(error)) {
+      return res.status(400).json({ message: 'Invalid image dimensions or content' });
     }
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ message: 'User not found' });
@@ -223,6 +270,7 @@ router.post('/background-upload', auth, imageUpload.single('background'), async 
 // @access  Private
 router.delete('/background', auth, async (req, res) => {
   try {
+    let previousBackground = '';
     await withDb((db) => {
       const user = (db.users || []).find(
         (entry) => resolveUserId(entry) === req.user.id
@@ -234,9 +282,13 @@ router.delete('/background', auth, async (req, res) => {
       }
 
       user.profile = user.profile || {};
+      previousBackground = user.profile.backgroundImage || '';
       user.profile.backgroundImage = '';
       user.updatedAt = new Date().toISOString();
       return db;
+    });
+    await removeManagedUpload(previousBackground).catch((error) => {
+      console.warn('Could not remove profile background file:', error.message);
     });
 
     res.json({ message: 'Background removed' });

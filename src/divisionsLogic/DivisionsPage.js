@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { useLanguage } from '../i18n/LanguageContext';
 import TeamSelection from './TeamSelection';
 import Modal from '../Modal/Modal';

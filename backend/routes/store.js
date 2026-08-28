@@ -7,17 +7,24 @@ import {
   withDb
 } from '../repositories/index.js';
 import { ensureCoinAccount } from '../utils/coinBonus.js';
+import auth from '../middleware/auth.js';
+import { getStoreItem } from '../config/storeCatalog.js';
 
 const router = express.Router();
 
 const resolveUserId = (user) => user?.id || user?._id;
 
 // POST /api/store/purchase
-router.post('/purchase', async (req, res) => {
+router.post('/purchase', auth, async (req, res) => {
   try {
-    const { userId, itemId, category, cost } = req.body;
-    if (!userId || !itemId || !category) {
+    const { itemId, category } = req.body || {};
+    const userId = req.user.id;
+    if (!itemId || !category) {
       return res.status(400).json({ message: 'Missing purchase data' });
+    }
+    const catalogItem = getStoreItem(itemId, category);
+    if (!catalogItem) {
+      return res.status(400).json({ message: 'Unknown store item' });
     }
 
     let purchase;
@@ -36,7 +43,7 @@ router.post('/purchase', async (req, res) => {
 
       ensureCoinAccount(user);
 
-      const itemCost = Number(cost || 0);
+      const itemCost = catalogItem.cost;
       if (user.coins.balance < itemCost) {
         const error = new Error('Insufficient eurodolary');
         error.code = 'INSUFFICIENT_COINS';

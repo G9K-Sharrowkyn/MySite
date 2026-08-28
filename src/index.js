@@ -22,6 +22,22 @@ const configureAxiosBaseUrl = () => {
 };
 
 configureAxiosBaseUrl();
+axios.defaults.withCredentials = true;
+
+// Keep authentication consistent across every feature. Individual screens may
+// still provide their own header, but requests must never depend on that.
+axios.interceptors.request.use((config) => {
+  if (typeof window === 'undefined') return config;
+  const token = window.localStorage.getItem('token');
+  if (!token || token === 'cookie-session') return config;
+
+  const headers = config.headers || {};
+  if (!headers.Authorization && !headers.authorization && !headers['x-auth-token']) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  config.headers = headers;
+  return config;
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -2,6 +2,13 @@ import React, { useState, useRef } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './ImageUpload.css';
 
+const SAFE_IMAGE_TYPES = new Set([
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif'
+]);
+
 const ImageUpload = ({ currentImage, onImageChange, className = '' }) => {
   const [preview, setPreview] = useState(currentImage || null);
   const [uploading, setUploading] = useState(false);
@@ -12,7 +19,7 @@ const ImageUpload = ({ currentImage, onImageChange, className = '' }) => {
     if (!file) return;
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
+    if (!SAFE_IMAGE_TYPES.has(String(file.type || '').toLowerCase())) {
       alert('Proszę wybrać plik obrazu (JPG, PNG, GIF)');
       return;
     }
@@ -84,7 +91,7 @@ const ImageUpload = ({ currentImage, onImageChange, className = '' }) => {
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/*"
+        accept="image/png,image/jpeg,image/webp,image/gif"
         onChange={handleFileInputChange}
         style={{ display: 'none' }}
       />

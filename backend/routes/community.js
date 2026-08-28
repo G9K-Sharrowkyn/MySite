@@ -1,6 +1,7 @@
 ﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, withDb } from '../repositories/index.js';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -24,10 +25,11 @@ router.get('/discussions', async (_req, res) => {
 });
 
 // POST /api/community/discussions
-router.post('/discussions', async (req, res) => {
+router.post('/discussions', auth, async (req, res) => {
   try {
-    const { title, content, category, userId } = req.body;
-    if (!title || !content || !userId) {
+    const { title, content, category } = req.body;
+    const userId = req.user.id;
+    if (!title || !content) {
       return res.status(400).json({ message: 'Missing discussion data' });
     }
 

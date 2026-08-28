@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import BoosterAnimation from './BoosterAnimation';
 import '../assets/css/BoosterPack.css';
 import BoosterPack from '../assets/cards/BoosterPack.png';
@@ -11,15 +11,17 @@ const CardInfo = ({ onDeckCreated }) => {
   const [particlesVisible, setParticlesVisible] = useState(false);
   const particleCanvasRef = useRef(null);
 
-  const cardsContext = require.context('../assets/cards', false, /\.png$/);
-  const cards = cardsContext.keys().filter(f => f !== './BoosterPack.png').map(f => {
-    const cardName = f.replace('./', '').replace('.png', '');
-    return { name: cardName, imageUrl: cardsContext(f) };
-  });
+  const cards = useMemo(() => {
+    const cardsContext = require.context('../assets/cards', false, /\.png$/);
+    return cardsContext.keys().filter(f => f !== './BoosterPack.png').map(f => {
+      const cardName = f.replace('./', '').replace('.png', '');
+      return { name: cardName, imageUrl: cardsContext(f) };
+    });
+  }, []);
 
   useEffect(() => {
     onDeckCreated([...cards]);
-  }, []);
+  }, [cards, onDeckCreated]);
 
   const openBooster = () => {
     if (boosterPacks <= 0) return;

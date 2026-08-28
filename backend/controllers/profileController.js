@@ -28,6 +28,20 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     : user.fights || [];
 
   const effectiveRole = isPrimaryAdminEmail(user.email) ? 'admin' : (user.role || 'user');
+  const publicProfile = {
+    displayName: profile.displayName || user.username || '',
+    bio: profile.bio || '',
+    description: profile.description || '',
+    profilePicture: profile.profilePicture || profile.avatar || '',
+    avatar: profile.avatar || profile.profilePicture || '',
+    backgroundImage: profile.backgroundImage || '',
+    favoriteCharacters: profile.favoriteCharacters || [],
+    location: profile.location || '',
+    favoriteUniverse: profile.favoriteUniverse || '',
+    website: profile.website || '',
+    interests: profile.interests || [],
+    joinDate: profile.joinDate || user.createdAt || null
+  };
 
   return {
     id: resolveUserId(user),
@@ -64,11 +78,15 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
     divisions: user.divisions || {},
     fights,
     joinDate: profile.joinDate || user.createdAt || new Date().toISOString(),
-    lastActive: profile.lastActive || user.updatedAt || new Date().toISOString(),
-    profile: {
-      ...profile,
-      backgroundImage: profile.backgroundImage || ''
-    }
+    ...(includeEmail
+      ? {
+          lastActive:
+            profile.lastActive || user.updatedAt || new Date().toISOString()
+        }
+      : {}),
+    profile: includeEmail
+      ? { ...profile, backgroundImage: profile.backgroundImage || '' }
+      : publicProfile
   };
 };
 

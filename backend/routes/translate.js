@@ -1,53 +1,76 @@
 import express from 'express';
 import axios from 'axios';
+import rateLimit from 'express-rate-limit';
+import auth from '../middleware/auth.js';
 
 const router = express.Router();
+const translationProvider = String(
+  process.env.TRANSLATION_PROVIDER || 'disabled'
+).trim().toLowerCase();
+const translationEnabled = translationProvider === 'mymemory';
+const translationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: Number(process.env.TRANSLATION_RATE_LIMIT_MAX) || 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { msg: 'Too many translation requests. Please try again later.' }
+});
+
+router.get('/config', (_req, res) => {
+  res.json({
+    enabled: translationEnabled,
+    provider: translationEnabled ? 'MyMemory' : null,
+    privacyNotice: translationEnabled
+      ? 'Only text you explicitly translate is sent to the external MyMemory service.'
+      : null
+  });
+});
 
 // @route   POST /api/translate
 // @desc    Translate text to English using MyMemory Translation API
-// @access  Public
-router.post('/', async (req, res) => {
+// @access  Private
+router.post('/', translationLimiter, auth, async (req, res) => {
   try {
-    const { text } = req.body;
-    
-    if (!text) {
-      return res.status(400).json({ msg: 'Text is required' });
+    if (!translationEnabled) {
+      return res.status(503).json({ msg: 'Translation is not enabled.' });
     }
 
-    console.log('Translation request for text:', text);
+    const { text } = req.body;
+    
+    if (typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ msg: 'Text is required' });
+    }
+    if (text.length > 5000) {
+      return res.status(400).json({ msg: 'Text is too long' });
+    }
 
     // Use MyMemory Translation API (free, no API key required)
     // Detect language and translate to English
-    const encodedText = encodeURIComponent(text);
-    const apiUrl = `https://api.mymemory.translated.net/get?q=${encodedText}&langpair=autodetect|en`;
-    
-    const response = await axios.get(apiUrl, {
-      timeout: 10000 // 10 second timeout
+    const response = await axios.get('https://api.mymemory.translated.net/get', {
+      params: { q: text.trim(), langpair: 'autodetect|en' },
+      timeout: 10000,
+      maxRedirects: 0,
+      maxContentLength: 256 * 1024,
+      maxBodyLength: 256 * 1024,
+      proxy: false,
+      headers: { accept: 'application/json' },
+      validateStatus: (status) => status >= 200 && status < 300
     });
-
-    console.log('MyMemory response:', response.data);
 
     if (response.data && response.data.responseData && response.data.responseData.translatedText) {
       const translatedText = response.data.responseData.translatedText;
-      const detectedLanguage = response.data.responseData.match || 'unknown';
       
       return res.json({ 
-        translatedText: translatedText,
-        detectedLanguage: detectedLanguage
+        translatedText
       });
     }
 
-    console.error('Unexpected response format:', response.data);
     return res.status(500).json({ msg: 'Translation failed - unexpected response format' });
     
   } catch (error) {
     console.error('Translation error:', error.message);
-    console.error('Error response:', error.response?.data);
-    
-    // If translation service fails, return a fallback message
     return res.status(500).json({ 
-      msg: 'Translation service unavailable',
-      error: error.message 
+      msg: 'Translation service unavailable'
     });
   }
 });

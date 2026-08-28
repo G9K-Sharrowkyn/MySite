@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router';
 import Notification from '../notificationLogic/Notification';
 import { AuthContext } from '../auth/AuthContext';
 import GoogleSignInButton from './GoogleSignInButton';
@@ -95,12 +95,12 @@ const Login = () => {
       }
     );
 
-    if (!response.data?.token || !response.data?.userId) {
+    if (!response.data?.authenticated || !response.data?.userId) {
       showNotification('Unexpected response from the server.', 'error');
       return;
     }
 
-    login(response.data.token, response.data.userId, response.data.user);
+    login(null, response.data.userId, response.data.user);
     showNotification('Login successful!', 'success');
     setTimeout(() => {
       navigate('/feed', { replace: true });
@@ -137,13 +137,13 @@ const Login = () => {
         return;
       }
 
-      if (!response.data?.token || !response.data?.userId) {
+      if (!response.data?.authenticated || !response.data?.userId) {
         showNotification('Unexpected response from the server.', 'error');
         return;
       }
 
       setPendingVerificationEmail('');
-      login(response.data.token, response.data.userId, response.data.user);
+      login(null, response.data.userId, response.data.user);
       showNotification('Login successful!', 'success');
 
       setTimeout(() => {
@@ -183,12 +183,12 @@ const Login = () => {
         return;
       }
 
-      if (!response.data?.token || !response.data?.userId) {
+      if (!response.data?.authenticated || !response.data?.userId) {
         showNotification('Unexpected response from the server.', 'error');
         return;
       }
 
-      login(response.data.token, response.data.userId, response.data.user);
+      login(null, response.data.userId, response.data.user);
       showNotification('Google sign-in successful!', 'success');
       setTimeout(() => {
         navigate('/feed', { replace: true });

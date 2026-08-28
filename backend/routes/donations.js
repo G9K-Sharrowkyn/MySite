@@ -1,8 +1,27 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { donationsRepo } from '../repositories/index.js';
+import {
+  donationsRepo,
+  usersRepo,
+  withDb
+} from '../repositories/index.js';
+import auth from '../middleware/auth.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
+import {
+  getDonationCurrency,
+  getDonationProviders
+} from '../config/donationConfig.js';
+import { logModerationAction } from '../utils/moderationAudit.js';
 
 const router = express.Router();
+
+// GET /api/donations/config
+router.get('/config', (_req, res) => {
+  res.json({
+    providers: getDonationProviders(),
+    currency: getDonationCurrency()
+  });
+});
 
 // GET /api/donations/stats
 router.get('/stats', async (_req, res) => {
@@ -10,6 +29,22 @@ router.get('/stats', async (_req, res) => {
     const donations = await donationsRepo.getAll();
     const totalAmount = donations.reduce((sum, entry) => sum + (entry.amount || 0), 0);
     const totalDonations = donations.length;
+    const now = new Date();
+    const monthlyProgress = donations
+      .filter((entry) => {
+        const date = new Date(entry.timestamp || entry.createdAt || 0);
+        return (
+          Number.isFinite(date.getTime()) &&
+          date.getUTCFullYear() === now.getUTCFullYear() &&
+          date.getUTCMonth() === now.getUTCMonth()
+        );
+      })
+      .reduce((sum, entry) => sum + (entry.amount || 0), 0);
+    const configuredMonthlyGoal = Number(process.env.DONATION_MONTHLY_GOAL);
+    const monthlyGoal =
+      Number.isFinite(configuredMonthlyGoal) && configuredMonthlyGoal > 0
+        ? configuredMonthlyGoal
+        : 1000;
 
     const recentDonations = donations
       .slice()
@@ -43,8 +78,8 @@ router.get('/stats', async (_req, res) => {
     res.json({
       totalDonations,
       totalAmount,
-      monthlyGoal: 1000,
-      monthlyProgress: totalAmount,
+      monthlyGoal,
+      monthlyProgress,
       topDonors: topDonorList,
       recentDonations
     });
@@ -55,23 +90,47 @@ router.get('/stats', async (_req, res) => {
 });
 
 // POST /api/donations/record
-router.post('/record', async (req, res) => {
+router.post('/record', auth, roleMiddleware(['moderator', 'admin']), async (req, res) => {
   try {
-    const { amount, message, platform, timestamp } = req.body;
-    if (!amount || amount <= 0) {
+    const { amount, message, platform, timestamp, donorName } = req.body;
+    const numericAmount = Number(amount);
+    if (!Number.isFinite(numericAmount) || numericAmount <= 0 || numericAmount > 100000) {
       return res.status(400).json({ message: 'Invalid donation amount' });
     }
 
     let created;
     created = {
       id: uuidv4(),
-      amount: Number(amount),
-      message: message || '',
-      platform: platform || 'unknown',
-      timestamp: timestamp || new Date().toISOString(),
+      amount: numericAmount,
+      currency: getDonationCurrency(),
+      donorName: String(donorName || 'Supporter').trim().slice(0, 80) || 'Supporter',
+      message: String(message || '').trim().slice(0, 500),
+      platform: String(platform || 'manual').trim().slice(0, 50),
+      timestamp: timestamp && Number.isFinite(new Date(timestamp).getTime())
+        ? new Date(timestamp).toISOString()
+        : new Date().toISOString(),
       createdAt: new Date().toISOString()
     };
-    await donationsRepo.insert(created);
+    await withDb(async (db) => {
+      await donationsRepo.insert(created, { db });
+      const actor = await usersRepo.findOne(
+        (user) => (user.id || user._id) === req.user.id,
+        { db }
+      );
+      await logModerationAction({
+        db,
+        actor: actor || req.user,
+        action: 'donation.record',
+        targetType: 'donation',
+        targetId: created.id,
+        details: {
+          amount: created.amount,
+          currency: created.currency,
+          platform: created.platform
+        }
+      });
+      return db;
+    });
 
     res.status(201).json(created);
   } catch (error) {

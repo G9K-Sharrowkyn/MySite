@@ -13,15 +13,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Use Node.js 20
+      - name: Use Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm ci
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Lint and test frontend
+        run: |
+          npm run lint
+          npm test -- --watchAll=false --runInBand
 
       - name: Build frontend
+        env:
+          REACT_APP_API_URL: ${{ secrets.VPS_API_ORIGIN }}
+          REACT_APP_SOCKET_URL: ${{ secrets.VPS_API_ORIGIN }}
+          REACT_APP_CCG_API_URL: ${{ secrets.VPS_CCG_API_URL }}
+          REACT_APP_CCG_SOCKET_URL: ${{ secrets.VPS_CCG_SOCKET_URL }}
+          REACT_APP_GOOGLE_CLIENT_ID: ${{ secrets.VPS_GOOGLE_CLIENT_ID }}
+          REACT_APP_VAPID_PUBLIC_KEY: ${{ secrets.VPS_VAPID_PUBLIC_KEY }}
         run: npm run build
 
       - name: Include Apache rewrites (.htaccess) in build output

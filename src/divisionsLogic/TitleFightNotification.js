@@ -1,7 +1,7 @@
 import React from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import { useLanguage } from '../i18n/LanguageContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import './TitleFightNotification.css';
 
 const TitleFightNotification = ({ titleFights, divisionName, currentUser }) => {

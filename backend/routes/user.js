@@ -2,13 +2,15 @@ import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { coinTransactionsRepo, usersRepo, withDb } from '../repositories/index.js';
 import { syncRankFromPoints } from '../utils/rankSystem.js';
+import auth from '../middleware/auth.js';
+import roleMiddleware from '../middleware/roleMiddleware.js';
 
 const router = express.Router();
 
 const resolveUserId = (user) => user?.id || user?._id;
 
 // POST /api/user/rewards
-router.post('/rewards', async (req, res) => {
+router.post('/rewards', auth, roleMiddleware(['moderator', 'admin']), async (req, res) => {
   try {
     const { userId, reward } = req.body || {};
     if (!userId || !reward) {
@@ -23,6 +25,12 @@ router.post('/rewards', async (req, res) => {
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
+      const values = ['xp', 'points', 'coins'].map((key) => Number(reward[key] || 0));
+      if (values.some((value) => !Number.isFinite(value) || value < 0 || value > 10000)) {
+        const error = new Error('Invalid reward value');
+        error.code = 'INVALID_REWARD';
         throw error;
       }
 
@@ -64,6 +72,9 @@ router.post('/rewards', async (req, res) => {
 
     res.json({ message: 'Rewards applied' });
   } catch (error) {
+    if (error.code === 'INVALID_REWARD') {
+      return res.status(400).json({ message: error.message });
+    }
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ message: 'User not found' });
     }

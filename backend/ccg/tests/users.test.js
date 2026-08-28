@@ -14,30 +14,37 @@ test('get cards list', async () => {
   expect(Array.isArray(res.body)).toBe(true);
 });
 
-test('register, login, add to collection', async () => {
+test('register and load an isolated CCG profile', async () => {
   const timestamp = Date.now();
   const email = `u${timestamp}@ex.com`;
   const username = `tester_${timestamp}`;
 
+  const password = 'pass12345678';
   const { body } = await request(server)
     .post('/api/auth/register')
-    .send({ username, email, password: 'pass123' })
+    .send({
+      username,
+      email,
+      password,
+      consent: {
+        termsOfService: true,
+        privacyPolicy: true,
+        minimumAgeConfirmed: true
+      }
+    })
     .expect(201);
   token = body.token;
-
-  const cardsRes = await request(server).get('/api/users/cards');
-  const cardId = cardsRes.body[0]._id || cardsRes.body[0].name;
 
   await request(server)
     .post('/api/users/collection')
     .set('Authorization', `Bearer ${token}`)
-    .send({ cardId })
-    .expect(200);
+    .send({ cardId: 'arbitrary-card' })
+    .expect(404);
 
   const profile = await request(server)
     .get('/api/users/me')
     .set('Authorization', `Bearer ${token}`)
     .expect(200);
-  const has = profile.body.collection.some(c => c._id === cardId || c.name === cardId);
-  expect(has).toBe(true);
+  expect(profile.body.collection).toEqual([]);
+  expect(profile.body.packs).toEqual({ normal: 8, premium: 0 });
 });

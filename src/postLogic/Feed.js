@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router';
 import axios from 'axios';
 import PostCard from './PostCard';
 import CreatePost from './CreatePost';

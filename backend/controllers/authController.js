@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   authChallengesRepo,
   emailVerificationTokensRepo,
+  legalConsentsRepo,
   usersRepo,
   withDb
 } from '../repositories/index.js';
@@ -17,10 +18,11 @@ import {
 } from '../services/emailService.js';
 import {
   ensurePrimaryAdminRole,
-  isPrimaryAdminEmail,
   normalizeEmail
 } from '../utils/primaryAdmin.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
+import { clearAuthCookie, setAuthCookie } from '../utils/authCookie.js';
+import { getLegalConfig } from '../config/legalConfig.js';
 
 const isJwtConfigured = () =>
   typeof process.env.JWT_SECRET === 'string' &&
@@ -44,8 +46,40 @@ const requireEmailVerification =
   process.env.NODE_ENV === 'production';
 
 const isStaffRole = (role) => role === 'admin' || role === 'moderator';
-const isPrimaryAdminAccount = (user) =>
-  Boolean(user) && isPrimaryAdminEmail(user.email);
+const PASSWORD_MIN_LENGTH = 10;
+const DUMMY_PASSWORD_HASH =
+  '$2b$10$Lfi5YfDgJWEHgfLihQ53x.AyONY4UmPxAQAyGqsgG2Ir291vvwmK2';
+const isE2eTestMode = () =>
+  process.env.NODE_ENV !== 'production' &&
+  process.env.E2E_TEST_MODE === 'true';
+
+const hasRequiredLegalConsent = (consent) =>
+  consent?.termsOfService === true &&
+  consent?.privacyPolicy === true &&
+  consent?.minimumAgeConfirmed === true;
+
+const saveRegistrationConsent = async (db, userId, source) => {
+  await legalConsentsRepo.insert(
+    {
+      id: uuidv4(),
+      userId,
+      termsOfService: true,
+      privacyPolicy: true,
+      minimumAgeConfirmed: true,
+      policyVersion: getLegalConfig().policyVersion,
+      source,
+      createdAt: new Date().toISOString()
+    },
+    { db }
+  );
+};
+
+const isValidNewPassword = (password) =>
+  typeof password === 'string' &&
+  password.length >= PASSWORD_MIN_LENGTH &&
+  password.length <= 128 &&
+  /[A-Za-z]/.test(password) &&
+  /\d/.test(password);
 
 const getActiveSuspension = (user) => {
   const suspension = user?.moderation?.suspension;
@@ -59,13 +93,16 @@ const getActiveSuspension = (user) => {
 };
 
 const createTwoFactorCode = () =>
-  `${Math.floor(100000 + Math.random() * 900000)}`;
+  String(crypto.randomInt(100000, 1000000));
 
 const createTwoFactorCodeDigest = (code) =>
   crypto
     .createHmac('sha256', process.env.JWT_SECRET)
     .update(String(code || ''))
     .digest('hex');
+
+const hashOneTimeToken = (token) =>
+  crypto.createHash('sha256').update(String(token || '')).digest('hex');
 
 const createSignedChallengeToken = (challengeId, metadata = {}) =>
   jwt.sign(
@@ -159,7 +196,8 @@ const resolveUserId = (user) => user.id || user._id;
 const buildAuthPayload = (user) => ({
   user: {
     id: resolveUserId(user),
-    role: user.role
+    role: user.role,
+    tokenVersion: Number(user.tokenVersion || 0)
   }
 });
 
@@ -175,30 +213,37 @@ const buildAuthResponse = (user) => ({
   suspension: getActiveSuspension(user)
 });
 
+const testTokenResponse = (token) =>
+  process.env.NODE_ENV === 'test' || isE2eTestMode() ? { token } : {};
+
 const ensureEmailVerificationToken = async (db, userId, email) => {
-  const existing = await emailVerificationTokensRepo.findOne(
-    (entry) =>
-      entry.userId === userId &&
-      entry.usedAt == null &&
-      Number(entry.expiresAt || 0) > Date.now(),
+  const now = Date.now();
+  await emailVerificationTokensRepo.updateAll(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.userId === userId && entry.usedAt == null) {
+          entry.usedAt = now;
+          entry.replacedAt = now;
+        }
+      });
+      return entries;
+    },
     { db }
   );
 
-  const token = existing?.token || uuidv4();
-  if (!existing) {
-    await emailVerificationTokensRepo.insert(
-      {
-        id: uuidv4(),
-        userId,
-        email,
-        token,
-        createdAt: Date.now(),
-        expiresAt: Date.now() + VERIFICATION_TOKEN_TTL_MS,
-        usedAt: null
-      },
-      { db }
-    );
-  }
+  const token = crypto.randomBytes(32).toString('hex');
+  await emailVerificationTokensRepo.insert(
+    {
+      id: uuidv4(),
+      userId,
+      email,
+      tokenHash: hashOneTimeToken(token),
+      createdAt: now,
+      expiresAt: now + VERIFICATION_TOKEN_TTL_MS,
+      usedAt: null
+    },
+    { db }
+  );
 
   return token;
 };
@@ -215,8 +260,7 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
   const challengeId = uuidv4();
   const signedChallengeToken = createSignedChallengeToken(challengeId, {
     userId,
-    email,
-    codeDigest: createTwoFactorCodeDigest(code)
+    email
   });
 
   // Keep previous pending challenges to avoid invalidating a code/token pair
@@ -241,7 +285,9 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
       email,
       purpose: 'login_2fa',
       token: signedChallengeToken,
-      code,
+      codeDigest: createTwoFactorCodeDigest(code),
+      attempts: 0,
+      maxAttempts: 5,
       createdAt: Date.now(),
       expiresAt: Date.now() + TWO_FACTOR_TTL_MS,
       usedAt: null
@@ -251,16 +297,18 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
 
   await sendTwoFactorCodeEmail(email, code);
 
-  return signedChallengeToken;
+  return { challengeToken: signedChallengeToken, code };
 };
 
 const finalizeLoginResponse = async (res, user) => {
   const userId = resolveUserId(user);
   const payload = buildAuthPayload(user);
   const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '24h' });
+  setAuthCookie(res, token);
 
   return res.json({
-    token,
+    authenticated: true,
+    ...testTokenResponse(token),
     userId,
     user: buildAuthResponse(user)
   });
@@ -276,6 +324,7 @@ const buildNewUser = ({ username, email, passwordHash }) => {
     emailVerified: false,
     password: passwordHash,
     role: 'user',
+    tokenVersion: 0,
     authProvider: 'local',
     profile: {
       displayName: username,
@@ -364,9 +413,9 @@ export const register = async (req, res) => {
     return;
   }
 
-  const { username, email, password } = req.body;
+  const { username, email, password, consent } = req.body;
 
-  if (!username || !email || !password) {
+  if (!username || !email || !password || !hasRequiredLegalConsent(consent)) {
     return res.status(400).json({ msg: 'Missing required fields.' });
   }
 
@@ -412,6 +461,7 @@ export const register = async (req, res) => {
         newUser.id,
         normalizedEmail
       );
+      await saveRegistrationConsent(db, newUser.id, 'local_registration');
 
       return db;
     });
@@ -444,9 +494,11 @@ export const register = async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h'
     });
+    setAuthCookie(res, token);
 
     res.status(201).json({
-      token,
+      authenticated: true,
+      ...testTokenResponse(token),
       userId: newUser.id,
       user: buildAuthResponse(newUser),
       requiresEmailVerification: false,
@@ -481,6 +533,7 @@ export const login = async (req, res) => {
     );
 
     if (!user) {
+      await bcrypt.compare(password, DUMMY_PASSWORD_HASH);
       return res.status(400).json({ msg: 'Invalid email or password.' });
     }
 
@@ -520,7 +573,7 @@ export const login = async (req, res) => {
 
     const now = new Date().toISOString();
     let responseUser = user;
-    let challengeToken = null;
+    let challenge = null;
     await withDb(async (db) => {
       const storedUser = await usersRepo.findOne(
         (entry) => resolveUserId(entry) === resolveUserId(user),
@@ -537,17 +590,18 @@ export const login = async (req, res) => {
         storedUser.updatedAt = now;
         responseUser = storedUser;
 
-        if (isStaffRole(storedUser.role) && !isPrimaryAdminAccount(storedUser)) {
-          challengeToken = await issueStaffTwoFactorChallenge(db, storedUser);
+        if (isStaffRole(storedUser.role)) {
+          challenge = await issueStaffTwoFactorChallenge(db, storedUser);
         }
       }
       return db;
     });
 
-    if (challengeToken) {
+    if (challenge) {
       return res.status(202).json({
         requires2FA: true,
-        challengeToken,
+        challengeToken: challenge.challengeToken,
+        ...(isE2eTestMode() ? { testTwoFactorCode: challenge.code } : {}),
         msg: 'Security code sent to your email.'
       });
     }
@@ -571,6 +625,7 @@ export const loginWithGoogle = async (req, res) => {
   }
 
   const idToken = req.body?.idToken;
+  const consent = req.body?.consent;
   if (!idToken || typeof idToken !== 'string') {
     return res.status(400).json({ msg: 'Google ID token is required.' });
   }
@@ -589,6 +644,13 @@ export const loginWithGoogle = async (req, res) => {
         );
 
         if (!user) {
+          if (!hasRequiredLegalConsent(consent)) {
+            const error = new Error(
+              'Accept the Terms of Service, acknowledge the Privacy Policy and confirm the minimum age before creating an account.'
+            );
+            error.code = 'LEGAL_CONSENT_REQUIRED';
+            throw error;
+          }
           const username = generateUniqueUsername(users, {
             name: googlePayload.name,
             email: normalizedEmail
@@ -655,11 +717,19 @@ export const loginWithGoogle = async (req, res) => {
         return users;
       }, { db });
 
+      if (created) {
+        await saveRegistrationConsent(
+          db,
+          resolveUserId(responseUser),
+          'google_registration'
+        );
+      }
+
       return db;
     });
 
-    if (isStaffRole(responseUser.role) && !isPrimaryAdminAccount(responseUser)) {
-      const challengeToken = await withDb(async (db) => {
+    if (isStaffRole(responseUser.role)) {
+      const challenge = await withDb(async (db) => {
         const storedUser = await usersRepo.findOne(
           (entry) => resolveUserId(entry) === resolveUserId(responseUser),
           { db }
@@ -676,7 +746,8 @@ export const loginWithGoogle = async (req, res) => {
 
       return res.status(202).json({
         requires2FA: true,
-        challengeToken,
+        challengeToken: challenge.challengeToken,
+        ...(isE2eTestMode() ? { testTwoFactorCode: challenge.code } : {}),
         isNewUser: created,
         msg: 'Security code sent to your email.'
       });
@@ -686,14 +757,19 @@ export const loginWithGoogle = async (req, res) => {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: '24h'
     });
+    setAuthCookie(res, token);
 
     return res.status(created ? 201 : 200).json({
-      token,
+      authenticated: true,
+      ...testTokenResponse(token),
       userId: resolveUserId(responseUser),
       user: buildAuthResponse(responseUser),
       isNewUser: created
     });
   } catch (error) {
+    if (error.code === 'LEGAL_CONSENT_REQUIRED') {
+      return res.status(400).json({ msg: error.message });
+    }
     if (error.code === 'ACCOUNT_SUSPENDED') {
       return res.status(403).json({
         msg: error.message,
@@ -715,6 +791,12 @@ export const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
   const userId = resolveUserId(req.user);
 
+  if (!isValidNewPassword(newPassword)) {
+    return res.status(400).json({
+      msg: `New password must be ${PASSWORD_MIN_LENGTH}-128 characters and contain a letter and a number.`
+    });
+  }
+
   try {
     const user = await usersRepo.findOne(
       (u) => resolveUserId(u) === userId
@@ -735,12 +817,25 @@ export const changePassword = async (req, res) => {
     const hashedPassword = await bcrypt.hash(newPassword, salt);
 
     // Update password
+    let updatedUser = null;
     await usersRepo.updateById(userId, (storedUser) => {
       storedUser.password = hashedPassword;
+      storedUser.tokenVersion = Number(storedUser.tokenVersion || 0) + 1;
+      storedUser.passwordChangedAt = new Date().toISOString();
+      updatedUser = storedUser;
       return storedUser;
     });
 
-    res.json({ msg: 'Password changed successfully' });
+    const token = jwt.sign(buildAuthPayload(updatedUser), process.env.JWT_SECRET, {
+      expiresIn: '24h'
+    });
+    setAuthCookie(res, token);
+    res.json({
+      msg: 'Password changed successfully',
+      authenticated: true,
+      ...testTokenResponse(token),
+      user: buildAuthResponse(updatedUser)
+    });
   } catch (error) {
     console.error('Change password error:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -753,6 +848,14 @@ export const changePassword = async (req, res) => {
 export const updateTimezone = async (req, res) => {
   const { timezone } = req.body;
   const userId = resolveUserId(req.user);
+  if (typeof timezone !== 'string' || timezone.length > 64) {
+    return res.status(400).json({ msg: 'Invalid timezone.' });
+  }
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: timezone });
+  } catch (_error) {
+    return res.status(400).json({ msg: 'Invalid timezone.' });
+  }
 
   try {
     const user = await usersRepo.findOne(
@@ -794,12 +897,13 @@ export const forgotPassword = async (req, res) => {
     }
 
     // Generate reset token
-    const resetToken = uuidv4();
+    const resetToken = crypto.randomBytes(32).toString('hex');
     const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
 
     // Save reset token to user
     await usersRepo.updateById(resolveUserId(user), (storedUser) => {
-      storedUser.resetPasswordToken = resetToken;
+      storedUser.resetPasswordTokenHash = hashOneTimeToken(resetToken);
+      storedUser.resetPasswordToken = null;
       storedUser.resetPasswordExpiry = resetTokenExpiry;
       return storedUser;
     });
@@ -807,7 +911,10 @@ export const forgotPassword = async (req, res) => {
     // Send email
     await sendPasswordResetEmail(user.email, resetToken);
 
-    res.json({ msg: 'If that email is registered, a reset link has been sent.' });
+    res.json({
+      msg: 'If that email is registered, a reset link has been sent.',
+      ...(isE2eTestMode() ? { testResetToken: resetToken } : {})
+    });
   } catch (error) {
     console.error('Forgot password error:', error);
     res.status(500).json({ msg: 'Error sending reset email' });
@@ -820,9 +927,18 @@ export const forgotPassword = async (req, res) => {
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
 
+  if (!token || !isValidNewPassword(newPassword)) {
+    return res.status(400).json({
+      msg: `A valid token and a ${PASSWORD_MIN_LENGTH}-128 character password containing a letter and a number are required.`
+    });
+  }
+
   try {
+    const tokenHash = hashOneTimeToken(token);
     const user = await usersRepo.findOne(
-      (u) => u.resetPasswordToken === token && u.resetPasswordExpiry > Date.now()
+      (u) =>
+        (u.resetPasswordTokenHash === tokenHash || u.resetPasswordToken === token) &&
+        u.resetPasswordExpiry > Date.now()
     );
 
     if (!user) {
@@ -837,7 +953,10 @@ export const resetPassword = async (req, res) => {
     await usersRepo.updateById(resolveUserId(user), (storedUser) => {
       storedUser.password = hashedPassword;
       storedUser.resetPasswordToken = null;
+      storedUser.resetPasswordTokenHash = null;
       storedUser.resetPasswordExpiry = null;
+      storedUser.tokenVersion = Number(storedUser.tokenVersion || 0) + 1;
+      storedUser.passwordChangedAt = new Date().toISOString();
       return storedUser;
     });
 
@@ -845,6 +964,41 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ msg: 'Error resetting password' });
+  }
+};
+
+export const establishSession = async (req, res) => {
+  try {
+    const user = await usersRepo.findOne(
+      (entry) => resolveUserId(entry) === resolveUserId(req.user)
+    );
+    if (!user) {
+      return res.status(401).json({ msg: 'User account was not found.' });
+    }
+    return finalizeLoginResponse(res, user);
+  } catch (error) {
+    console.error('Session establishment error:', error);
+    return res.status(500).json({ msg: 'Server error.' });
+  }
+};
+
+export const logout = async (req, res) => {
+  try {
+    if (req.user?.id) {
+      await usersRepo.updateById(req.user.id, (user) => {
+        user.tokenVersion = Number(user.tokenVersion || 0) + 1;
+        user.lastLogoutAt = new Date().toISOString();
+        return user;
+      });
+    }
+    clearAuthCookie(res);
+    return res.json({ msg: 'Signed out' });
+  } catch (error) {
+    clearAuthCookie(res);
+    console.error('Logout session revocation error:', error);
+    return res.status(503).json({
+      msg: 'The local session was cleared, but server-side revocation failed.'
+    });
   }
 };
 
@@ -858,11 +1012,12 @@ export const verifyEmail = async (req, res) => {
   }
 
   try {
+    const tokenHash = hashOneTimeToken(token);
     let verifiedUser = null;
     await withDb(async (db) => {
       const verificationRecord = await emailVerificationTokensRepo.findOne(
         (entry) =>
-          entry.token === token &&
+          (entry.tokenHash === tokenHash || entry.token === token) &&
           entry.usedAt == null &&
           Number(entry.expiresAt || 0) > Date.now(),
         { db }
@@ -965,73 +1120,19 @@ export const verifyLoginTwoFactor = async (req, res) => {
   }
 
   try {
-    let challengePayload = null;
-    let challengeId = null;
-    let challengeTokenSignatureValid = false;
-    try {
-      challengePayload = verifySignedChallengeToken(challengeToken);
-      challengeId = challengePayload.challengeId;
-      challengeTokenSignatureValid = true;
-    } catch (tokenError) {
-      if (
-        tokenError?.name !== 'TokenExpiredError' &&
-        tokenError?.name !== 'JsonWebTokenError' &&
-        tokenError?.name !== 'NotBeforeError'
-      ) {
-        throw tokenError;
-      }
-    }
+    const challengePayload = verifySignedChallengeToken(challengeToken);
+    const challengeId = challengePayload.challengeId;
 
     let authenticatedUser = null;
+    let verificationFailure = null;
     await withDb(async (db) => {
       const challenge = await authChallengesRepo.findOne(
         (entry) =>
-          (
-            (challengeTokenSignatureValid && entry.id === challengeId) ||
-            entry.token === challengeToken
-          ) &&
+          entry.id === challengeId &&
           entry.purpose === 'login_2fa',
         { db }
       );
       if (!challenge) {
-        // Fallback for cases where a previously issued challenge entry is not
-        // persisted but the signed token is still valid.
-        if (
-          challengeTokenSignatureValid &&
-          challengePayload?.codeDigest &&
-          createTwoFactorCodeDigest(code) === challengePayload.codeDigest
-        ) {
-          let fallbackUser = null;
-          if (challengePayload?.userId) {
-            fallbackUser = await usersRepo.findOne(
-              (entry) => resolveUserId(entry) === challengePayload.userId,
-              { db }
-            );
-          }
-          if (!fallbackUser && challengePayload?.email) {
-            fallbackUser = await usersRepo.findOne(
-              (entry) => normalizeEmail(entry.email || '') === normalizeEmail(challengePayload.email || ''),
-              { db }
-            );
-          }
-          if (!fallbackUser) {
-            const error = new Error('User not found.');
-            error.code = 'USER_NOT_FOUND';
-            throw error;
-          }
-
-          if (!fallbackUser.id) {
-            fallbackUser.id = uuidv4();
-          }
-          ensurePrimaryAdminRole(fallbackUser);
-          fallbackUser.profile = fallbackUser.profile || {};
-          fallbackUser.profile.lastActive = new Date().toISOString();
-          fallbackUser.updatedAt = new Date().toISOString();
-          applyDailyActivityBonus(db, fallbackUser, 'login', 50);
-          authenticatedUser = fallbackUser;
-          return db;
-        }
-
         const error = new Error('Challenge not found.');
         error.code = 'CHALLENGE_NOT_FOUND';
         throw error;
@@ -1046,13 +1147,33 @@ export const verifyLoginTwoFactor = async (req, res) => {
         error.code = 'CHALLENGE_EXPIRED';
         throw error;
       }
-      if (challenge.code !== code) {
-        const error = new Error('Invalid security code.');
-        error.code = 'INVALID_CODE';
+      const maxAttempts = Number(challenge.maxAttempts || 5);
+      if (Number(challenge.attempts || 0) >= maxAttempts) {
+        const error = new Error('Too many invalid attempts. Please sign in again.');
+        error.code = 'TOO_MANY_ATTEMPTS';
         throw error;
+      }
+      const expectedDigest = challenge.codeDigest || createTwoFactorCodeDigest(challenge.code);
+      const suppliedDigest = createTwoFactorCodeDigest(code);
+      const digestMatches =
+        expectedDigest.length === suppliedDigest.length &&
+        crypto.timingSafeEqual(
+          Buffer.from(expectedDigest, 'utf8'),
+          Buffer.from(suppliedDigest, 'utf8')
+        );
+      if (!digestMatches) {
+        challenge.attempts = Number(challenge.attempts || 0) + 1;
+        challenge.lastFailedAt = Date.now();
+        if (challenge.attempts >= maxAttempts) {
+          challenge.usedAt = Date.now();
+        }
+        verificationFailure = 'Invalid security code.';
+        return db;
       }
 
       challenge.usedAt = Date.now();
+      challenge.code = null;
+      challenge.codeDigest = null;
       // Resolve by challenge userId first to avoid matching a different account
       // that happens to share the same email (e.g. legacy local + google account).
       let user = await usersRepo.findOne(
@@ -1099,6 +1220,9 @@ export const verifyLoginTwoFactor = async (req, res) => {
       return db;
     });
 
+    if (verificationFailure) {
+      return res.status(400).json({ msg: verificationFailure });
+    }
     return finalizeLoginResponse(res, authenticatedUser);
   } catch (error) {
     if (
@@ -1113,7 +1237,8 @@ export const verifyLoginTwoFactor = async (req, res) => {
       error.code === 'CHALLENGE_NOT_FOUND' ||
       error.code === 'CHALLENGE_EXPIRED' ||
       error.code === 'INVALID_CODE' ||
-      error.code === 'CHALLENGE_ALREADY_USED'
+      error.code === 'CHALLENGE_ALREADY_USED' ||
+      error.code === 'TOO_MANY_ATTEMPTS'
     ) {
       return res.status(400).json({ msg: error.message });
     }

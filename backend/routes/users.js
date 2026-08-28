@@ -2,6 +2,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import { readDb, withDb } from '../repositories/index.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
+import auth from '../middleware/auth.js';
+import {
+  commentValidation,
+  profileUpdateValidation
+} from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -9,6 +14,13 @@ const resolveUserId = (user) => user?.id || user?._id;
 
 const findUserById = (db, userId) =>
   (db.users || []).find((entry) => resolveUserId(entry) === userId);
+
+const requireSelf = (req, res, next) => {
+  if (req.params.userId !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+  return next();
+};
 
 const ensureCoinAccount = (user) => {
   if (!user) return;
@@ -168,7 +180,7 @@ const buildTeamFighters = (team) => {
 };
 
 // GET /api/users/search
-router.get('/search', async (req, res) => {
+router.get('/search', auth, async (req, res) => {
   try {
     const q = (req.query.q || '').toLowerCase();
     if (!q) {
@@ -195,10 +207,11 @@ router.get('/search', async (req, res) => {
 });
 
 // POST /api/users/claim-daily-task
-router.post('/claim-daily-task', async (req, res) => {
+router.post('/claim-daily-task', auth, async (req, res) => {
   try {
-    const { userId, taskId } = req.body;
-    if (!userId || !taskId) {
+    const { taskId } = req.body;
+    const userId = req.user.id;
+    if (!taskId) {
       return res.status(400).json({ message: 'Missing task data' });
     }
 
@@ -250,7 +263,7 @@ router.post('/claim-daily-task', async (req, res) => {
 });
 
 // GET /api/users/:userId/coins
-router.get('/:userId/coins', async (req, res) => {
+router.get('/:userId/coins', auth, requireSelf, async (req, res) => {
   try {
     let coins = 0;
     await withDb((db) => {
@@ -276,7 +289,7 @@ router.get('/:userId/coins', async (req, res) => {
 });
 
 // GET /api/users/:userId/coin-history
-router.get('/:userId/coin-history', async (req, res) => {
+router.get('/:userId/coin-history', auth, requireSelf, async (req, res) => {
   try {
     const db = await readDb();
     const history = (db.coinTransactions || []).filter(
@@ -290,7 +303,7 @@ router.get('/:userId/coin-history', async (req, res) => {
 });
 
 // GET /api/users/:userId/inventory
-router.get('/:userId/inventory', async (req, res) => {
+router.get('/:userId/inventory', auth, requireSelf, async (req, res) => {
   try {
     const db = await readDb();
     const inventory = (db.storePurchases || []).filter(
@@ -304,7 +317,7 @@ router.get('/:userId/inventory', async (req, res) => {
 });
 
 // GET /api/users/:userId/daily-tasks
-router.get('/:userId/daily-tasks', async (req, res) => {
+router.get('/:userId/daily-tasks', auth, requireSelf, async (req, res) => {
   try {
     let tasks = [];
     await withDb((db) => {
@@ -335,7 +348,7 @@ router.get('/:userId/achievements', async (req, res) => {
 });
 
 // GET /api/users/:userId/betting-history
-router.get('/:userId/betting-history', async (req, res) => {
+router.get('/:userId/betting-history', auth, requireSelf, async (req, res) => {
   try {
     const db = await readDb();
     const bets = (db.bets || []).filter((bet) => bet.userId === req.params.userId);
@@ -364,7 +377,7 @@ router.get('/:userId/betting-history', async (req, res) => {
 });
 
 // GET /api/users/:userId/current-bets
-router.get('/:userId/current-bets', async (req, res) => {
+router.get('/:userId/current-bets', auth, requireSelf, async (req, res) => {
   try {
     const db = await readDb();
     const bets = (db.bets || []).filter(
@@ -415,7 +428,6 @@ router.get('/:userId/profile', async (req, res) => {
       location: profile.location || '',
       favoriteUniverse: profile.favoriteUniverse || '',
       website: profile.website || '',
-      birthDate: profile.birthDate || '',
       interests: profile.interests || [],
       createdAt: user.createdAt || profile.joinDate || new Date().toISOString(),
       isModerator: user.role === 'moderator',
@@ -430,37 +442,56 @@ router.get('/:userId/profile', async (req, res) => {
 });
 
 // PUT /api/users/:userId/profile
-router.put('/:userId/profile', async (req, res) => {
-  try {
-    let updatedProfile;
-    await withDb((db) => {
-      const user = findUserById(db, req.params.userId);
-      if (!user) {
-        const error = new Error('User not found');
-        error.code = 'USER_NOT_FOUND';
-        throw error;
-      }
-
-      user.profile = user.profile || {};
-      Object.entries(req.body || {}).forEach(([key, value]) => {
-        if (value !== undefined) {
-          user.profile[key] = value;
+router.put(
+  '/:userId/profile',
+  auth,
+  requireSelf,
+  profileUpdateValidation,
+  async (req, res) => {
+    try {
+      const allowedProfileFields = new Set([
+        'displayName',
+        'bio',
+        'description',
+        'location',
+        'favoriteUniverse',
+        'website',
+        'birthDate',
+        'interests',
+        'profilePicture',
+        'avatar',
+        'backgroundImage'
+      ]);
+      let updatedProfile;
+      await withDb((db) => {
+        const user = findUserById(db, req.params.userId);
+        if (!user) {
+          const error = new Error('User not found');
+          error.code = 'USER_NOT_FOUND';
+          throw error;
         }
-      });
-      user.updatedAt = new Date().toISOString();
-      updatedProfile = user.profile;
-      return db;
-    });
 
-    res.json(updatedProfile);
-  } catch (error) {
-    if (error.code === 'USER_NOT_FOUND') {
-      return res.status(404).json({ message: 'User not found' });
+        user.profile = user.profile || {};
+        Object.entries(req.body || {}).forEach(([key, value]) => {
+          if (allowedProfileFields.has(key) && value !== undefined) {
+            user.profile[key] = value;
+          }
+        });
+        user.updatedAt = new Date().toISOString();
+        updatedProfile = user.profile;
+        return db;
+      });
+
+      res.json(updatedProfile);
+    } catch (error) {
+      if (error.code === 'USER_NOT_FOUND') {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      console.error('Error updating profile:', error);
+      res.status(500).json({ message: 'Server error' });
     }
-    console.error('Error updating profile:', error);
-    res.status(500).json({ message: 'Server error' });
   }
-});
+);
 
 // GET /api/users/:userId/profile-comments
 router.get('/:userId/profile-comments', async (req, res) => {
@@ -501,10 +532,11 @@ router.get('/:userId/profile-comments', async (req, res) => {
 });
 
 // POST /api/users/:userId/profile-comments
-router.post('/:userId/profile-comments', async (req, res) => {
+router.post('/:userId/profile-comments', auth, commentValidation, async (req, res) => {
   try {
-    const { authorId, content } = req.body;
-    if (!authorId || !content) {
+    const { content } = req.body;
+    const authorId = req.user.id;
+    if (!content) {
       return res.status(400).json({ message: 'Missing comment data' });
     }
 
@@ -514,6 +546,11 @@ router.post('/:userId/profile-comments', async (req, res) => {
       if (!author) {
         const error = new Error('Author not found');
         error.code = 'AUTHOR_NOT_FOUND';
+        throw error;
+      }
+      if (!findUserById(db, req.params.userId)) {
+        const error = new Error('Profile not found');
+        error.code = 'PROFILE_NOT_FOUND';
         throw error;
       }
 
@@ -556,6 +593,9 @@ router.post('/:userId/profile-comments', async (req, res) => {
   } catch (error) {
     if (error.code === 'AUTHOR_NOT_FOUND') {
       return res.status(404).json({ message: 'Author not found' });
+    }
+    if (error.code === 'PROFILE_NOT_FOUND') {
+      return res.status(404).json({ message: 'Profile not found' });
     }
     console.error('Error creating profile comment:', error);
     res.status(500).json({ message: 'Server error' });
@@ -640,7 +680,7 @@ router.get('/:userId/fight-history', async (req, res) => {
 });
 
 // GET /api/users/:userId/profile-analysis
-router.get('/:userId/profile-analysis', async (req, res) => {
+router.get('/:userId/profile-analysis', auth, requireSelf, async (req, res) => {
   try {
     const db = await readDb();
     const user = findUserById(db, req.params.userId);
@@ -674,7 +714,7 @@ router.get('/:userId/profile-analysis', async (req, res) => {
 });
 
 // GET /api/users/:userId/behavior
-router.get('/:userId/behavior', async (req, res) => {
+router.get('/:userId/behavior', auth, requireSelf, async (req, res) => {
   try {
     const db = await readDb();
     const user = findUserById(db, req.params.userId);

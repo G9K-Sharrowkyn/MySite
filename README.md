@@ -1,5 +1,9 @@
 # Getting Started with Create React App
 
+Before a public release, complete the
+[pre-launch checklist](./PRELAUNCH_CHECKLIST.md). Production startup and
+deployment are guarded by backend configuration and health checks.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Setup
@@ -27,13 +31,12 @@ To enable login/register with Google:
    - Backend (`backend/.env`): `GOOGLE_CLIENT_ID=...`
 
 
-## Default Moderator Login
+## Administrator setup
 
-A moderator account is preloaded in `backend/db.json`.
-
-- **Username:** `moderator`
-- **Email:** `moderator@site.local`
-- **Password:** `mod1234`
+No default account or password is shipped with the application. Register an
+account, verify its email, set `PRIMARY_ADMIN_EMAIL` to that address in the
+backend environment, and restart the backend. Never commit a database or
+credentials to Git.
 
 ## Styling Overview
 

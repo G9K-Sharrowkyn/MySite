@@ -63,7 +63,7 @@ Congratulations! You have created an **AMAZING** and **COMPREHENSIVE** community
 ### 🚀 **How to Run Your Website**
 
 #### **Prerequisites:**
-- Node.js (v14 or higher)
+- Node.js 24 LTS or newer (minimum supported by the current frontend router: 22.22)
 - npm (comes with Node.js)
 
 #### **Step 1: Install Dependencies**
@@ -111,15 +111,9 @@ npm run dev  # If you add this script to package.json
 
 ### 🎯 **Default Login Credentials**
 
-**Moderator Account:**
-- **Username**: `moderator`
-- **Email**: `moderator@site.local`
-- **Password**: `mod1234`
-
-**Test User Account:**
-- **Username**: `testuser`
-- **Email**: `testuser@example.com`
-- **Password**: `password123`
+No default credentials are shipped. Create and verify a normal account, then
+set `PRIMARY_ADMIN_EMAIL` in the backend environment to that account's email.
+Keep databases, backups and environment files outside Git.
 
 ### 🌐 **Website Features Tour**
 
@@ -192,11 +186,14 @@ Edit CSS variables in your component files:
 
 Your website is already incredibly feature-complete! Here are some optional enhancements:
 
-1. **Real Database**: Migrate from JSON to a production database (e.g. PostgreSQL)
-2. **Real-time Updates**: Add WebSocket for live voting
-3. **Image Upload**: Allow users to upload character images
-4. **Advanced Tournaments**: Bracket-style tournaments
-5. **Social Features**: Friend system, groups
+1. **Production operations**: MongoDB replica set, monitoring and tested
+   off-site backups
+2. **Performance**: load-test expected launch traffic and split large optional
+   bundles where measurements justify it
+3. **Moderation operations**: staff procedures, response times and escalation
+4. **Legal review**: final operator-specific review of policies and donations
+5. **Product enhancements**: add new game and social modes only after the
+   launch-critical checklist is complete
 6. **Mobile App**: React Native version
 7. **Admin Dashboard**: Advanced moderation tools
 

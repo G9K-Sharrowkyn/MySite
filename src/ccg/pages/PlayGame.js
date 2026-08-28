@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import socket from '../utils/socket';
 import GameInterface from '../components/GameInterface';
 import LoadingScreen from '../components/LoadingScreen';

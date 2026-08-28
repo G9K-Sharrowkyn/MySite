@@ -1,0 +1,9 @@
+.env
+.env.*
+.tmp
+backups
+ccg/data/users.json
+db.json
+node_modules
+uploads
+*.log

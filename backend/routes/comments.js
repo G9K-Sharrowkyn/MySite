@@ -6,24 +6,27 @@ import {
   deleteComment,
   toggleCommentLike,
   addCommentReaction,
+  removeCommentReaction,
   addUserComment,
   getUserComments,
   addFightComment,
   getFightComments
 } from '../controllers/commentController.js';
 import auth from '../middleware/auth.js';
+import { commentValidation } from '../middleware/validation.js';
+import { optionalAuth } from '../middleware/optionalAuth.js';
 
 const router = express.Router();
 
 // @route   GET api/comments/post/:postId
 // @desc    Get comments for a post
 // @access  Public
-router.get('/post/:postId', getPostComments);
+router.get('/post/:postId', optionalAuth, getPostComments);
 
 // @route   POST api/comments/post/:postId
 // @desc    Create a new comment for a post
 // @access  Private
-router.post('/post/:postId', auth, addPostComment);
+router.post('/post/:postId', auth, commentValidation, addPostComment);
 
 // @route   GET api/comments/user/:userId
 // @desc    Get comments for a user profile
@@ -33,7 +36,7 @@ router.get('/user/:userId', getUserComments);
 // @route   POST api/comments/user/:userId
 // @desc    Create a new comment for a user profile
 // @access  Private
-router.post('/user/:userId', auth, addUserComment);
+router.post('/user/:userId', auth, commentValidation, addUserComment);
 
 // @route   GET api/comments/fight/:fightId
 // @desc    Get comments for a fight
@@ -43,22 +46,22 @@ router.get('/fight/:fightId', getFightComments);
 // @route   POST api/comments/fight/:fightId
 // @desc    Create a new comment for a fight
 // @access  Private
-router.post('/fight/:fightId', auth, addFightComment);
+router.post('/fight/:fightId', auth, commentValidation, addFightComment);
 
 // @route   GET api/comments/:postId
 // @desc    Get comments for a post (legacy)
 // @access  Public
-router.get('/:postId', getPostComments);
+router.get('/:postId', optionalAuth, getPostComments);
 
 // @route   POST api/comments
 // @desc    Create a new comment (legacy)
 // @access  Private
-router.post('/', auth, addPostComment);
+router.post('/', auth, commentValidation, addPostComment);
 
 // @route   PUT api/comments/:id
 // @desc    Update a comment
 // @access  Private
-router.put('/:id', auth, updateComment);
+router.put('/:id', auth, commentValidation, updateComment);
 
 // @route   DELETE api/comments/:id
 // @desc    Delete a comment
@@ -74,5 +77,10 @@ router.post('/:id/like', auth, toggleCommentLike);
 // @desc    Add or update reaction on a comment
 // @access  Private
 router.post('/:id/reaction', auth, addCommentReaction);
+
+// @route   DELETE api/comments/:id/reaction/:reactionId
+// @desc    Remove the current user's reaction from a comment
+// @access  Private
+router.delete('/:id/reaction/:reactionId', auth, removeCommentReaction);
 
 export default router;

@@ -1,7 +1,7 @@
 import request from 'supertest';
 import express from 'express';
 import authRoutes from '../routes/auth.js';
-import { usersRepo } from '../repositories/index.js';
+import { legalConsentsRepo, usersRepo } from '../repositories/index.js';
 
 const app = express();
 app.use(express.json());
@@ -11,7 +11,12 @@ describe('Auth Controller', () => {
   const testUser = {
     username: `testuser_${Date.now()}`,
     email: `test_${Date.now()}@example.com`,
-    password: 'TestPass123!'
+    password: 'TestPass123!',
+    consent: {
+      termsOfService: true,
+      privacyPolicy: true,
+      minimumAgeConfirmed: true
+    }
   };
 
   beforeAll(() => {
@@ -22,6 +27,18 @@ describe('Auth Controller', () => {
     await usersRepo.updateAll((users) =>
       users.filter((user) => user.email !== testUser.email)
     );
+    await legalConsentsRepo.updateAll((items) =>
+      items.filter((item) => item.userId !== testUser.id)
+    );
+  });
+
+  test('rejects registration without required legal consent', async () => {
+    const response = await request(app).post('/auth/register').send({
+      username: `no_consent_${Date.now()}`,
+      email: `no_consent_${Date.now()}@example.com`,
+      password: 'TestPass123!'
+    });
+    expect(response.statusCode).toBe(400);
   });
 
   test('registers a new user', async () => {
@@ -29,6 +46,17 @@ describe('Auth Controller', () => {
     expect(response.statusCode).toBe(201);
     expect(response.body).toHaveProperty('token');
     expect(response.body).toHaveProperty('userId');
+    testUser.id = response.body.userId;
+
+    const consent = await legalConsentsRepo.findOne(
+      (item) => item.userId === response.body.userId
+    );
+    expect(consent).toMatchObject({
+      termsOfService: true,
+      privacyPolicy: true,
+      minimumAgeConfirmed: true,
+      source: 'local_registration'
+    });
   });
 
   test('logs in an existing user', async () => {

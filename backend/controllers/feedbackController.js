@@ -6,6 +6,11 @@ import {
 } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logModerationAction } from '../utils/moderationAudit.js';
+import { decodeSafeDataImage } from '../utils/imageSecurity.js';
+import {
+  buildCharacterMediaPath,
+  ingestCharacterMediaFromSource
+} from '../services/characterMedia.js';
 
 const normalizeTags = (tags) => {
   if (!Array.isArray(tags)) {
@@ -15,6 +20,14 @@ const normalizeTags = (tags) => {
     .map((tag) => String(tag || '').trim())
     .filter(Boolean)
     .slice(0, 20);
+};
+
+const boundedText = (value, maxLength) =>
+  typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
+
+const normalizeSuggestionImage = (value) => {
+  if (typeof value !== 'string') return '';
+  return decodeSafeDataImage(value)?.source || '';
 };
 
 const deriveBaseName = (name) => {
@@ -40,36 +53,12 @@ const guessUniverseFromTags = (tags) => {
   return 'Other';
 };
 
-const normalizeCharacterImage = (value) => {
-  if (typeof value !== 'string') return '';
-  const trimmed = value.trim();
-  if (!trimmed) return '';
-
-  // Stored uploads / static assets are safe.
-  if (trimmed.startsWith('/characters/') || trimmed.startsWith('/uploads/')) {
-    return trimmed;
-  }
-
-  // Allow data-URLs for now (small images); long-term we'll want to store files server-side.
-  if (trimmed.startsWith('data:image/')) {
-    return trimmed;
-  }
-
-  // In production the site is HTTPS; http:// images become mixed-content and will be blocked.
-  if (/^http:\/\//i.test(trimmed)) {
-    return '';
-  }
-
-  if (/^https:\/\//i.test(trimmed)) {
-    return trimmed;
-  }
-
-  return '';
-};
-
 export const submitFeedback = async (req, res) => {
   try {
-    const { type, title, description, reportedUser } = req.body;
+    const type = boundedText(req.body?.type, 30).toLowerCase();
+    const title = boundedText(req.body?.title, 100);
+    const description = boundedText(req.body?.description, 1000);
+    const reportedUser = boundedText(req.body?.reportedUser, 80);
 
     if (!type || !title || !description) {
       return res.status(400).json({ msg: 'Please provide all required fields' });
@@ -84,19 +73,25 @@ export const submitFeedback = async (req, res) => {
       return res.status(400).json({ msg: 'Username is required for user reports' });
     }
 
-    if (type === 'character' && (!req.body.characterName || !req.body.characterTags)) {
+    const characterName = boundedText(req.body?.characterName, 120);
+    const characterTags = normalizeTags(req.body?.characterTags);
+    const characterImage = normalizeSuggestionImage(req.body?.characterImage);
+    if (
+      type === 'character' &&
+      (!characterName || characterTags.length === 0 || !characterImage)
+    ) {
       return res.status(400).json({ msg: 'Character name and tags are required for character suggestions' });
     }
 
     const feedback = {
-      id: Date.now().toString(),
+      id: uuidv4(),
       type,
-      title: title.substring(0, 100),
-      description: description.substring(0, 1000),
+      title,
+      description,
       reportedUser: type === 'user' ? reportedUser : undefined,
-      characterName: type === 'character' ? req.body.characterName : undefined,
-      characterTags: type === 'character' ? req.body.characterTags : undefined,
-      characterImage: type === 'character' ? req.body.characterImage : undefined,
+      characterName: type === 'character' ? characterName : undefined,
+      characterTags: type === 'character' ? characterTags : undefined,
+      characterImage: type === 'character' ? characterImage : undefined,
       submittedBy: req.user?.username || 'Anonymous',
       submittedById: req.user?.id || null,
       status: 'pending', // pending, reviewed, resolved, dismissed, approved
@@ -122,7 +117,7 @@ export const submitFeedback = async (req, res) => {
           admin.notifications = [];
         }
         admin.notifications.push({
-          id: Date.now().toString() + Math.random(),
+          id: uuidv4(),
           type: 'feedback',
           text: notificationText,
           feedbackId: feedback.id,
@@ -162,6 +157,14 @@ export const getFeedback = async (req, res) => {
     if (type && type !== 'all') {
       feedback = feedback.filter(f => f.type === type);
     }
+    feedback = feedback.map((entry) =>
+      entry?.type === 'character'
+        ? {
+            ...entry,
+            characterImage: normalizeSuggestionImage(entry.characterImage)
+          }
+        : entry
+    );
 
     // Sort by newest first
     feedback.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -286,6 +289,38 @@ export const approveCharacterSuggestion = async (req, res) => {
     }
 
     const { id } = req.params;
+    const pendingFeedback = await feedbackRepo.findById(id);
+    if (!pendingFeedback || pendingFeedback.type !== 'character') {
+      return res.status(404).json({ msg: 'Character suggestion not found' });
+    }
+    if (pendingFeedback.status === 'approved') {
+      return res.status(409).json({ msg: 'Character suggestion was already approved' });
+    }
+    const safeSuggestionImage = normalizeSuggestionImage(
+      pendingFeedback.characterImage
+    );
+    if (!safeSuggestionImage) {
+      return res.status(400).json({
+        msg: 'The suggested character image is invalid and must be resubmitted'
+      });
+    }
+
+    const characterId = uuidv4();
+    const ingested = await ingestCharacterMediaFromSource({
+      characterId,
+      image: safeSuggestionImage,
+      frontendOrigin: process.env.FRONTEND_URL,
+      apiOrigin: process.env.API_ORIGIN || process.env.FRONTEND_URL
+    }).catch((error) => ({
+      ok: false,
+      reason: error?.message || 'ingest_failed'
+    }));
+    if (!ingested?.ok) {
+      return res.status(400).json({
+        msg: `Character image could not be safely imported (${ingested?.reason || 'unknown_error'}).`
+      });
+    }
+
     let characterCreated = false;
     let newCharacter = null;
 
@@ -297,7 +332,11 @@ export const approveCharacterSuggestion = async (req, res) => {
       const actorName = actorUser?.username || req.user.username || 'moderator';
       const feedback = await feedbackRepo.findById(id, { db });
 
-      if (!feedback || feedback.type !== 'character') {
+      if (
+        !feedback ||
+        feedback.type !== 'character' ||
+        feedback.status === 'approved'
+      ) {
         return db;
       }
 
@@ -306,10 +345,10 @@ export const approveCharacterSuggestion = async (req, res) => {
       const name = String(feedback.characterName || '').trim();
       const baseName = deriveBaseName(name);
       const universe = guessUniverseFromTags(tags);
-      const image = normalizeCharacterImage(feedback.characterImage) || '/logo512.png'; // Guaranteed to exist in CRA builds.
+      const image = buildCharacterMediaPath(characterId);
 
       const character = {
-        id: uuidv4(),
+        id: characterId,
         name,
         baseName,
         tags,

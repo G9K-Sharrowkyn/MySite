@@ -8,6 +8,7 @@ import {
 } from '../repositories/index.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -53,9 +54,16 @@ const normalizeMessage = (message, users = []) => {
 // @access  Private
 export const sendMessage = async (req, res) => {
   const { recipientId, content, subject } = req.body;
+  const normalizedRecipientId =
+    typeof recipientId === 'string' ? recipientId.trim() : '';
+  const normalizedContent = typeof content === 'string' ? content.trim() : '';
+  const normalizedSubject = typeof subject === 'string' ? subject.trim() : '';
 
-  if (!recipientId || !content) {
+  if (!normalizedRecipientId || !normalizedContent) {
     return res.status(400).json({ msg: 'Recipient and content are required.' });
+  }
+  if (normalizedContent.length > 5000 || normalizedSubject.length > 200) {
+    return res.status(400).json({ msg: 'Message or subject is too long.' });
   }
 
   try {
@@ -65,8 +73,8 @@ export const sendMessage = async (req, res) => {
     await withDb(async (db) => {
       const blocks = await blocksRepo.getAll({ db });
       const isBlocked =
-        blocks.some((b) => b.blockerId === req.user.id && b.blockedId === recipientId) ||
-        blocks.some((b) => b.blockerId === recipientId && b.blockedId === req.user.id);
+        blocks.some((b) => b.blockerId === req.user.id && b.blockedId === normalizedRecipientId) ||
+        blocks.some((b) => b.blockerId === normalizedRecipientId && b.blockedId === req.user.id);
       if (isBlocked) {
         const error = new Error('Messaging is blocked');
         error.code = 'BLOCKED';
@@ -84,7 +92,7 @@ export const sendMessage = async (req, res) => {
       }
 
       const recipient = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === recipientId,
+        (entry) => resolveUserId(entry) === normalizedRecipientId,
         { db }
       );
       if (!recipient) {
@@ -101,8 +109,8 @@ export const sendMessage = async (req, res) => {
         recipientId: resolveUserId(recipient),
         recipientUsername: recipient.username,
         recipientDisplayName: getUserDisplayName(recipient),
-        subject: subject || '',
-        content,
+        subject: normalizedSubject,
+        content: normalizedContent,
         read: false,
         deleted: false,
         createdAt: now
@@ -119,18 +127,11 @@ export const sendMessage = async (req, res) => {
     });
 
     // Emit Socket.IO event if available
-    if (req.io && req.userSocketMap) {
-      const recipientSocketId = req.userSocketMap.get(recipientId);
-      
-      if (recipientSocketId) {
-        req.io.to(recipientSocketId).emit('new-private-message', {
-          ...normalizeMessage(createdMessage),
-          recipientId: recipientId
-        });
-        console.log(`Emitted private message to user ${recipientId} at socket ${recipientSocketId}`);
-      } else {
-        console.log(`User ${recipientId} is not connected, message will be delivered later`);
-      }
+    if (req.io) {
+      req.io.to(`user:${normalizedRecipientId}`).emit('new-private-message', {
+        ...normalizeMessage(createdMessage),
+        recipientId: normalizedRecipientId
+      });
     }
 
     res.json({ msg: 'Message sent', message: normalizeMessage(createdMessage) });
@@ -151,9 +152,11 @@ export const sendMessage = async (req, res) => {
 // @access  Private
 export const getMessages = async (req, res) => {
   try {
-    const { type = 'all', page = 1, limit = 20 } = req.query;
-    const pageNumber = Number(page) || 1;
-    const limitNumber = Number(limit) || 20;
+    const { type = 'all' } = req.query;
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 20,
+      maxLimit: 100
+    });
 
     const db = await readDb();
     const messages = await messagesRepo.getAll({ db });
@@ -335,9 +338,10 @@ export const markAsRead = async (req, res) => {
 // @access  Private
 export const getConversation = async (req, res) => {
   try {
-    const { page = 1, limit = 50 } = req.query;
-    const pageNumber = Number(page) || 1;
-    const limitNumber = Number(limit) || 50;
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
     const otherUserId = req.params.userId;
 
     const db = await readDb();

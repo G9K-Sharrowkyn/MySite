@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import axios from 'axios';
 import ProfilePage from './ProfilePage';
 import { LanguageContext } from '../i18n/LanguageContext';
-import { __setMockParams } from 'react-router-dom';
+import { __setMockParams } from 'react-router';
 import { createMockAxios } from '../testUtils/mockAxios';
 
 jest.mock('axios');

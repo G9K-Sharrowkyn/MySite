@@ -1,0 +1,14 @@
+.swoop-racing-page {
+  width: 100%;
+  min-height: 620px;
+  overflow: hidden;
+  background: #000;
+}
+
+.swoop-racing-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #000;
+}

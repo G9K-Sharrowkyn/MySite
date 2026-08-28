@@ -14,6 +14,10 @@ import { addRankPoints, getRankInfo, RANK_POINT_VALUES, updateLeveledBadgeProgre
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
 import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { parseLimit, parsePagination } from '../utils/pagination.js';
+import { getReaction } from '../config/reactionCatalog.js';
+import { sanitizePostPhotos } from '../utils/imageSecurity.js';
+import { getIdempotencyKey } from '../utils/idempotency.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveRole = (user) => user?.role || 'user';
@@ -155,10 +159,14 @@ export const normalizePostForResponse = (post, users, options = {}) => {
   const author = users.find((user) => resolveUserId(user) === post.authorId);
   const normalized = { ...post };
   const postId = normalized.id || normalized._id;
+  const viewerUserId = options.viewerUserId || null;
+  const viewerReaction = viewerUserId
+    ? (post.reactions || []).find((reaction) => reaction.userId === viewerUserId)
+    : null;
+  delete normalized.idempotencyKey;
 
   if (normalized.fight) {
     const now = options.now instanceof Date ? options.now : new Date();
-    const viewerUserId = options.viewerUserId || null;
     const voteVisibility = normalizeVoteVisibility(normalized.fight.voteVisibility);
     const revealVotes = shouldRevealFightVotes(normalized.fight, now);
     const myVote = getFightMyVote(normalized.fight, viewerUserId);
@@ -191,7 +199,14 @@ export const normalizePostForResponse = (post, users, options = {}) => {
   return {
     ...normalized,
     id: postId,
-    author: buildAuthor(author)
+    author: buildAuthor(author),
+    userReaction: viewerReaction
+      ? {
+          id: viewerReaction.reactionId,
+          icon: viewerReaction.reactionIcon,
+          name: viewerReaction.reactionName
+        }
+      : null
   };
 };
 
@@ -200,6 +215,14 @@ const findPostById = (posts, id) =>
 
 const isPostSoftDeleted = (post) =>
   Boolean(post?.moderation?.deleted?.isDeleted);
+
+const assertPostActive = (post) => {
+  if (!post || isPostSoftDeleted(post)) {
+    const error = new Error('Post not found');
+    error.code = 'POST_NOT_FOUND';
+    throw error;
+  }
+};
 
 const sortPosts = (posts, sortBy) => {
   if (sortBy === 'likes') {
@@ -270,7 +293,7 @@ const notifyAdminsForProfanity = async (db, payload) => {
 };
 
 export const getAllPosts = async (req, res) => {
-  const { page = 1, limit = 10, sortBy = 'createdAt', category, group } = req.query;
+  const { sortBy = 'createdAt', category, group } = req.query;
   try {
     const db = await readDb();
     const viewerUserId = req.user?.id || null;
@@ -301,8 +324,10 @@ export const getAllPosts = async (req, res) => {
     }
 
     const sortedPosts = sortPosts(filteredPosts, sortBy);
-    const pageNumber = Number(page);
-    const limitNumber = Number(limit);
+    const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
+      defaultLimit: 10,
+      maxLimit: 50
+    });
     const pagedPosts = sortedPosts.slice(
       (pageNumber - 1) * limitNumber,
       pageNumber * limitNumber
@@ -425,8 +450,10 @@ export const createPost = async (req, res) => {
   }
 
   try {
+    const idempotencyKey = getIdempotencyKey(req);
     const now = new Date();
     const postType = type || 'discussion';
+    const safePhotos = sanitizePostPhotos(photos);
     const resolveLockTime = (duration) => {
       if (!duration) {
         return new Date(now.getTime() + 72 * 60 * 60 * 1000);
@@ -448,6 +475,7 @@ export const createPost = async (req, res) => {
 
     let createdPost;
     let author;
+    let idempotencyReplay = false;
     const resolvedCategory = postType === 'fight' ? null : (category || 'discussion');
     const resolvedGroup = normalizePostGroup(group);
 
@@ -468,6 +496,21 @@ export const createPost = async (req, res) => {
         throw error;
       }
 
+      if (idempotencyKey) {
+        const existingPost = await postsRepo.findOne(
+          (post) =>
+            post.authorId === req.user.id &&
+            post.idempotencyKey === idempotencyKey &&
+            !isPostSoftDeleted(post),
+          { db }
+        );
+        if (existingPost) {
+          createdPost = existingPost;
+          idempotencyReplay = true;
+          return db;
+        }
+      }
+
       const postData = {
         id: uuidv4(),
         title,
@@ -479,7 +522,7 @@ export const createPost = async (req, res) => {
         likes: [],
         comments: [],
         views: 0,
-        photos: Array.isArray(photos) ? photos : [],
+        photos: safePhotos,
         poll: null,
         fight: null,
         reactions: [],
@@ -494,7 +537,8 @@ export const createPost = async (req, res) => {
           characters: [],
           powerTiers: [],
           categories: []
-        }
+        },
+        ...(idempotencyKey ? { idempotencyKey } : {})
       };
 
       if (postType === 'fight') {
@@ -594,6 +638,9 @@ export const createPost = async (req, res) => {
       return db;
     });
 
+    if (idempotencyReplay) {
+      res.set('Idempotency-Replayed', 'true');
+    }
     res.status(201).json({
       ...normalizePostForResponse(createdPost, [author]),
       commentCount: 0,
@@ -606,6 +653,12 @@ export const createPost = async (req, res) => {
     }
     if (err.code === 'FORBIDDEN_OFFICIAL') {
       return res.status(403).json({ message: err.message });
+    }
+    if (err.code === 'INVALID_IMAGE_SOURCE') {
+      return res.status(400).json({ message: err.message });
+    }
+    if (err.code === 'INVALID_IDEMPOTENCY_KEY') {
+      return res.status(400).json({ message: err.message });
     }
     console.error('Error creating post:', err.message);
     res.status(500).send('Server Error');
@@ -649,6 +702,7 @@ export const updatePost = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       const user = await usersRepo.findOne(
         (entry) => resolveUserId(entry) === req.user.id,
@@ -673,7 +727,9 @@ export const updatePost = async (req, res) => {
       if (typeof updates?.title === 'string') post.title = updates.title;
       if (typeof updates?.content === 'string') post.content = updates.content;
       if (typeof updates?.type === 'string') post.type = updates.type;
-      if (Array.isArray(updates?.photos)) post.photos = updates.photos;
+      if (Object.prototype.hasOwnProperty.call(updates || {}, 'photos')) {
+        post.photos = sanitizePostPhotos(updates.photos);
+      }
       if (Object.prototype.hasOwnProperty.call(updates || {}, 'group')) {
         post.group = normalizePostGroup(updates.group);
       }
@@ -799,6 +855,9 @@ export const updatePost = async (req, res) => {
     }
     if (err.code === 'ACCESS_DENIED') {
       return res.status(403).json({ msg: 'Access denied' });
+    }
+    if (err.code === 'INVALID_IMAGE_SOURCE') {
+      return res.status(400).json({ msg: err.message });
     }
     console.error('Error updating post:', err.message);
     res.status(500).send('Server Error');
@@ -985,6 +1044,7 @@ export const toggleLike = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       post.likes = Array.isArray(post.likes) ? post.likes : [];
       const index = post.likes.findIndex((like) => like.userId === req.user.id);
@@ -993,6 +1053,18 @@ export const toggleLike = async (req, res) => {
       if (wasLiked) {
         post.likes.splice(index, 1);
         isLiked = false;
+
+        const author = await usersRepo.findOne(
+          (entry) => resolveUserId(entry) === post.authorId,
+          { db }
+        );
+        if (author?.activity) {
+          author.activity.likesReceived = Math.max(
+            0,
+            Number(author.activity.likesReceived || 0) - 1
+          );
+          author.updatedAt = new Date().toISOString();
+        }
       } else {
         post.likes.push({ userId: req.user.id, likedAt: new Date().toISOString() });
         isLiked = true;
@@ -1050,6 +1122,7 @@ export const voteInPoll = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       if (!post.poll || !Array.isArray(post.poll.options)) {
         const error = new Error('Post does not have a poll');
@@ -1112,7 +1185,7 @@ export const voteInPoll = async (req, res) => {
 };
 
 export const getOfficialFights = async (req, res) => {
-  const { limit = 10 } = req.query;
+  const limit = parseLimit(req.query.limit, { fallback: 10, max: 50 });
 
   try {
     const db = await readDb();
@@ -1121,7 +1194,7 @@ export const getOfficialFights = async (req, res) => {
     const fights = db.posts.filter(
       (post) => post.isOfficial && post.type === 'fight' && post.fight?.status === 'active'
     );
-    const sorted = sortPosts(fights, 'createdAt').slice(0, Number(limit));
+    const sorted = sortPosts(fights, 'createdAt').slice(0, limit);
     const fightsWithUserInfo = sorted.map((post) =>
       normalizePostForResponse(post, db.users, { viewerUserId, now })
     );
@@ -1154,6 +1227,7 @@ export const voteInFight = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       if (post.type !== 'fight' || !post.fight) {
         const error = new Error('Post is not a fight post');
@@ -1276,7 +1350,13 @@ export const voteInFight = async (req, res) => {
 
 export const addReaction = async (req, res) => {
   const { id } = req.params;
-  const { reactionId, reactionIcon, reactionName } = req.body;
+  const reaction = getReaction(req.body?.reactionId);
+  if (!reaction) {
+    return res.status(400).json({ msg: 'Invalid reaction' });
+  }
+  const reactionId = reaction.id;
+  const reactionIcon = reaction.icon;
+  const reactionName = reaction.name;
 
   try {
     let reactionsArray = [];
@@ -1291,6 +1371,7 @@ export const addReaction = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       post.reactions = Array.isArray(post.reactions) ? post.reactions : [];
       const existingReactionIndex = post.reactions.findIndex(
@@ -1376,6 +1457,7 @@ export const removeReaction = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       post.reactions = Array.isArray(post.reactions) ? post.reactions : [];
       const beforeCount = post.reactions.length;
@@ -1444,11 +1526,14 @@ export const createUserChallenge = async (req, res) => {
   }
 
   try {
+    const idempotencyKey = getIdempotencyKey(req);
     const now = new Date();
+    const safePhotos = sanitizePostPhotos(photos);
     const expiresAt = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days to respond
     let createdPost;
     let challenger;
     let opponent;
+    let idempotencyReplay = false;
     const resolvedGroup = normalizePostGroup(group);
 
     await withDb(async (db) => {
@@ -1478,6 +1563,25 @@ export const createUserChallenge = async (req, res) => {
         throw error;
       }
 
+      if (idempotencyKey) {
+        const existingPost = await postsRepo.findOne(
+          (post) =>
+            post.authorId === req.user.id &&
+            post.idempotencyKey === idempotencyKey &&
+            !isPostSoftDeleted(post),
+          { db }
+        );
+        if (existingPost) {
+          createdPost = existingPost;
+          opponent = await usersRepo.findOne(
+            (user) => resolveUserId(user) === existingPost.fight?.opponentId,
+            { db }
+          );
+          idempotencyReplay = true;
+          return db;
+        }
+      }
+
       const postData = {
         id: uuidv4(),
         title,
@@ -1489,7 +1593,7 @@ export const createUserChallenge = async (req, res) => {
         likes: [],
         comments: [],
         views: 0,
-        photos: Array.isArray(photos) ? photos : [],
+        photos: safePhotos,
         poll: null,
         reactions: [],
         group: resolvedGroup,
@@ -1497,6 +1601,7 @@ export const createUserChallenge = async (req, res) => {
         moderatorCreated: false,
         category: null,
         featured: false,
+        ...(idempotencyKey ? { idempotencyKey } : {}),
         tags: [],
         autoTags: {
           universes: [],
@@ -1606,6 +1711,9 @@ export const createUserChallenge = async (req, res) => {
       return db;
     });
 
+    if (idempotencyReplay) {
+      res.set('Idempotency-Replayed', 'true');
+    }
     res.status(201).json({
       ...normalizePostForResponse(createdPost, [challenger]),
       commentCount: 0,
@@ -1626,6 +1734,12 @@ export const createUserChallenge = async (req, res) => {
     }
     if (err.code === 'SELF_CHALLENGE') {
       return res.status(400).json({ message: 'Cannot challenge yourself' });
+    }
+    if (err.code === 'INVALID_IMAGE_SOURCE') {
+      return res.status(400).json({ message: err.message });
+    }
+    if (err.code === 'INVALID_IDEMPOTENCY_KEY') {
+      return res.status(400).json({ message: err.message });
     }
     console.error('Error creating user challenge:', err.message);
     res.status(500).json({ message: 'Server Error', error: err.message });
@@ -1657,6 +1771,7 @@ export const respondToChallenge = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       if (!post.fight || post.fight.fightMode !== 'user_vs_user') {
         const error = new Error('This is not a user-vs-user challenge');
@@ -1814,6 +1929,7 @@ export const approveChallenge = async (req, res) => {
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
+      assertPostActive(post);
 
       if (!post.fight || post.fight.fightMode !== 'user_vs_user') {
         const error = new Error('This is not a user-vs-user challenge');

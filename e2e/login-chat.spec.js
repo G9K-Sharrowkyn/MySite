@@ -1,5 +1,7 @@
 ﻿const { test, expect } = require('@playwright/test');
 
+const { loginViaUi } = require('./helpers');
+
 const waitForBackend = async (page) => {
   await expect.poll(async () => {
     const response = await page.request.get('http://localhost:5000/');
@@ -15,15 +17,20 @@ test('user can log in and open the global chat', async ({ page }) => {
 
   await waitForBackend(page);
   const registration = await page.request.post('http://localhost:5000/api/auth/register', {
-    data: { username, email, password }
+    data: {
+      username,
+      email,
+      password,
+      consent: {
+        termsOfService: true,
+        privacyPolicy: true,
+        minimumAgeConfirmed: true
+      }
+    }
   });
   expect(registration.ok()).toBeTruthy();
 
-  await page.goto('/login');
-
-  await page.getByPlaceholder('Email address').fill(email);
-  await page.getByPlaceholder('Password').fill(password);
-  await page.locator('input[type="submit"]').click();
+  await loginViaUi(page, email, password);
 
   await expect(page).toHaveURL(/\/feed/, { timeout: 20000 });
   await expect(page.locator('.feed-container')).toBeVisible();

@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { usersRepo, withDb } from '../repositories/index.js';
 
-const STAFF_PASSWORD = process.env.STAFF_TEMP_PASSWORD || 'Admin123!';
+const STAFF_PASSWORD = process.env.STAFF_TEMP_PASSWORD || '';
 
 const nowIso = () => new Date().toISOString();
 
