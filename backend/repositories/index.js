@@ -44,6 +44,7 @@ export const feedbackRepo = repositories.feedback;
 export const nicknameChangeLogsRepo = repositories.nicknameChangeLogs;
 export const moderatorActionLogsRepo = repositories.moderatorActionLogs;
 export const swoopRunsRepo = repositories.swoopRuns;
+export const tronWinsRepo = repositories.tronWins;
 export const emailVerificationTokensRepo = repositories.emailVerificationTokens;
 export const authChallengesRepo = repositories.authChallenges;
 

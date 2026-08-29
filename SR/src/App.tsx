@@ -8,20 +8,27 @@ import { TrackEditor } from './components/TrackEditor';
 export default function App() {
   useGameAudio();
   const phase       = useGameStore((s) => s.phase);
+  const language    = useGameStore((s) => s.language);
   const engageGear  = useGameStore((s) => s.engageGear);
   const selectedTrack = useGameStore((s) => s.selectedTrack);
   const setHostUser = useGameStore((s) => s.setHostUser);
+  const setLanguage = useGameStore((s) => s.setLanguage);
   const syncLeaderboard = useGameStore((s) => s.syncLeaderboard);
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   useEffect(() => {
     const handleHostSession = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== window.parent) return;
       if (event.data?.type !== 'geekfights:swoop-session') return;
       setHostUser(event.data.user ?? null);
+      setLanguage(event.data.language);
     };
     window.addEventListener('message', handleHostSession);
     return () => window.removeEventListener('message', handleHostSession);
-  }, [setHostUser]);
+  }, [setHostUser, setLanguage]);
 
   useEffect(() => {
     void syncLeaderboard(selectedTrack);

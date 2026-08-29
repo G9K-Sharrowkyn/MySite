@@ -63,6 +63,7 @@ import ccgRoutes from './routes/ccg.js';
 import friendsRoutes from './routes/friends.js';
 import blocksRoutes from './routes/blocks.js';
 import swoopRoutes from './routes/swoop.js';
+import tronRoutes from './routes/tron.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
 import { notificationsRepo } from './repositories/index.js';
 import { usersRepo } from './repositories/index.js';
@@ -1305,6 +1306,7 @@ app.use('/api/moderation', moderationRoutes);
 app.use('/api/friends', friendsRoutes);
 app.use('/api/blocks', blocksRoutes);
 app.use('/api/swoop', swoopRoutes);
+app.use('/api/tron', tronRoutes);
 
 // Share preview endpoint for social cards
 const SHARE_IMAGE_RENDER_VERSION = '2026-02-07-share-jpg-8';

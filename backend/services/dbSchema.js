@@ -35,6 +35,7 @@ export const DEFAULT_DB = {
   nicknameChangeLogs: [],
   moderatorActionLogs: [],
   swoopRuns: [],
+  tronWins: [],
   emailVerificationTokens: [],
   authChallenges: []
 };

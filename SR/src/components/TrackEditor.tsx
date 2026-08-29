@@ -11,14 +11,16 @@ import {
   useGameStore,
 } from '../store/gameStore';
 import type { ObstacleType, TrackEvent, TrackId } from '../store/gameStore';
+import { swoopText } from '../i18n';
+import type { SwoopTranslationKey } from '../i18n';
 
-const TYPE_LABELS: Record<ObstacleType, string> = {
-  boost: 'Akcelerator',
-  boulder: 'Głaz',
-  gate: 'Brama',
-  wall: 'Ściana',
-  lowBarrier: 'Bariera do skoku',
-  mine: 'Mina',
+const TYPE_LABEL_KEYS: Record<ObstacleType, SwoopTranslationKey> = {
+  boost: 'typeBoost',
+  boulder: 'typeBoulder',
+  gate: 'typeGate',
+  wall: 'typeWall',
+  lowBarrier: 'typeLowBarrier',
+  mine: 'typeMine',
 };
 
 const TYPE_ORDER: ObstacleType[] = ['boost', 'boulder', 'gate', 'wall', 'lowBarrier', 'mine'];
@@ -76,6 +78,7 @@ function EditorScene({
 }
 
 export function TrackEditor() {
+  const language = useGameStore((state) => state.language);
   const phase = useGameStore((state) => state.phase);
   const trackId = useGameStore((state) => state.selectedTrack);
   const savedEvents = useGameStore((state) => state.trackEvents[trackId]);
@@ -92,6 +95,7 @@ export function TrackEditor() {
   const [selectedType, setSelectedType] = useState<ObstacleType>('boost');
   const [status, setStatus] = useState('');
   const [saving, setSaving] = useState(false);
+  const t = (key: SwoopTranslationKey, values: Record<string, string | number> = {}) => swoopText(language, key, values);
 
   useEffect(() => {
     setDraft(savedEvents.map((event) => ({ ...event })));
@@ -159,47 +163,47 @@ export function TrackEditor() {
       event.side = cursorX < -0.7 ? 'left' : cursorX > 0.7 ? 'right' : 'center';
     }
     setDraft((events) => [...events, event].sort((a, b) => a.distance - b.distance));
-    setStatus('Dodano obiekt do wersji roboczej.');
+    setStatus(t('addedDraft'));
   };
 
   const removeEvent = (index: number) => {
     setDraft((events) => events.filter((_, eventIndex) => eventIndex !== index));
-    setStatus('Usunięto obiekt z wersji roboczej.');
+    setStatus(t('removedDraft'));
   };
 
   const save = async () => {
     const sanitized = sanitizeTrackEvents(draft, track.length);
     if (!sanitized) {
-      setStatus('Nie udało się zapisać układu: dane trasy są niepoprawne.');
+      setStatus(t('invalidLayout'));
       return;
     }
 
     setSaving(true);
-    setStatus('Zapisywanie układu do pliku projektu…');
+    setStatus(t('savingProject'));
     try {
       const layouts = { ...trackLayouts, [trackId]: sanitized };
       const path = await persistTrackLayoutsToProject(layouts);
       saveTrackEvents(trackId, sanitized);
-      setStatus(`Zapisano ${sanitized.length} obiektów w ${path}. Układ jest trwały i wejdzie do buildu.`);
+      setStatus(t('savedProject', { count: sanitized.length, path }));
     } catch (error) {
-      setStatus(`Błąd zapisu plikowego: ${error instanceof Error ? error.message : 'nieznany błąd'}`);
+      setStatus(t('fileSaveError', { error: error instanceof Error ? error.message : t('unknownError') }));
     } finally {
       setSaving(false);
     }
   };
 
   const reset = async () => {
-    if (!window.confirm(`Przywrócić domyślny układ trasy ${track.name}?`)) return;
+    if (!window.confirm(t('confirmReset', { track: track.name }))) return;
     setSaving(true);
-    setStatus('Zapisywanie domyślnego układu do pliku projektu…');
+    setStatus(t('savingDefault'));
     try {
       const defaults = TRACKS[trackId].events.map((event) => ({ ...event }));
       const layouts = { ...trackLayouts, [trackId]: defaults };
       const path = await persistTrackLayoutsToProject(layouts);
       resetTrackEvents(trackId);
-      setStatus(`Przywrócono domyślny układ i zapisano go w ${path}.`);
+      setStatus(t('restoredDefault', { path }));
     } catch (error) {
-      setStatus(`Błąd zapisu plikowego: ${error instanceof Error ? error.message : 'nieznany błąd'}`);
+      setStatus(t('fileSaveError', { error: error instanceof Error ? error.message : t('unknownError') }));
     } finally {
       setSaving(false);
     }
@@ -213,7 +217,7 @@ export function TrackEditor() {
     link.download = `swoop-${trackId}-layout.json`;
     link.click();
     URL.revokeObjectURL(url);
-    setStatus('Wyeksportowano kopię JSON.');
+    setStatus(t('exportedJson'));
   };
 
   const importJson = async (file: File | undefined) => {
@@ -224,9 +228,9 @@ export function TrackEditor() {
       const events = sanitizeTrackEvents(rawEvents, track.length);
       if (!events) throw new Error('invalid layout');
       setDraft(events);
-      setStatus(`Wczytano ${events.length} obiektów. Kliknij ZAPISZ, aby zatwierdzić.`);
+      setStatus(t('importedJson', { count: events.length }));
     } catch {
-      setStatus('Plik nie zawiera poprawnego układu tej trasy.');
+      setStatus(t('invalidJson'));
     }
   };
 
@@ -251,7 +255,7 @@ export function TrackEditor() {
       </Canvas>
 
       <aside className="track-editor-panel">
-        <div className="editor-heading">EDYTOR TRASY</div>
+        <div className="editor-heading">{t('editorTitle')}</div>
         <div className="editor-track-tabs">
           {(Object.keys(TRACKS) as TrackId[]).map((id) => (
             <button key={id} className={id === trackId ? 'active' : ''} onClick={() => selectTrack(id)}>
@@ -260,7 +264,7 @@ export function TrackEditor() {
           ))}
         </div>
 
-        <label className="editor-label">Pozycja kursora</label>
+        <label className="editor-label">{t('cursorPosition')}</label>
         <div className="editor-position-row">
           <button onClick={() => moveCursor(-50)}>−50</button>
           <input
@@ -281,18 +285,18 @@ export function TrackEditor() {
           value={cursorDistance}
           onChange={(event) => setCursorDistance(Number(event.target.value))}
         />
-        <div className="editor-help">Kółko/W–S: trasa · A/D: lewo/prawo · Shift: 25 m · Page Up/Down: 100 m</div>
+        <div className="editor-help">{t('editorHelp')}</div>
 
-        <label className="editor-label">Typ obiektu</label>
+        <label className="editor-label">{t('objectType')}</label>
         <div className="editor-type-grid">
           {TYPE_ORDER.map((type) => (
             <button key={type} className={type === selectedType ? 'active' : ''} onClick={() => setSelectedType(type)}>
-              {TYPE_LABELS[type]}
+              {t(TYPE_LABEL_KEYS[type])}
             </button>
           ))}
         </div>
 
-        <label className="editor-label">Pozycja w poprzek: {cursorX.toFixed(1)}</label>
+        <label className="editor-label">{t('crossPosition', { value: cursorX.toFixed(1) })}</label>
         <input
           className="editor-route-slider"
           type="range"
@@ -303,40 +307,40 @@ export function TrackEditor() {
           onChange={(event) => setCursorX(Number(event.target.value))}
         />
         <div className="editor-lane-buttons">
-          <button onClick={() => setCursorX(-2)}>LEWA</button>
-          <button onClick={() => setCursorX(0)}>ŚRODEK</button>
-          <button onClick={() => setCursorX(2)}>PRAWA</button>
+          <button onClick={() => setCursorX(-2)}>{t('left')}</button>
+          <button onClick={() => setCursorX(0)}>{t('center')}</button>
+          <button onClick={() => setCursorX(2)}>{t('right')}</button>
         </div>
 
-        <button className="editor-add" onClick={addEvent}>+ DODAJ NA {Math.round(cursorDistance)} m</button>
+        <button className="editor-add" onClick={addEvent}>{t('addAt', { distance: Math.round(cursorDistance) })}</button>
 
-        <label className="editor-label">Obiekty ±18 m od kursora</label>
+        <label className="editor-label">{t('nearby')}</label>
         <div className="editor-nearby">
-          {nearby.length === 0 && <div className="editor-empty">Brak obiektów w pobliżu.</div>}
+          {nearby.length === 0 && <div className="editor-empty">{t('noNearby')}</div>}
           {nearby.map(({ event, index }) => (
             <div className="editor-nearby-row" key={`${index}-${event.distance}-${event.type}`}>
-              <span>{event.distance} m · {TYPE_LABELS[event.type]} · x {event.x.toFixed(1)}</span>
-              <button onClick={() => removeEvent(index)}>USUŃ</button>
+              <span>{event.distance} m · {t(TYPE_LABEL_KEYS[event.type])} · x {event.x.toFixed(1)}</span>
+              <button onClick={() => removeEvent(index)}>{t('remove')}</button>
             </div>
           ))}
         </div>
 
         <div className="editor-stats">
-          {draft.length} obiektów · {draft.filter((event) => event.type === 'boost').length} akceleratorów
+          {t('editorStats', { objects: draft.length, boosts: draft.filter((event) => event.type === 'boost').length })}
         </div>
         {status && <div className="editor-status">{status}</div>}
 
         <div className="editor-actions">
           <button className="save" disabled={saving} onClick={() => void save()}>
-            {saving ? 'ZAPISYWANIE…' : 'ZAPISZ TRASĘ DO PLIKU'}
+            {saving ? t('saving') : t('saveTrack')}
           </button>
-          <button onClick={exportJson}>EKSPORT JSON</button>
+          <button onClick={exportJson}>{t('exportJson')}</button>
           <label className="editor-import">
-            IMPORT JSON
+            {t('importJson')}
             <input type="file" accept="application/json,.json" onChange={(event) => void importJson(event.target.files?.[0])} />
           </label>
-          <button disabled={saving} onClick={() => void reset()}>DOMYŚLNY UKŁAD</button>
-          <button onClick={() => setPhase('menu')}>WRÓĆ DO MENU</button>
+          <button disabled={saving} onClick={() => void reset()}>{t('defaultLayout')}</button>
+          <button onClick={() => setPhase('menu')}>{t('backToMenu')}</button>
         </div>
       </aside>
     </div>

@@ -55,6 +55,8 @@ function AppContent() {
   const location = useLocation();
   const isLoggedIn = !!user;
   const isSwoopRoute = location.pathname === '/swoop-racing';
+  const isTronRoute = location.pathname === '/tron-arena';
+  const isImmersiveGameRoute = isSwoopRoute || isTronRoute;
   const updateAvailable = false;
 
   if (loading) {
@@ -134,11 +136,11 @@ function AppContent() {
       </Routes>
       </Suspense>
       {/* Global Chat System - only show when logged in */}
-      {isLoggedIn && !isSwoopRoute && <GlobalChatSystem />}
+      {isLoggedIn && !isImmersiveGameRoute && <GlobalChatSystem />}
       {/* Feedback Button - always visible */}
-      {!isSwoopRoute && <FeedbackButton />}
+      {!isImmersiveGameRoute && <FeedbackButton />}
       <CookieConsent />
-      {!isSwoopRoute && <BuildVersion />}
+      {!isImmersiveGameRoute && <BuildVersion />}
     </div>
   );
 }

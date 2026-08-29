@@ -1,233 +1,1028 @@
 .tron-page {
-  min-height: calc(100vh - 180px);
-  padding: 18px 20px 28px;
-  color: #e7f2ff;
+  --tron-cyan: #39e9ff;
+  --tron-blue: #087cf0;
+  --tron-orange: #ff8a32;
+  min-height: calc(100vh - 64px);
+  padding: 20px clamp(12px, 2vw, 30px) 34px;
+  color: #eaffff;
   background:
-    radial-gradient(circle at 20% 20%, rgba(0, 132, 255, 0.14), transparent 45%),
-    radial-gradient(circle at 80% 78%, rgba(0, 240, 255, 0.1), transparent 44%),
-    linear-gradient(180deg, #02050d 0%, #041025 100%);
+    radial-gradient(circle at 50% -15%, rgba(0, 175, 255, 0.2), transparent 42%),
+    linear-gradient(180deg, #01030a 0%, #020916 55%, #01030a 100%);
+  font-family: "Rajdhani", "Segoe UI", sans-serif;
 }
 
-.tron-header {
-  margin-bottom: 14px;
+.tron-titlebar {
+  max-width: 1680px;
+  margin: 0 auto 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 20px;
 }
 
-.tron-header h1 {
-  margin: 0 0 6px;
-  font-size: clamp(1.5rem, 3vw, 2.2rem);
-  letter-spacing: 0.04em;
+.tron-kicker,
+.tron-panel-heading span,
+.tron-room-form label,
+.tron-speed-hud span,
+.tron-overlay-top span,
+.tron-round-result span {
+  color: #75c6d4;
+  font-size: 0.69rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
 }
 
-.tron-header p {
-  margin: 0;
-  opacity: 0.86;
+.tron-titlebar h1 {
+  margin: 2px 0 0;
+  color: #dfffff;
+  font-size: clamp(1.45rem, 3vw, 2.25rem);
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-shadow: 0 0 18px rgba(57, 233, 255, 0.42);
+}
+
+.tron-titlebar p {
+  max-width: 660px;
+  margin: 0 0 3px;
+  color: #a7c3cd;
+  font-size: 0.94rem;
+  text-align: right;
 }
 
 .tron-layout {
+  width: min(1680px, 100%);
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr) 304px;
   gap: 14px;
   align-items: start;
 }
 
 .tron-canvas-panel {
   position: relative;
-  border: 1px solid rgba(0, 214, 255, 0.28);
-  border-radius: 18px;
+  min-height: 700px;
   overflow: hidden;
-  background: rgba(0, 0, 0, 0.46);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
-  min-height: 620px;
+  border: 1px solid rgba(57, 233, 255, 0.42);
+  border-radius: 5px;
+  background: #01030a;
+  box-shadow:
+    0 0 0 1px rgba(4, 86, 134, 0.42) inset,
+    0 20px 55px rgba(0, 0, 0, 0.58),
+    0 0 30px rgba(0, 183, 255, 0.1);
+}
+
+.tron-canvas-panel::before,
+.tron-canvas-panel::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.tron-canvas-panel::before {
+  inset: 0;
+  background: repeating-linear-gradient(
+    180deg,
+    transparent 0,
+    transparent 3px,
+    rgba(43, 236, 255, 0.025) 4px
+  );
+  mix-blend-mode: screen;
+}
+
+.tron-canvas-panel::after {
+  inset: 0;
+  box-shadow: 0 0 68px rgba(0, 0, 0, 0.78) inset;
 }
 
 .tron-canvas {
   width: 100%;
-  height: 74vh;
-  min-height: 620px;
+  height: min(78vh, 900px);
+  min-height: 700px;
   display: block;
+  outline: 0;
+  touch-action: none;
 }
 
 .tron-overlay {
   position: absolute;
-  left: 10px;
-  right: 10px;
-  top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  z-index: 6;
   pointer-events: none;
 }
 
-.tron-pill {
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(0, 214, 255, 0.35);
-  background: rgba(1, 18, 35, 0.8);
-  font-size: 0.82rem;
-  letter-spacing: 0.03em;
-}
-
-.tron-sidebar {
-  border: 1px solid rgba(0, 214, 255, 0.28);
-  border-radius: 14px;
-  padding: 14px;
-  background: rgba(2, 13, 26, 0.82);
-  backdrop-filter: blur(6px);
-}
-
-.tron-room-form label {
-  display: block;
-  font-size: 0.8rem;
-  margin-bottom: 8px;
-  opacity: 0.8;
-}
-
-.tron-room-row {
-  display: flex;
-  gap: 8px;
-}
-
-.tron-room-row input {
-  flex: 1;
-  border-radius: 10px;
-  border: 1px solid rgba(126, 185, 255, 0.36);
-  background: rgba(10, 20, 38, 0.9);
-  color: #f3f8ff;
-  padding: 10px;
-  outline: none;
-}
-
-.tron-room-row input:focus {
-  border-color: #00dfff;
-  box-shadow: 0 0 0 2px rgba(0, 223, 255, 0.18);
-}
-
-.tron-room-row button {
-  border: 1px solid rgba(0, 223, 255, 0.55);
-  background: linear-gradient(180deg, #145fab 0%, #0b3e7a 100%);
-  color: #ffffff;
-  border-radius: 10px;
-  padding: 0 14px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.tron-status {
-  margin-top: 14px;
-  padding: 10px;
-  border-radius: 10px;
-  border: 1px solid rgba(102, 147, 212, 0.28);
-  background: rgba(9, 18, 30, 0.7);
+.tron-overlay-top {
+  top: 14px;
+  left: 14px;
+  right: 14px;
   display: grid;
-  gap: 6px;
-}
-
-.tron-status div {
-  display: flex;
+  grid-template-columns: 130px minmax(220px, 340px) 180px;
   justify-content: space-between;
+  align-items: stretch;
   gap: 10px;
 }
 
-.tron-status span {
-  opacity: 0.8;
+.tron-round-block,
+.tron-phase-block,
+.tron-room-block {
+  min-height: 62px;
+  padding: 9px 14px;
+  border: 1px solid rgba(57, 233, 255, 0.32);
+  background: linear-gradient(180deg, rgba(3, 28, 48, 0.88), rgba(1, 9, 20, 0.86));
+  box-shadow: 0 0 22px rgba(0, 176, 255, 0.09) inset;
+  backdrop-filter: blur(8px);
 }
 
-.tron-winner {
-  margin-top: 12px;
-  border: 1px solid rgba(143, 255, 0, 0.4);
-  border-radius: 10px;
-  padding: 10px;
-  background: rgba(19, 42, 5, 0.6);
+.tron-round-block strong,
+.tron-room-block strong {
+  display: block;
+  margin-top: 2px;
+  color: #e8ffff;
+  font-size: 1.45rem;
+  letter-spacing: 0.08em;
 }
+
+.tron-phase-block {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: center;
+}
+
+.tron-phase-block strong {
+  grid-row: span 2;
+  align-self: center;
+  color: var(--tron-cyan);
+  font-size: 1.65rem;
+  text-shadow: 0 0 14px rgba(57, 233, 255, 0.65);
+}
+
+.tron-phase-block small {
+  color: #678898;
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.tron-countdown,
+.tron-round-result {
+  position: absolute;
+  z-index: 8;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.tron-countdown {
+  color: #ecffff;
+  font-size: clamp(5rem, 13vw, 10rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 16px #00bfff, 0 0 55px #0075ff;
+  animation: tron-countdown-pulse 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes tron-countdown-pulse {
+  from { opacity: 0.72; transform: translate(-50%, -50%) scale(0.94); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1.03); }
+}
+
+.tron-round-result {
+  width: min(440px, calc(100% - 40px));
+  padding: 18px 24px;
+  border: 1px solid rgba(99, 255, 184, 0.6);
+  background: rgba(0, 18, 26, 0.9);
+  text-align: center;
+  box-shadow: 0 0 46px rgba(0, 255, 190, 0.24);
+}
+
+.tron-round-result strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 1.6rem;
+  letter-spacing: 0.08em;
+}
+
+.tron-round-result.tron-crashed {
+  border-color: rgba(255, 76, 83, 0.65);
+  box-shadow: 0 0 46px rgba(255, 35, 63, 0.2);
+}
+
+.tron-speed-hud {
+  position: absolute;
+  z-index: 7;
+  left: 50%;
+  bottom: 18px;
+  width: min(620px, calc(100% - 220px));
+  transform: translateX(-50%);
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  border: 1px solid rgba(57, 233, 255, 0.46);
+  background: linear-gradient(180deg, rgba(3, 29, 48, 0.94), rgba(1, 8, 19, 0.94));
+  box-shadow: 0 0 28px rgba(0, 183, 255, 0.12) inset;
+  pointer-events: none;
+}
+
+.tron-speed-readout {
+  padding: 10px 14px;
+  border-right: 1px solid rgba(57, 233, 255, 0.25);
+  text-align: center;
+}
+
+.tron-speed-readout strong {
+  display: inline-block;
+  margin: 0 4px;
+  color: #f4ffff;
+  font-size: 2rem;
+  line-height: 1;
+  text-shadow: 0 0 15px rgba(57, 233, 255, 0.75);
+}
+
+.tron-speed-readout small {
+  color: #6ba2ae;
+  font-size: 0.62rem;
+}
+
+.tron-energy {
+  padding: 10px 14px 8px;
+}
+
+.tron-energy-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tron-energy-label strong {
+  color: #c9ffff;
+  font-size: 0.8rem;
+}
+
+.tron-energy-track {
+  height: 11px;
+  margin-top: 5px;
+  overflow: hidden;
+  border: 1px solid rgba(57, 233, 255, 0.34);
+  background: #020811;
+}
+
+.tron-energy-track i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #0078ff, #25f0ff 65%, #fff472 90%, #ff7038);
+  box-shadow: 0 0 12px #26e9ff;
+  transition: width 120ms linear;
+}
+
+.tron-slide-state {
+  margin-top: 5px;
+  color: #638997;
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-align: center;
+}
+
+.tron-slide-state.is-active {
+  color: #ffe95c;
+  text-shadow: 0 0 10px #ff8500;
+  animation: tron-slide-flash 0.25s alternate infinite;
+}
+
+@keyframes tron-slide-flash { to { opacity: 0.72; } }
+
+.tron-controls {
+  position: absolute;
+  z-index: 9;
+  right: 14px;
+  bottom: 17px;
+  display: flex;
+  gap: 8px;
+}
+
+.tron-controls button {
+  width: 74px;
+  height: 58px;
+  border: 1px solid rgba(57, 233, 255, 0.48);
+  background: rgba(2, 18, 32, 0.88);
+  color: #d9ffff;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tron-controls button:hover,
+.tron-controls button:active {
+  border-color: #fff27a;
+  background: rgba(16, 70, 82, 0.94);
+  box-shadow: 0 0 18px rgba(255, 221, 45, 0.2);
+}
+
+.tron-controls b,
+.tron-controls span {
+  display: block;
+}
+
+.tron-controls b { font-size: 1.45rem; line-height: 1; }
+.tron-controls span { margin-top: 4px; color: #74aab6; font-size: 0.62rem; letter-spacing: 0.1em; }
+
+.tron-sidebar {
+  display: grid;
+  gap: 12px;
+}
+
+.tron-room-form,
+.tron-players,
+.tron-rules {
+  padding: 14px;
+  border: 1px solid rgba(57, 233, 255, 0.26);
+  background: linear-gradient(160deg, rgba(3, 20, 34, 0.95), rgba(1, 7, 15, 0.96));
+  box-shadow: 0 0 26px rgba(0, 128, 190, 0.06) inset;
+}
+
+.tron-panel-heading {
+  min-height: 22px;
+  margin-bottom: 11px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(57, 233, 255, 0.14);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tron-panel-heading strong { color: var(--tron-cyan); font-size: 0.8rem; }
+.tron-room-form label { display: block; margin-bottom: 6px; }
+.tron-room-row { display: flex; gap: 6px; }
+
+.tron-room-row input {
+  min-width: 0;
+  flex: 1;
+  padding: 9px 10px;
+  border: 1px solid rgba(72, 184, 214, 0.35);
+  border-radius: 0;
+  outline: 0;
+  background: #020a13;
+  color: #ecffff;
+  font: inherit;
+}
+
+.tron-room-row input:focus { border-color: var(--tron-cyan); box-shadow: 0 0 10px rgba(57, 233, 255, 0.18); }
+
+.tron-room-row button {
+  padding: 0 12px;
+  border: 1px solid #37d6eb;
+  border-radius: 0;
+  background: #073b51;
+  color: #dfffff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+.tron-connection {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ff4a56;
+  box-shadow: 0 0 8px #ff2539;
+}
+
+.tron-connection.connected { background: #51ff9a; box-shadow: 0 0 9px #18ff7e; }
+.tron-connection.connecting { background: #ffe563; box-shadow: 0 0 9px #ffd400; }
 
 .tron-error {
-  margin-top: 10px;
-  border: 1px solid rgba(255, 85, 95, 0.45);
-  border-radius: 10px;
-  padding: 8px 10px;
-  background: rgba(56, 6, 13, 0.65);
-}
-
-.tron-players {
-  margin-top: 14px;
-}
-
-.tron-players h2 {
-  margin: 0 0 10px;
-  font-size: 1rem;
-}
-
-.tron-players p {
-  margin: 0;
-  opacity: 0.75;
-}
-
-.tron-players ul {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-
-.tron-players li {
-  display: grid;
-  grid-template-columns: 10px 1fr auto auto auto;
-  gap: 8px;
-  align-items: center;
-  border: 1px solid rgba(106, 156, 238, 0.26);
-  border-radius: 10px;
-  padding: 8px 10px;
-  background: rgba(8, 17, 32, 0.7);
-}
-
-.tron-players li.is-dead {
-  opacity: 0.7;
-}
-
-.tron-players .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.tron-players .name {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.tron-players .wins {
-  font-weight: 700;
-}
-
-.tron-players .me {
-  color: #8ef7ff;
-  font-size: 0.82rem;
-}
-
-.tron-players .state {
-  color: #b8c3d8;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 74, 86, 0.6);
+  background: rgba(58, 3, 12, 0.82);
+  color: #ffd9dc;
   font-size: 0.78rem;
 }
 
-@media (max-width: 1200px) {
-  .tron-layout {
+.tron-players p { margin: 0; color: #6f919c; font-size: 0.8rem; }
+.tron-players ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+
+.tron-players li {
+  display: grid;
+  grid-template-columns: 19px 6px minmax(0, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  min-height: 43px;
+  padding: 6px 7px;
+  border-left: 2px solid transparent;
+  background: rgba(5, 19, 31, 0.78);
+}
+
+.tron-players li.is-riding { border-left-color: #ffe85a; background: rgba(58, 45, 4, 0.36); }
+.tron-players li.is-dead { opacity: 0.46; filter: grayscale(0.75); }
+.tron-player-rank { color: #456877; font-size: 0.7rem; font-weight: 800; }
+
+.tron-player-color {
+  width: 5px;
+  height: 28px;
+  background: var(--player-color);
+  box-shadow: 0 0 8px var(--player-color);
+}
+
+.tron-player-name { min-width: 0; }
+.tron-player-name b,
+.tron-player-name small { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tron-player-name b { color: #e7fbff; font-size: 0.78rem; }
+.tron-player-name small { margin-top: 2px; color: #5f8591; font-size: 0.57rem; letter-spacing: 0.08em; }
+.tron-players li > strong { color: #7ebbc5; font-size: 0.7rem; }
+.tron-players em { color: var(--tron-cyan); font-size: 0.55rem; font-style: normal; font-weight: 900; }
+
+.tron-rules ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 11px; }
+.tron-rules li { display: grid; grid-template-columns: 26px 1fr; gap: 7px; color: #8ba6af; font-size: 0.72rem; line-height: 1.35; }
+.tron-rules li b { color: #1abfd8; font-size: 0.62rem; }
+
+@media (max-width: 1180px) {
+  .tron-layout { grid-template-columns: 1fr; }
+  .tron-sidebar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tron-canvas, .tron-canvas-panel { min-height: 620px; }
+}
+
+@media (max-width: 800px) {
+  .tron-page { padding: 10px 8px 24px; }
+  .tron-titlebar { align-items: start; flex-direction: column; }
+  .tron-titlebar p { text-align: left; }
+  .tron-sidebar { grid-template-columns: 1fr; }
+  .tron-canvas, .tron-canvas-panel { height: 72vh; min-height: 520px; }
+  .tron-overlay-top { grid-template-columns: 82px 1fr; }
+  .tron-room-block { display: none; }
+  .tron-round-block, .tron-phase-block { min-height: 52px; padding: 7px 9px; }
+  .tron-speed-hud { left: 10px; right: 10px; width: auto; transform: none; grid-template-columns: 92px 1fr; }
+  .tron-controls { right: 10px; bottom: 92px; }
+}
+
+@media (max-width: 520px) {
+  .tron-canvas, .tron-canvas-panel { min-height: 470px; }
+  .tron-phase-block small { display: none; }
+  .tron-speed-hud { grid-template-columns: 78px 1fr; }
+  .tron-speed-readout { padding: 9px 7px; }
+  .tron-speed-readout strong { font-size: 1.5rem; }
+  .tron-slide-state { font-size: 0.52rem; }
+}
+
+/* The route has a lightweight join screen. Once a room accepts the player,
+   the arena takes over the entire viewport, independently of the site header. */
+.tron-page.is-lobby {
+  width: 100%;
+  min-height: calc(100dvh - var(--header-height, 85px));
+  padding: 0;
+}
+
+.tron-page.is-playing {
+  position: fixed;
+  z-index: 5000;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 0;
+  padding: 0;
+  background: #00030a;
+}
+
+.tron-stage {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+}
+
+.tron-page .tron-canvas-panel {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tron-page .tron-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+}
+
+.tron-lobby-overlay {
+  position: absolute;
+  z-index: 12;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 4vw, 64px) 16px;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(0, 195, 255, 0.08), transparent 35%),
+    linear-gradient(90deg, rgba(0, 3, 10, 0.9), rgba(0, 7, 17, 0.7), rgba(0, 3, 10, 0.9));
+  overflow-y: auto;
+}
+
+.tron-lobby-card {
+  width: min(1040px, 100%);
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgba(57, 233, 255, 0.48);
+  background:
+    linear-gradient(145deg, rgba(4, 28, 46, 0.97), rgba(1, 8, 18, 0.98));
+  box-shadow:
+    0 0 0 1px rgba(0, 118, 178, 0.28) inset,
+    0 24px 70px rgba(0, 0, 0, 0.72),
+    0 0 42px rgba(0, 183, 255, 0.13);
+  text-align: center;
+}
+
+.tron-lobby-card h1 {
+  margin: 5px 0 12px;
+  color: #e7ffff;
+  font-size: clamp(1.8rem, 5vw, 3rem);
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 20px rgba(57, 233, 255, 0.46);
+}
+
+.tron-lobby-card > p {
+  max-width: 460px;
+  margin: 0 auto;
+  color: #8fb3bd;
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.tron-server-state {
+  min-height: 38px;
+  margin: 20px 0 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  color: #7cc9d7;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.tron-server-state .tron-connection {
+  display: inline-block;
+  flex: 0 0 auto;
+}
+
+.tron-color-picker {
+  margin: 0 0 18px;
+  padding: 0;
+  border: 0;
+}
+
+.tron-color-picker legend {
+  width: 100%;
+  margin-bottom: 9px;
+  color: #75a5af;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.18em;
+  text-align: center;
+}
+
+.tron-color-picker > div {
+  display: flex;
+  justify-content: center;
+  gap: 13px;
+}
+
+.tron-color-picker button {
+  width: 37px;
+  height: 37px;
+  padding: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.72);
+  cursor: pointer;
+  transition: transform 130ms ease, border-color 130ms ease, box-shadow 130ms ease;
+}
+
+.tron-color-picker button i {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--trail-color);
+  box-shadow: 0 0 11px var(--trail-color), 0 0 3px #fff inset;
+}
+
+.tron-color-picker button:hover,
+.tron-color-picker button.is-selected {
+  transform: scale(1.14);
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--trail-color), 0 0 16px var(--trail-color);
+}
+
+.tron-color-picker button:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+
+.tron-solo-button {
+  width: 100%;
+  padding: 17px 20px;
+  border: 1px solid #4cf0ff;
+  background:
+    linear-gradient(180deg, rgba(11, 101, 126, 0.9), rgba(2, 45, 64, 0.96));
+  color: #efffff;
+  cursor: pointer;
+  box-shadow: 0 0 22px rgba(27, 226, 255, 0.12) inset;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.tron-solo-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #fff37b;
+  box-shadow: 0 0 30px rgba(27, 226, 255, 0.24) inset, 0 0 22px rgba(27, 226, 255, 0.15);
+}
+
+.tron-solo-button:disabled,
+.tron-room-row button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.tron-solo-button span,
+.tron-solo-button strong,
+.tron-solo-button small {
+  display: block;
+}
+
+.tron-solo-button span {
+  color: #72c8d7;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+}
+
+.tron-solo-button strong {
+  margin: 3px 0;
+  font-size: 1.25rem;
+  letter-spacing: 0.14em;
+}
+
+.tron-solo-button small {
+  color: #82aab4;
+  font-size: 0.68rem;
+}
+
+.tron-menu-divider {
+  margin: 22px 0 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #507a86;
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.tron-menu-divider::before,
+.tron-menu-divider::after {
+  content: "";
+  height: 1px;
+  flex: 1;
+  background: rgba(57, 233, 255, 0.18);
+}
+
+.tron-lobby-card .tron-room-form {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+}
+
+.tron-lobby-card .tron-room-row input {
+  height: 46px;
+}
+
+.tron-lobby-card .tron-room-row button {
+  min-width: 112px;
+}
+
+.tron-lobby-card .tron-room-form > small {
+  display: block;
+  margin-top: 7px;
+  color: #52727d;
+  font-size: 0.63rem;
+}
+
+.tron-lobby-card .tron-error {
+  margin-top: 14px;
+  text-align: left;
+}
+
+.tron-lobby-controls {
+  margin-top: 22px;
+  color: #557d88;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+}
+
+.tron-multiplayer-lobby {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.75fr);
+  gap: 14px;
+  text-align: left;
+}
+
+.tron-room-browser,
+.tron-create-room,
+.tron-leaderboard {
+  border: 1px solid rgba(57, 233, 255, 0.24);
+  background: rgba(0, 5, 14, 0.76);
+  box-shadow: 0 0 24px rgba(0, 190, 255, 0.06) inset;
+}
+
+.tron-room-browser > header,
+.tron-leaderboard > header {
+  min-height: 44px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(57, 233, 255, 0.16);
+}
+
+.tron-room-browser > header div,
+.tron-leaderboard > header div {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+}
+
+.tron-room-browser > header span,
+.tron-create-room > header,
+.tron-leaderboard > header span {
+  color: #cfffff;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+}
+
+.tron-room-browser > header strong,
+.tron-leaderboard > header small {
+  color: var(--tron-cyan);
+  font-size: 0.66rem;
+}
+
+.tron-room-browser > header button {
+  padding: 6px 9px;
+  border: 1px solid rgba(57, 233, 255, 0.3);
+  background: rgba(0, 25, 38, 0.8);
+  color: #8fdbe7;
+  font-size: 0.55rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+}
+
+.tron-room-list {
+  max-height: 268px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+.tron-room-list article {
+  margin-bottom: 7px;
+  padding: 10px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 10px;
+  align-items: center;
+  border-left: 3px solid #3bf2ff;
+  background: rgba(4, 25, 37, 0.86);
+}
+
+.tron-room-list article.is-private {
+  border-left-color: #ffd84a;
+}
+
+.tron-room-summary strong,
+.tron-room-summary small {
+  display: block;
+}
+
+.tron-room-summary strong {
+  color: #edffff;
+  font-size: 0.78rem;
+}
+
+.tron-room-summary small {
+  margin-top: 3px;
+  color: #628d98;
+  font-size: 0.53rem;
+  letter-spacing: 0.08em;
+}
+
+.tron-room-capacity {
+  color: #bdfbff;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.tron-room-list article input,
+.tron-create-room input,
+.tron-leaderboard select {
+  min-width: 0;
+  border: 1px solid rgba(57, 233, 255, 0.28);
+  background: rgba(0, 4, 11, 0.92);
+  color: #edffff;
+}
+
+.tron-room-list article input {
+  height: 34px;
+  padding: 0 9px;
+}
+
+.tron-room-list article > button,
+.tron-create-submit {
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid #32dceb;
+  background: rgba(0, 65, 83, 0.86);
+  color: #eaffff;
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  cursor: pointer;
+}
+
+.tron-room-list article:not(.is-private) > button {
+  grid-column: 1 / 3;
+}
+
+.tron-room-list article > button:disabled,
+.tron-create-submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.tron-create-room {
+  padding: 12px;
+}
+
+.tron-create-room > header {
+  margin-bottom: 12px;
+}
+
+.tron-create-room label {
+  display: block;
+  margin: 9px 0 5px;
+  color: #75a5af;
+  font-size: 0.57rem;
+  font-weight: 900;
+  letter-spacing: 0.11em;
+}
+
+.tron-create-room > input {
+  width: 100%;
+  height: 38px;
+  padding: 0 10px;
+}
+
+.tron-visibility-switch {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.tron-visibility-switch button {
+  min-height: 34px;
+  border: 1px solid rgba(57, 233, 255, 0.2);
+  background: rgba(1, 18, 29, 0.8);
+  color: #527d87;
+  font-size: 0.55rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tron-visibility-switch button.is-active {
+  border-color: #4cefff;
+  color: #efffff;
+  box-shadow: 0 0 12px rgba(57, 233, 255, 0.14) inset;
+}
+
+.tron-create-submit {
+  width: 100%;
+  margin-top: 13px;
+}
+
+.tron-empty-state {
+  padding: 20px 10px;
+  color: #63828b;
+  font-size: 0.67rem;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.tron-leaderboard {
+  margin-top: 14px;
+  text-align: left;
+}
+
+.tron-leaderboard select {
+  height: 31px;
+  padding: 0 8px;
+  font-size: 0.65rem;
+}
+
+.tron-leaderboard ol {
+  max-height: 215px;
+  margin: 0;
+  padding: 7px 10px;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.tron-leaderboard li:not(.tron-empty-state) {
+  min-height: 31px;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.045);
+}
+
+.tron-leaderboard li b {
+  color: #547f8a;
+  font-size: 0.62rem;
+}
+
+.tron-leaderboard li span {
+  color: #dfffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.tron-leaderboard li strong {
+  color: #ffd84a;
+  font-size: 0.58rem;
+  letter-spacing: 0.07em;
+}
+
+.tron-leaderboard > p {
+  margin: 0;
+  padding: 7px 11px 10px;
+  color: #50717a;
+  font-size: 0.58rem;
+}
+
+@media (max-width: 760px) {
+  .tron-multiplayer-lobby {
     grid-template-columns: 1fr;
   }
 
-  .tron-canvas {
-    height: min(72vh, 760px);
-    min-height: 500px;
+  .tron-lobby-card {
+    padding: 22px 14px;
   }
 }
 
-@media (max-width: 768px) {
-  .tron-page {
-    padding: 10px 10px 18px;
+.tron-page.is-playing .tron-overlay-top {
+  grid-template-columns: 112px minmax(220px, 340px) minmax(150px, 210px) 82px;
+}
+
+.tron-exit-button {
+  min-height: 62px;
+  border: 1px solid rgba(255, 100, 91, 0.52);
+  background: rgba(48, 4, 10, 0.82);
+  color: #ffaba5;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.tron-exit-button:hover {
+  border-color: #ff7167;
+  color: #fff;
+  box-shadow: 0 0 16px rgba(255, 42, 38, 0.2) inset;
+}
+
+@media (max-width: 800px) {
+  .tron-page.is-lobby,
+  .tron-page.is-playing,
+  .tron-page .tron-canvas,
+  .tron-page .tron-canvas-panel {
+    min-height: 0;
   }
 
-  .tron-canvas {
-    min-height: 420px;
+  .tron-page.is-lobby {
+    min-height: calc(100dvh - var(--header-height, 85px));
+  }
+
+  .tron-page.is-playing .tron-overlay-top {
+    grid-template-columns: 75px 1fr 66px;
+  }
+
+  .tron-page.is-playing .tron-room-block {
+    display: none;
+  }
+
+  .tron-exit-button {
+    min-height: 52px;
   }
 }

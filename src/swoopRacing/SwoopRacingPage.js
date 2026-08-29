@@ -1,11 +1,13 @@
 import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AuthContext } from '../auth/AuthContext';
+import { useLanguage } from '../i18n/LanguageContext';
 import './SwoopRacingPage.css';
 
 const MIN_GAME_HEIGHT = 620;
 
 export default function SwoopRacingPage() {
   const { user } = useContext(AuthContext);
+  const { currentLanguage } = useLanguage();
   const iframeRef = useRef(null);
   const [gameHeight, setGameHeight] = useState(MIN_GAME_HEIGHT);
 
@@ -20,11 +22,12 @@ export default function SwoopRacingPage() {
               displayName: user.displayName,
               role: user.role
             }
-          : null
+          : null,
+        language: currentLanguage
       },
       window.location.origin
     );
-  }, [user]);
+  }, [currentLanguage, user]);
 
   useEffect(() => {
     const header = document.querySelector('.header');

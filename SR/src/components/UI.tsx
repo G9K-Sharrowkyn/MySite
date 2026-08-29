@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useGameStore, TRACKS } from '../store/gameStore';
 import type { TrackId } from '../store/gameStore';
 import { MAX_SPEED, getReferenceTimeMs, getSpeedEffectIntensity } from '../game/raceRules';
+import { swoopText, trackSubtitle } from '../i18n';
 
 function formatTime(ms: number): string {
   const totalS = ms / 1000;
@@ -28,6 +29,8 @@ function RaceTopConsole({ stage }: { stage: 'countdown' | 'starting' | 'racing' 
   const countdownValue = useGameStore((state) => state.countdownValue);
   const distance = useGameStore((state) => state.travelledDistance);
   const trackId = useGameStore((state) => state.selectedTrack);
+  const language = useGameStore((state) => state.language);
+  const t = (key: Parameters<typeof swoopText>[1]) => swoopText(language, key);
   const track = TRACKS[trackId];
   const progress = Math.min(distance / track.length, 1);
   const referenceTime = getReferenceTimeMs(progress, track.record);
@@ -38,7 +41,7 @@ function RaceTopConsole({ stage }: { stage: 'countdown' | 'starting' | 'racing' 
   return (
     <div className={`race-console-top stage-${stage}`}>
       <div className="race-console-cap left" />
-      <div className="start-lights" aria-label="Sygnalizacja startowa">
+      <div className="start-lights" aria-label={t('startLights')}>
         <span className="start-light red active" />
         <span className={`start-light yellow ${yellowOn ? 'active' : ''}`} />
         <span className={`start-light green ${greenOn ? 'active' : ''}`} />
@@ -50,17 +53,17 @@ function RaceTopConsole({ stage }: { stage: 'countdown' | 'starting' | 'racing' 
       <div className="race-console-readout">
         {stage === 'countdown' ? (
           <>
-            <span>START</span>
-            <strong>{countdownValue === 3 ? 'CZERWONE' : 'UWAGA'}</strong>
+            <span>{t('start')}</span>
+            <strong>{countdownValue === 3 ? t('red') : t('warning')}</strong>
           </>
         ) : stage === 'starting' ? (
           <>
-            <span>SYGNAŁ</span>
-            <strong className="go-readout">START</strong>
+            <span>{t('signal')}</span>
+            <strong className="go-readout">{t('start')}</strong>
           </>
         ) : (
           <>
-            <span>VS REKORD</span>
+            <span>{t('vsRecord')}</span>
             <strong className={diff < 0 ? 'ahead' : 'behind'}>{formatDiff(diff)}</strong>
           </>
         )}
@@ -75,6 +78,7 @@ function RaceTopConsole({ stage }: { stage: 'countdown' | 'starting' | 'racing' 
 
 // ─── HUD ──────────────────────────────────────────────────────────────────────
 export function HUD() {
+  const language     = useGameStore((s) => s.language);
   const phase        = useGameStore((s) => s.phase);
   const speed        = useGameStore((s) => s.speed);
   const gear         = useGameStore((s) => s.currentGear);
@@ -86,6 +90,7 @@ export function HUD() {
   const jumpCooldown = useGameStore((s) => s.jumpCooldown);
   const collisionBlocked = useGameStore((s) => s.collisionBlocked);
   const speedEffect  = getSpeedEffectIntensity(speed);
+  const t = (key: Parameters<typeof swoopText>[1], values: Record<string, string | number> = {}) => swoopText(language, key, values);
 
   if (phase !== 'racing' && phase !== 'coasting') return null;
 
@@ -101,10 +106,10 @@ export function HUD() {
       : Math.min(1, shiftProg / 0.8);
 
   const shiftLabel =
-    shiftQuality === 'perfect' ? 'IDEALNA ZMIANA' :
-    shiftQuality === 'good'    ? 'DOBRA ZMIANA'   :
-    shiftQuality === 'early'   ? 'ZA WCZEŚNIE'    :
-    shiftQuality === 'late'    ? 'ZA PÓŹNO'       : '';
+    shiftQuality === 'perfect' ? t('perfectShift') :
+    shiftQuality === 'good'    ? t('goodShift')   :
+    shiftQuality === 'early'   ? t('tooEarly')    :
+    shiftQuality === 'late'    ? t('tooLate')     : '';
 
   const shiftLabelColor =
     shiftQuality === 'perfect' ? '#00ff88' :
@@ -117,15 +122,15 @@ export function HUD() {
       <div className="speed-vignette" style={{ opacity: speedEffect * 0.62 }} />
       {collisionBlocked && (
         <div className="collision-blocked-alert">
-          <span>POJAZD ZABLOKOWANY</span>
-          <strong>UŻYJ A / D, ABY OMINĄĆ PRZESZKODĘ</strong>
+          <span>{t('vehicleBlocked')}</span>
+          <strong>{t('avoidObstacle')}</strong>
         </div>
       )}
       <RaceTopConsole stage="racing" />
 
       <div className="swoop-bottom-hud">
         <div className="swoop-gear-pod">
-          <span>BIEG</span>
+          <span>{t('gear')}</span>
           <strong>{gear || '–'}</strong>
           <small>{Math.round(speed)} km/h</small>
         </div>
@@ -133,17 +138,17 @@ export function HUD() {
         <div className="swoop-shift-console">
           <div className="swoop-shift-message">
             {coasting ? (
-              <span className="coasting-label">META · WYTRACANIE PRĘDKOŚCI</span>
+              <span className="coasting-label">{t('finishCoasting')}</span>
             ) : shiftTimer > 0 && shiftLabel ? (
               <span className="shift-quality-flash" style={{ color: shiftLabelColor }}>{shiftLabel}</span>
             ) : isPerfect ? (
-              <span className="swoop-shift-now">LPM · ZMIEŃ BIEG</span>
+              <span className="swoop-shift-now">{t('changeGear')}</span>
             ) : isReady ? (
-              <span className="swoop-shift-armed">PRZYGOTUJ ZMIANĘ</span>
+              <span className="swoop-shift-armed">{t('prepareShift')}</span>
             ) : gear === 5 ? (
-              <span className="shift-max">MAKSYMALNY BIEG</span>
+              <span className="shift-max">{t('maxGear')}</span>
             ) : (
-              <span>PRĘDKOŚĆ SILNIKA</span>
+              <span>{t('engineSpeed')}</span>
             )}
           </div>
 
@@ -165,20 +170,20 @@ export function HUD() {
           </div>
 
           <div className="swoop-console-caption">
-            <span>{coasting ? 'HAMOWANIE AUTOMATYCZNE' : 'LPM · ZMIANA BIEGU'}</span>
+            <span>{coasting ? t('autoBraking') : t('changeGear')}</span>
             {boostActive && <strong>BOOST +15</strong>}
           </div>
         </div>
 
         <div className="swoop-status-dial" style={{ '--hull-level': `${Math.max(0, 100 - damage) * 3.6}deg` } as React.CSSProperties}>
           <div className="swoop-dial-inner">
-            <span>PRĘDKOŚĆ</span>
+            <span>{t('speed')}</span>
             <strong>{Math.round(speed)}</strong>
             <small>km/h</small>
             <div className={`dial-jump ${jumpCooldown <= 0 ? 'ready' : ''}`}>
-              SKOK {jumpCooldown <= 0 ? 'GOTOWY' : `${jumpCooldown.toFixed(1)} s`}
+              {jumpCooldown <= 0 ? t('jumpReady') : t('jumpCooldown', { seconds: jumpCooldown.toFixed(1) })}
             </div>
-            <div className="dial-hull">KADŁUB {100 - damage}%</div>
+            <div className="dial-hull">{t('hull', { percent: 100 - damage })}</div>
           </div>
         </div>
       </div>
@@ -186,7 +191,7 @@ export function HUD() {
       {/* Controls hint */}
       {!coasting && (
         <div className="controls-hint">
-          A/D · ← → — skręt &nbsp;|&nbsp; Spacja — skok &nbsp;|&nbsp; LPM — zmiana biegu
+          {t('controlsAll')}
         </div>
       )}
     </div>
@@ -197,13 +202,14 @@ export function HUD() {
 export function StartingOverlay() {
   const phase = useGameStore((s) => s.phase);
   const falseStart = useGameStore((s) => s.falseStart);
+  const language = useGameStore((s) => s.language);
   if (phase !== 'starting') return null;
   return (
     <div className="countdown-overlay starting-overlay" onClick={(e) => e.preventDefault()}>
       <RaceTopConsole stage="starting" />
       <div className="start-signal-wrap compact">
         <div className={`start-instruction ${falseStart ? 'false-start' : ''}`}>
-          {falseStart ? 'FALSTART · SILNIK ZDŁAWIONY · KLIKNIJ LPM' : 'ZIELONE · KLIKNIJ LPM — START'}
+          {swoopText(language, falseStart ? 'falseStart' : 'greenStart')}
         </div>
       </div>
     </div>
@@ -217,6 +223,7 @@ export function Countdown() {
   const setVal     = useGameStore((s) => s.setCountdown);
   const startRace  = useGameStore((s) => s.startRace);
   const timerRef   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const language   = useGameStore((s) => s.language);
 
   useEffect(() => {
     if (phase !== 'countdown') return;
@@ -239,7 +246,7 @@ export function Countdown() {
       <RaceTopConsole stage="countdown" />
       <div className="start-signal-wrap compact">
         <div className="prestart-instruction">
-          {value === 3 ? 'PRZYGOTUJ SIĘ' : 'UWAGA' }
+          {swoopText(language, value === 3 ? 'getReady' : 'warning')}
         </div>
       </div>
     </div>
@@ -248,6 +255,7 @@ export function Countdown() {
 
 // ─── Finish Screen ────────────────────────────────────────────────────────────
 export function FinishScreen() {
+  const language     = useGameStore((s) => s.language);
   const phase        = useGameStore((s) => s.phase);
   const raceTime     = useGameStore((s) => s.raceTime);
   const collisions   = useGameStore((s) => s.collisions);
@@ -271,32 +279,33 @@ export function FinishScreen() {
   const diff       = myTimeMs - track.record;
   const isDestroyed = damage >= 100;
   const isRecord   = !isDestroyed && diff < 0;
+  const t = (key: Parameters<typeof swoopText>[1]) => swoopText(language, key);
 
   return (
     <div className="finish-overlay">
       <div className="finish-card">
         <div className="finish-title" style={{ color: isDestroyed ? '#ff4444' : '' }}>
-          {isDestroyed ? '💥 POJAZD ZNISZCZONY!' : '🏁 META!'}
+          {isDestroyed ? t('destroyed') : t('finish')}
         </div>
         <div className="finish-track">{track.name}</div>
 
         <div className="finish-stats">
           <div className="stat-row">
-            <span>Twój czas</span>
+            <span>{t('yourTime')}</span>
             <span className="stat-value highlight">{formatTime(myTimeMs)}</span>
           </div>
           <div className="stat-row">
-            <span>Rekord trasy</span>
+            <span>{t('trackRecord')}</span>
             <span className="stat-value">{formatTime(track.record)}</span>
           </div>
           <div className="stat-row">
-            <span>Różnica</span>
+            <span>{t('difference')}</span>
             <span className="stat-value" style={{ color: isRecord ? '#00ff88' : '#ff6644' }}>
               {formatDiff(diff)}
             </span>
           </div>
           <div className="stat-row">
-            <span>Kolizje</span>
+            <span>{t('collisions')}</span>
             <span className="stat-value" style={{ color: collisions > 0 ? '#ff4444' : '#00ff88' }}>
               {collisions}
             </span>
@@ -304,7 +313,7 @@ export function FinishScreen() {
         </div>
 
         {isRecord && (
-          <div className="new-record-banner">🏆 NOWY REKORD TRASY!</div>
+          <div className="new-record-banner">{t('newRecord')}</div>
         )}
 
         <div className="finish-leaderboard">
@@ -320,10 +329,10 @@ export function FinishScreen() {
 
         <div className="finish-actions">
           <button className="btn btn-primary" onClick={() => startCountdown('countdown')}>
-            🔄 Jeszcze raz
+            {t('again')}
           </button>
           <button className="btn btn-secondary" onClick={resetRace}>
-            ← Menu
+            {t('menu')}
           </button>
         </div>
       </div>
@@ -333,6 +342,7 @@ export function FinishScreen() {
 
 // ─── Main Menu ────────────────────────────────────────────────────────────────
 export function MainMenu() {
+  const language       = useGameStore((s) => s.language);
   const phase          = useGameStore((s) => s.phase);
   const selected       = useGameStore((s) => s.selectedTrack);
   const selectTrack    = useGameStore((s) => s.selectTrack);
@@ -343,6 +353,7 @@ export function MainMenu() {
   const leaderboardSource = useGameStore((s) => s.leaderboardSource);
   const leaderboardError = useGameStore((s) => s.leaderboardError);
   const hostUser       = useGameStore((s) => s.hostUser);
+  const t = (key: Parameters<typeof swoopText>[1]) => swoopText(language, key);
 
   if (phase !== 'menu') return null;
 
@@ -355,22 +366,22 @@ export function MainMenu() {
           <span className="title-swoop">SWOOP</span>
           <span className="title-racer">RACER</span>
         </div>
-        <div className="menu-subtitle">Galaktyczne wyścigi · KOTOR Edition</div>
+        <div className="menu-subtitle">{t('gameSubtitle')}</div>
 
         <div className="nickname-section">
-          <label className="form-label">{hostUser ? 'Konto GeekFights' : 'Pseudonim'}</label>
+          <label className="form-label">{hostUser ? t('geekfightsAccount') : t('nickname')}</label>
           <input
             className="form-input"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             readOnly={Boolean(hostUser)}
             maxLength={20}
-            placeholder="Twój pseudonim..."
+            placeholder={t('nicknamePlaceholder')}
           />
         </div>
 
         <div className="track-section">
-          <div className="section-label">Wybierz trasę</div>
+          <div className="section-label">{t('chooseTrack')}</div>
           <div className="track-grid">
             {tracks.map((track) => (
               <button
@@ -380,7 +391,7 @@ export function MainMenu() {
                 style={{ '--track-color': track.color } as React.CSSProperties}
               >
                 <div className="track-name">{track.name}</div>
-                <div className="track-sub">{track.subtitle}</div>
+                <div className="track-sub">{trackSubtitle(language, track.id)}</div>
                 <div className="track-record">⏱ {formatTime(track.record)}</div>
               </button>
             ))}
@@ -389,7 +400,7 @@ export function MainMenu() {
 
         <div className="menu-leaderboard">
           <div className="section-label">
-            TOP 100 {leaderboardSource === 'online' ? 'ONLINE' : 'LOKALNIE'} — {TRACKS[selected].name}
+            TOP 100 {leaderboardSource === 'online' ? t('online') : t('local')} — {TRACKS[selected].name}
           </div>
           <div className="lb-table">
             {leaderboard
@@ -406,26 +417,26 @@ export function MainMenu() {
                 </div>
               ))}
             {leaderboard.filter((e) => e.trackId === selected).length === 0 && (
-              <div className="lb-empty">Brak wyników. Ustaw pierwszy rekord!</div>
+              <div className="lb-empty">{t('noResults')}</div>
             )}
           </div>
-          {leaderboardError && <div className="lb-error">{leaderboardError}</div>}
+          {leaderboardError && <div className="lb-error">{t(leaderboardError as Parameters<typeof swoopText>[1])}</div>}
         </div>
 
         <button className="btn btn-start" onClick={() => setPhase('countdown')}>
-          ▶ STARTUJ
+          {t('race')}
         </button>
 
         {(!hostUser || hostUser.role === 'moderator' || hostUser.role === 'admin') && (
           <button className="btn btn-editor" onClick={() => setPhase('editor')}>
-            ⚙ EDYTOR TRASY
+            {t('trackEditor')}
           </button>
         )}
 
         <div className="menu-controls">
-          <span>← A/D → — skręt</span>
-          <span>Spacja — skok</span>
-          <span>LPM — zmień bieg</span>
+          <span>{t('steer')}</span>
+          <span>{t('jumpControl')}</span>
+          <span>{t('shiftControl')}</span>
         </div>
       </div>
     </div>

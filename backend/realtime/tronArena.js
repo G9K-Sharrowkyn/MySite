@@ -1,61 +1,55 @@
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import { randomUUID } from 'crypto';
+import { recordTronWin } from '../services/tronLeaderboard.js';
+import {
+  TRON_RULES,
+  createSimulationPlayer,
+  getDirectionName,
+  normalizeDirection,
+  stepSimulation
+} from './tronSimulation.js';
 
-const GRID_SIZE = 48;
 const MAX_PLAYERS = 8;
-const TICK_MS = 50;
-const ROUND_COUNTDOWN_MS = 2500;
-const ROUND_END_DELAY_MS = 3000;
-const DEFAULT_ROOM_ID = 'public';
-
-const DIRECTIONS = {
-  up: { x: 0, y: -1 },
-  down: { x: 0, y: 1 },
-  left: { x: -1, y: 0 },
-  right: { x: 1, y: 0 }
-};
-
-const OPPOSITE_DIRECTION = {
-  up: 'down',
-  down: 'up',
-  left: 'right',
-  right: 'left'
-};
+const ROUND_COUNTDOWN_MS = 2800;
+const ROUND_END_DELAY_MS = 3500;
+const MAX_TURN_QUEUE = 3;
+const MIN_PASSWORD_LENGTH = 4;
 
 const COLOR_PALETTE = [
-  '#00e5ff',
-  '#ff4d6d',
-  '#ffd166',
-  '#8ac926',
-  '#c77dff',
-  '#ff9f1c',
-  '#4cc9f0',
-  '#f72585'
+  '#00e5ff', '#ff7a00', '#ffd84a', '#ff3b4d', '#58f56b'
 ];
 
-const clampRoomId = (value) => {
-  const raw = String(value || DEFAULT_ROOM_ID)
-    .trim()
+export const clampPlayerColor = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return COLOR_PALETTE.includes(normalized) ? normalized : null;
+};
+
+const clampRoomId = (value) =>
+  String(value || '').trim().toLowerCase().replace(/[^a-z0-9_-]/g, '').slice(0, 40);
+
+const clampRoomName = (value) => {
+  const normalized = String(value || '').trim().replace(/\s+/g, ' ');
+  return normalized.slice(0, 36);
+};
+
+const clampPassword = (value) => String(value || '').slice(0, 72);
+
+const createRoomId = (name) => {
+  const slug = clampRoomName(name)
     .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, '');
-  return raw || DEFAULT_ROOM_ID;
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 22) || 'arena';
+  return `${slug}-${randomUUID().slice(0, 6)}`;
 };
 
 const clampUsername = (value) => {
   const raw = String(value || '').trim().replace(/\s+/g, ' ');
-  if (!raw) return '';
-  return raw.slice(0, 32);
+  return raw ? raw.slice(0, 32) : '';
 };
-
-const cellKey = (x, y) => `${x}:${y}`;
-
-const parseCellKey = (value) => {
-  const [x, y] = String(value || '')
-    .split(':')
-    .map((part) => Number(part));
-  return { x, y };
-};
-
-const inBounds = (x, y) => x >= 0 && x < GRID_SIZE && y >= 0 && y < GRID_SIZE;
 
 const getSocketAuthUser = (socket) => {
   const token = socket.handshake?.auth?.token;
@@ -65,133 +59,161 @@ const getSocketAuthUser = (socket) => {
     const id = payload?.user?.id || payload?.userId || payload?.id || null;
     const role = payload?.user?.role || payload?.role || 'user';
     const username = payload?.user?.username || payload?.username || '';
-    if (!id) return null;
-    return { id, role, username };
+    return id ? { id, role, username } : null;
   } catch (_error) {
     return null;
   }
 };
 
 const buildSpawnPoints = () => {
-  const edge = GRID_SIZE - 5;
-  const mid = Math.floor(GRID_SIZE / 2);
+  const edge = TRON_RULES.arenaSize / 2 - 7;
+  const lane = 10;
   return [
-    { x: 4, y: 4, dir: 'right' },
-    { x: edge, y: edge, dir: 'left' },
-    { x: edge, y: 4, dir: 'down' },
-    { x: 4, y: edge, dir: 'up' },
-    { x: mid, y: 4, dir: 'down' },
-    { x: mid, y: edge, dir: 'up' },
-    { x: 4, y: mid, dir: 'right' },
-    { x: edge, y: mid, dir: 'left' }
+    { x: -edge, y: -edge, direction: 1 },
+    { x: edge, y: edge, direction: 3 },
+    { x: edge, y: -edge, direction: 2 },
+    { x: -edge, y: edge, direction: 0 },
+    { x: -lane, y: -edge, direction: 2 },
+    { x: lane, y: edge, direction: 0 },
+    { x: -edge, y: lane, direction: 1 },
+    { x: edge, y: -lane, direction: 3 }
   ];
 };
 
-const createRoom = (id) => ({
+const createRoom = (id, options = {}) => ({
   id,
-  phase: 'waiting', // waiting | countdown | running | finished
+  name: options.name || id,
+  visibility: options.visibility === 'private' ? 'private' : 'public',
+  passwordHash: options.passwordHash || null,
+  hidden: Boolean(options.hidden),
+  hostSocketId: options.hostSocketId || null,
+  createdAt: new Date().toISOString(),
+  phase: 'waiting',
   round: 0,
   winnerSocketId: null,
   countdownEndsAt: null,
   players: new Map(),
-  trails: new Set(),
+  trailSegments: [],
+  nextTrailId: 1,
   tickInterval: null,
   countdownTimeout: null,
   finishTimeout: null
 });
 
+const createTrailId = (room) => () => `${room.round}-${room.nextTrailId++}`;
+
 const clearRoundTimers = (room) => {
-  if (room.tickInterval) {
-    clearInterval(room.tickInterval);
-    room.tickInterval = null;
-  }
-  if (room.countdownTimeout) {
-    clearTimeout(room.countdownTimeout);
-    room.countdownTimeout = null;
-  }
-  if (room.finishTimeout) {
-    clearTimeout(room.finishTimeout);
-    room.finishTimeout = null;
-  }
+  if (room.tickInterval) clearInterval(room.tickInterval);
+  if (room.countdownTimeout) clearTimeout(room.countdownTimeout);
+  if (room.finishTimeout) clearTimeout(room.finishTimeout);
+  room.tickInterval = null;
+  room.countdownTimeout = null;
+  room.finishTimeout = null;
 };
+
+const serializePlayer = (player) => ({
+  socketId: player.socketId,
+  userId: player.userId,
+  username: player.username,
+  color: player.color,
+  x: player.x,
+  y: player.y,
+  dir: getDirectionName(player.direction),
+  direction: player.direction,
+  alive: player.alive,
+  spectator: Boolean(player.isSpectator),
+  wins: player.wins,
+  speed: Number(player.speed || TRON_RULES.baseSpeed),
+  speedPercent: Math.max(0, Math.min(100, Math.round(
+    ((Number(player.speed || TRON_RULES.baseSpeed) - TRON_RULES.baseSpeed) /
+      (TRON_RULES.maxSpeed - TRON_RULES.baseSpeed)) * 100
+  ))),
+  wallRiding: Boolean(player.wallRiding),
+  wallRideSide: player.wallRideSide,
+  wallRideTime: Number(player.wallRideTime || 0),
+  boostDecayRemaining: Number(player.boostDecayRemaining || 0),
+  crashedAt: player.crashedAt || null
+});
 
 const serializeRoom = (room) => {
   const players = Array.from(room.players.values())
     .sort((a, b) => a.joinedAt - b.joinedAt)
-    .map((player) => ({
-      socketId: player.socketId,
-      userId: player.userId,
-      username: player.username,
-      color: player.color,
-      x: player.x,
-      y: player.y,
-      dir: player.dir,
-      alive: player.alive,
-      spectator: Boolean(player.isSpectator),
-      wins: player.wins
-    }));
-
-  const winner = room.winnerSocketId
-    ? players.find((player) => player.socketId === room.winnerSocketId) || null
-    : null;
-
+    .map(serializePlayer);
   return {
     roomId: room.id,
-    gridSize: GRID_SIZE,
-    tickMs: TICK_MS,
+    arenaSize: TRON_RULES.arenaSize,
+    gridSize: TRON_RULES.arenaSize,
+    tickMs: TRON_RULES.tickMs,
+    baseSpeed: TRON_RULES.baseSpeed,
+    maxSpeed: TRON_RULES.maxSpeed,
     phase: room.phase,
     round: room.round,
     countdownEndsAt: room.countdownEndsAt,
-    winner,
+    winner: room.winnerSocketId
+      ? players.find((player) => player.socketId === room.winnerSocketId) || null
+      : null,
     players,
-    trails: Array.from(room.trails, parseCellKey)
+    trails: room.trailSegments
   };
+};
+
+const serializeLobbyRoom = (room) => ({
+  roomId: room.id,
+  name: room.name,
+  isPrivate: room.visibility === 'private',
+  phase: room.phase,
+  round: room.round,
+  playerCount: room.players.size,
+  maxPlayers: MAX_PLAYERS,
+  createdAt: room.createdAt,
+  hostName: room.players.get(room.hostSocketId)?.username || null
+});
+
+const serializeLobby = (rooms) => ({
+  rooms: [...rooms.values()]
+    .filter((room) => !room.hidden && room.players.size > 0)
+    .sort((left, right) => (
+      right.players.size - left.players.size ||
+      String(right.createdAt).localeCompare(String(left.createdAt))
+    ))
+    .map(serializeLobbyRoom),
+  updatedAt: new Date().toISOString()
+});
+
+const emitLobbyState = (namespace, rooms, socket = null) => {
+  const payload = serializeLobby(rooms);
+  if (socket) socket.emit('tron:lobby', payload);
+  else namespace.emit('tron:lobby', payload);
 };
 
 const emitRoomState = (namespace, room, socket = null) => {
   const payload = serializeRoom(room);
-  if (socket) {
-    socket.emit('tron:state', payload);
-    return;
-  }
-  namespace.to(room.id).emit('tron:state', payload);
+  if (socket) socket.emit('tron:state', payload);
+  else namespace.to(room.id).emit('tron:state', payload);
 };
 
-const getRoundPlayers = (room) =>
-  Array.from(room.players.values()).filter((player) => player.inRound);
-
-const getAlivePlayers = (room) =>
-  getRoundPlayers(room).filter((player) => player.alive);
+const getRoundPlayers = (room) => Array.from(room.players.values()).filter((player) => player.inRound);
+const getAlivePlayers = (room) => getRoundPlayers(room).filter((player) => player.alive);
 
 const assignRoundSpawns = (room) => {
   const spawns = buildSpawnPoints();
-  const players = Array.from(room.players.values()).sort(
-    (a, b) => a.joinedAt - b.joinedAt
-  );
-
-  room.trails.clear();
-
-  players.forEach((player, index) => {
+  const existingPlayers = Array.from(room.players.values()).sort((a, b) => a.joinedAt - b.joinedAt);
+  room.trailSegments = [];
+  room.nextTrailId = 1;
+  existingPlayers.forEach((existing, index) => {
     if (index >= MAX_PLAYERS) {
-      player.inRound = false;
-      player.alive = false;
-      player.x = null;
-      player.y = null;
-      player.dir = 'up';
-      player.pendingDir = null;
-      player.isSpectator = true;
+      Object.assign(existing, {
+        inRound: false, alive: false, x: null, y: null, isSpectator: true,
+        pendingTurn: null, pendingTurns: [], wallRiding: false, boostDecayRemaining: 0,
+        boostDecayRate: 0
+      });
       return;
     }
-
-    const spawn = spawns[index % spawns.length];
-    player.inRound = true;
-    player.alive = true;
-    player.x = spawn.x;
-    player.y = spawn.y;
-    player.dir = spawn.dir;
-    player.pendingDir = null;
-    player.isSpectator = false;
-    room.trails.add(cellKey(spawn.x, spawn.y));
+    const player = createSimulationPlayer(
+      existing, spawns[index], createTrailId(room), room.trailSegments
+    );
+    player.lastTurnAt = 0;
+    room.players.set(existing.socketId, player);
   });
 };
 
@@ -200,125 +222,66 @@ const beginWaitingPhase = (namespace, room) => {
   room.phase = 'waiting';
   room.countdownEndsAt = null;
   room.winnerSocketId = null;
-  room.trails.clear();
+  room.trailSegments = [];
   for (const player of room.players.values()) {
-    player.inRound = false;
-    player.alive = false;
-    player.x = null;
-    player.y = null;
-    player.pendingDir = null;
-    player.isSpectator = false;
+    Object.assign(player, {
+      inRound: false, alive: false, x: null, y: null, pendingTurn: null, pendingTurns: [],
+      wallRiding: false, wallRideSide: null, wallRideTime: 0,
+      boostDecayRemaining: 0, boostDecayRate: 0, isSpectator: false
+    });
   }
   emitRoomState(namespace, room);
 };
 
 const finishRound = (namespace, room) => {
   if (room.phase !== 'running') return;
-
   clearRoundTimers(room);
   room.phase = 'finished';
-
   const survivors = getAlivePlayers(room);
   const winner = survivors.length === 1 ? survivors[0] : null;
   if (winner) {
     winner.wins += 1;
     room.winnerSocketId = winner.socketId;
-  } else {
-    room.winnerSocketId = null;
-  }
-
+    void recordTronWin({
+      userId: winner.userId,
+      nickname: winner.username,
+      roomId: room.id,
+      round: room.round
+    }).then(({ recorded, monthKey }) => {
+      if (recorded) namespace.emit('tron:leaderboard-updated', { monthKey });
+    }).catch((error) => {
+      console.error('Could not record TRON victory:', error);
+    });
+  } else room.winnerSocketId = null;
   emitRoomState(namespace, room);
-
   room.finishTimeout = setTimeout(() => {
     room.finishTimeout = null;
-    if (room.players.size >= 1) {
-      startRoundCountdown(namespace, room);
-      return;
-    }
-    beginWaitingPhase(namespace, room);
+    if (room.players.size >= 1) startRoundCountdown(namespace, room);
+    else beginWaitingPhase(namespace, room);
   }, ROUND_END_DELAY_MS);
+};
+
+const shouldFinishRound = (room) => {
+  const roundPlayers = getRoundPlayers(room);
+  const alive = roundPlayers.filter((player) => player.alive);
+  return roundPlayers.length > 1 ? alive.length <= 1 : alive.length === 0;
 };
 
 const tickRoom = (namespace, room) => {
   if (room.phase !== 'running') return;
-
-  const alivePlayers = getAlivePlayers(room);
-  const roundPlayersCount = getRoundPlayers(room).length;
-  const shouldFinish =
-    (roundPlayersCount > 1 && alivePlayers.length <= 1) ||
-    (roundPlayersCount <= 1 && alivePlayers.length === 0);
-  if (shouldFinish) {
+  if (shouldFinishRound(room)) {
     finishRound(namespace, room);
     return;
   }
-
-  const plannedMoves = [];
-  for (const player of alivePlayers) {
-    const nextDirection = player.pendingDir;
-    if (
-      nextDirection &&
-      DIRECTIONS[nextDirection] &&
-      OPPOSITE_DIRECTION[player.dir] !== nextDirection
-    ) {
-      player.dir = nextDirection;
-    }
-    player.pendingDir = null;
-
-    const vector = DIRECTIONS[player.dir] || DIRECTIONS.up;
-    const nextX = player.x + vector.x;
-    const nextY = player.y + vector.y;
-
-    plannedMoves.push({
-      player,
-      nextX,
-      nextY,
-      nextKey: cellKey(nextX, nextY)
-    });
-  }
-
-  const eliminated = new Set();
-
-  for (const move of plannedMoves) {
-    if (!inBounds(move.nextX, move.nextY)) {
-      eliminated.add(move.player.socketId);
-      continue;
-    }
-    if (room.trails.has(move.nextKey)) {
-      eliminated.add(move.player.socketId);
-    }
-  }
-
-  const nextCellCounts = new Map();
-  for (const move of plannedMoves) {
-    const count = nextCellCounts.get(move.nextKey) || 0;
-    nextCellCounts.set(move.nextKey, count + 1);
-  }
-
-  for (const move of plannedMoves) {
-    if ((nextCellCounts.get(move.nextKey) || 0) > 1) {
-      eliminated.add(move.player.socketId);
-    }
-  }
-
-  for (const move of plannedMoves) {
-    if (eliminated.has(move.player.socketId)) {
-      move.player.alive = false;
-      continue;
-    }
-    move.player.x = move.nextX;
-    move.player.y = move.nextY;
-    room.trails.add(move.nextKey);
-  }
-
+  stepSimulation({
+    players: getRoundPlayers(room),
+    trailSegments: room.trailSegments,
+    dt: TRON_RULES.tickMs / 1000,
+    rules: TRON_RULES,
+    createTrailId: createTrailId(room)
+  });
   emitRoomState(namespace, room);
-
-  const remainingAlive = getAlivePlayers(room).length;
-  const shouldFinishAfterTick =
-    (roundPlayersCount > 1 && remainingAlive <= 1) ||
-    (roundPlayersCount <= 1 && remainingAlive === 0);
-  if (shouldFinishAfterTick) {
-    finishRound(namespace, room);
-  }
+  if (shouldFinishRound(room)) finishRound(namespace, room);
 };
 
 const startRunningRound = (namespace, room) => {
@@ -326,10 +289,7 @@ const startRunningRound = (namespace, room) => {
   room.countdownEndsAt = null;
   room.winnerSocketId = null;
   emitRoomState(namespace, room);
-
-  room.tickInterval = setInterval(() => {
-    tickRoom(namespace, room);
-  }, TICK_MS);
+  room.tickInterval = setInterval(() => tickRoom(namespace, room), TRON_RULES.tickMs);
 };
 
 const startRoundCountdown = (namespace, room) => {
@@ -340,140 +300,195 @@ const startRoundCountdown = (namespace, room) => {
   room.countdownEndsAt = Date.now() + ROUND_COUNTDOWN_MS;
   assignRoundSpawns(room);
   emitRoomState(namespace, room);
-
   room.countdownTimeout = setTimeout(() => {
     room.countdownTimeout = null;
-    if (room.players.size < 1) {
-      beginWaitingPhase(namespace, room);
-      return;
-    }
-    startRunningRound(namespace, room);
+    if (room.players.size < 1) beginWaitingPhase(namespace, room);
+    else startRunningRound(namespace, room);
   }, ROUND_COUNTDOWN_MS);
 };
 
 const maybeStartRound = (namespace, room) => {
-  if (room.phase !== 'waiting') return;
-  if (room.players.size < 1) return;
-  startRoundCountdown(namespace, room);
+  if (room.phase === 'waiting' && room.players.size >= 1) startRoundCountdown(namespace, room);
 };
 
 const choosePlayerColor = (room) => {
   const used = new Set(Array.from(room.players.values()).map((player) => player.color));
-  const free = COLOR_PALETTE.find((color) => !used.has(color));
-  return free || COLOR_PALETTE[room.players.size % COLOR_PALETTE.length];
+  return COLOR_PALETTE.find((color) => !used.has(color)) ||
+    COLOR_PALETTE[room.players.size % COLOR_PALETTE.length];
 };
 
 const leaveRoom = (namespace, rooms, socket, roomId) => {
   const room = rooms.get(roomId);
-  if (!room) return;
-
+  if (!room || !room.players.has(socket.id)) return;
   const removed = room.players.get(socket.id);
-  if (!removed) return;
-
   const removedWasAlive = removed.alive && removed.inRound;
   room.players.delete(socket.id);
   socket.leave(room.id);
-
   if (!room.players.size) {
     clearRoundTimers(room);
     rooms.delete(room.id);
+    emitLobbyState(namespace, rooms);
     return;
   }
-
-  if (room.phase === 'countdown' && room.players.size < 1) {
-    beginWaitingPhase(namespace, room);
-    return;
+  if (room.hostSocketId === socket.id) {
+    room.hostSocketId = room.players.keys().next().value || null;
   }
-
-  if (room.phase === 'running' && removedWasAlive && getAlivePlayers(room).length <= 1) {
+  if (room.phase === 'running' && removedWasAlive && shouldFinishRound(room)) {
     finishRound(namespace, room);
+    emitLobbyState(namespace, rooms);
     return;
   }
-
   emitRoomState(namespace, room);
   maybeStartRound(namespace, room);
+  emitLobbyState(namespace, rooms);
+};
+
+const absoluteDirectionToTurn = (currentDirection, requestedDirection) => {
+  const current = normalizeDirection(currentDirection);
+  const requested = normalizeDirection(requestedDirection);
+  if (requested === (current + 1) % 4) return 'right';
+  if (requested === (current + 3) % 4) return 'left';
+  return null;
 };
 
 export const initTronNamespace = (io) => {
   const namespace = io.of('/tron');
   const rooms = new Map();
+  const lobbyInterval = setInterval(() => emitLobbyState(namespace, rooms), 1000);
+  lobbyInterval.unref?.();
 
   namespace.on('connection', (socket) => {
     const authUser = getSocketAuthUser(socket);
     socket.data.tronRoomId = null;
 
-    socket.on('tron:join', (payload = {}) => {
-      const roomId = clampRoomId(payload.roomId);
+    const enterRoom = (room, payload = {}) => {
       const requestedName = clampUsername(payload.username);
-      const username =
-        requestedName || clampUsername(authUser?.username) || `Guest-${socket.id.slice(0, 5)}`;
-
+      const username = requestedName || clampUsername(authUser?.username) || `Guest-${socket.id.slice(0, 5)}`;
       if (socket.data.tronRoomId) {
         leaveRoom(namespace, rooms, socket, socket.data.tronRoomId);
         socket.data.tronRoomId = null;
       }
-
-      let room = rooms.get(roomId);
-      if (!room) {
-        room = createRoom(roomId);
-        rooms.set(roomId, room);
-      }
-
       if (room.players.size >= MAX_PLAYERS) {
-        socket.emit('tron:error', { message: 'Pokoj jest pelny (max 8 graczy).' });
-        return;
+        socket.emit('tron:error', { code: 'ROOM_FULL', message: 'Pokój jest pełny (maksymalnie 8 graczy).' });
+        return false;
       }
-
       room.players.set(socket.id, {
         socketId: socket.id,
         userId: authUser?.id || `guest:${socket.id}`,
         username,
-        color: choosePlayerColor(room),
-        x: null,
-        y: null,
-        dir: 'up',
-        pendingDir: null,
-        alive: false,
-        inRound: false,
-        isSpectator: false,
-        wins: 0,
-        joinedAt: Date.now()
+        color: clampPlayerColor(payload.color) || choosePlayerColor(room),
+        x: null, y: null, direction: 0, pendingTurn: null, pendingTurns: [],
+        alive: false, inRound: false,
+        isSpectator: room.phase === 'running' || room.phase === 'finished',
+        speed: TRON_RULES.baseSpeed, wallRiding: false, wallRideSide: null,
+        wallRideTime: 0, boostDecayRemaining: 0, boostDecayRate: 0,
+        currentTrailId: null, crashedAt: null,
+        wins: 0, lastTurnAt: 0, joinedAt: Date.now()
       });
-
-      socket.data.tronRoomId = roomId;
-      socket.join(roomId);
+      socket.data.tronRoomId = room.id;
+      socket.join(room.id);
+      // Players who arrive during the pre-round countdown still enter that
+      // round. Reassigning untouched spawn points is safe until movement starts.
+      if (room.phase === 'countdown') assignRoundSpawns(room);
       emitRoomState(namespace, room);
       maybeStartRound(namespace, room);
+      emitLobbyState(namespace, rooms);
+      return true;
+    };
+
+    emitLobbyState(namespace, rooms, socket);
+
+    socket.on('tron:list', () => emitLobbyState(namespace, rooms, socket));
+
+    socket.on('tron:create', async (payload = {}) => {
+      try {
+        const isSolo = payload.mode === 'solo';
+        const visibility = isSolo || payload.visibility === 'private' ? 'private' : 'public';
+        const name = isSolo ? 'Trening solo' : clampRoomName(payload.name);
+        const password = clampPassword(payload.password);
+        if (!isSolo && name.length < 3) {
+          socket.emit('tron:error', { code: 'ROOM_NAME', message: 'Nazwa pokoju musi mieć co najmniej 3 znaki.' });
+          return;
+        }
+        if (!isSolo && visibility === 'private' && password.length < MIN_PASSWORD_LENGTH) {
+          socket.emit('tron:error', {
+            code: 'ROOM_PASSWORD',
+            message: `Hasło prywatnego pokoju musi mieć co najmniej ${MIN_PASSWORD_LENGTH} znaki.`
+          });
+          return;
+        }
+        const roomId = createRoomId(name);
+        const passwordHash = visibility === 'private' && !isSolo
+          ? await bcrypt.hash(password, 10)
+          : null;
+        const room = createRoom(roomId, {
+          name,
+          visibility,
+          passwordHash,
+          hidden: isSolo,
+          hostSocketId: socket.id
+        });
+        rooms.set(roomId, room);
+        socket.emit('tron:created', { roomId });
+        enterRoom(room, payload);
+      } catch (error) {
+        console.error('Could not create TRON room:', error);
+        socket.emit('tron:error', { code: 'ROOM_CREATE', message: 'Nie udało się utworzyć pokoju.' });
+      }
+    });
+
+    socket.on('tron:join', async (payload = {}) => {
+      try {
+        const roomId = clampRoomId(payload.roomId);
+        const room = rooms.get(roomId);
+        if (!room || room.hidden) {
+          socket.emit('tron:error', { code: 'ROOM_NOT_FOUND', message: 'Ten pokój już nie istnieje.' });
+          return;
+        }
+        if (room.visibility === 'private') {
+          const password = clampPassword(payload.password);
+          const accepted = room.passwordHash && await bcrypt.compare(password, room.passwordHash);
+          if (!accepted) {
+            socket.emit('tron:error', { code: 'BAD_PASSWORD', message: 'Nieprawidłowe hasło do pokoju.' });
+            return;
+          }
+        }
+        enterRoom(room, payload);
+      } catch (error) {
+        console.error('Could not join TRON room:', error);
+        socket.emit('tron:error', { code: 'ROOM_JOIN', message: 'Nie udało się dołączyć do pokoju.' });
+      }
     });
 
     socket.on('tron:turn', (payload = {}) => {
-      const roomId = socket.data.tronRoomId;
-      if (!roomId) return;
-      const room = rooms.get(roomId);
+      const room = rooms.get(socket.data.tronRoomId);
       if (!room || room.phase !== 'running') return;
       const player = room.players.get(socket.id);
-      if (!player || !player.alive || !player.inRound) return;
-
-      const direction = String(payload.direction || '').toLowerCase();
-      if (!DIRECTIONS[direction]) return;
-      if (OPPOSITE_DIRECTION[player.dir] === direction) return;
-      player.pendingDir = direction;
+      if (!player?.alive || !player.inRound) return;
+      let turn = String(payload.turn || '').toLowerCase();
+      if (turn !== 'left' && turn !== 'right') {
+        const requested = String(payload.direction || '').toLowerCase();
+        if (!['up', 'right', 'down', 'left'].includes(requested)) return;
+        turn = absoluteDirectionToTurn(player.direction, requested);
+      }
+      if (turn !== 'left' && turn !== 'right') return;
+      if (!Array.isArray(player.pendingTurns)) player.pendingTurns = [];
+      if (player.pendingTurns.length >= MAX_TURN_QUEUE) return;
+      player.pendingTurns.push(turn);
+      player.lastTurnAt = Date.now();
     });
 
     socket.on('tron:leave', () => {
-      const roomId = socket.data.tronRoomId;
-      if (!roomId) return;
-      leaveRoom(namespace, rooms, socket, roomId);
+      if (!socket.data.tronRoomId) return;
+      leaveRoom(namespace, rooms, socket, socket.data.tronRoomId);
       socket.data.tronRoomId = null;
+      emitLobbyState(namespace, rooms, socket);
     });
-
     socket.on('disconnect', () => {
-      const roomId = socket.data.tronRoomId;
-      if (!roomId) return;
-      leaveRoom(namespace, rooms, socket, roomId);
+      if (!socket.data.tronRoomId) return;
+      leaveRoom(namespace, rooms, socket, socket.data.tronRoomId);
       socket.data.tronRoomId = null;
     });
   });
-
   return namespace;
 };

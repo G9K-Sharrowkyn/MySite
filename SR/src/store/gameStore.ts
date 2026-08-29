@@ -17,6 +17,8 @@ import type { CollisionImpact, CollisionResolution } from '../game/raceRules.ts'
 import { buildTrackEvents } from '../game/trackDesign.ts';
 import authoredTrackFile from '../game/trackLayouts.json' with { type: 'json' };
 import { fetchSwoopLeaderboard, submitSwoopRun } from '../services/swoopApi.ts';
+import { getInitialGameLanguage, normalizeGameLanguage } from '../i18n.ts';
+import type { GameLanguage } from '../i18n.ts';
 
 export type GamePhase = 'menu' | 'editor' | 'countdown' | 'starting' | 'racing' | 'coasting' | 'finished';
 export type TrackId   = 'taris' | 'tatooine' | 'manaan' | 'korriban';
@@ -227,6 +229,7 @@ function loadNickname(): string {
 
 // ─── Game State ───────────────────────────────────────────────────────────────
 interface GameState {
+  language: GameLanguage;
   phase: GamePhase;
   selectedTrack: TrackId;
   countdownValue: number;        // 3,2,1,0=GO
@@ -267,6 +270,7 @@ interface GameState {
   trackEvents: TrackLayouts;
 
   // Actions
+  setLanguage: (language: unknown) => void;
   setPhase: (p: GamePhase) => void;
   selectTrack: (id: TrackId) => void;
   setCountdown: (v: number) => void;
@@ -291,6 +295,7 @@ interface GameState {
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
+  language: getInitialGameLanguage(),
   phase: 'menu',
   selectedTrack: 'taris',
   countdownValue: 3,
@@ -324,6 +329,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   scoreSubmitted: false,
   trackEvents: loadTrackLayouts(),
 
+  setLanguage: (language) => set({ language: normalizeGameLanguage(language) }),
   setPhase: (p) => p === 'countdown'
     ? set({
         phase: p,
@@ -376,7 +382,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       }));
     } catch {
       // Standalone Vite development intentionally keeps the local leaderboard.
-      set({ leaderboardError: 'Ranking online jest chwilowo niedostępny.' });
+      set({ leaderboardError: 'leaderboardUnavailable' });
     }
   },
 
@@ -597,7 +603,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           leaderboardError: null,
         }));
       } catch {
-        set({ leaderboardError: 'Nie udało się zapisać wyniku online.' });
+        set({ leaderboardError: 'scoreSaveFailed' });
       }
       return;
     }

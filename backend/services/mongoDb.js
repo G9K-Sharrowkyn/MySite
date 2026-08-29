@@ -307,6 +307,22 @@ const ensureIndexes = async (db) => {
             }
           }
         }
+      ]],
+      ['tronWins', [
+        uniqueId,
+        { key: { monthKey: 1, wonAt: -1 } },
+        { key: { userId: 1, monthKey: 1 } },
+        {
+          key: { roomId: 1, round: 1, userId: 1 },
+          options: {
+            unique: true,
+            partialFilterExpression: {
+              roomId: { $type: 'string' },
+              round: { $type: 'number' },
+              userId: { $type: 'string' }
+            }
+          }
+        }
       ]]
     ];
 
