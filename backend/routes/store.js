@@ -4,7 +4,7 @@ import {
   coinTransactionsRepo,
   storePurchasesRepo,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { ensureCoinAccount } from '../utils/coinBonus.js';
 import auth from '../middleware/auth.js';
@@ -30,11 +30,8 @@ router.post('/purchase', auth, async (req, res) => {
     let purchase;
     let balance = 0;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === userId,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(userId, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -50,9 +47,19 @@ router.post('/purchase', auth, async (req, res) => {
         throw error;
       }
 
-      user.coins.balance -= itemCost;
-      user.coins.totalSpent = (user.coins.totalSpent || 0) + itemCost;
-      user.virtualCoins = user.coins.balance;
+      const updatedUser = await usersRepo.updateById(userId, (storedUser) => {
+        ensureCoinAccount(storedUser);
+        if (storedUser.coins.balance < itemCost) {
+          const error = new Error('Insufficient eurodolary');
+          error.code = 'INSUFFICIENT_COINS';
+          throw error;
+        }
+        storedUser.coins.balance -= itemCost;
+        storedUser.coins.totalSpent = (storedUser.coins.totalSpent || 0) + itemCost;
+        storedUser.virtualCoins = storedUser.coins.balance;
+        storedUser.updatedAt = new Date().toISOString();
+        return storedUser;
+      }, context);
 
       purchase = {
         id: uuidv4(),
@@ -62,7 +69,7 @@ router.post('/purchase', auth, async (req, res) => {
         cost: itemCost,
         purchasedAt: new Date().toISOString()
       };
-      await storePurchasesRepo.insert(purchase, { db });
+      await storePurchasesRepo.insert(purchase, context);
 
       await coinTransactionsRepo.insert({
         id: uuidv4(),
@@ -71,12 +78,11 @@ router.post('/purchase', auth, async (req, res) => {
         amount: -itemCost,
         type: 'purchase',
         description: `Store purchase: ${itemId}`,
-        balance: user.coins.balance,
+        balance: updatedUser.coins.balance,
         createdAt: new Date().toISOString()
-      }, { db });
+      }, context);
 
-      balance = user.coins.balance;
-      return db;
+      balance = updatedUser.coins.balance;
     });
 
     res.json({ purchase, balance });

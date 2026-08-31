@@ -3,7 +3,6 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import sharp from 'sharp';
-import { fileURLToPath } from 'url';
 import {
   getCharacters,
   searchCharacters,
@@ -20,11 +19,11 @@ import {
   isValidUploadedImage,
   MAX_IMAGE_INPUT_PIXELS
 } from '../utils/imageSecurity.js';
+import { getUploadDirectory } from '../utils/uploadFiles.js';
 
 const router = express.Router();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const characterUploadDir = path.resolve(__dirname, '..', 'uploads', 'characters');
+const characterUploadDir = getUploadDirectory('characters');
 fs.mkdirSync(characterUploadDir, { recursive: true });
 
 const imageUpload = multer({

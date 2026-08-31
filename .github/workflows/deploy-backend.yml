@@ -1,19 +1,25 @@
 name: Deploy Backend to VPS (SSH)
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Quality Gate"]
+    types: [completed]
     branches: ["main"]
-    paths:
-      - "backend/**"
-      - ".github/workflows/deploy-backend.yml"
   workflow_dispatch:
+
+concurrency:
+  group: deploy-backend-production
+  cancel-in-progress: false
 
 jobs:
   deploy-backend:
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || github.sha }}
 
       - name: Use Node.js 24
         uses: actions/setup-node@v4

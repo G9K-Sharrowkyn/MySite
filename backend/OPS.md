@@ -4,6 +4,7 @@
 
 - `GET /healthz`
 - `GET /api/health`
+- `GET /readyz`
 
 Both endpoints return a small JSON payload with:
 - `ok`
@@ -11,7 +12,9 @@ Both endpoints return a small JSON payload with:
 - `uptimeSec`
 - `timestamp`
 
-Use this in uptime monitors.
+Use `/healthz` for process liveness. Use `/readyz` for deployment and traffic
+routing checks: it also pings MongoDB and confirms the configured Redis adapter
+was initialized.
 
 ## Rate Limits
 
@@ -20,6 +23,10 @@ The API uses several scoped limiters:
 - stricter auth limiter (`/api/auth/*` for login/register/google/forgot/reset)
 - share-render limiter (`/share/post/*` and `/api/share/post/*`)
 - feedback and optional translation limiters
+
+When `REDIS_URL` is configured, the global API, authentication and share-render
+limits are shared by all Node processes. Without Redis they are intentionally
+process-local and are suitable only for a single API process.
 
 Environment variables:
 - `API_RATE_LIMIT_MAX` (default: `300` in production, `2000` in development)
@@ -118,7 +125,8 @@ Before restart, deployment runs `npm run preflight:production`. It rejects:
 
 Use Node.js 24 and a MongoDB replica set or sharded cluster.
 After PM2 starts or reloads the process, `npm run verify:deployment` polls the
-local `/healthz` endpoint and fails the deployment if the API does not become
+local `/readyz` endpoint and fails the deployment if MongoDB (and Redis, when
+configured) do not become
 healthy within 30 seconds.
 
 Last updated: 2026-07-28

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { getOptimizedImageProps } from '../utils/placeholderImage';
 import { AuthContext } from '../auth/AuthContext';
+import { apiFetch } from '../utils/apiFetch';
 import './BettingSystem.css';
 
 const BettingSystem = () => {
@@ -19,7 +20,7 @@ const BettingSystem = () => {
 
   const fetchAvailableFights = async () => {
     try {
-      const response = await fetch('/api/betting/fights', {
+      const response = await apiFetch('/api/betting/fights', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -36,7 +37,7 @@ const BettingSystem = () => {
 
   const fetchMyBets = async () => {
     try {
-      const response = await fetch('/api/betting/my-bets', {
+      const response = await apiFetch('/api/betting/my-bets', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -395,7 +396,7 @@ const ParlayBetting = ({ fights }) => {
     }
 
     try {
-      const response = await fetch('/api/betting/parlay', {
+      const response = await apiFetch('/api/betting/parlay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -572,7 +573,7 @@ const BetModal = ({ fight, onClose, onBetPlaced }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/betting/place/${fight._id}`, {
+      const response = await apiFetch(`/api/betting/place/${fight._id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

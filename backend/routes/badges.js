@@ -2,7 +2,12 @@
 import { v4 as uuidv4 } from 'uuid';
 import auth from '../middleware/auth.js';
 import moderatorAuth from '../middleware/moderatorAuth.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  badgesRepo,
+  userBadgesRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 
 const router = express.Router();
 
@@ -197,22 +202,33 @@ const normalizeBadge = (badge) => ({
 });
 
 const ensureBadges = async () => {
-  const db = await readDb();
-  if ((db.badges || []).length > 0) {
-    return db;
-  }
-
-  await withDb((data) => {
-    data.badges = DEFAULT_BADGES.map((badge) => ({
-      ...badge,
-      _id: badge.id,
-      isActive: true,
-      createdAt: new Date().toISOString()
-    }));
-    return data;
+  const now = new Date().toISOString();
+  await withRepositoryTransaction(async (context) => {
+    for (const badge of DEFAULT_BADGES) {
+      await badgesRepo.insertIfAbsent({ id: badge.id }, {
+        ...badge,
+        _id: badge.id,
+        isActive: true,
+        createdAt: now
+      }, context);
+    }
   });
+  return badgesRepo.getAll();
+};
 
-  return readDb();
+const updateStoredRecord = (repo, record, updater, context) => {
+  const id = record?.id ?? record?._id;
+  if (id === undefined || id === null) return Promise.resolve(undefined);
+  return repo.updateById(id, updater, record?.id !== undefined ? 'id' : '_id', context);
+};
+
+const hydrateUserBadges = async (entries) => {
+  const badgeIds = [...new Set(entries.map((entry) => entry.badgeId).filter(Boolean))];
+  const badges = badgeIds.length
+    ? await badgesRepo.findManyBy({ id: { $in: badgeIds } })
+    : [];
+  const badgeMap = new Map(badges.map((badge) => [badge.id, badge]));
+  return entries.map((entry) => buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId)));
 };
 
 const buildUserBadgeEntry = (entry, badge) => ({
@@ -272,8 +288,7 @@ const calculateLeveledBadgeProgress = (user, badge) => {
 // GET /api/badges/all
 router.get('/all', async (_req, res) => {
   try {
-    const db = await ensureBadges();
-    const badges = (db.badges || []).map(normalizeBadge);
+    const badges = (await ensureBadges()).map(normalizeBadge);
     res.json({ badges });
   } catch (error) {
     console.error('Error fetching badges:', error);
@@ -284,13 +299,12 @@ router.get('/all', async (_req, res) => {
 // GET /api/badges/available
 router.get('/available', async (req, res) => {
   try {
-    const db = await ensureBadges();
+    await ensureBadges();
     const { category, rarity } = req.query;
-    const badges = (db.badges || [])
-      .filter((badge) => badge.isActive !== false)
-      .filter((badge) => (category ? badge.category === category : true))
-      .filter((badge) => (rarity ? badge.rarity === rarity : true))
-      .map(normalizeBadge);
+    const query = { isActive: { $ne: false } };
+    if (category) query.category = category;
+    if (rarity) query.rarity = rarity;
+    const badges = (await badgesRepo.findManyBy(query)).map(normalizeBadge);
 
     res.json(badges);
   } catch (error) {
@@ -302,14 +316,12 @@ router.get('/available', async (req, res) => {
 // GET /api/badges/user (current user)
 router.get('/user', auth, async (req, res) => {
   try {
-    const db = await ensureBadges();
-    const badges = (db.userBadges || []).filter(
-      (entry) => entry.userId === req.user.id && entry.isActive !== false
-    );
-    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
-    const userBadges = badges.map((entry) =>
-      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
-    );
+    await ensureBadges();
+    const badges = await userBadgesRepo.findManyBy({
+      userId: req.user.id,
+      isActive: { $ne: false }
+    });
+    const userBadges = await hydrateUserBadges(badges);
 
     res.json({ badges: userBadges });
   } catch (error) {
@@ -321,14 +333,12 @@ router.get('/user', auth, async (req, res) => {
 // GET /api/badges/user/:userId
 router.get('/user/:userId', async (req, res) => {
   try {
-    const db = await ensureBadges();
-    const badges = (db.userBadges || []).filter(
-      (entry) => entry.userId === req.params.userId && entry.isActive !== false
-    );
-    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
-    const userBadges = badges.map((entry) =>
-      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
-    );
+    await ensureBadges();
+    const badges = await userBadgesRepo.findManyBy({
+      userId: req.params.userId,
+      isActive: { $ne: false }
+    });
+    const userBadges = await hydrateUserBadges(badges);
 
     res.json(userBadges);
   } catch (error) {
@@ -340,8 +350,7 @@ router.get('/user/:userId', async (req, res) => {
 // GET /api/badges/leveled/:userId - Get leveled badges with progress for a user
 router.get('/leveled/:userId', async (req, res) => {
   try {
-    const db = await readDb();
-    const user = db.users.find((u) => u.id === req.params.userId || u._id === req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -371,14 +380,12 @@ router.get('/leveled-all', async (_req, res) => {
 // GET /api/badges/my-badges (alias)
 router.get('/my-badges', auth, async (req, res) => {
   try {
-    const db = await ensureBadges();
-    const badges = (db.userBadges || []).filter(
-      (entry) => entry.userId === req.user.id && entry.isActive !== false
-    );
-    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
-    const userBadges = badges.map((entry) =>
-      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
-    );
+    await ensureBadges();
+    const badges = await userBadgesRepo.findManyBy({
+      userId: req.user.id,
+      isActive: { $ne: false }
+    });
+    const userBadges = await hydrateUserBadges(badges);
 
     res.json(userBadges);
   } catch (error) {
@@ -391,15 +398,17 @@ router.get('/my-badges', auth, async (req, res) => {
 router.put('/display/:badgeId', auth, async (req, res) => {
   try {
     const { isDisplayed } = req.body;
-    await withDb((db) => {
-      db.userBadges = Array.isArray(db.userBadges) ? db.userBadges : [];
-      const entry = db.userBadges.find(
-        (badge) => badge.userId === req.user.id && badge.badgeId === req.params.badgeId
-      );
+    await withRepositoryTransaction(async (context) => {
+      const entry = await userBadgesRepo.findOneBy({
+        userId: req.user.id,
+        badgeId: req.params.badgeId
+      }, {}, context);
       if (entry) {
-        entry.isDisplayed = Boolean(isDisplayed);
+        await updateStoredRecord(userBadgesRepo, entry, (draft) => ({
+          ...draft,
+          isDisplayed: Boolean(isDisplayed)
+        }), context);
       }
-      return db;
     });
 
     res.json({ message: 'Badge display updated successfully' });
@@ -412,15 +421,20 @@ router.put('/display/:badgeId', auth, async (req, res) => {
 // GET /api/badges/leaderboard/:badgeId
 router.get('/leaderboard/:badgeId', async (req, res) => {
   try {
-    const db = await ensureBadges();
-    const limit = Number(req.query.limit || 10);
-    const entries = (db.userBadges || [])
-      .filter((entry) => entry.badgeId === req.params.badgeId && entry.isActive !== false)
-      .sort((a, b) => new Date(a.earnedAt || 0) - new Date(b.earnedAt || 0))
-      .slice(0, limit);
+    await ensureBadges();
+    const limit = Math.min(100, Math.max(1, Number(req.query.limit) || 10));
+    const entries = await userBadgesRepo.findManyBy({
+      badgeId: req.params.badgeId,
+      isActive: { $ne: false }
+    }, { sort: { earnedAt: 1 }, limit });
+    const userIds = [...new Set(entries.map((entry) => entry.userId).filter(Boolean))];
+    const users = userIds.length
+      ? await usersRepo.findManyBy({ id: { $in: userIds } })
+      : [];
+    const userMap = new Map(users.map((user) => [user.id, user]));
 
     const leaderboard = entries.map((entry) => {
-      const user = (db.users || []).find((u) => u.id === entry.userId);
+      const user = userMap.get(entry.userId);
       return {
         ...entry,
         user: user
@@ -443,20 +457,22 @@ router.get('/leaderboard/:badgeId', async (req, res) => {
 // GET /api/badges/stats
 router.get('/stats', async (_req, res) => {
   try {
-    const db = await ensureBadges();
-    const totalBadges = (db.badges || []).filter((badge) => badge.isActive !== false).length;
-    const totalAwarded = (db.userBadges || []).filter((entry) => entry.isActive !== false).length;
-
+    await ensureBadges();
+    const activeQuery = { isActive: { $ne: false } };
+    const [totalBadges, totalAwarded, countsByBadge, badges] = await Promise.all([
+      badgesRepo.countBy(activeQuery),
+      userBadgesRepo.countBy(activeQuery),
+      userBadgesRepo.groupCountBy('badgeId', activeQuery),
+      badgesRepo.findManyBy(activeQuery)
+    ]);
     const rarityStats = {};
     const categoryStats = {};
-    (db.userBadges || [])
-      .filter((entry) => entry.isActive !== false)
-      .forEach((entry) => {
-        const badge = (db.badges || []).find((b) => b.id === entry.badgeId);
-        if (!badge) return;
-        rarityStats[badge.rarity] = (rarityStats[badge.rarity] || 0) + 1;
-        categoryStats[badge.category] = (categoryStats[badge.category] || 0) + 1;
-      });
+    badges.forEach((badge) => {
+      const count = Number(countsByBadge[badge.id] || 0);
+      if (!count) return;
+      rarityStats[badge.rarity] = (rarityStats[badge.rarity] || 0) + count;
+      categoryStats[badge.category] = (categoryStats[badge.category] || 0) + count;
+    });
 
     res.json({ totalBadges, totalAwarded, rarityStats, categoryStats });
   } catch (error) {
@@ -480,17 +496,7 @@ router.post('/award', moderatorAuth, async (req, res) => {
 
     let created;
 
-    await withDb((db) => {
-      db.userBadges = Array.isArray(db.userBadges) ? db.userBadges : [];
-      const existing = db.userBadges.find(
-        (entry) => entry.userId === userId && entry.badgeId === badgeId
-      );
-      if (existing) {
-        const error = new Error('User already has this badge');
-        error.code = 'ALREADY_HAS';
-        throw error;
-      }
-
+    await withRepositoryTransaction(async (context) => {
       created = {
         id: uuidv4(),
         userId,
@@ -500,8 +506,16 @@ router.post('/award', moderatorAuth, async (req, res) => {
         isDisplayed: false,
         isActive: true
       };
-      db.userBadges.push(created);
-      return db;
+      const result = await userBadgesRepo.insertIfAbsent(
+        { userId, badgeId },
+        created,
+        context
+      );
+      if (!result.inserted) {
+        const error = new Error('User already has this badge');
+        error.code = 'ALREADY_HAS';
+        throw error;
+      }
     });
 
     res.json({ message: 'Badge awarded successfully', badge: created });
@@ -523,22 +537,23 @@ router.post('/create', moderatorAuth, async (req, res) => {
     }
 
     let created;
-    await withDb((db) => {
-      db.badges = Array.isArray(db.badges) ? db.badges : [];
-      const exists = db.badges.some((badge) => badge.id === badgeData.id);
-      if (exists) {
-        const error = new Error('Badge ID already exists');
-        error.code = 'DUPLICATE';
-        throw error;
-      }
+    await withRepositoryTransaction(async (context) => {
       created = {
         ...badgeData,
         _id: badgeData.id,
         isActive: true,
         createdAt: new Date().toISOString()
       };
-      db.badges.push(created);
-      return db;
+      const result = await badgesRepo.insertIfAbsent(
+        { id: badgeData.id },
+        created,
+        context
+      );
+      if (!result.inserted) {
+        const error = new Error('Badge ID already exists');
+        error.code = 'DUPLICATE';
+        throw error;
+      }
     });
 
     res.status(201).json({ message: 'Badge created successfully', badge: created });
@@ -555,16 +570,18 @@ router.post('/create', moderatorAuth, async (req, res) => {
 router.put('/:badgeId', moderatorAuth, async (req, res) => {
   try {
     let updated;
-    await withDb((db) => {
-      const badge = (db.badges || []).find((entry) => entry.id === req.params.badgeId);
+    await withRepositoryTransaction(async (context) => {
+      const badge = await badgesRepo.findById(req.params.badgeId, context);
       if (!badge) {
         const error = new Error('Badge not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
-      Object.assign(badge, req.body);
-      updated = badge;
-      return db;
+      updated = await badgesRepo.updateById(
+        badge.id,
+        (draft) => ({ ...draft, ...req.body, id: badge.id }),
+        context
+      );
     });
 
     res.json({ message: 'Badge updated successfully', badge: updated });
@@ -580,15 +597,18 @@ router.put('/:badgeId', moderatorAuth, async (req, res) => {
 // Moderator: delete badge (soft delete)
 router.delete('/:badgeId', moderatorAuth, async (req, res) => {
   try {
-    await withDb((db) => {
-      const badge = (db.badges || []).find((entry) => entry.id === req.params.badgeId);
+    await withRepositoryTransaction(async (context) => {
+      const badge = await badgesRepo.findById(req.params.badgeId, context);
       if (!badge) {
         const error = new Error('Badge not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
-      badge.isActive = false;
-      return db;
+      await badgesRepo.updateById(
+        badge.id,
+        (draft) => ({ ...draft, isActive: false }),
+        context
+      );
     });
 
     res.json({ message: 'Badge deleted successfully' });
@@ -604,8 +624,7 @@ router.delete('/:badgeId', moderatorAuth, async (req, res) => {
 // Moderator: list all badges
 router.get('/manage/all', moderatorAuth, async (_req, res) => {
   try {
-    const db = await ensureBadges();
-    res.json((db.badges || []).map(normalizeBadge));
+    res.json((await ensureBadges()).map(normalizeBadge));
   } catch (error) {
     console.error('Error fetching all badges:', error);
     res.status(500).json({ message: 'Server error' });
@@ -615,14 +634,9 @@ router.get('/manage/all', moderatorAuth, async (_req, res) => {
 // Moderator: user badge history
 router.get('/manage/user/:userId/history', moderatorAuth, async (req, res) => {
   try {
-    const db = await ensureBadges();
-    const entries = (db.userBadges || []).filter(
-      (entry) => entry.userId === req.params.userId
-    );
-    const badgeMap = new Map((db.badges || []).map((badge) => [badge.id, badge]));
-    const history = entries.map((entry) =>
-      buildUserBadgeEntry(entry, badgeMap.get(entry.badgeId))
-    );
+    await ensureBadges();
+    const entries = await userBadgesRepo.findManyBy({ userId: req.params.userId });
+    const history = await hydrateUserBadges(entries);
     res.json(history);
   } catch (error) {
     console.error('Error fetching user badge history:', error);
@@ -633,18 +647,22 @@ router.get('/manage/user/:userId/history', moderatorAuth, async (req, res) => {
 // Moderator: revoke badge
 router.delete('/revoke/:userId/:badgeId', moderatorAuth, async (req, res) => {
   try {
-    await withDb((db) => {
-      const entry = (db.userBadges || []).find(
-        (badge) =>
-          badge.userId === req.params.userId && badge.badgeId === req.params.badgeId
-      );
+    await withRepositoryTransaction(async (context) => {
+      const entry = await userBadgesRepo.findOneBy({
+        userId: req.params.userId,
+        badgeId: req.params.badgeId
+      }, {}, context);
       if (!entry) {
         const error = new Error('User badge not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
-      entry.isActive = false;
-      return db;
+      await updateStoredRecord(
+        userBadgesRepo,
+        entry,
+        (draft) => ({ ...draft, isActive: false }),
+        context
+      );
     });
 
     res.json({ message: 'Badge revoked successfully' });
@@ -663,16 +681,11 @@ router.delete('/revoke/:userId/:badgeId', moderatorAuth, async (req, res) => {
 router.get('/tournament/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const db = await readDb();
-    
-    const userBadges = (db.userBadges || []).filter(
-      badge => badge.userId === userId && badge.type === 'tournament_winner' && badge.displayOnProfile
-    );
-    
-    // Sort by date won (newest first)
-    const sortedBadges = userBadges.sort((a, b) => 
-      new Date(b.wonAt) - new Date(a.wonAt)
-    );
+    const sortedBadges = await userBadgesRepo.findManyBy({
+      userId,
+      type: 'tournament_winner',
+      displayOnProfile: true
+    }, { sort: { wonAt: -1 }, limit: 100 });
     
     res.json({
       success: true,

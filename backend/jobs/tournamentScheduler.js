@@ -1,357 +1,321 @@
 import cron from 'node-cron';
 import { v4 as uuidv4 } from 'uuid';
+import { isBackgroundJobsAuthority } from '../config/runtimeConfig.js';
 import {
-  withDb,
   notificationsRepo,
   tournamentsRepo,
   userBadgesRepo,
-  usersRepo
+  usersRepo,
+  withRepositoryTransaction
 } from '../repositories/index.js';
 
-const getAllTournaments = async () => tournamentsRepo.getAll();
+const isSchedulerAuthority = () =>
+  process.env.NODE_ENV !== 'test' &&
+  isBackgroundJobsAuthority();
 
-const updateTournament = async (id, tournament) =>
-  tournamentsRepo.updateById(id, () => tournament);
-
-// Funkcja wysyłająca powiadomienia do uczestników
-async function notifyParticipants(tournament, type, message) {
-  try {
-    const participants = tournament.participants || [];
-
-    await notificationsRepo.updateAll((notifications) => {
-      participants.forEach((participant) => {
-        notifications.push({
-          id: uuidv4(),
-          userId: participant.userId,
-          type: 'tournament',
-          title: type === 'start' ? '🏆 Tournament Started!' : '🎉 Tournament Completed!',
-          message: message,
-          data: {
-            tournamentId: tournament.id,
-            tournamentTitle: tournament.title
-          },
-          read: false,
-          createdAt: new Date().toISOString()
-        });
-      });
-
-      return notifications;
+const processTournamentsByStatus = async (status, handler) => {
+  let lastId = '';
+  while (true) {
+    const query = lastId ? { status, id: { $gt: lastId } } : { status };
+    const batch = await tournamentsRepo.findManyBy(query, {
+      sort: { id: 1 },
+      limit: 200
     });
-    
-    console.log(`Notifications sent to ${participants.length} participants for tournament ${tournament.id}`);
-  } catch (error) {
-    console.error('Error sending notifications:', error);
+    if (batch.length === 0) return;
+    for (const tournament of batch) await handler(tournament);
+    if (batch.length < 200) return;
+    lastId = batch.at(-1).id;
   }
-}
+};
 
-// Funkcja dodająca badge zwycięzcy
-async function addWinnerBadge(userId, tournament) {
-  try {
-    await withDb((db) => {
-      const badge = {
-        id: uuidv4(),
-        userId: userId,
-        type: 'tournament_winner',
-        tournamentId: tournament.id,
-        tournamentTitle: tournament.title,
-        teamMembers: tournament.participants.find((p) => p.userId === userId)?.characters || [],
-        wonAt: new Date().toISOString(),
-        displayOnProfile: true
-      };
-
-      userBadgesRepo.insert(badge, { db });
-
-      usersRepo.updateById(
-        userId,
-        (user) => {
-          user.tournamentsWon = (user.tournamentsWon || 0) + 1;
-          return user;
+const notifyParticipants = async (tournament, type, message, context) => {
+  for (const participant of tournament.participants || []) {
+    if (!participant?.userId) continue;
+    const id = `tournament:${tournament.id}:${type}:${participant.userId}`;
+    await notificationsRepo.insertIfAbsent(
+      { id },
+      {
+        id,
+        userId: participant.userId,
+        type: 'tournament',
+        title:
+          type === 'start' ? 'Tournament Started!' : 'Tournament Completed!',
+        message,
+        data: {
+          tournamentId: tournament.id,
+          tournamentTitle: tournament.title
         },
-        { db }
-      );
-
-      return db;
-    });
-    
-    console.log(`Winner badge added for user ${userId} in tournament ${tournament.id}`);
-  } catch (error) {
-    console.error('Error adding winner badge:', error);
+        read: false,
+        createdAt: new Date().toISOString()
+      },
+      context
+    );
   }
-}
+};
 
-// Funkcja generująca brackety automatycznie
-async function generateBracketsForTournament(tournament) {
-  try {
-    const participants = tournament.participants || [];
-    
-    if (participants.length < 2) {
-      console.log(`Tournament ${tournament.id} has insufficient participants`);
-      return false;
+const addWinnerBadge = async (userId, tournament, context) => {
+  const id = `tournament-winner:${tournament.id}:${userId}`;
+  const { inserted } = await userBadgesRepo.insertIfAbsent(
+    { id },
+    {
+      id,
+      badgeId: `tournament:${tournament.id}`,
+      userId,
+      type: 'tournament_winner',
+      tournamentId: tournament.id,
+      tournamentTitle: tournament.title,
+      teamMembers:
+        tournament.participants.find((entry) => entry.userId === userId)
+          ?.characters || [],
+      wonAt: new Date().toISOString(),
+      displayOnProfile: true,
+      isActive: true
+    },
+    context
+  );
+  if (!inserted) return;
+  await usersRepo.updateById(
+    userId,
+    (user) => {
+      user.tournamentsWon = Number(user.tournamentsWon || 0) + 1;
+      return user;
+    },
+    context
+  );
+};
+
+const buildTournamentBrackets = (participants) => {
+  const ranked = structuredClone(participants).sort(
+    (left, right) => Number(right.points || 0) - Number(left.points || 0)
+  );
+  let bracketSize = 2;
+  while (bracketSize < ranked.length) bracketSize *= 2;
+
+  const matches = [];
+  for (let index = 0; index < bracketSize / 2; index += 1) {
+    const participant1 = ranked[index] || null;
+    const participant2 = ranked[bracketSize - 1 - index] || null;
+    const match = {
+      id: uuidv4(),
+      round: 1,
+      matchNumber: index + 1,
+      participant1: participant1
+        ? {
+            userId: participant1.userId,
+            username: participant1.username,
+            characters: participant1.characters
+          }
+        : { type: 'bye' },
+      participant2: participant2
+        ? {
+            userId: participant2.userId,
+            username: participant2.username,
+            characters: participant2.characters
+          }
+        : { type: 'bye' },
+      status: 'pending',
+      votes: {},
+      winner: null
+    };
+    if (!participant2 && participant1) {
+      match.status = 'completed';
+      match.winner = participant1.userId;
+    } else if (!participant1 && participant2) {
+      match.status = 'completed';
+      match.winner = participant2.userId;
     }
+    matches.push(match);
+  }
 
-    // Sortuj uczestników według punktów
-    participants.sort((a, b) => (b.points || 0) - (a.points || 0));
-
-    // Znajdź najbliższą potęgę 2
-    let bracketSize = 2;
-    while (bracketSize < participants.length) {
-      bracketSize *= 2;
-    }
-
-    const byeCount = bracketSize - participants.length;
-    const matches = [];
-
-    // Pierwsza runda z bye
-    for (let i = 0; i < bracketSize / 2; i++) {
-      const participant1 = participants[i] || null;
-      const participant2 = participants[bracketSize - 1 - i] || null;
-
-      const match = {
+  const totalRounds = Math.log2(bracketSize);
+  for (let round = 2; round <= totalRounds; round += 1) {
+    const matchesInRound = bracketSize / 2 ** round;
+    for (let index = 0; index < matchesInRound; index += 1) {
+      matches.push({
         id: uuidv4(),
-        round: 1,
-        matchNumber: i + 1,
-        participant1: participant1 ? {
-          userId: participant1.userId,
-          username: participant1.username,
-          characters: participant1.characters
-        } : { type: 'bye' },
-        participant2: participant2 ? {
-          userId: participant2.userId,
-          username: participant2.username,
-          characters: participant2.characters
-        } : { type: 'bye' },
+        round,
+        matchNumber: index + 1,
+        participant1: { type: 'tbd' },
+        participant2: { type: 'tbd' },
         status: 'pending',
         votes: {},
         winner: null
-      };
-
-      // Auto-advance jeśli jest bye
-      if (!participant2) {
-        match.status = 'completed';
-        match.winner = participant1.userId;
-      } else if (!participant1) {
-        match.status = 'completed';
-        match.winner = participant2.userId;
-      }
-
-      matches.push(match);
+      });
     }
+  }
+  return matches;
+};
 
-    // Oblicz liczbę rund
-    const totalRounds = Math.log2(bracketSize);
-    
-    // Stwórz puste mecze dla pozostałych rund
-    for (let round = 2; round <= totalRounds; round++) {
-      const matchesInRound = bracketSize / Math.pow(2, round);
-      
-      for (let i = 0; i < matchesInRound; i++) {
-        matches.push({
-          id: uuidv4(),
-          round,
-          matchNumber: i + 1,
-          participant1: { type: 'tbd' },
-          participant2: { type: 'tbd' },
-          status: 'pending',
-          votes: {},
-          winner: null
-        });
-      }
-    }
+async function generateBracketsForTournament(tournamentOrId) {
+  const tournamentId =
+    typeof tournamentOrId === 'string' ? tournamentOrId : tournamentOrId?.id;
+  if (!tournamentId) return false;
+  return withRepositoryTransaction(async (context) => {
+    const tournament = await tournamentsRepo.findById(tournamentId, context);
+    if (!tournament || tournament.status !== 'recruiting') return false;
+    const participants = tournament.participants || [];
+    if (participants.length < 2) return false;
 
-    // Zaktualizuj turniej
-    tournament.brackets = matches;
+    tournament.brackets = buildTournamentBrackets(participants);
     tournament.currentRound = 1;
     tournament.status = 'active';
-
-    await updateTournament(tournament.id, tournament);
-    
-    // Wyślij powiadomienia do uczestników
+    tournament.updatedAt = new Date().toISOString();
+    await tournamentsRepo.updateById(tournamentId, () => tournament, context);
     await notifyParticipants(
-      tournament, 
-      'start', 
-      `Tournament "${tournament.title}" has started! Check out the brackets and vote for your favorites.`
+      tournament,
+      'start',
+      `Tournament "${tournament.title}" has started! Check the brackets and vote for your favorites.`,
+      context
     );
-    
-    console.log(`Brackets generated for tournament ${tournament.id}`);
     return true;
-  } catch (error) {
-    console.error('Error generating brackets:', error);
-    return false;
-  }
+  });
 }
 
-// Funkcja zaawansująca rundę turnieju
-async function advanceRound(tournament) {
-  try {
+async function advanceRound(tournamentOrId) {
+  const tournamentId =
+    typeof tournamentOrId === 'string' ? tournamentOrId : tournamentOrId?.id;
+  if (!tournamentId) return false;
+  return withRepositoryTransaction(async (context) => {
+    const tournament = await tournamentsRepo.findById(tournamentId, context);
+    if (!tournament || tournament.status !== 'active') return false;
     const matches = tournament.brackets || [];
-    const currentRound = tournament.currentRound || 1;
-    
-    // Znajdź mecze z obecnej rundy
-    const currentRoundMatches = matches.filter(m => m.round === currentRound);
-    
-    // Sprawdź, czy wszystkie mecze są ukończone
-    const allCompleted = currentRoundMatches.every(m => m.status === 'completed');
-    
-    if (!allCompleted) {
-      console.log(`Tournament ${tournament.id} - not all matches completed in round ${currentRound}`);
+    const currentRound = Number(tournament.currentRound || 1);
+    const currentRoundMatches = matches.filter(
+      (match) => Number(match.round) === currentRound
+    );
+    if (
+      currentRoundMatches.length === 0 ||
+      !currentRoundMatches.every((match) => match.status === 'completed')
+    ) {
       return false;
     }
 
-    // Znajdź mecze z następnej rundy
     const nextRound = currentRound + 1;
-    const nextRoundMatches = matches.filter(m => m.round === nextRound);
-    
+    const nextRoundMatches = matches.filter(
+      (match) => Number(match.round) === nextRound
+    );
     if (nextRoundMatches.length === 0) {
-      // Turniej zakończony
+      const winnerId = currentRoundMatches[0]?.winner;
       tournament.status = 'completed';
-      const finalMatch = currentRoundMatches[0];
-      tournament.winner = finalMatch.winner;
-      
-      // Dodaj badge zwycięzcy
-      if (finalMatch.winner) {
-        await addWinnerBadge(finalMatch.winner, tournament);
-        
-        // Wyślij powiadomienia o zakończeniu
-        const winnerParticipant = tournament.participants.find(p => p.userId === finalMatch.winner);
+      tournament.winner = winnerId || null;
+      tournament.updatedAt = new Date().toISOString();
+      await tournamentsRepo.updateById(tournamentId, () => tournament, context);
+      if (winnerId) {
+        await addWinnerBadge(winnerId, tournament, context);
+        const winner = tournament.participants.find(
+          (participant) => participant.userId === winnerId
+        );
         await notifyParticipants(
           tournament,
           'complete',
-          `Tournament "${tournament.title}" has ended! Winner: ${winnerParticipant?.username || 'Unknown'} 🏆`
+          `Tournament "${tournament.title}" has ended! Winner: ${winner?.username || 'Unknown'}.`,
+          context
         );
       }
-      
-      await updateTournament(tournament.id, tournament);
-      console.log(`Tournament ${tournament.id} completed! Winner: ${finalMatch.winner}`);
       return true;
     }
 
-    // Zaawansuj zwycięzców do następnej rundy
-    for (let i = 0; i < nextRoundMatches.length; i++) {
-      const match1 = currentRoundMatches[i * 2];
-      const match2 = currentRoundMatches[i * 2 + 1];
-      
-      if (match1 && match1.winner) {
-        const winner1 = tournament.participants.find(p => p.userId === match1.winner);
-        nextRoundMatches[i].participant1 = {
-          userId: winner1.userId,
-          username: winner1.username,
-          characters: winner1.characters
+    for (let index = 0; index < nextRoundMatches.length; index += 1) {
+      const firstWinnerId = currentRoundMatches[index * 2]?.winner;
+      const secondWinnerId = currentRoundMatches[index * 2 + 1]?.winner;
+      const firstWinner = tournament.participants.find(
+        (participant) => participant.userId === firstWinnerId
+      );
+      const secondWinner = tournament.participants.find(
+        (participant) => participant.userId === secondWinnerId
+      );
+      if (firstWinner) {
+        nextRoundMatches[index].participant1 = {
+          userId: firstWinner.userId,
+          username: firstWinner.username,
+          characters: firstWinner.characters
         };
       }
-      
-      if (match2 && match2.winner) {
-        const winner2 = tournament.participants.find(p => p.userId === match2.winner);
-        nextRoundMatches[i].participant2 = {
-          userId: winner2.userId,
-          username: winner2.username,
-          characters: winner2.characters
+      if (secondWinner) {
+        nextRoundMatches[index].participant2 = {
+          userId: secondWinner.userId,
+          username: secondWinner.username,
+          characters: secondWinner.characters
         };
       }
-      
-      // Ustaw status meczu
-      if (nextRoundMatches[i].participant1.type !== 'tbd' && 
-          nextRoundMatches[i].participant2.type !== 'tbd') {
-        nextRoundMatches[i].status = 'active';
-      }
+      if (firstWinner && secondWinner) nextRoundMatches[index].status = 'active';
     }
-
     tournament.currentRound = nextRound;
-    await updateTournament(tournament.id, tournament);
-    
-    console.log(`Tournament ${tournament.id} advanced to round ${nextRound}`);
+    tournament.updatedAt = new Date().toISOString();
+    await tournamentsRepo.updateById(tournamentId, () => tournament, context);
     return true;
-  } catch (error) {
-    console.error('Error advancing round:', error);
-    return false;
-  }
+  });
 }
 
-// Cron job sprawdzający turnieje co godzinę
-cron.schedule('0 * * * *', async () => {
-  console.log('Running tournament scheduler...');
-  
-  try {
-    const tournaments = await getAllTournaments();
-    
-    for (const tournament of tournaments) {
-      const now = new Date();
-      
-      // Sprawdź turnieje w fazie rekrutacji
-      if (tournament.status === 'recruiting' && tournament.recruitmentEndDate) {
-        const endDate = new Date(tournament.recruitmentEndDate);
-        
-        if (now >= endDate) {
-          console.log(`Starting tournament ${tournament.id}`);
-          await generateBracketsForTournament(tournament);
-        }
-      }
-      
-      // Sprawdź aktywne turnieje
-      if (tournament.status === 'active' && tournament.battleTime) {
-        const battleTime = tournament.battleTime; // Format "HH:MM"
-        const [hours, minutes] = battleTime.split(':').map(Number);
-        
-        const currentHour = now.getHours();
-        const currentMinute = now.getMinutes();
-        
-        // Jeśli jest czas bitwy (z tolerancją 5 minut)
-        if (currentHour === hours && currentMinute >= minutes && currentMinute < minutes + 5) {
-          console.log(`Checking if round can advance for tournament ${tournament.id}`);
-          await advanceRound(tournament);
-        }
-      }
+const completeMatchesAtVoteThreshold = async (tournamentId) =>
+  withRepositoryTransaction(async (context) => {
+    const tournament = await tournamentsRepo.findById(tournamentId, context);
+    if (!tournament || tournament.status !== 'active') return false;
+    const currentRound = Number(tournament.currentRound || 1);
+    let updated = false;
+    for (const match of tournament.brackets || []) {
+      if (Number(match.round) !== currentRound || match.status !== 'active') continue;
+      const votes = Object.values(match.votes || {});
+      const firstVotes = votes.filter(
+        (vote) => vote === match.participant1?.userId
+      ).length;
+      const secondVotes = votes.filter(
+        (vote) => vote === match.participant2?.userId
+      ).length;
+      if (firstVotes < 10 && secondVotes < 10) continue;
+      match.winner =
+        firstVotes > secondVotes
+          ? match.participant1.userId
+          : match.participant2.userId;
+      match.status = 'completed';
+      updated = true;
     }
-  } catch (error) {
-    console.error('Error in tournament scheduler:', error);
-  }
-});
+    if (!updated) return false;
+    tournament.updatedAt = new Date().toISOString();
+    await tournamentsRepo.updateById(tournamentId, () => tournament, context);
+    return true;
+  });
 
-// Dodatkowy cron sprawdzający zakończenie głosowania co 10 minut
-cron.schedule('*/10 * * * *', async () => {
-  console.log('Checking active matches for vote completion...');
-  
-  try {
-    const tournaments = await getAllTournaments();
-    
-    for (const tournament of tournaments) {
-      if (tournament.status !== 'active') continue;
-      
-      const matches = tournament.brackets || [];
-      const currentRound = tournament.currentRound || 1;
-      const currentRoundMatches = matches.filter(m => m.round === currentRound && m.status === 'active');
-      
-      let updated = false;
-      
-      for (const match of currentRoundMatches) {
-        const votes = match.votes || {};
-        const participant1Votes = Object.values(votes).filter(v => v === match.participant1?.userId).length;
-        const participant2Votes = Object.values(votes).filter(v => v === match.participant2?.userId).length;
-        
-        // Jeśli któryś osiągnął próg głosów (np. 10), zakończ mecz
-        const VOTE_THRESHOLD = 10;
-        
-        if (participant1Votes >= VOTE_THRESHOLD || participant2Votes >= VOTE_THRESHOLD) {
-          match.winner = participant1Votes > participant2Votes ? 
-            match.participant1.userId : match.participant2.userId;
-          match.status = 'completed';
-          updated = true;
-          
-          console.log(`Match ${match.id} completed by votes in tournament ${tournament.id}`);
+if (isSchedulerAuthority()) {
+  cron.schedule('0 * * * *', async () => {
+    const now = new Date();
+    try {
+      await processTournamentsByStatus('recruiting', async (tournament) => {
+        if (
+          tournament.recruitmentEndDate &&
+          now >= new Date(tournament.recruitmentEndDate)
+        ) {
+          await generateBracketsForTournament(tournament.id);
         }
-      }
-      
-      if (updated) {
-        await updateTournament(tournament.id, tournament);
-      }
+      });
+      await processTournamentsByStatus('active', async (tournament) => {
+        if (!tournament.battleTime) return;
+        const [hours, minutes] = String(tournament.battleTime).split(':').map(Number);
+        if (
+          now.getHours() === hours &&
+          now.getMinutes() >= minutes &&
+          now.getMinutes() < minutes + 5
+        ) {
+          await advanceRound(tournament.id);
+        }
+      });
+    } catch (error) {
+      console.error('Error in tournament scheduler:', error);
     }
-  } catch (error) {
-    console.error('Error checking match votes:', error);
-  }
-});
+  });
 
-console.log('Tournament scheduler initialized');
+  cron.schedule('*/10 * * * *', async () => {
+    try {
+      await processTournamentsByStatus('active', (tournament) =>
+        completeMatchesAtVoteThreshold(tournament.id)
+      );
+    } catch (error) {
+      console.error('Error checking tournament match votes:', error);
+    }
+  });
+  console.log('Tournament scheduler initialized on this authority process.');
+} else {
+  console.log('Tournament scheduler is disabled on this API process.');
+}
 
-export {
-  generateBracketsForTournament,
-  advanceRound
-};
+export { advanceRound, generateBracketsForTournament };

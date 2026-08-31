@@ -9,7 +9,13 @@ import {
   getUnreadCount
 } from '../controllers/messageController.js';
 import auth from '../middleware/auth.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  blocksRepo,
+  conversationsRepo,
+  messagesRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { parsePagination } from '../utils/pagination.js';
@@ -20,13 +26,6 @@ const resolveUserId = (user) => user?.id || user?._id;
 
 const findUserById = (db, userId) =>
   (db.users || []).find((entry) => resolveUserId(entry) === userId);
-
-const areUsersBlocked = (db, firstUserId, secondUserId) =>
-  (db.blocks || []).some(
-    (block) =>
-      (block.blockerId === firstUserId && block.blockedId === secondUserId) ||
-      (block.blockerId === secondUserId && block.blockedId === firstUserId)
-  );
 
 const buildConversationResponse = (db, conversation, viewerId) => {
   const participants = (conversation.participants || []).map((participantId) => {
@@ -40,15 +39,15 @@ const buildConversationResponse = (db, conversation, viewerId) => {
     };
   });
 
-  const messages = conversation.messages || [];
-  const lastMessage = messages[messages.length - 1] || null;
-  const unreadCount = messages.filter((message) => {
-    if (message.senderId === viewerId) {
-      return false;
-    }
-    const readBy = Array.isArray(message.readBy) ? message.readBy : [];
-    return !readBy.includes(viewerId);
-  }).length;
+  const legacyMessages = conversation.messages || [];
+  const lastMessage = conversation.lastMessage || legacyMessages[legacyMessages.length - 1] || null;
+  const unreadCount = Number.isFinite(conversation.unreadCounts?.[viewerId])
+    ? conversation.unreadCounts[viewerId]
+    : legacyMessages.filter((message) => {
+        if (message.senderId === viewerId) return false;
+        const readBy = Array.isArray(message.readBy) ? message.readBy : [];
+        return !readBy.includes(viewerId);
+      }).length;
 
   return {
     id: conversation.id,
@@ -73,7 +72,6 @@ router.get('/unread/count', auth, getUnreadCount);
 // @access  Private
 router.get('/conversation/:userId', auth, async (req, res) => {
   try {
-    const db = await readDb();
     const currentUserId = req.user.id;
     const otherUserId = req.params.userId;
     const { page, limit } = parsePagination(req.query, {
@@ -82,17 +80,22 @@ router.get('/conversation/:userId', auth, async (req, res) => {
     });
 
     // Find all messages between these two users
-    const allMessages = (db.messages || []).filter(message =>
-      !message.deleted &&
-      (
-        (message.senderId === currentUserId && message.recipientId === otherUserId) ||
-        (message.senderId === otherUserId && message.recipientId === currentUserId)
-      )
-    ).sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-    const messages = allMessages.slice((page - 1) * limit, page * limit);
-
-    // Get other user info
-    const otherUser = findUserById(db, otherUserId);
+    const query = {
+      deleted: { $ne: true },
+      $or: [
+        { senderId: currentUserId, recipientId: otherUserId },
+        { senderId: otherUserId, recipientId: currentUserId }
+      ]
+    };
+    const [messages, totalMessages, otherUser] = await Promise.all([
+      messagesRepo.findManyBy(query, {
+        sort: { createdAt: 1 },
+        skip: (page - 1) * limit,
+        limit
+      }),
+      messagesRepo.countBy(query),
+      usersRepo.findById(otherUserId)
+    ]);
 
     res.json({
       messages,
@@ -105,9 +108,9 @@ router.get('/conversation/:userId', auth, async (req, res) => {
       },
       pagination: {
         currentPage: page,
-        totalPages: Math.ceil(allMessages.length / limit) || 1,
-        totalMessages: allMessages.length,
-        hasNext: page * limit < allMessages.length,
+        totalPages: Math.ceil(totalMessages / limit) || 1,
+        totalMessages,
+        hasNext: page * limit < totalMessages,
         hasPrev: page > 1
       }
     });
@@ -125,16 +128,10 @@ router.put('/conversation/:userId/read-all', auth, async (req, res) => {
     const currentUserId = req.user.id;
     const otherUserId = req.params.userId;
 
-    await withDb(async (db) => {
-      // Mark all messages from otherUserId to currentUserId as read
-      (db.messages || []).forEach(message => {
-        if (message.senderId === otherUserId && message.recipientId === currentUserId && !message.read) {
-          message.read = true;
-          message.readAt = new Date().toISOString();
-        }
-      });
-      return db;
-    });
+    await messagesRepo.patchManyBy(
+      { senderId: otherUserId, recipientId: currentUserId, read: { $ne: true } },
+      { read: true, readAt: new Date().toISOString() }
+    );
 
     res.json({ msg: 'Messages marked as read' });
   } catch (error) {
@@ -151,14 +148,19 @@ router.get('/conversations/:userId', auth, async (req, res) => {
     if (req.params.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
-    const db = await readDb();
-    const conversations = (db.conversations || []).filter((conversation) =>
-      (conversation.participants || []).includes(req.params.userId)
+    const conversations = await conversationsRepo.findManyBy(
+      { participants: req.params.userId },
+      { sort: { updatedAt: -1 }, limit: 100 }
     );
-    const payload = conversations
-      .slice()
-      .sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
-      .map((conversation) => buildConversationResponse(db, conversation, req.params.userId));
+    const participantIds = [...new Set(
+      conversations.flatMap((conversation) => conversation.participants || [])
+    )];
+    const users = participantIds.length
+      ? await usersRepo.findManyBy({ id: { $in: participantIds } })
+      : [];
+    const payload = conversations.map((conversation) =>
+      buildConversationResponse({ users }, conversation, req.params.userId)
+    );
     res.json(payload);
   } catch (error) {
     console.error('Error fetching conversations:', error);
@@ -180,45 +182,69 @@ router.post('/conversations', auth, async (req, res) => {
       return res.status(400).json({ message: 'Recipient required' });
     }
     const trustedParticipants = [req.user.id, requestedRecipientId];
+    const participantKey = [...trustedParticipants].sort().join(':');
 
-    let created;
-    await withDb((db) => {
-      db.conversations = Array.isArray(db.conversations) ? db.conversations : [];
-      if (!findUserById(db, requestedRecipientId)) {
-        const error = new Error('Recipient not found');
-        error.code = 'RECIPIENT_NOT_FOUND';
-        throw error;
-      }
-      if (areUsersBlocked(db, req.user.id, requestedRecipientId)) {
-        const error = new Error('Messaging is blocked');
-        error.code = 'BLOCKED';
-        throw error;
-      }
-      const existing = db.conversations.find((conversation) => {
+    const [recipient, currentUser, blockingRelationship] = await Promise.all([
+      usersRepo.findById(requestedRecipientId),
+      usersRepo.findById(req.user.id),
+      blocksRepo.findOneBy({
+        $or: [
+          { blockerId: req.user.id, blockedId: requestedRecipientId },
+          { blockerId: requestedRecipientId, blockedId: req.user.id }
+        ]
+      })
+    ]);
+    if (!recipient) {
+      const error = new Error('Recipient not found');
+      error.code = 'RECIPIENT_NOT_FOUND';
+      throw error;
+    }
+    if (blockingRelationship) {
+      const error = new Error('Messaging is blocked');
+      error.code = 'BLOCKED';
+      throw error;
+    }
+
+    let created = await conversationsRepo.findOneBy({ participantKey });
+    if (!created) {
+      const legacyCandidates = await conversationsRepo.findManyBy({
+        participants: req.user.id
+      }, { sort: { updatedAt: -1 }, limit: 200 });
+      created = legacyCandidates.find((conversation) => {
         const ids = conversation.participants || [];
-        return (
-          ids.length === trustedParticipants.length &&
-          trustedParticipants.every((id) => ids.includes(id))
-        );
+        return ids.length === 2 && trustedParticipants.every((id) => ids.includes(id));
       });
-      if (existing) {
-        created = existing;
-        return db;
+      if (created && !created.participantKey) {
+        created = await conversationsRepo.updateById(created.id, (conversation) => {
+          conversation.participantKey = participantKey;
+          return conversation;
+        });
       }
-
-      created = {
+    }
+    if (!created) {
+      const candidate = {
         id: uuidv4(),
         participants: trustedParticipants,
+        participantKey,
         messages: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      db.conversations.push(created);
-      return db;
-    });
+      try {
+        created = await conversationsRepo.insert(candidate);
+      } catch (error) {
+        if (error?.code !== 11000) throw error;
+        created = await conversationsRepo.findOneBy({ participantKey });
+      }
+    }
 
-    const db = await readDb();
-    res.status(201).json(buildConversationResponse(db, created, req.user.id));
+    res.status(201).json(
+      buildConversationResponse(
+        { users: [currentUser, recipient].filter(Boolean) },
+        created,
+        req.user.id
+      )
+    );
   } catch (error) {
     if (error.code === 'RECIPIENT_NOT_FOUND') {
       return res.status(404).json({ message: 'Recipient not found' });
@@ -246,48 +272,65 @@ router.post('/send', auth, async (req, res) => {
     }
 
     let created;
-    await withDb((db) => {
-      const conversation = (db.conversations || []).find(
-        (entry) => entry.id === conversationId
+    await withRepositoryTransaction(async (context) => {
+      const existingConversation = await conversationsRepo.findById(
+        conversationId,
+        'id',
+        context
       );
-      if (!conversation) {
+      if (!existingConversation) {
         const error = new Error('Conversation not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
-      if (!(conversation.participants || []).includes(req.user.id)) {
+      if (!(existingConversation.participants || []).includes(req.user.id)) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
-      const otherParticipantIds = (conversation.participants || []).filter(
+      const otherParticipantIds = (existingConversation.participants || []).filter(
         (participantId) => participantId !== req.user.id
       );
-      if (
-        otherParticipantIds.some((participantId) =>
-          areUsersBlocked(db, req.user.id, participantId)
-        )
-      ) {
+      const blockingRelationship = otherParticipantIds.length
+        ? await blocksRepo.findOneBy({
+          $or: otherParticipantIds.flatMap((participantId) => [
+            { blockerId: req.user.id, blockedId: participantId },
+            { blockerId: participantId, blockedId: req.user.id }
+          ])
+        }, {}, context)
+        : null;
+      if (blockingRelationship) {
         const error = new Error('Messaging is blocked');
         error.code = 'BLOCKED';
         throw error;
       }
 
-      conversation.messages = Array.isArray(conversation.messages)
-        ? conversation.messages
-        : [];
+      const recipientId = otherParticipantIds[0] || null;
       created = {
         id: uuidv4(),
         conversationId,
         senderId: req.user.id,
+        recipientId,
         content: normalizedContent,
+        subject: '',
+        read: false,
+        deleted: false,
+        createdAt: new Date().toISOString(),
         timestamp: new Date().toISOString(),
         type: 'text',
         readBy: [req.user.id]
       };
-      conversation.messages.push(created);
-      conversation.updatedAt = new Date().toISOString();
-      return db;
+      await messagesRepo.insert(created, context);
+      await conversationsRepo.updateById(conversationId, (conversation) => {
+        conversation.lastMessage = created;
+        conversation.updatedAt = created.createdAt;
+        conversation.unreadCounts = conversation.unreadCounts || {};
+        if (recipientId) {
+          conversation.unreadCounts[recipientId] =
+            Number(conversation.unreadCounts[recipientId] || 0) + 1;
+        }
+        return conversation;
+      }, 'id', context);
     });
 
     res.status(201).json(created);
@@ -311,9 +354,11 @@ router.post('/send', auth, async (req, res) => {
 // @access  Private
 router.post('/read/:conversationId', auth, async (req, res) => {
   try {
-    await withDb((db) => {
-      const conversation = (db.conversations || []).find(
-        (entry) => entry.id === req.params.conversationId
+    await withRepositoryTransaction(async (context) => {
+      const conversation = await conversationsRepo.findById(
+        req.params.conversationId,
+        'id',
+        context
       );
       if (!conversation) {
         const error = new Error('Conversation not found');
@@ -325,17 +370,23 @@ router.post('/read/:conversationId', auth, async (req, res) => {
         error.code = 'ACCESS_DENIED';
         throw error;
       }
-
-      conversation.messages = Array.isArray(conversation.messages)
-        ? conversation.messages
-        : [];
-      conversation.messages.forEach((message) => {
+      await messagesRepo.patchManyBy({
+        conversationId: req.params.conversationId,
+        recipientId: req.user.id,
+        read: { $ne: true }
+      }, { read: true, readAt: new Date().toISOString() }, context);
+      await conversationsRepo.updateById(req.params.conversationId, (stored) => {
+        stored.unreadCounts = stored.unreadCounts || {};
+        stored.unreadCounts[req.user.id] = 0;
+        stored.messages = Array.isArray(stored.messages) ? stored.messages : [];
+        stored.messages.forEach((message) => {
         message.readBy = Array.isArray(message.readBy) ? message.readBy : [];
         if (!message.readBy.includes(req.user.id)) {
           message.readBy.push(req.user.id);
         }
-      });
-      return db;
+        });
+        return stored;
+      }, 'id', context);
     });
 
     res.json({ message: 'Marked as read' });
@@ -356,10 +407,7 @@ router.post('/read/:conversationId', auth, async (req, res) => {
 // @access  Private
 router.get('/conversations/:conversationId/messages', auth, async (req, res) => {
   try {
-    const db = await readDb();
-    const conversation = (db.conversations || []).find(
-      (entry) => entry.id === req.params.conversationId
-    );
+    const conversation = await conversationsRepo.findById(req.params.conversationId);
 
     if (!conversation) {
       return res.status(404).json({ message: 'Conversation not found' });
@@ -367,7 +415,27 @@ router.get('/conversations/:conversationId/messages', auth, async (req, res) => 
     if (!(conversation.participants || []).includes(req.user.id)) {
       return res.status(403).json({ message: 'Access denied' });
     }
-    return res.json(conversation.messages || []);
+    const { page, limit } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
+    const query = {
+      conversationId: req.params.conversationId,
+      deleted: { $ne: true }
+    };
+    const [storedMessages, totalMessages] = await Promise.all([
+      messagesRepo.findManyBy(query, {
+        sort: { createdAt: 1 },
+        skip: (page - 1) * limit,
+        limit
+      }),
+      messagesRepo.countBy(query)
+    ]);
+    if (totalMessages > 0) {
+      return res.json(storedMessages);
+    }
+    const legacyMessages = conversation.messages || [];
+    return res.json(legacyMessages.slice((page - 1) * limit, page * limit));
   } catch (error) {
     console.error('Error fetching conversation:', error);
     res.status(500).json({ message: 'Server error' });
@@ -387,16 +455,10 @@ router.post('/mark-read/:userId', auth, async (req, res) => {
     const currentUserId = req.user.id;
     const otherUserId = req.params.userId;
 
-    await withDb((db) => {
-      const messages = db.messages || [];
-      messages.forEach(message => {
-        if (message.senderId === otherUserId && message.recipientId === currentUserId && !message.read) {
-          message.read = true;
-          message.readAt = new Date().toISOString();
-        }
-      });
-      return db;
-    });
+    await messagesRepo.patchManyBy(
+      { senderId: otherUserId, recipientId: currentUserId, read: { $ne: true } },
+      { read: true, readAt: new Date().toISOString() }
+    );
 
     res.json({ success: true });
   } catch (error) {

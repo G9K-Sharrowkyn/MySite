@@ -1,5 +1,12 @@
 ﻿import express from 'express';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  charactersRepo,
+  commentsRepo,
+  postsRepo,
+  tagsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { autoTagPost, getBaseTags } from '../utils/tagging.js';
 import { normalizePostForResponse } from '../controllers/postController.js';
 import { optionalAuth } from '../middleware/optionalAuth.js';
@@ -11,57 +18,25 @@ const router = express.Router();
 
 const CATEGORY_KEYS = ['universe', 'character', 'power_tier', 'genre'];
 
-const normalizeTagName = (value) => String(value || '').trim();
+const ACTIVE_POST_QUERY = { 'moderation.deleted.isDeleted': { $ne: true } };
 
-const extractTagsByCategory = (post) => {
-  const autoTags = post.autoTags || {};
-  const tags = Array.isArray(post.tags) ? post.tags : [];
-
+const loadTagIndex = async () => {
+  const [universes, characters, powerTiers, genres] = await Promise.all([
+    postsRepo.groupArrayValues(['autoTags.universes'], ACTIVE_POST_QUERY),
+    postsRepo.groupArrayValues(['autoTags.characters'], ACTIVE_POST_QUERY),
+    postsRepo.groupArrayValues(['autoTags.powerTiers'], ACTIVE_POST_QUERY),
+    postsRepo.groupArrayValues(['autoTags.categories', 'tags'], ACTIVE_POST_QUERY)
+  ]);
+  const toMap = (entries) => new Map(entries.map((entry) => [
+    entry.tag.toLowerCase(),
+    { name: entry.tag, postCount: entry.count }
+  ]));
   return {
-    universe: (autoTags.universes || []).map(normalizeTagName).filter(Boolean),
-    character: (autoTags.characters || []).map(normalizeTagName).filter(Boolean),
-    power_tier: (autoTags.powerTiers || []).map(normalizeTagName).filter(Boolean),
-    genre: [
-      ...(autoTags.categories || []).map(normalizeTagName),
-      ...tags.map(normalizeTagName)
-    ].filter(Boolean)
+    universe: toMap(universes),
+    character: toMap(characters),
+    power_tier: toMap(powerTiers),
+    genre: toMap(genres)
   };
-};
-
-const resolveUserId = (user) => user?.id || user?._id;
-
-const buildAuthor = (user) => {
-  if (!user) return null;
-  return {
-    id: resolveUserId(user),
-    username: user.username,
-    profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',
-    role: user.role || 'user'
-  };
-};
-
-const buildTagIndex = (posts) => {
-  const index = {
-    universe: new Map(),
-    character: new Map(),
-    power_tier: new Map(),
-    genre: new Map()
-  };
-
-  posts.forEach((post) => {
-    const tagsByCategory = extractTagsByCategory(post);
-    CATEGORY_KEYS.forEach((category) => {
-      const bucket = index[category];
-      tagsByCategory[category].forEach((tag) => {
-        const key = tag.toLowerCase();
-        const entry = bucket.get(key) || { name: tag, postCount: 0 };
-        entry.postCount += 1;
-        bucket.set(key, entry);
-      });
-    });
-  });
-
-  return index;
 };
 
 const buildReactionSummary = (reactions = []) => {
@@ -82,18 +57,6 @@ const buildReactionSummary = (reactions = []) => {
   });
 };
 
-const buildCommentCountByPostId = (comments = []) => {
-  const counts = new Map();
-  comments.forEach((comment) => {
-    const isPostComment = comment?.type === 'post' || !comment?.type;
-    if (!isPostComment) return;
-    const postId = comment.postId;
-    if (!postId) return;
-    counts.set(postId, (counts.get(postId) || 0) + 1);
-  });
-  return counts;
-};
-
 const mapTagEntries = (entries, category) =>
   [...entries.values()]
     .sort((a, b) => b.postCount - a.postCount)
@@ -111,14 +74,6 @@ const resolveTagId = (tag) => {
   return `${tag.category}:${tag.name.toLowerCase()}`;
 };
 
-const findStoredTagIndex = (tags, id) =>
-  tags.findIndex((tag) => {
-    const tagId = resolveTagId(tag);
-    if (tagId === id) return true;
-    if (tag?.name && tag.name.toLowerCase() === id.toLowerCase()) return true;
-    return false;
-  });
-
 const normalizeStoredTag = (tag) => {
   const id = resolveTagId(tag);
   return {
@@ -132,8 +87,7 @@ const normalizeStoredTag = (tag) => {
 // GET /api/tags - list tags (simple)
 router.get('/', async (_req, res) => {
   try {
-    const db = await readDb();
-    const index = buildTagIndex(db.posts || []);
+    const index = await loadTagIndex();
     const tags = CATEGORY_KEYS.flatMap((category) =>
       mapTagEntries(index[category], category)
     );
@@ -148,8 +102,7 @@ router.get('/', async (_req, res) => {
 // GET /api/tags/categories - tags grouped by category
 router.get('/categories', async (_req, res) => {
   try {
-    const db = await readDb();
-    const index = buildTagIndex(db.posts || []);
+    const index = await loadTagIndex();
     const categories = {};
 
     CATEGORY_KEYS.forEach((category) => {
@@ -171,8 +124,7 @@ router.get('/search', async (req, res) => {
       return res.json({ success: true, tags: [] });
     }
 
-    const db = await readDb();
-    const index = buildTagIndex(db.posts || []);
+    const index = await loadTagIndex();
     const results = CATEGORY_KEYS.flatMap((category) =>
       mapTagEntries(index[category], category)
     ).filter((tag) => tag.name.toLowerCase().includes(q));
@@ -188,8 +140,7 @@ router.get('/search', async (req, res) => {
 router.get('/trending', async (req, res) => {
   try {
     const limit = parseLimit(req.query.limit, { fallback: 10, max: 50 });
-    const db = await readDb();
-    const index = buildTagIndex(db.posts || []);
+    const index = await loadTagIndex();
     const tags = CATEGORY_KEYS.flatMap((category) =>
       mapTagEntries(index[category], category)
     )
@@ -214,7 +165,6 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
       group,
       ...filters
     } = req.body || {};
-    const db = await readDb();
     const viewerUserId = req.user?.id || null;
     const now = new Date();
 
@@ -222,68 +172,81 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
       (category) => Array.isArray(filters[category]) && filters[category].length > 0
     );
 
-    let posts = db.posts || [];
-
+    const query = { ...ACTIVE_POST_QUERY };
+    const clauses = [];
     const normalizedCategory = String(postCategory || '').toLowerCase();
     if (normalizedCategory && normalizedCategory !== 'all') {
-      posts = posts.filter((post) => {
-        if (normalizedCategory === 'fight') {
-          return post.type === 'fight';
-        }
-        if (post.type === 'fight') return false;
-        const postCategory = String(
-          post.category || (post.type !== 'fight' ? 'discussion' : '')
-        ).toLowerCase();
-        return postCategory === normalizedCategory;
-      });
+      if (normalizedCategory === 'fight') {
+        clauses.push({ type: 'fight' });
+      } else if (normalizedCategory === 'discussion') {
+        clauses.push({ type: { $ne: 'fight' } });
+        clauses.push({ $or: [{ category: 'discussion' }, { category: { $exists: false } }] });
+      } else {
+        clauses.push({ type: { $ne: 'fight' }, category: normalizedCategory });
+      }
     }
 
     const normalizedGroup = String(group || '').trim().toLowerCase();
     if (normalizedGroup && normalizedGroup !== 'all' && normalizedGroup !== 'none') {
-      posts = posts.filter(
-        (post) => String(post?.group || '').trim().toLowerCase() === normalizedGroup
-      );
+      clauses.push({ group: normalizedGroup });
     }
 
     if (hasFilters) {
-      posts = posts.filter((post) => {
-        const tagsByCategory = extractTagsByCategory(post);
-        return CATEGORY_KEYS.every((category) => {
-          const wanted = filters[category] || [];
-          if (!wanted.length) {
-            return true;
-          }
-          const normalizedWanted = wanted.map((tag) => tag.toLowerCase());
-          return tagsByCategory[category].some((tag) =>
-            normalizedWanted.includes(tag.toLowerCase())
-          );
+      const pathsByCategory = {
+        universe: ['autoTags.universes'],
+        character: ['autoTags.characters'],
+        power_tier: ['autoTags.powerTiers'],
+        genre: ['autoTags.categories', 'tags']
+      };
+      CATEGORY_KEYS.forEach((category) => {
+        const wanted = Array.isArray(filters[category]) ? filters[category] : [];
+        if (!wanted.length) return;
+        const alternatives = [];
+        wanted.forEach((tag) => {
+          const escaped = String(tag).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          pathsByCategory[category].forEach((path) => {
+            alternatives.push({ [path]: { $regex: `^${escaped}$`, $options: 'i' } });
+          });
         });
+        clauses.push({ $or: alternatives });
       });
     }
-
-    const sorted = [...posts].sort((a, b) => {
-      if (sortBy === 'likes') {
-        return (b.likes?.length || 0) - (a.likes?.length || 0);
-      }
-      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-    });
+    if (clauses.length) query.$and = clauses;
 
     const { page: pageNumber, limit: limitNumber } = parsePagination(
       { page, limit },
       { defaultLimit: 10, maxLimit: 50 }
     );
-    const paged = sorted.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
-    );
-
-    const commentCounts = buildCommentCountByPostId(db.comments || []);
+    const skip = (pageNumber - 1) * limitNumber;
+    const [paged, count] = await Promise.all([
+      sortBy === 'likes'
+        ? postsRepo.findTopByArrayLength('likes', { skip, limit: limitNumber }, query)
+        : postsRepo.findManyBy(query, {
+            sort: { createdAt: -1 },
+            skip,
+            limit: limitNumber
+          }),
+      postsRepo.countBy(query)
+    ]);
+    const postIds = paged.map((post) => post.id);
+    const authorIds = [...new Set(paged.map((post) => post.authorId).filter(Boolean))];
+    const [commentCountObject, users] = await Promise.all([
+      postIds.length
+        ? commentsRepo.groupCountBy('postId', {
+            postId: { $in: postIds },
+            $or: [{ type: 'post' }, { type: { $exists: false } }]
+          })
+        : {},
+      authorIds.length
+        ? usersRepo.findManyBy({ id: { $in: authorIds } }, { limit: authorIds.length })
+        : []
+    ]);
     const formatted = paged.map((post) => {
-      const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
+      const normalized = normalizePostForResponse(post, users, { viewerUserId, now });
       const postId = normalized.id;
       return {
         ...normalized,
-        commentCount: commentCounts.get(postId) || 0,
+        commentCount: commentCountObject[postId] || 0,
         reactionsSummary: buildReactionSummary(post.reactions || [])
       };
     });
@@ -291,7 +254,7 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
     res.json({
       success: true,
       posts: formatted,
-      count: posts.length
+      count
     });
   } catch (error) {
     console.error('Error filtering posts:', error);
@@ -302,8 +265,8 @@ router.post('/filter-posts', optionalAuth, async (req, res) => {
 // POST /api/tags/auto-tag - generate tags from content
 router.post('/auto-tag', auth, async (req, res) => {
   try {
-    const db = await readDb();
-    const tagged = autoTagPost(db, req.body || {});
+    const characters = await charactersRepo.findManyBy({}, { limit: 5000 });
+    const tagged = autoTagPost({ characters }, req.body || {});
     res.json({ success: true, ...tagged });
   } catch (error) {
     console.error('Error auto-tagging:', error);
@@ -317,31 +280,23 @@ router.post('/initialize', auth, roleMiddleware(['moderator', 'admin']), async (
     const baseTags = getBaseTags();
     let created = [];
 
-    await withDb((db) => {
-      db.tags = Array.isArray(db.tags) ? db.tags : [];
-      const existing = new Set(
-        db.tags.map((tag) => `${tag.category}:${tag.name}`.toLowerCase())
-      );
-
-      baseTags.forEach((tag) => {
-        const key = `${tag.category}:${tag.name}`.toLowerCase();
-        if (existing.has(key)) {
-          return;
-        }
-
+    await withRepositoryTransaction(async (context) => {
+      for (const tag of baseTags) {
         const id = resolveTagId(tag) || `${tag.category}:${tag.name.toLowerCase()}`;
-        db.tags.push({
-          ...tag,
-          id,
-          _id: id,
-          usageCount: 0,
-          createdAt: new Date().toISOString(),
-          isActive: true
-        });
-        created.push(tag.name);
-      });
-
-      return db;
+        const result = await tagsRepo.insertIfAbsent(
+          { id },
+          {
+            ...tag,
+            id,
+            _id: id,
+            usageCount: 0,
+            createdAt: new Date().toISOString(),
+            isActive: true
+          },
+          context
+        );
+        if (result.inserted) created.push(tag.name);
+      }
     });
 
     res.json({ success: true, created, count: created.length });
@@ -354,8 +309,7 @@ router.post('/initialize', auth, roleMiddleware(['moderator', 'admin']), async (
 // GET /api/tags/stats - aggregate tag stats
 router.get('/stats', async (_req, res) => {
   try {
-    const db = await readDb();
-    const index = buildTagIndex(db.posts || []);
+    const index = await loadTagIndex();
     const categories = {};
     const totals = {};
 
@@ -374,7 +328,7 @@ router.get('/stats', async (_req, res) => {
       totals,
       totalTags: allTags.length,
       topTags: allTags.slice().sort((a, b) => b.postCount - a.postCount).slice(0, 10),
-      storedTags: (db.tags || []).length,
+      storedTags: await tagsRepo.countBy({}),
       categories
     });
   } catch (error) {
@@ -387,31 +341,34 @@ router.get('/stats', async (_req, res) => {
 router.put('/:id', auth, roleMiddleware(['moderator', 'admin']), async (req, res) => {
   try {
     let updated;
-    await withDb((db) => {
-      db.tags = Array.isArray(db.tags) ? db.tags : [];
-      const index = findStoredTagIndex(db.tags, req.params.id);
-      if (index < 0) {
+    await withRepositoryTransaction(async (context) => {
+      const stored =
+        (await tagsRepo.findById(req.params.id, context)) ||
+        (await tagsRepo.findOneBy(
+          { name: { $regex: `^${String(req.params.id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, $options: 'i' } },
+          {},
+          context
+        ));
+      if (!stored) {
         const error = new Error('Tag not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
 
-      const tag = db.tags[index];
-      const nextName = req.body?.name ?? tag.name;
-      const nextCategory = req.body?.category ?? tag.category;
-      const nextId = resolveTagId({ ...tag, name: nextName, category: nextCategory });
-
-      tag.name = nextName;
-      tag.category = nextCategory;
-      if (req.body?.color !== undefined) tag.color = req.body.color;
-      if (req.body?.isActive !== undefined) {
-        tag.isActive = Boolean(req.body.isActive);
-      }
-      tag.id = nextId;
-      tag._id = nextId;
-      tag.updatedAt = new Date().toISOString();
-      updated = normalizeStoredTag(tag);
-      return db;
+      const nextName = req.body?.name ?? stored.name;
+      const nextCategory = req.body?.category ?? stored.category;
+      const nextId = resolveTagId({ ...stored, name: nextName, category: nextCategory });
+      updated = await tagsRepo.updateById(stored.id, (tag) => {
+        tag.name = nextName;
+        tag.category = nextCategory;
+        if (req.body?.color !== undefined) tag.color = req.body.color;
+        if (req.body?.isActive !== undefined) tag.isActive = Boolean(req.body.isActive);
+        tag.id = nextId;
+        tag._id = nextId;
+        tag.updatedAt = new Date().toISOString();
+        return tag;
+      }, context);
+      updated = normalizeStoredTag(updated);
     });
 
     res.json({ success: true, tag: updated });
@@ -428,15 +385,10 @@ router.put('/:id', auth, roleMiddleware(['moderator', 'admin']), async (req, res
 router.delete('/:id', auth, roleMiddleware(['moderator', 'admin']), async (req, res) => {
   try {
     let removed = false;
-    await withDb((db) => {
-      db.tags = Array.isArray(db.tags) ? db.tags : [];
-      const before = db.tags.length;
-      db.tags = db.tags.filter(
-        (tag) => resolveTagId(tag) !== req.params.id
-      );
-      removed = db.tags.length !== before;
-      return db;
-    });
+    const stored = await tagsRepo.findById(req.params.id);
+    if (stored) {
+      removed = Boolean(await tagsRepo.removeById(stored.id));
+    }
 
     if (!removed) {
       return res.status(404).json({ success: false, message: 'Tag not found' });

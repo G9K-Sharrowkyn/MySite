@@ -8,6 +8,10 @@ import {
   deleteCharacterMediaById,
   ingestCharacterMediaFromSource
 } from '../services/characterMedia.js';
+import {
+  findBuiltInCharacter,
+  getMergedCharacterCatalog
+} from '../services/characterCatalog.js';
 import { normalizeSafeImageSource } from '../utils/imageSecurity.js';
 import { removeManagedUpload } from '../utils/uploadFiles.js';
 
@@ -40,12 +44,10 @@ const deriveBaseName = (name) => {
   return (index > 0 ? safe.slice(0, index) : safe).trim();
 };
 
-const getMongoCharacters = async () => {
+const getCharacterCatalog = async () => {
   const dbCharactersRaw = await charactersRepo.getAll();
   const dbCharacters = Array.isArray(dbCharactersRaw) ? dbCharactersRaw : [];
-  return dbCharacters.filter(
-    (character) => String(character?.status || 'active').toLowerCase() !== 'deleted'
-  );
+  return getMergedCharacterCatalog(dbCharacters);
 };
 
 // @desc    Get all characters
@@ -53,7 +55,7 @@ const getMongoCharacters = async () => {
 // @access  Public
 export const getCharacters = async (req, res) => {
   try {
-    const characters = await getMongoCharacters();
+    const characters = await getCharacterCatalog();
 
     // Avoid stale list right after moderation/admin edits.
     if (req.header('x-auth-token')) {
@@ -81,7 +83,7 @@ export const searchCharacters = async (req, res) => {
     const limitRaw = Number(req.query.limit || 12);
     const limit = Number.isFinite(limitRaw) ? Math.max(1, Math.min(30, limitRaw)) : 12;
 
-    const characters = await getMongoCharacters();
+    const characters = await getCharacterCatalog();
     const results = characters
       .filter((character) => {
         const name = String(character?.name || '').toLowerCase();
@@ -361,8 +363,9 @@ export const deleteCharacter = async (req, res) => {
       return res.status(400).json({ msg: 'Double confirmation phrase is required.' });
     }
 
-    const dbCharacters = await charactersRepo.getAll();
-    const target = dbCharacters.find((entry) => String(entry?.id || '') === String(id));
+    const storedTarget = await charactersRepo.findById(String(id));
+    const builtInTarget = await findBuiltInCharacter(id);
+    const target = storedTarget || builtInTarget;
     if (!target) {
       return res.status(404).json({ msg: 'Character not found.' });
     }
@@ -376,7 +379,25 @@ export const deleteCharacter = async (req, res) => {
       return res.status(400).json({ msg: 'Character name confirmation does not match.' });
     }
 
-    await charactersRepo.removeById(String(id));
+    if (builtInTarget) {
+      if (storedTarget) {
+        await charactersRepo.updateById(String(id), (character) => ({
+          ...character,
+          status: 'deleted',
+          deletedAt: new Date().toISOString(),
+          deletedBy: req.user?.id || null
+        }));
+      } else {
+        await charactersRepo.insert({
+          ...builtInTarget,
+          status: 'deleted',
+          deletedAt: new Date().toISOString(),
+          deletedBy: req.user?.id || null
+        });
+      }
+    } else {
+      await charactersRepo.removeById(String(id));
+    }
     if (resolveCharacterImage(target).startsWith('/api/media/characters/')) {
       await deleteCharacterMediaById(String(id));
     }

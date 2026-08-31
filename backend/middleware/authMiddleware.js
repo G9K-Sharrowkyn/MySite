@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { readDb, usersRepo } from '../repositories/index.js';
+import { usersRepo } from '../repositories/index.js';
 import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 import { getAuthCookieToken } from '../utils/authCookie.js';
 
@@ -35,11 +35,7 @@ export default async function authMiddleware(req, res, next) {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     req.user = decoded.user;
 
-    const db = await readDb();
-    const currentUser = await usersRepo.findOne(
-      (entry) => resolveUserId(entry) === resolveUserId(req.user),
-      { db }
-    );
+    const currentUser = await usersRepo.findById(resolveUserId(req.user));
 
     if (!currentUser) {
       return res.status(401).json({ msg: 'User account was not found.' });

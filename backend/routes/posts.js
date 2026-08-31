@@ -22,46 +22,11 @@ import {
 } from '../controllers/postController.js';
 import auth from '../middleware/auth.js';
 import { optionalAuth } from '../middleware/optionalAuth.js';
-import { readDb } from '../repositories/index.js';
+import { postsRepo, usersRepo } from '../repositories/index.js';
 import { postUpdateValidation, postValidation } from '../middleware/validation.js';
 import { parseLimit, parsePagination } from '../utils/pagination.js';
 
 const router = express.Router();
-
-const normalizeFightTeam = (value) => {
-  if (Array.isArray(value)) {
-    return value
-      .map((entry) => (typeof entry === 'string' ? entry : entry?.name))
-      .filter(Boolean)
-      .join(', ');
-  }
-  if (typeof value === 'string') return value;
-  return value ? String(value) : '';
-};
-
-const isPostSoftDeleted = (post) =>
-  Boolean(post?.moderation?.deleted?.isDeleted);
-
-const collectTags = (posts) => {
-  const counts = new Map();
-  posts.forEach((post) => {
-    const tags = new Set();
-    (post.tags || []).forEach((tag) => tags.add(String(tag).trim()));
-    const autoTags = post.autoTags || {};
-    (autoTags.universes || []).forEach((tag) => tags.add(String(tag).trim()));
-    (autoTags.characters || []).forEach((tag) => tags.add(String(tag).trim()));
-    (autoTags.powerTiers || []).forEach((tag) => tags.add(String(tag).trim()));
-    (autoTags.categories || []).forEach((tag) => tags.add(String(tag).trim()));
-
-    tags.forEach((tag) => {
-      if (!tag) return;
-      const key = tag.toLowerCase();
-      counts.set(key, { tag, count: (counts.get(key)?.count || 0) + 1 });
-    });
-  });
-
-  return [...counts.values()].sort((a, b) => b.count - a.count);
-};
 
 // @route   GET api/posts
 // @desc    Get all posts
@@ -86,39 +51,40 @@ router.get('/official', optionalAuth, async (req, res) => {
     const { sortBy = 'createdAt' } = req.query;
     const viewerUserId = req.user?.id || null;
 
-    // Build sort object
-    const db = await readDb();
-    const sortKey = sortBy === 'likes' ? 'likes' : 'createdAt';
-    const officialPosts = db.posts.filter(
-      (post) => post.isOfficial && !isPostSoftDeleted(post)
-    );
-
-    const sorted = [...officialPosts].sort((a, b) => {
-      if (sortKey === 'likes') {
-        return (b.likes?.length || 0) - (a.likes?.length || 0);
-      }
-      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
-    });
-
     const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
       defaultLimit: 20,
       maxLimit: 50
     });
-    const paged = sorted.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
-    );
+    const query = {
+      isOfficial: true,
+      'moderation.deleted.isDeleted': { $ne: true }
+    };
+    const skip = (pageNumber - 1) * limitNumber;
+    const [paged, totalPosts] = await Promise.all([
+      sortBy === 'likes'
+        ? postsRepo.findTopByArrayLength('likes', { skip, limit: limitNumber }, query)
+        : postsRepo.findManyBy(query, {
+            sort: { createdAt: -1 },
+            skip,
+            limit: limitNumber
+          }),
+      postsRepo.countBy(query)
+    ]);
+    const authorIds = [...new Set(paged.map((post) => post.authorId).filter(Boolean))];
+    const authors = authorIds.length
+      ? await usersRepo.findManyBy({ id: { $in: authorIds } }, { limit: authorIds.length })
+      : [];
 
     const formattedPosts = paged.map((post) =>
-      normalizePostForResponse(post, db.users, { viewerUserId })
+      normalizePostForResponse(post, authors, { viewerUserId })
     );
 
     res.json({
       fights: formattedPosts,
       posts: formattedPosts,
-      totalPosts: officialPosts.length,
+      totalPosts,
       currentPage: pageNumber,
-      totalPages: Math.ceil(officialPosts.length / limitNumber)
+      totalPages: Math.ceil(totalPosts / limitNumber)
     });
   } catch (error) {
     console.error('Error fetching official posts:', error);
@@ -132,10 +98,16 @@ router.get('/official', optionalAuth, async (req, res) => {
 router.get('/tags/popular', async (req, res) => {
   try {
     const limit = parseLimit(req.query.limit, { fallback: 10, max: 50 });
-    const db = await readDb();
-    const tags = collectTags(
-      (db.posts || []).filter((post) => !isPostSoftDeleted(post))
-    ).slice(0, limit);
+    const tags = (await postsRepo.groupArrayValues(
+      [
+        'tags',
+        'autoTags.universes',
+        'autoTags.characters',
+        'autoTags.powerTiers',
+        'autoTags.categories'
+      ],
+      { 'moderation.deleted.isDeleted': { $ne: true } }
+    )).slice(0, limit);
     res.json(tags);
   } catch (error) {
     console.error('Error fetching popular tags:', error);
@@ -148,10 +120,16 @@ router.get('/tags/popular', async (req, res) => {
 // @access  Public
 router.get('/tags/all', async (_req, res) => {
   try {
-    const db = await readDb();
-    const tags = collectTags(
-      (db.posts || []).filter((post) => !isPostSoftDeleted(post))
-    ).map((entry) => entry.tag);
+    const tags = (await postsRepo.groupArrayValues(
+      [
+        'tags',
+        'autoTags.universes',
+        'autoTags.characters',
+        'autoTags.powerTiers',
+        'autoTags.categories'
+      ],
+      { 'moderation.deleted.isDeleted': { $ne: true } }
+    )).slice(0, 1000).map((entry) => entry.tag);
     res.json(tags);
   } catch (error) {
     console.error('Error fetching tags:', error);

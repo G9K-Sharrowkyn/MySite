@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   donationsRepo,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import auth from '../middleware/auth.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
@@ -26,31 +26,33 @@ router.get('/config', (_req, res) => {
 // GET /api/donations/stats
 router.get('/stats', async (_req, res) => {
   try {
-    const donations = await donationsRepo.getAll();
-    const totalAmount = donations.reduce((sum, entry) => sum + (entry.amount || 0), 0);
-    const totalDonations = donations.length;
     const now = new Date();
-    const monthlyProgress = donations
-      .filter((entry) => {
-        const date = new Date(entry.timestamp || entry.createdAt || 0);
-        return (
-          Number.isFinite(date.getTime()) &&
-          date.getUTCFullYear() === now.getUTCFullYear() &&
-          date.getUTCMonth() === now.getUTCMonth()
-        );
-      })
-      .reduce((sum, entry) => sum + (entry.amount || 0), 0);
+    const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const nextMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const monthlyQuery = {
+      $or: [
+        { timestamp: { $gte: monthStart.toISOString(), $lt: nextMonth.toISOString() } },
+        {
+          timestamp: { $exists: false },
+          createdAt: { $gte: monthStart.toISOString(), $lt: nextMonth.toISOString() }
+        }
+      ]
+    };
+    const [totalAmount, totalDonations, monthlyProgress, recentDonationsRaw, topDonorRows] =
+      await Promise.all([
+        donationsRepo.sumBy('amount'),
+        donationsRepo.countBy({}),
+        donationsRepo.sumBy('amount', monthlyQuery),
+        donationsRepo.findManyBy({}, { sort: { timestamp: -1, createdAt: -1 }, limit: 10 }),
+        donationsRepo.groupSumBy('donorName', 'amount')
+      ]);
     const configuredMonthlyGoal = Number(process.env.DONATION_MONTHLY_GOAL);
     const monthlyGoal =
       Number.isFinite(configuredMonthlyGoal) && configuredMonthlyGoal > 0
         ? configuredMonthlyGoal
         : 1000;
 
-    const recentDonations = donations
-      .slice()
-      .sort((a, b) => new Date(b.timestamp || b.createdAt || 0) - new Date(a.timestamp || 0))
-      .slice(0, 10)
-      .map((entry) => ({
+    const recentDonations = recentDonationsRaw.map((entry) => ({
         id: entry.id,
         donorName: entry.donorName || 'Supporter',
         amount: entry.amount || 0,
@@ -58,22 +60,14 @@ router.get('/stats', async (_req, res) => {
         timestamp: entry.timestamp || entry.createdAt
       }));
 
-    const topDonors = donations
-      .reduce((acc, entry) => {
-        const name = entry.donorName || 'Supporter';
-        acc[name] = (acc[name] || 0) + (entry.amount || 0);
-        return acc;
-      }, {});
-
-    const topDonorList = Object.entries(topDonors)
-      .map(([name, amount]) => ({
+    const topDonorList = topDonorRows
+      .slice(0, 5)
+      .map(({ key: name, total: amount }) => ({
         id: name,
         name,
         totalAmount: amount,
         badge: amount >= 100 ? 'Gold' : amount >= 50 ? 'Silver' : 'Bronze'
-      }))
-      .sort((a, b) => b.totalAmount - a.totalAmount)
-      .slice(0, 5);
+      }));
 
     res.json({
       totalDonations,
@@ -111,14 +105,11 @@ router.post('/record', auth, roleMiddleware(['moderator', 'admin']), async (req,
         : new Date().toISOString(),
       createdAt: new Date().toISOString()
     };
-    await withDb(async (db) => {
-      await donationsRepo.insert(created, { db });
-      const actor = await usersRepo.findOne(
-        (user) => (user.id || user._id) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      await donationsRepo.insert(created, context);
+      const actor = await usersRepo.findById(req.user.id, context);
       await logModerationAction({
-        db,
+        db: context,
         actor: actor || req.user,
         action: 'donation.record',
         targetType: 'donation',
@@ -129,7 +120,6 @@ router.post('/record', auth, roleMiddleware(['moderator', 'admin']), async (req,
           platform: created.platform
         }
       });
-      return db;
     });
 
     res.status(201).json(created);

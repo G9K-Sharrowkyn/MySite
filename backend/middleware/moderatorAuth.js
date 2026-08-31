@@ -9,9 +9,7 @@ const moderatorAuth = async (req, res, next) => {
       return res.status(401).json({ msg: 'No token, authorization denied' });
     }
 
-    const user = await usersRepo.findOne(
-      (entry) => resolveUserId(entry) === req.user.id
-    );
+    const user = await usersRepo.findById(req.user.id);
     if (!user) {
       return res.status(401).json({ msg: 'User not found' });
     }

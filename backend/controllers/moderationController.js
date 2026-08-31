@@ -1,4 +1,9 @@
-import { feedbackRepo, moderatorActionLogsRepo, usersRepo, withDb } from '../repositories/index.js';
+import {
+  feedbackRepo,
+  moderatorActionLogsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
 
@@ -34,13 +39,10 @@ export const getModerationLogs = async (req, res) => {
 
     const { limit = 200 } = req.query;
     const limitNumber = Math.max(1, Math.min(Number(limit) || 200, 1000));
-    const logs = await moderatorActionLogsRepo.getAll();
-    const sorted = [...logs]
-      .sort(
-        (a, b) =>
-          new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-      )
-      .slice(0, limitNumber);
+    const sorted = await moderatorActionLogsRepo.findManyBy(
+      {},
+      { sort: { createdAt: -1 }, limit: limitNumber }
+    );
 
     res.json(sorted);
   } catch (error) {
@@ -55,26 +57,22 @@ export const getReportsQueue = async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
-    const feedback = await feedbackRepo.getAll();
-    const sorted = [...feedback].sort(
-      (a, b) =>
-        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
-    );
-
-    const counts = sorted.reduce(
-      (acc, item) => {
-        const status = item?.status || 'pending';
-        acc[status] = (acc[status] || 0) + 1;
-        return acc;
-      },
-      { pending: 0, reviewed: 0, resolved: 0, dismissed: 0, approved: 0 }
-    );
-
-    const queue = sorted.filter((entry) =>
-      ['pending', 'reviewed'].includes(entry?.status)
-    );
-
-    res.json({ counts, queue, total: sorted.length });
+    const [statusCounts, queue, total] = await Promise.all([
+      feedbackRepo.groupCountBy('status'),
+      feedbackRepo.findManyBy(
+        { status: { $in: ['pending', 'reviewed'] } },
+        { sort: { createdAt: -1 }, limit: 200 }
+      ),
+      feedbackRepo.countBy({})
+    ]);
+    const counts = {
+      pending: statusCounts.pending || 0,
+      reviewed: statusCounts.reviewed || 0,
+      resolved: statusCounts.resolved || 0,
+      dismissed: statusCounts.dismissed || 0,
+      approved: statusCounts.approved || 0
+    };
+    res.json({ counts, queue, total });
   } catch (error) {
     console.error('Error fetching reports queue:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -86,10 +84,11 @@ export const listUsersForModeration = async (req, res) => {
     if (!isStaff(req.user)) {
       return res.status(403).json({ msg: 'Access denied' });
     }
-    const users = await usersRepo.getAll();
-    const filtered = users
-      .filter((entry) => (entry.role || 'user') !== 'admin')
-      .map(buildModerationUser);
+    const users = await usersRepo.findManyBy(
+      { role: { $ne: 'admin' } },
+      { sort: { username: 1 }, limit: 200 }
+    );
+    const filtered = users.map(buildModerationUser);
     return res.json(filtered);
   } catch (error) {
     console.error('Error listing users for moderation:', error);
@@ -115,15 +114,15 @@ export const suspendUser = async (req, res) => {
 
   try {
     let updated = null;
-    await withDb(async (db) => {
-      const actor = await usersRepo.findOne((entry) => resolveUserId(entry) === req.user.id, { db });
+    await withRepositoryTransaction(async (context) => {
+      const actor = await usersRepo.findById(req.user.id, context);
       if (!actor || !isStaff(actor)) {
         const err = new Error('Access denied');
         err.code = 'ACCESS_DENIED';
         throw err;
       }
 
-      const target = await usersRepo.findOne((entry) => resolveUserId(entry) === targetUserId, { db });
+      const target = await usersRepo.findById(targetUserId, context);
       if (!target) {
         const err = new Error('User not found');
         err.code = 'USER_NOT_FOUND';
@@ -145,22 +144,24 @@ export const suspendUser = async (req, res) => {
       const now = new Date();
       const until = type === 'time' ? new Date(now.getTime() + boundedHours * 60 * 60 * 1000) : null;
 
-      target.moderation = target.moderation || {};
-      target.moderation.suspension = {
-        active: true,
-        type,
-        reason,
-        startedAt: now.toISOString(),
-        until: until ? until.toISOString() : null,
-        createdById: resolveUserId(actor),
-        createdByUsername: actor.username || '',
-        createdByRole: actor.role || 'user'
-      };
-      target.updatedAt = now.toISOString();
-      updated = target;
+      updated = await usersRepo.updateById(targetUserId, (storedTarget) => {
+        storedTarget.moderation = storedTarget.moderation || {};
+        storedTarget.moderation.suspension = {
+          active: true,
+          type,
+          reason,
+          startedAt: now.toISOString(),
+          until: until ? until.toISOString() : null,
+          createdById: resolveUserId(actor),
+          createdByUsername: actor.username || '',
+          createdByRole: actor.role || 'user'
+        };
+        storedTarget.updatedAt = now.toISOString();
+        return storedTarget;
+      }, context);
 
       await logModerationAction({
-        db,
+        db: context,
         actor,
         action: 'user.suspend',
         targetType: 'user',
@@ -172,7 +173,6 @@ export const suspendUser = async (req, res) => {
         }
       });
 
-      return db;
     });
 
     return res.json({ msg: 'User suspended successfully.', user: buildModerationUser(updated) });
@@ -190,15 +190,15 @@ export const unsuspendUser = async (req, res) => {
   const targetUserId = String(req.params.userId || '');
   try {
     let updated = null;
-    await withDb(async (db) => {
-      const actor = await usersRepo.findOne((entry) => resolveUserId(entry) === req.user.id, { db });
+    await withRepositoryTransaction(async (context) => {
+      const actor = await usersRepo.findById(req.user.id, context);
       if (!actor || !isStaff(actor)) {
         const err = new Error('Access denied');
         err.code = 'ACCESS_DENIED';
         throw err;
       }
 
-      const target = await usersRepo.findOne((entry) => resolveUserId(entry) === targetUserId, { db });
+      const target = await usersRepo.findById(targetUserId, context);
       if (!target) {
         const err = new Error('User not found');
         err.code = 'USER_NOT_FOUND';
@@ -210,21 +210,23 @@ export const unsuspendUser = async (req, res) => {
         throw err;
       }
 
-      target.moderation = target.moderation || {};
-      const previous = target.moderation.suspension || null;
-      target.moderation.suspension = {
-        ...(previous || {}),
-        active: false,
-        endedAt: new Date().toISOString(),
-        endedById: resolveUserId(actor),
-        endedByUsername: actor.username || '',
-        endedByRole: actor.role || 'user'
-      };
-      target.updatedAt = new Date().toISOString();
-      updated = target;
+      const previous = target.moderation?.suspension || null;
+      updated = await usersRepo.updateById(targetUserId, (storedTarget) => {
+        storedTarget.moderation = storedTarget.moderation || {};
+        storedTarget.moderation.suspension = {
+          ...(previous || {}),
+          active: false,
+          endedAt: new Date().toISOString(),
+          endedById: resolveUserId(actor),
+          endedByUsername: actor.username || '',
+          endedByRole: actor.role || 'user'
+        };
+        storedTarget.updatedAt = new Date().toISOString();
+        return storedTarget;
+      }, context);
 
       await logModerationAction({
-        db,
+        db: context,
         actor,
         action: 'user.unsuspend',
         targetType: 'user',
@@ -235,7 +237,6 @@ export const unsuspendUser = async (req, res) => {
         }
       });
 
-      return db;
     });
 
     return res.json({ msg: 'User suspension removed.', user: buildModerationUser(updated) });

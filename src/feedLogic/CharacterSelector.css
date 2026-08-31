@@ -52,10 +52,39 @@
   font-size: 1rem;
   color: #222 !important; /* Strong visible color with !important */
   border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
 }
 
 .character-item-name-only .character-name {
   color: #222 !important;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.character-suggestion-image {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: #e9edf2;
+  border: 1px solid #d2d7dd;
+}
+
+.character-suggestion-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.character-universe {
+  color: #68717c;
+  font-size: 0.78rem;
+  line-height: 1.2;
 }
 
 .character-item-name-only:hover {

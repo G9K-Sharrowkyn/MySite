@@ -1,5 +1,14 @@
 RewriteEngine On
 
+<IfModule mod_headers.c>
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set X-Frame-Options "SAMEORIGIN"
+  Header always set Cross-Origin-Opener-Policy "same-origin-allow-popups"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+</IfModule>
+
 # Send social preview bots to backend share endpoint with OG tags
 RewriteCond %{HTTP_USER_AGENT} (facebookexternalhit|facebot|twitterbot|slackbot|linkedinbot|whatsapp|discordbot|telegrambot|pinterest|embedly|quora\\ link\\ preview|skypeuripreview|vkshare|googlebot|bingbot|yandexbot|duckduckbot) [NC]
 RewriteRule ^post/([A-Za-z0-9-]+)$ https://api.versusversevault.com/share/post/$1 [L,R=302]

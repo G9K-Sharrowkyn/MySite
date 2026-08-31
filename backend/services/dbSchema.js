@@ -31,6 +31,7 @@ export const DEFAULT_DB = {
   recommendationEvents: [],
   characterSuggestions: [],
   divisionSeasons: [],
+  divisionTeamSlots: [],
   feedback: [],
   nicknameChangeLogs: [],
   moderatorActionLogs: [],

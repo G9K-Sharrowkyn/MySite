@@ -2,6 +2,7 @@ import React, { useContext, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router';
 import { AuthContext } from '../auth/AuthContext';
 import { setAuthToken } from './api';
+import socket from './utils/socket';
 import Profile from './pages/Profile';
 import Collection from './pages/Collection';
 import Lobby from './pages/Lobby';
@@ -19,6 +20,12 @@ function CcgApp() {
   useEffect(() => {
     setAuthToken(token || null);
   }, [token]);
+
+  useEffect(() => {
+    if (!user || !token) return undefined;
+    socket.connect();
+    return () => socket.disconnect();
+  }, [token, user]);
 
   if (loading) {
     return <div className="ccg-root min-h-screen">Loading...</div>;

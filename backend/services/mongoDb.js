@@ -245,6 +245,12 @@ const clearCollectionCache = (key) => {
   collectionCache.delete(key);
 };
 
+const clearDatabaseCache = (collectionKey) => {
+  if (collectionKey) clearCollectionCache(collectionKey);
+  dbCache = undefined;
+  dbCacheTimestamp = 0;
+};
+
 const ensureIndexes = async (db) => {
   if (indexesReadyPromise) return indexesReadyPromise;
 
@@ -258,9 +264,41 @@ const ensureIndexes = async (db) => {
     const uniqueId = {
       key: { id: 1 },
       options: {
+        name: 'uniq_id',
         unique: true,
         partialFilterExpression: { id: { $type: 'string' } }
       }
+    };
+    const indexKeysEqual = (left, right) =>
+      JSON.stringify(left || {}) === JSON.stringify(right || {});
+    const collationCompatible = (existing, requested) =>
+      !requested ||
+      (
+        existing?.locale === requested.locale &&
+        Number(existing?.strength) === Number(requested.strength)
+      );
+    const partialFilterCompatible = (existing, requested) =>
+      !requested ||
+      !existing ||
+      JSON.stringify(existing) === JSON.stringify(requested);
+    const ensureCollectionIndex = async (collection, spec) => {
+      const options = spec.options || {};
+      const indexes = await collection.indexes().catch(() => []);
+      const compatible = indexes.some((existing) =>
+        indexKeysEqual(existing.key, spec.key) &&
+        (!options.unique || existing.unique === true) &&
+        collationCompatible(existing.collation, options.collation) &&
+        partialFilterCompatible(
+          existing.partialFilterExpression,
+          options.partialFilterExpression
+        )
+      );
+      if (compatible) return false;
+      await collection.createIndex(spec.key, {
+        background: true,
+        ...options
+      });
+      return true;
     };
     const specs = [
       ['users', [
@@ -268,6 +306,7 @@ const ensureIndexes = async (db) => {
         {
           key: { username: 1 },
           options: {
+            name: 'uniq_username_ci',
             unique: true,
             collation: { locale: 'en', strength: 2 },
             partialFilterExpression: { username: { $type: 'string' } }
@@ -276,22 +315,260 @@ const ensureIndexes = async (db) => {
         {
           key: { email: 1 },
           options: {
+            name: 'uniq_email_ci',
             unique: true,
             collation: { locale: 'en', strength: 2 },
             partialFilterExpression: { email: { $type: 'string' } }
           }
         },
-        { key: { role: 1 } }
+        { key: { role: 1 } },
+        { key: { 'divisions.$**': 1 } },
+        { key: { 'stats.experience': -1 } },
+        { key: { 'stats.points': -1, 'stats.fightsWon': -1 } },
+        { key: { 'stats.fights.total': -1 } },
+        { key: { 'stats.fights.wins': -1 } }
       ]],
-      ['posts', [uniqueId, { key: { authorId: 1 } }, { key: { createdAt: -1 } }, { key: { type: 1 } }, { key: { category: 1 } }]],
-      ['comments', [uniqueId, { key: { postId: 1 } }, { key: { targetId: 1 } }, { key: { authorId: 1 } }, { key: { type: 1 } }, { key: { createdAt: -1 } }]],
-      ['messages', [uniqueId, { key: { senderId: 1, recipientId: 1, createdAt: -1 } }, { key: { recipientId: 1, read: 1, deleted: 1 } }]],
+      ['posts', [
+        uniqueId,
+        { key: { authorId: 1, createdAt: -1 } },
+        { key: { 'moderation.deleted.isDeleted': 1, createdAt: -1 } },
+        { key: { group: 1, createdAt: -1 } },
+        { key: { type: 1, createdAt: -1 } },
+        { key: { category: 1, createdAt: -1 } },
+        { key: { isOfficial: 1, 'moderation.deleted.isDeleted': 1, createdAt: -1 } },
+        { key: { 'fight.opponentId': 1, 'fight.status': 1, 'fight.expiresAt': 1 } },
+        { key: { 'fight.challengerId': 1, 'fight.status': 1, createdAt: -1 } },
+        {
+          key: { authorId: 1, idempotencyKey: 1 },
+          options: {
+            name: 'uniq_post_idempotency',
+            unique: true,
+            partialFilterExpression: {
+              authorId: { $type: 'string' },
+              idempotencyKey: { $type: 'string' }
+            }
+          }
+        }
+      ]],
+      ['comments', [
+        uniqueId,
+        { key: { postId: 1, createdAt: 1 } },
+        { key: { targetId: 1, createdAt: -1 } },
+        { key: { fightId: 1, createdAt: -1 } },
+        { key: { authorId: 1, createdAt: -1 } },
+        { key: { type: 1 } },
+        { key: { threadId: 1, parentId: 1 } },
+        {
+          key: { authorId: 1, targetId: 1, idempotencyKey: 1 },
+          options: {
+            name: 'uniq_comment_idempotency',
+            unique: true,
+            partialFilterExpression: {
+              authorId: { $type: 'string' },
+              targetId: { $type: 'string' },
+              idempotencyKey: { $type: 'string' }
+            }
+          }
+        }
+      ]],
+      ['messages', [
+        uniqueId,
+        { key: { senderId: 1, recipientId: 1, createdAt: -1 } },
+        { key: { recipientId: 1, read: 1, deleted: 1 } },
+        { key: { conversationId: 1, createdAt: 1 } },
+        { key: { conversationId: 1, recipientId: 1, read: 1 } }
+      ]],
+      ['chatMessages', [uniqueId, { key: { createdAt: -1 } }]],
+      ['conversations', [
+        uniqueId,
+        { key: { participants: 1, updatedAt: -1 } },
+        {
+          key: { participantKey: 1 },
+          options: {
+            name: 'uniq_participant_key',
+            unique: true,
+            partialFilterExpression: { participantKey: { $type: 'string' } }
+          }
+        }
+      ]],
       ['notifications', [uniqueId, { key: { userId: 1, read: 1, createdAt: -1 } }]],
-      ['friendRequests', [uniqueId, { key: { fromUserId: 1, toUserId: 1, status: 1 } }, { key: { toUserId: 1, status: 1, createdAt: -1 } }]],
-      ['friendships', [uniqueId, { key: { userId1: 1, userId2: 1 } }, { key: { userId1: 1 } }, { key: { userId2: 1 } }]],
-      ['blocks', [uniqueId, { key: { blockerId: 1, blockedId: 1 } }, { key: { blockerId: 1 } }]],
+      ['friendRequests', [
+        uniqueId,
+        { key: { fromUserId: 1, toUserId: 1, status: 1 } },
+        { key: { toUserId: 1, status: 1, createdAt: -1 } },
+        {
+          key: { requestKey: 1 },
+          options: {
+            name: 'uniq_pending_friend_request',
+            unique: true,
+            partialFilterExpression: {
+              requestKey: { $type: 'string' },
+              status: 'pending'
+            }
+          }
+        }
+      ]],
+      ['friendships', [
+        uniqueId,
+        { key: { userId1: 1, userId2: 1 } },
+        { key: { userId1: 1 } },
+        { key: { userId2: 1 } },
+        {
+          key: { friendshipKey: 1 },
+          options: {
+            name: 'uniq_friendship_key',
+            unique: true,
+            partialFilterExpression: { friendshipKey: { $type: 'string' } }
+          }
+        }
+      ]],
+      ['blocks', [
+        uniqueId,
+        { key: { blockerId: 1, blockedId: 1 } },
+        { key: { blockerId: 1 } },
+        {
+          key: { blockKey: 1 },
+          options: {
+            name: 'uniq_block_key',
+            unique: true,
+            partialFilterExpression: { blockKey: { $type: 'string' } }
+          }
+        }
+      ]],
       ['feedback', [uniqueId, { key: { status: 1, createdAt: -1 } }, { key: { type: 1 } }]],
-      ['tournaments', [uniqueId, { key: { status: 1, createdAt: -1 } }]],
+      ['tournaments', [
+        uniqueId,
+        { key: { status: 1, createdAt: -1 } },
+        { key: { status: 1, id: 1 } },
+        { key: { status: 1, recruitmentEndDate: 1 } },
+        { key: { createdBy: 1, createdAt: -1 } },
+        { key: { 'participants.userId': 1 } }
+      ]],
+      ['fights', [
+        uniqueId,
+        { key: { status: 1, createdAt: -1 } },
+        { key: { isOfficial: 1, createdAt: -1 } },
+        { key: { category: 1, createdAt: -1 } },
+        { key: { 'participants.userId': 1, createdAt: -1 } },
+        { key: { userId: 1, createdAt: -1 } },
+        { key: { createdBy: 1, createdAt: -1 } }
+      ]],
+      ['votes', [
+        uniqueId,
+        { key: { fightId: 1, team: 1, createdAt: -1 } },
+        { key: { userId: 1, createdAt: -1 } },
+        {
+          key: { fightId: 1, userId: 1 },
+          options: {
+            name: 'uniq_fight_user_vote',
+            unique: true,
+            partialFilterExpression: {
+              fightId: { $type: 'string' },
+              userId: { $type: 'string' }
+            }
+          }
+        }
+      ]],
+      ['divisionFights', [
+        uniqueId,
+        { key: { divisionId: 1, status: 1, createdAt: -1 } },
+        { key: { divisionId: 1, fightType: 1, status: 1, createdAt: -1 } },
+        { key: { status: 1, endTime: 1 } },
+        { key: { bettingCloses: 1, createdAt: -1 } },
+        { key: { 'team1.userId': 1, createdAt: -1 } },
+        { key: { 'team2.userId': 1, createdAt: -1 } }
+      ]],
+      ['divisionSeasons', [uniqueId, { key: { isLocked: 1, startAt: 1, endAt: 1 } }]],
+      ['divisionTeamSlots', [
+        uniqueId,
+        { key: { divisionId: 1, userId: 1 } },
+        {
+          key: { divisionId: 1, characterId: 1 },
+          options: {
+            name: 'uniq_division_character_slot',
+            unique: true,
+            partialFilterExpression: {
+              divisionId: { $type: 'string' },
+              characterId: { $type: 'string' }
+            }
+          }
+        }
+      ]],
+      ['characters', [
+        uniqueId,
+        { key: { name: 1 } },
+        { key: { division: 1, universe: 1, name: 1 } }
+      ]],
+      ['badges', [
+        uniqueId,
+        { key: { isActive: 1, category: 1, rarity: 1 } }
+      ]],
+      ['userBadges', [
+        uniqueId,
+        { key: { userId: 1, isActive: 1, earnedAt: -1 } },
+        { key: { badgeId: 1, isActive: 1, earnedAt: 1 } },
+        { key: { userId: 1, type: 1, displayOnProfile: 1, wonAt: -1 } },
+        {
+          key: { userId: 1, badgeId: 1 },
+          options: {
+            name: 'uniq_user_badge',
+            unique: true,
+            partialFilterExpression: {
+              userId: { $type: 'string' },
+              badgeId: { $type: 'string' }
+            }
+          }
+        }
+      ]],
+      ['bets', [
+        uniqueId,
+        { key: { fightId: 1, status: 1, createdAt: -1 } },
+        { key: { userId: 1, status: 1, createdAt: -1 } },
+        { key: { createdAt: -1 } }
+      ]],
+      ['coinTransactions', [uniqueId, { key: { userId: 1, createdAt: -1 } }]],
+      ['storePurchases', [uniqueId, { key: { userId: 1, purchasedAt: -1 } }]],
+      ['challengeProgress', [
+        uniqueId,
+        {
+          key: { userId: 1 },
+          options: {
+            name: 'uniq_challenge_progress_user',
+            unique: true,
+            partialFilterExpression: { userId: { $type: 'string' } }
+          }
+        }
+      ]],
+      ['legalConsents', [uniqueId, { key: { userId: 1, createdAt: -1 } }]],
+      ['emailVerificationTokens', [
+        uniqueId,
+        { key: { userId: 1, usedAt: 1, expiresAt: 1 } },
+        {
+          key: { tokenHash: 1 },
+          options: {
+            name: 'uniq_verification_token_hash',
+            unique: true,
+            partialFilterExpression: { tokenHash: { $type: 'string' } }
+          }
+        }
+      ]],
+      ['authChallenges', [
+        uniqueId,
+        { key: { userId: 1, purpose: 1, expiresAt: 1 } },
+        { key: { token: 1 } }
+      ]],
+      ['pushSubscriptions', [
+        uniqueId,
+        { key: { userId: 1 } },
+        {
+          key: { 'subscription.endpoint': 1 },
+          options: {
+            name: 'uniq_push_endpoint',
+            unique: true,
+            partialFilterExpression: { 'subscription.endpoint': { $type: 'string' } }
+          }
+        }
+      ]],
       ['nicknameChangeLogs', [{ key: { userId: 1, changedAt: -1 } }, { key: { username: 1, changedAt: -1 } }]],
       ['moderatorActionLogs', [uniqueId, { key: { createdAt: -1 } }, { key: { actorId: 1, createdAt: -1 } }, { key: { targetType: 1, createdAt: -1 } }]],
       ['swoopRuns', [
@@ -300,6 +577,7 @@ const ensureIndexes = async (db) => {
         {
           key: { userId: 1, trackId: 1 },
           options: {
+            name: 'uniq_user_track',
             unique: true,
             partialFilterExpression: {
               userId: { $type: 'string' },
@@ -315,6 +593,7 @@ const ensureIndexes = async (db) => {
         {
           key: { roomId: 1, round: 1, userId: 1 },
           options: {
+            name: 'uniq_room_round_winner',
             unique: true,
             partialFilterExpression: {
               roomId: { $type: 'string' },
@@ -323,17 +602,36 @@ const ensureIndexes = async (db) => {
             }
           }
         }
+      ]],
+      ['characterMedia', [
+        {
+          key: { characterId: 1 },
+          options: {
+            name: 'uniq_character_media',
+            unique: true
+          }
+        },
+        { key: { updatedAt: -1 } }
       ]]
     ];
+
+    for (const collectionName of COLLECTION_KEYS) {
+      try {
+        await ensureCollectionIndex(db.collection(collectionName), uniqueId);
+      } catch (error) {
+        console.error(
+          `Unique id index ensure failed for ${collectionName}:`,
+          error?.message || error
+        );
+        if (process.env.NODE_ENV === 'production') throw error;
+      }
+    }
 
     for (const [collectionName, indexes] of specs) {
       try {
         const collection = db.collection(collectionName);
         for (const index of indexes) {
-          await collection.createIndex(index.key, {
-            background: true,
-            ...(index.options || {})
-          });
+          await ensureCollectionIndex(collection, index);
         }
       } catch (error) {
         console.error(`Index ensure failed for ${collectionName}:`, error?.message || error);
@@ -343,13 +641,6 @@ const ensureIndexes = async (db) => {
       }
     }
 
-    for (const collectionName of COLLECTION_KEYS) {
-      if (specs.some(([name]) => name === collectionName)) continue;
-      await db.collection(collectionName).createIndex(
-        { id: 1 },
-        uniqueId.options
-      );
-    }
   })();
 
   return indexesReadyPromise;
@@ -399,6 +690,258 @@ const getDb = async () => {
 
 export const getMongoDb = async () => getDb();
 
+export const withMongoTransaction = async (handler) => {
+  if (typeof handler !== 'function') {
+    throw new TypeError('Mongo transaction handler must be a function.');
+  }
+  const activeClient = await getClient();
+  const mongoDb = activeClient.db(getMongoDbName());
+  const session = activeClient.startSession();
+  let result;
+  try {
+    await session.withTransaction(async () => {
+      result = await handler({ mongoDb, session });
+    });
+    return result;
+  } finally {
+    await session.endSession();
+    for (const key of COLLECTION_KEYS) clearCollectionCache(key);
+  }
+};
+
+export const findMongoDocument = async (
+  collectionKey,
+  filter,
+  options = {}
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  const document = await db.collection(collectionKey).findOne(filter || {}, {
+    projection: options.projection,
+    collation: options.collation
+  });
+  return document ? stripMongoId(document) : null;
+};
+
+export const findMongoDocuments = async (
+  collectionKey,
+  filter = {},
+  options = {}
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  let cursor = db.collection(collectionKey).find(filter, {
+    projection: options.projection,
+    collation: options.collation
+  });
+  if (options.sort) cursor = cursor.sort(options.sort);
+  if (Number.isFinite(options.skip) && options.skip > 0) {
+    cursor = cursor.skip(Math.floor(options.skip));
+  }
+  if (Number.isFinite(options.limit) && options.limit > 0) {
+    cursor = cursor.limit(Math.floor(options.limit));
+  }
+  return (await cursor.toArray()).map(stripMongoId);
+};
+
+export const countMongoDocuments = async (collectionKey, filter = {}) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  return db.collection(collectionKey).countDocuments(filter);
+};
+
+export const distinctMongoValues = async (
+  collectionKey,
+  field,
+  filter = {}
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  return db.collection(collectionKey).distinct(field, filter);
+};
+
+export const aggregateMongoDocuments = async (
+  collectionKey,
+  pipeline = []
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  return db.collection(collectionKey).aggregate(pipeline).toArray();
+};
+
+export const insertMongoDocument = async (collectionKey, rawDocument) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  const document = sanitizeDoc(rawDocument);
+  if (!resolveDocumentId(document)) document.id = randomUUID();
+  await db.collection(collectionKey).insertOne(document);
+  clearDatabaseCache(collectionKey);
+  return cloneData(document);
+};
+
+export const upsertMongoDocument = async (
+  collectionKey,
+  filter,
+  rawDocument
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  const document = sanitizeDoc(rawDocument);
+  if (!resolveDocumentId(document)) document.id = randomUUID();
+  const result = await db.collection(collectionKey).updateOne(
+    filter || {},
+    { $setOnInsert: document },
+    { upsert: true }
+  );
+  const stored = await db.collection(collectionKey).findOne(filter || {});
+  clearDatabaseCache(collectionKey);
+  return {
+    item: stored ? stripMongoId(stored) : cloneData(document),
+    inserted: result.upsertedCount === 1
+  };
+};
+
+export const insertMongoDocumentsAtomically = async (entries = []) => {
+  const normalizedEntries = entries.map(({ collectionKey, document }) => {
+    assertCollectionKey(collectionKey);
+    const sanitized = sanitizeDoc(document);
+    if (!resolveDocumentId(sanitized)) sanitized.id = randomUUID();
+    return { collectionKey, document: sanitized };
+  });
+  if (normalizedEntries.length === 0) return [];
+
+  const activeClient = await getClient();
+  const db = activeClient.db(getMongoDbName());
+  const session = activeClient.startSession();
+  try {
+    await session.withTransaction(async () => {
+      for (const entry of normalizedEntries) {
+        await db.collection(entry.collectionKey).insertOne(entry.document, { session });
+      }
+    });
+  } finally {
+    await session.endSession();
+  }
+  for (const { collectionKey } of normalizedEntries) {
+    clearDatabaseCache(collectionKey);
+  }
+  return cloneData(normalizedEntries.map((entry) => entry.document));
+};
+
+export const updateMongoDocument = async (
+  collectionKey,
+  filter,
+  updater,
+  options = {}
+) => {
+  assertCollectionKey(collectionKey);
+  if (typeof updater !== 'function') {
+    throw new TypeError('Mongo document updater must be a function.');
+  }
+
+  const activeClient = await getClient();
+  const db = activeClient.db(getMongoDbName());
+  const session = activeClient.startSession();
+  let result = null;
+  try {
+    await session.withTransaction(async () => {
+      const currentRaw = await db.collection(collectionKey).findOne(filter || {}, {
+        session,
+        collation: options.collation
+      });
+      if (!currentRaw) {
+        result = null;
+        return;
+      }
+
+      const current = stripMongoId(currentRaw);
+      const draft = cloneData(current);
+      const updated = await updater(draft);
+      const replacement = sanitizeDoc(
+        updated && typeof updated === 'object' ? updated : draft
+      );
+      replacement.id = resolveDocumentId(replacement) || current.id || randomUUID();
+
+      await db.collection(collectionKey).replaceOne(
+        { _id: currentRaw._id },
+        replacement,
+        { session }
+      );
+      result = replacement;
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  clearDatabaseCache(collectionKey);
+  return result ? cloneData(result) : null;
+};
+
+export const removeMongoDocument = async (
+  collectionKey,
+  filter,
+  options = {}
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  const result = await db.collection(collectionKey).findOneAndDelete(filter || {}, {
+    collation: options.collation
+  });
+  clearDatabaseCache(collectionKey);
+  return result ? stripMongoId(result) : null;
+};
+
+export const removeMongoDocuments = async (
+  collectionKey,
+  filter
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  const result = await db.collection(collectionKey).deleteMany(filter || {});
+  clearDatabaseCache(collectionKey);
+  return { deletedCount: result.deletedCount };
+};
+
+export const patchMongoDocuments = async (
+  collectionKey,
+  filter,
+  patch
+) => {
+  assertCollectionKey(collectionKey);
+  const db = await getDb();
+  const result = await db.collection(collectionKey).updateMany(
+    filter || {},
+    { $set: sanitizeDoc(patch || {}) }
+  );
+  clearDatabaseCache(collectionKey);
+  return {
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount
+  };
+};
+
+export const unsetMongoDocumentPaths = async (
+  collectionKey,
+  filter,
+  paths
+) => {
+  assertCollectionKey(collectionKey);
+  const safePaths = (Array.isArray(paths) ? paths : [])
+    .map(String)
+    .filter(Boolean);
+  if (!safePaths.length) return { matchedCount: 0, modifiedCount: 0 };
+  const db = await getDb();
+  const result = await db.collection(collectionKey).updateMany(
+    filter || {},
+    { $unset: Object.fromEntries(safePaths.map((path) => [path, ''])) }
+  );
+  clearDatabaseCache(collectionKey);
+  return {
+    matchedCount: result.matchedCount,
+    modifiedCount: result.modifiedCount
+  };
+};
+
 export const verifyMongoTransactions = async () => {
   const db = await getDb();
   const activeClient = await getClient();
@@ -436,6 +979,88 @@ const sanitizeDoc = (doc) => {
     delete copy._id;
   }
   return copy;
+};
+
+const assertCollectionKey = (collectionKey) => {
+  if (!COLLECTION_KEYS.includes(collectionKey)) {
+    throw new Error(`Unknown collection: ${collectionKey}`);
+  }
+};
+
+const resolveDocumentId = (document) =>
+  document && typeof document.id === 'string' && document.id.trim()
+    ? document.id.trim()
+    : null;
+
+export const buildCollectionDiff = (beforeItems = [], afterItems = []) => {
+  const beforeById = new Map();
+  const afterById = new Map();
+
+  for (const raw of beforeItems) {
+    const document = sanitizeDoc(raw);
+    const id = resolveDocumentId(document);
+    if (!id) continue;
+    beforeById.set(id, document);
+  }
+
+  for (const raw of afterItems) {
+    const document = sanitizeDoc(raw);
+    const id = resolveDocumentId(document) || randomUUID();
+    if (afterById.has(id)) {
+      const error = new Error(`Duplicate document id in collection update: ${id}`);
+      error.code = 'DUPLICATE_DOCUMENT_ID';
+      throw error;
+    }
+    document.id = id;
+    afterById.set(id, document);
+  }
+
+  const upserts = [];
+  for (const [id, document] of afterById) {
+    const previous = beforeById.get(id);
+    if (!previous || JSON.stringify(previous) !== JSON.stringify(document)) {
+      upserts.push(document);
+    }
+  }
+
+  const removedIds = [];
+  for (const id of beforeById.keys()) {
+    if (!afterById.has(id)) removedIds.push(id);
+  }
+
+  return {
+    upserts,
+    removedIds,
+    documents: [...afterById.values()]
+  };
+};
+
+const applyCollectionDiff = async (
+  db,
+  collectionKey,
+  beforeItems,
+  afterItems,
+  { session } = {}
+) => {
+  const diff = buildCollectionDiff(beforeItems, afterItems);
+  const collection = db.collection(collectionKey);
+  const operations = [
+    ...diff.upserts.map((document) => ({
+      replaceOne: {
+        filter: { id: document.id },
+        replacement: document,
+        upsert: true
+      }
+    })),
+    ...diff.removedIds.map((id) => ({
+      deleteOne: { filter: { id } }
+    }))
+  ];
+
+  if (operations.length > 0) {
+    await collection.bulkWrite(operations, { ordered: false, session });
+  }
+  return diff.documents;
 };
 
 const normalizeItemsWithIds = (items) =>
@@ -480,50 +1105,22 @@ const replaceCollection = async (db, key, items, { session } = {}) => {
   return docs;
 };
 
-let writeChain = Promise.resolve();
-
-const enqueueWrite = async (task) => {
-  let result;
-  let error;
-
-  writeChain = writeChain.then(
-    async () => {
-      try {
-        result = await task();
-      } catch (err) {
-        error = err;
-      }
-    },
-    async () => {
-      try {
-        result = await task();
-      } catch (err) {
-        error = err;
-      }
-    }
-  );
-
-  await writeChain;
-  if (error) {
-    throw error;
-  }
-  return result;
-};
-
-const loadDbSnapshot = async () => {
+const loadDbSnapshot = async ({ session, collectionKeys = COLLECTION_KEYS } = {}) => {
   const db = await getDb();
   const [entries, revisionRecord] = await Promise.all([
     Promise.all(
-      COLLECTION_KEYS.map(async (key) => {
-        const docs = await db.collection(key).find({}).toArray();
+      collectionKeys.map(async (key) => {
+        const docs = await db.collection(key).find({}, { session }).toArray();
         return [key, docs.map(stripMongoId)];
       })
     ),
-    db.collection('_app_meta').findOne({ _id: 'db_revision' })
+    db.collection('_app_meta').findOne({ _id: 'db_revision' }, { session })
   ]);
-  const data = Object.fromEntries(entries);
+  const data = collectionKeys.length === COLLECTION_KEYS.length
+    ? normalizeDb(Object.fromEntries(entries))
+    : Object.fromEntries(entries);
   return {
-    data: normalizeDb(data),
+    data,
     revision: Number(revisionRecord?.revision || 0)
   };
 };
@@ -610,73 +1207,69 @@ const commitCollections = async (db, entries, expectedRevision) => {
 };
 
 export const updateCollection = async (collectionKey, mutator) => {
-  if (!COLLECTION_KEYS.includes(collectionKey)) {
-    throw new Error(`Unknown collection: ${collectionKey}`);
-  }
-
-  return enqueueWrite(async () => {
-    for (let attempt = 0; attempt < 4; attempt += 1) {
-      const snapshot = await loadDbSnapshot();
-      const working = [...(snapshot.data[collectionKey] || [])];
+  assertCollectionKey(collectionKey);
+  const activeClient = await getClient();
+  const db = activeClient.db(getMongoDbName());
+  const session = activeClient.startSession();
+  let result = [];
+  try {
+    await session.withTransaction(async () => {
+      const documents = await db
+        .collection(collectionKey)
+        .find({}, { session })
+        .toArray();
+      const before = documents.map(stripMongoId);
+      const working = cloneData(before);
       const next = await mutator(working);
       const resolved = Array.isArray(next) ? next : working;
-      const db = await getDb();
-      try {
-        const committed = await commitCollections(
-          db,
-          [[collectionKey, resolved]],
-          snapshot.revision
-        );
-        const result = committed[collectionKey];
-        clearCollectionCache(collectionKey);
-        dbCache = undefined;
-        dbCacheTimestamp = 0;
-        return cloneData(result);
-      } catch (error) {
-        if (error.code !== 'WRITE_CONFLICT' || attempt === 3) throw error;
-      }
-    }
-    throw new Error('Database update retry limit reached');
-  });
+      result = await applyCollectionDiff(
+        db,
+        collectionKey,
+        before,
+        resolved,
+        { session }
+      );
+    });
+  } finally {
+    await session.endSession();
+  }
+  clearDatabaseCache(collectionKey);
+  return cloneData(result);
 };
 
 export const updateDb = async (mutator) => {
-  return enqueueWrite(async () => {
-    for (let attempt = 0; attempt < 4; attempt += 1) {
-      const snapshot = await loadDbSnapshot();
-      const data = snapshot.data;
-      const beforeSnapshots = new Map(
-        COLLECTION_KEYS.map((key) => [key, JSON.stringify(data[key] || [])])
-      );
+  const activeClient = await getClient();
+  const db = activeClient.db(getMongoDbName());
+  const session = activeClient.startSession();
+  let updated = normalizeDb({});
+  try {
+    await session.withTransaction(async () => {
+      const snapshot = await loadDbSnapshot({ session });
+      const original = snapshot.data;
+      const working = cloneData(original);
+      await mutator(working);
+      updated = normalizeDb(working);
 
-      await mutator(data);
-      const updated = normalizeDb(data);
-      const changedKeys = COLLECTION_KEYS.filter(
-        (key) => beforeSnapshots.get(key) !== JSON.stringify(updated[key] || [])
-      );
-      if (changedKeys.length === 0) {
-        return cloneData(updated);
-      }
-
-      const db = await getDb();
-      try {
-        const committed = await commitCollections(
-          db,
-          changedKeys.map((key) => [key, updated[key] || []]),
-          snapshot.revision
-        );
-        for (const key of changedKeys) {
-          updated[key] = committed[key];
-          clearCollectionCache(key);
+      for (const key of COLLECTION_KEYS) {
+        if (JSON.stringify(original[key] || []) === JSON.stringify(updated[key] || [])) {
+          continue;
         }
-        setCache(updated);
-        return cloneData(updated);
-      } catch (error) {
-        if (error.code !== 'WRITE_CONFLICT' || attempt === 3) throw error;
+        updated[key] = await applyCollectionDiff(
+          db,
+          key,
+          original[key] || [],
+          updated[key] || [],
+          { session }
+        );
       }
-    }
-    throw new Error('Database update retry limit reached');
-  });
+    });
+  } finally {
+    await session.endSession();
+  }
+
+  for (const key of COLLECTION_KEYS) clearCollectionCache(key);
+  setCache(updated);
+  return cloneData(updated);
 };
 
 export const closeMongo = async () => {

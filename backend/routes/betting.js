@@ -1,7 +1,16 @@
 ﻿import express from 'express';
 import auth from '../middleware/auth.js';
 import roleMiddleware from '../middleware/roleMiddleware.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  betsRepo,
+  coinTransactionsRepo,
+  divisionFightsRepo,
+  fightsRepo,
+  postsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
+import { parsePagination } from '../utils/pagination.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = express.Router();
@@ -28,9 +37,6 @@ const normalizeOutcome = (value) => {
 
   return null;
 };
-
-const findUserById = (db, userId) =>
-  (db.users || []).find((entry) => resolveUserId(entry) === userId);
 
 const findFightById = (db, fightId) =>
   (db.fights || []).find((entry) => entry.id === fightId);
@@ -76,6 +82,32 @@ const resolveFightContext = (db, fightId) => {
 
   return null;
 };
+
+const loadFightData = async (fightIds, context) => {
+  const ids = [...new Set((Array.isArray(fightIds) ? fightIds : [fightIds])
+    .map(String)
+    .filter(Boolean))];
+  if (!ids.length) {
+    return { posts: [], divisionFights: [], fights: [], bets: [] };
+  }
+  const idQuery = { id: { $in: ids } };
+  const posts = await postsRepo.findManyBy({ ...idQuery, type: 'fight' }, {}, context);
+  const divisionFights = await divisionFightsRepo.findManyBy(idQuery, {}, context);
+  const fights = await fightsRepo.findManyBy(idQuery, {}, context);
+  const bets = await betsRepo.findManyBy({ fightId: { $in: ids } }, {}, context);
+  return { posts, divisionFights, fights, bets };
+};
+
+const loadFightDataByBets = async (bets, context) => {
+  const fightIds = bets.flatMap((bet) => [
+    bet.fightId,
+    ...(bet.parlayBets || []).map((entry) => entry.fightId)
+  ]).filter(Boolean);
+  return loadFightData(fightIds, context);
+};
+
+const updateBet = (bet, updater, context) =>
+  betsRepo.updateById(bet.id, updater, context);
 
 const buildContextFromFight = (fight) => {
   if (!fight) return null;
@@ -246,7 +278,7 @@ const ensureCoinAccount = (user) => {
   }
 };
 
-const adjustCoins = (db, user, delta, type, description) => {
+const adjustCoins = async (context, user, delta, type, description) => {
   ensureCoinAccount(user);
   user.coins.balance = (user.coins.balance || 0) + delta;
   user.virtualCoins = user.coins.balance;
@@ -257,8 +289,7 @@ const adjustCoins = (db, user, delta, type, description) => {
     user.coins.totalSpent = (user.coins.totalSpent || 0) + Math.abs(delta);
   }
 
-  db.coinTransactions = Array.isArray(db.coinTransactions) ? db.coinTransactions : [];
-  db.coinTransactions.push({
+  await coinTransactionsRepo.insert({
     id: uuidv4(),
     userId: resolveUserId(user),
     amount: delta,
@@ -266,7 +297,8 @@ const adjustCoins = (db, user, delta, type, description) => {
     description,
     balance: user.coins.balance,
     createdAt: new Date().toISOString()
-  });
+  }, context);
+  await usersRepo.updateById(resolveUserId(user), () => user, context);
 };
 
 const getBettingWindow = (fight) => {
@@ -370,13 +402,19 @@ const buildAvailableFight = (db, fight, now = new Date()) => {
 };
 
 // GET /api/betting/fights
-router.get('/fights', auth, async (_req, res) => {
+router.get('/fights', auth, async (req, res) => {
   try {
-    const db = await readDb();
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const fightList = await fightsRepo.findManyBy(
+      { status: 'active' },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
+    );
+    const db = {
+      fights: fightList,
+      bets: await betsRepo.findManyBy({ fightId: { $in: fightList.map((fight) => fight.id) } })
+    };
     const now = new Date();
-    const fights = (db.fights || [])
-      .filter((fight) => fight.status === 'active')
-      .map((fight) => buildBettingFight(db, fight, now));
+    const fights = fightList.map((fight) => buildBettingFight(db, fight, now));
 
     res.json({ success: true, fights, count: fights.length });
   } catch (error) {
@@ -386,13 +424,19 @@ router.get('/fights', auth, async (_req, res) => {
 });
 
 // GET /api/betting/available-fights
-router.get('/available-fights', async (_req, res) => {
+router.get('/available-fights', async (req, res) => {
   try {
-    const db = await readDb();
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const fightList = await fightsRepo.findManyBy(
+      { status: 'active' },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
+    );
+    const db = {
+      fights: fightList,
+      bets: await betsRepo.findManyBy({ fightId: { $in: fightList.map((fight) => fight.id) } })
+    };
     const now = new Date();
-    const fights = (db.fights || [])
-      .filter((fight) => fight.status === 'active')
-      .map((fight) => buildAvailableFight(db, fight, now));
+    const fights = fightList.map((fight) => buildAvailableFight(db, fight, now));
     res.json(fights);
   } catch (error) {
     console.error('Error fetching available fights:', error);
@@ -403,15 +447,16 @@ router.get('/available-fights', async (_req, res) => {
 // GET /api/betting/fight/:fightId
 router.get('/fight/:fightId', auth, async (req, res) => {
   try {
-    const db = await readDb();
-    const fight = findFightById(db, req.params.fightId);
+    const fight = await fightsRepo.findById(req.params.fightId);
     if (!fight) {
       return res.status(404).json({ error: 'Fight not found' });
     }
 
+    const fightBets = await betsRepo.findManyBy({ fightId: fight.id });
+    const db = { fights: [fight], bets: fightBets };
     const totals = getFightBettingTotals(db, fight.id);
-    const userBet = (db.bets || []).find(
-      (bet) => bet.fightId === fight.id && bet.userId === req.user.id && bet.status === 'pending'
+    const userBet = fightBets.find(
+      (bet) => bet.userId === req.user.id && bet.status === 'pending'
     );
 
     res.json({
@@ -434,7 +479,7 @@ router.get('/fight/:fightId', auth, async (req, res) => {
 // GET /api/betting/fight/:fightId/odds
 router.get('/fight/:fightId/odds', auth, async (req, res) => {
   try {
-    const db = await readDb();
+    const db = await loadFightData(req.params.fightId);
     const context = resolveFightContext(db, req.params.fightId);
     if (!context) {
       return res.status(404).json({ error: 'Fight not found' });
@@ -461,8 +506,8 @@ router.post('/fight/:fightId', auth, async (req, res) => {
     let newBalance = 0;
     let betRecord;
 
-    await withDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (tx) => {
+      const user = await usersRepo.findById(req.user.id, tx);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -476,6 +521,7 @@ router.post('/fight/:fightId', auth, async (req, res) => {
         throw error;
       }
 
+      const db = await loadFightData(req.params.fightId, tx);
       const context = resolveFightContext(db, req.params.fightId);
       if (!context) {
         const error = new Error('Fight not found');
@@ -526,11 +572,9 @@ router.post('/fight/:fightId', auth, async (req, res) => {
         createdAt: nowIso
       };
 
-      db.bets = Array.isArray(db.bets) ? db.bets : [];
-      db.bets.push(betRecord);
-      adjustCoins(db, user, -amount, 'bet', 'Placed bet');
+      await betsRepo.insert(betRecord, tx);
+      await adjustCoins(tx, user, -amount, 'bet', 'Placed bet');
       newBalance = user.coins.balance;
-      return db;
     });
 
     res.json({ bet: betRecord, newBalance });
@@ -572,8 +616,8 @@ router.post('/place/:fightId', auth, async (req, res) => {
     let betRecord;
     let remainingCoins = 0;
 
-    await withDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (tx) => {
+      const user = await usersRepo.findById(req.user.id, tx);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -581,6 +625,7 @@ router.post('/place/:fightId', auth, async (req, res) => {
       }
       ensureCoinAccount(user);
 
+      const db = await loadFightData(req.params.fightId, tx);
       const context = resolveFightContext(db, req.params.fightId);
       if (!context) {
         const error = new Error('Fight not found');
@@ -643,11 +688,9 @@ router.post('/place/:fightId', auth, async (req, res) => {
           : { enabled: false }
       };
 
-      db.bets = Array.isArray(db.bets) ? db.bets : [];
-      db.bets.push(betRecord);
-      adjustCoins(db, user, -totalCost, 'bet', 'Placed bet');
+      await betsRepo.insert(betRecord, tx);
+      await adjustCoins(tx, user, -totalCost, 'bet', 'Placed bet');
       remainingCoins = user.coins.balance;
-      return db;
     });
 
     res.json({ success: true, message: 'Bet placed successfully', bet: betRecord, remainingCoins });
@@ -692,8 +735,9 @@ router.post('/place-bet', auth, async (req, res) => {
 
     let betRecord;
 
-    await withDb((db) => {
-      const user = findUserById(db, userId);
+    await withRepositoryTransaction(async (tx) => {
+      const user = await usersRepo.findById(userId, tx);
+      const db = await loadFightData(fightId, tx);
       const context = resolveFightContext(db, fightId);
       if (!user || !context) {
         const error = new Error('User or fight not found');
@@ -751,10 +795,8 @@ router.post('/place-bet', auth, async (req, res) => {
         createdAt: nowIso
       };
 
-      db.bets = Array.isArray(db.bets) ? db.bets : [];
-      db.bets.push(betRecord);
-      adjustCoins(db, user, -betAmount, 'bet', 'Placed bet');
-      return db;
+      await betsRepo.insert(betRecord, tx);
+      await adjustCoins(tx, user, -betAmount, 'bet', 'Placed bet');
     });
 
     res.json({ success: true, bet: betRecord });
@@ -791,8 +833,8 @@ router.post('/parlay', auth, async (req, res) => {
     let parlayBet;
     let remainingCoins = 0;
 
-    await withDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (tx) => {
+      const user = await usersRepo.findById(req.user.id, tx);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -808,6 +850,7 @@ router.post('/parlay', auth, async (req, res) => {
         throw error;
       }
 
+      const db = await loadFightData(bets.map((bet) => bet.fightId), tx);
       const now = new Date();
       const parlayBets = bets.map((bet) => {
         const context = resolveFightContext(db, bet.fightId);
@@ -875,11 +918,9 @@ router.post('/parlay', auth, async (req, res) => {
           : { enabled: false }
       };
 
-      db.bets = Array.isArray(db.bets) ? db.bets : [];
-      db.bets.push(parlayBet);
-      adjustCoins(db, user, -totalCost, 'bet', 'Placed parlay bet');
+      await betsRepo.insert(parlayBet, tx);
+      await adjustCoins(tx, user, -totalCost, 'bet', 'Placed parlay bet');
       remainingCoins = user.coins.balance;
-      return db;
     });
 
     res.json({
@@ -928,8 +969,8 @@ router.post('/place-parlay', auth, async (req, res) => {
 
     let parlayBet;
 
-    await withDb((db) => {
-      const user = findUserById(db, userId);
+    await withRepositoryTransaction(async (tx) => {
+      const user = await usersRepo.findById(userId, tx);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -943,6 +984,7 @@ router.post('/place-parlay', auth, async (req, res) => {
         throw error;
       }
 
+      const db = await loadFightData(bets.map((bet) => bet.fightId), tx);
       const now = new Date();
       const parlayBets = bets.map((bet) => {
         const context = resolveFightContext(db, bet.fightId);
@@ -1007,10 +1049,8 @@ router.post('/place-parlay', auth, async (req, res) => {
         createdAt: nowIso
       };
 
-      db.bets = Array.isArray(db.bets) ? db.bets : [];
-      db.bets.push(parlayBet);
-      adjustCoins(db, user, -betAmount, 'bet', 'Placed parlay bet');
-      return db;
+      await betsRepo.insert(parlayBet, tx);
+      await adjustCoins(tx, user, -betAmount, 'bet', 'Placed parlay bet');
     });
 
     res.json({ success: true, bet: parlayBet });
@@ -1041,8 +1081,12 @@ router.post('/place-parlay', auth, async (req, res) => {
 // GET /api/betting/my-bets
 router.get('/my-bets', auth, async (req, res) => {
   try {
-    const db = await readDb();
-    const bets = (db.bets || []).filter((bet) => bet.userId === req.user.id);
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const bets = await betsRepo.findManyBy(
+      { userId: req.user.id },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
+    );
+    const db = await loadFightDataByBets(bets);
     const fightsById = new Map((db.fights || []).map((fight) => [fight.id, fight]));
 
     const betsWithDetails = bets.map((bet) => ({
@@ -1063,8 +1107,12 @@ router.get('/history/:userId', auth, async (req, res) => {
     if (req.params.userId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Access denied' });
     }
-    const db = await readDb();
-    const bets = (db.bets || []).filter((bet) => bet.userId === req.params.userId);
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const bets = await betsRepo.findManyBy(
+      { userId: req.params.userId },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
+    );
+    const db = await loadFightDataByBets(bets);
     res.json(
       bets.map((bet) => ({
         ...bet,
@@ -1085,10 +1133,12 @@ router.get('/active-bets/:userId', auth, async (req, res) => {
     if (req.params.userId !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Access denied' });
     }
-    const db = await readDb();
-    const activeBets = (db.bets || []).filter(
-      (bet) => bet.userId === req.params.userId && bet.status === 'pending'
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const activeBets = await betsRepo.findManyBy(
+      { userId: req.params.userId, status: 'pending' },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
     );
+    const db = await loadFightDataByBets(activeBets);
 
     res.json(
       activeBets.map((bet) => ({
@@ -1103,12 +1153,20 @@ router.get('/active-bets/:userId', auth, async (req, res) => {
 });
 
 // Moderator endpoints
-router.get('/moderator/all', auth, roleMiddleware(['moderator', 'admin']), async (_req, res) => {
+router.get('/moderator/all', auth, roleMiddleware(['moderator', 'admin']), async (req, res) => {
   try {
-    const db = await readDb();
-    const bets = (db.bets || []).map((bet) => ({
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const entries = await betsRepo.findManyBy(
+      {},
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
+    );
+    const userIds = [...new Set(entries.map((bet) => bet.userId).filter(Boolean))];
+    const users = userIds.length ? await usersRepo.findManyBy({ id: { $in: userIds } }) : [];
+    const db = await loadFightDataByBets(entries);
+    db.users = users;
+    const bets = entries.map((bet) => ({
       ...bet,
-      userId: findUserById(db, bet.userId) || bet.userId,
+      userId: users.find((user) => resolveUserId(user) === bet.userId) || bet.userId,
       fightId: findFightById(db, bet.fightId) || bet.fightId
     }));
     res.json(bets);
@@ -1125,8 +1183,8 @@ router.post('/moderator/settle/:betId', auth, roleMiddleware(['moderator']), asy
       return res.status(400).json({ error: 'Invalid result' });
     }
 
-    await withDb((db) => {
-      const bet = (db.bets || []).find((entry) => entry.id === req.params.betId || entry._id === req.params.betId);
+    await withRepositoryTransaction(async (tx) => {
+      const bet = await betsRepo.findById(req.params.betId, tx);
       if (!bet) {
         const error = new Error('Bet not found');
         error.code = 'NOT_FOUND';
@@ -1139,17 +1197,22 @@ router.post('/moderator/settle/:betId', auth, roleMiddleware(['moderator']), asy
         throw error;
       }
 
-      bet.status = result;
-      bet.settledAt = new Date().toISOString();
+      const settledAt = new Date().toISOString();
 
-      const user = findUserById(db, bet.userId);
+      const user = await usersRepo.findById(bet.userId, tx);
       if (user && result === 'won') {
         const winnings = bet.actualWinnings || bet.potentialWinnings || 0;
         bet.actualWinnings = winnings;
-        adjustCoins(db, user, winnings, 'bet_won', 'Bet winnings');
+        await adjustCoins(tx, user, winnings, 'bet_won', 'Bet winnings');
       }
-
-      return db;
+      await updateBet(bet, (draft) => ({
+        ...draft,
+        status: result,
+        settledAt,
+        ...(bet.actualWinnings !== undefined
+          ? { actualWinnings: bet.actualWinnings }
+          : {})
+      }), tx);
     });
 
     res.json({ message: 'Bet settled' });
@@ -1167,8 +1230,8 @@ router.post('/moderator/settle/:betId', auth, roleMiddleware(['moderator']), asy
 
 router.post('/moderator/refund/:betId', auth, roleMiddleware(['moderator']), async (req, res) => {
   try {
-    await withDb((db) => {
-      const bet = (db.bets || []).find((entry) => entry.id === req.params.betId || entry._id === req.params.betId);
+    await withRepositoryTransaction(async (tx) => {
+      const bet = await betsRepo.findById(req.params.betId, tx);
       if (!bet) {
         const error = new Error('Bet not found');
         error.code = 'NOT_FOUND';
@@ -1181,15 +1244,16 @@ router.post('/moderator/refund/:betId', auth, roleMiddleware(['moderator']), asy
         throw error;
       }
 
-      bet.status = 'refunded';
-      bet.settledAt = new Date().toISOString();
-
-      const user = findUserById(db, bet.userId);
+      const settledAt = new Date().toISOString();
+      const user = await usersRepo.findById(bet.userId, tx);
       if (user) {
-        adjustCoins(db, user, bet.amount || 0, 'bet_refund', 'Bet refund');
+        await adjustCoins(tx, user, bet.amount || 0, 'bet_refund', 'Bet refund');
       }
-
-      return db;
+      await updateBet(bet, (draft) => ({
+        ...draft,
+        status: 'refunded',
+        settledAt
+      }), tx);
     });
 
     res.json({ message: 'Bet refunded' });

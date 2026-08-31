@@ -12,6 +12,7 @@ const rawDbPath =
 const DB_PATH = path.resolve(__dirname, '..', rawDbPath);
 
 let writeChain = Promise.resolve();
+let ensureDbPromise;
 
 const enqueueWrite = async (task) => {
   let result;
@@ -44,6 +45,7 @@ const enqueueWrite = async (task) => {
 const ensureArray = (value) => (Array.isArray(value) ? value : []);
 
 const atomicWriteFile = async (targetPath, contents) => {
+  await fs.mkdir(path.dirname(targetPath), { recursive: true });
   const tempPath = `${targetPath}.${process.pid}.${randomUUID()}.tmp`;
   let handle;
   try {
@@ -63,15 +65,23 @@ const atomicWriteFile = async (targetPath, contents) => {
 };
 
 const ensureDbFile = async () => {
-  try {
-    await fs.access(DB_PATH);
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      await atomicWriteFile(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2));
-    } else {
+  if (!ensureDbPromise) {
+    ensureDbPromise = (async () => {
+      try {
+        await fs.access(DB_PATH);
+      } catch (error) {
+        if (error.code === 'ENOENT') {
+          await atomicWriteFile(DB_PATH, JSON.stringify(DEFAULT_DB, null, 2));
+        } else {
+          throw error;
+        }
+      }
+    })().catch((error) => {
+      ensureDbPromise = undefined;
       throw error;
-    }
+    });
   }
+  return ensureDbPromise;
 };
 
 export const readDb = async () => {

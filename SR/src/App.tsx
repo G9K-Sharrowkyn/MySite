@@ -1,9 +1,14 @@
-import { useEffect } from 'react';
-import { GameScene } from './components/GameScene';
+import { lazy, Suspense, useEffect } from 'react';
 import { MainMenu, Countdown, StartingOverlay, HUD, FinishScreen } from './components/UI';
 import { useGameStore } from './store/gameStore';
 import { useGameAudio } from './hooks/useGameAudio';
-import { TrackEditor } from './components/TrackEditor';
+
+const GameScene = lazy(() => import('./components/GameScene').then((module) => ({
+  default: module.GameScene,
+})));
+const TrackEditor = lazy(() => import('./components/TrackEditor').then((module) => ({
+  default: module.TrackEditor,
+})));
 
 export default function App() {
   useGameAudio();
@@ -51,8 +56,10 @@ export default function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#000000' }}>
-      {showScene && <GameScene />}
-      <TrackEditor />
+      <Suspense fallback={null}>
+        {showScene && <GameScene />}
+        {phase === 'editor' && <TrackEditor />}
+      </Suspense>
       <MainMenu />
       <Countdown />
       <StartingOverlay />

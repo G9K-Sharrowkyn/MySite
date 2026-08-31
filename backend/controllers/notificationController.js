@@ -27,28 +27,16 @@ export const getNotifications = async (req, res) => {
       maxLimit: 100
     });
 
-    const notifications = await notificationsRepo.getAll();
-
-    const filtered = notifications.filter((notification) => {
-      if (notification.userId !== req.user.id) return false;
-      if (type) {
-        return notification.type === type;
-      }
-      return true;
-    });
-
-    const sorted = [...filtered].sort(
-      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    );
-    const paged = sorted.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
-    );
-
-    const unreadCount = notifications.filter(
-      (notification) =>
-        notification.userId === req.user.id && !notification.read
-    ).length;
+    const query = { userId: req.user.id, ...(type ? { type } : {}) };
+    const [paged, totalNotifications, unreadCount] = await Promise.all([
+      notificationsRepo.findManyBy(query, {
+        sort: { createdAt: -1 },
+        skip: (pageNumber - 1) * limitNumber,
+        limit: limitNumber
+      }),
+      notificationsRepo.countBy(query),
+      notificationsRepo.countBy({ userId: req.user.id, read: { $ne: true } })
+    ]);
 
     res.json({
       notifications: paged.map((notification) =>
@@ -56,16 +44,16 @@ export const getNotifications = async (req, res) => {
       ),
       pagination: {
         currentPage: pageNumber,
-        totalPages: Math.ceil(filtered.length / limitNumber) || 1,
-        totalNotifications: filtered.length,
-        hasNext: pageNumber * limitNumber < filtered.length,
+        totalPages: Math.ceil(totalNotifications / limitNumber) || 1,
+        totalNotifications,
+        hasNext: pageNumber * limitNumber < totalNotifications,
         hasPrev: pageNumber > 1
       },
       unreadCount
     });
   } catch (error) {
     console.error('Error fetching notifications:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -74,22 +62,19 @@ export const getNotifications = async (req, res) => {
 // @access  Private
 export const markAsRead = async (req, res) => {
   try {
-    let found;
-
-    await notificationsRepo.updateAll((notifications) => {
-      const notification = notifications.find(
-        (entry) => entry.id === req.params.id || entry._id === req.params.id
-      );
-      if (!notification || notification.userId !== req.user.id) {
-        const error = new Error('Notification not found');
-        error.code = 'NOTIFICATION_NOT_FOUND';
-        throw error;
-      }
-
-      notification.read = true;
-      notification.readAt = new Date().toISOString();
-      found = notification;
-      return notifications;
+    const notification = await notificationsRepo.findOneBy({
+      id: req.params.id,
+      userId: req.user.id
+    });
+    if (!notification) {
+      const error = new Error('Notification not found');
+      error.code = 'NOTIFICATION_NOT_FOUND';
+      throw error;
+    }
+    const found = await notificationsRepo.updateById(req.params.id, (entry) => {
+      entry.read = true;
+      entry.readAt = new Date().toISOString();
+      return entry;
     });
 
     res.json({
@@ -101,7 +86,7 @@ export const markAsRead = async (req, res) => {
       return res.status(404).json({ msg: 'Notification not found' });
     }
     console.error('Error marking notification as read:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -110,20 +95,15 @@ export const markAsRead = async (req, res) => {
 // @access  Private
 export const markAllAsRead = async (req, res) => {
   try {
-    await notificationsRepo.updateAll((notifications) => {
-      notifications.forEach((notification) => {
-        if (notification.userId === req.user.id && !notification.read) {
-          notification.read = true;
-          notification.readAt = new Date().toISOString();
-        }
-      });
-      return notifications;
-    });
+    await notificationsRepo.patchManyBy(
+      { userId: req.user.id, read: { $ne: true } },
+      { read: true, readAt: new Date().toISOString() }
+    );
 
     res.json({ msg: 'All notifications marked as read' });
   } catch (error) {
     console.error('Error marking all notifications as read:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -132,29 +112,19 @@ export const markAllAsRead = async (req, res) => {
 // @access  Private
 export const deleteNotification = async (req, res) => {
   try {
-    let removed = false;
-
-    await notificationsRepo.updateAll((notifications) => {
-      const before = notifications.length;
-      const filtered = notifications.filter(
-        (entry) =>
-          !(
-            (entry.id === req.params.id || entry._id === req.params.id) &&
-            entry.userId === req.user.id
-          )
-      );
-      removed = filtered.length !== before;
-      return filtered;
+    const notification = await notificationsRepo.findOneBy({
+      id: req.params.id,
+      userId: req.user.id
     });
-
-    if (!removed) {
+    if (!notification) {
       return res.status(404).json({ msg: 'Notification not found' });
     }
+    await notificationsRepo.removeById(req.params.id);
 
     res.json({ msg: 'Notification deleted' });
   } catch (error) {
     console.error('Error deleting notification:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -163,16 +133,15 @@ export const deleteNotification = async (req, res) => {
 // @access  Private
 export const getUnreadCount = async (req, res) => {
   try {
-    const notifications = await notificationsRepo.getAll();
-    const unreadCount = notifications.filter(
-      (notification) =>
-        notification.userId === req.user.id && !notification.read
-    ).length;
+    const unreadCount = await notificationsRepo.countBy({
+      userId: req.user.id,
+      read: { $ne: true }
+    });
 
     res.json({ unreadCount });
   } catch (error) {
     console.error('Error fetching unread notification count:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -206,18 +175,22 @@ export const createNotification = async (
     createdAt: now
   };
 
-  if (db && typeof db === 'object') {
-    await notificationsRepo.insert(notification, { db });
+  const isTransactionalInsert = Boolean(db && typeof db === 'object');
+  if (isTransactionalInsert) {
+    const context = db.mongoDb || db.db ? db : { db };
+    await notificationsRepo.insert(notification, context);
   } else {
     await notificationsRepo.insert(notification);
   }
 
-  await sendPushToUser(userId, {
-    title: title || 'New notification',
-    body: content || '',
-    url: data?.url || '/notifications',
-    notificationId: notification.id
-  });
+  if (!isTransactionalInsert) {
+    await sendPushToUser(userId, {
+      title: title || 'New notification',
+      body: content || '',
+      url: data?.url || '/notifications',
+      notificationId: notification.id
+    });
+  }
 
   return notification;
 };

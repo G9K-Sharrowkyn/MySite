@@ -1,6 +1,9 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  getSwoopLeaderboard,
+  saveSwoopBest
+} from '../services/swoopLeaderboard.js';
 
 const router = express.Router();
 
@@ -22,39 +25,6 @@ const normalizeInteger = (value) => {
   return Number.isFinite(parsed) ? Math.round(parsed) : null;
 };
 
-const compareRuns = (left, right) =>
-  left.timeMs - right.timeMs ||
-  left.collisions - right.collisions ||
-  new Date(left.updatedAt || 0).getTime() - new Date(right.updatedAt || 0).getTime();
-
-const buildLeaderboard = (db, trackId) => {
-  const usersById = new Map(
-    (db.users || []).map((user) => [resolveUserId(user), user])
-  );
-
-  return (db.swoopRuns || [])
-    .filter((run) => run.trackId === trackId)
-    .sort(compareRuns)
-    .slice(0, LEADERBOARD_LIMIT)
-    .map((run, index) => {
-      const user = usersById.get(run.userId);
-      return {
-        rank: index + 1,
-        userId: run.userId,
-        nickname:
-          user?.displayName ||
-          user?.profile?.displayName ||
-          user?.username ||
-          run.nickname ||
-          'Racer',
-        trackId: run.trackId,
-        timeMs: run.timeMs,
-        collisions: run.collisions,
-        updatedAt: run.updatedAt
-      };
-    });
-};
-
 router.get('/leaderboard/:trackId', async (req, res) => {
   const trackId = normalizeTrackId(req.params.trackId);
   if (!trackId) {
@@ -62,11 +32,10 @@ router.get('/leaderboard/:trackId', async (req, res) => {
   }
 
   try {
-    const db = await readDb();
     return res.json({
       trackId,
       limit: LEADERBOARD_LIMIT,
-      leaderboard: buildLeaderboard(db, trackId)
+      leaderboard: await getSwoopLeaderboard(trackId, LEADERBOARD_LIMIT)
     });
   } catch (error) {
     console.error('Error fetching swoop leaderboard:', error);
@@ -90,49 +59,16 @@ router.post('/runs', auth, async (req, res) => {
   }
 
   const userId = resolveUserId(req.user);
-  let accepted = false;
-  let personalBest = null;
-  let responseDb = null;
-
   try {
-    await withDb(async (db) => {
-      const user = (db.users || []).find((entry) => resolveUserId(entry) === userId);
-      if (!user) {
-        const error = new Error('User not found');
-        error.code = 'USER_NOT_FOUND';
-        throw error;
-      }
-
-      db.swoopRuns = Array.isArray(db.swoopRuns) ? db.swoopRuns : [];
-      const existingIndex = db.swoopRuns.findIndex(
-        (run) => run.userId === userId && run.trackId === trackId
-      );
-      const existing = existingIndex >= 0 ? db.swoopRuns[existingIndex] : null;
-      const now = new Date().toISOString();
-      const candidate = {
-        id: existing?.id || `${userId}:${trackId}`,
-        userId,
-        nickname:
-          user.displayName || user.profile?.displayName || user.username || req.user.username || 'Racer',
-        trackId,
-        timeMs,
-        collisions,
-        createdAt: existing?.createdAt || now,
-        updatedAt: now
-      };
-
-      if (!existing || compareRuns(candidate, existing) < 0) {
-        if (existingIndex >= 0) db.swoopRuns[existingIndex] = candidate;
-        else db.swoopRuns.push(candidate);
-        personalBest = candidate;
-        accepted = true;
-      } else {
-        personalBest = existing;
-      }
-      responseDb = db;
+    const { accepted, personalBest } = await saveSwoopBest({
+      userId,
+      nickname: req.user.username,
+      trackId,
+      timeMs,
+      collisions
     });
 
-    const leaderboard = buildLeaderboard(responseDb, trackId);
+    const leaderboard = await getSwoopLeaderboard(trackId, LEADERBOARD_LIMIT);
     const rank = leaderboard.find((entry) => entry.userId === userId)?.rank || null;
     return res.status(accepted ? 201 : 200).json({
       accepted,

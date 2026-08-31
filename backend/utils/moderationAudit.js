@@ -15,6 +15,7 @@ export const logModerationAction = async ({
   const role = actor.role || 'user';
   if (role !== 'admin' && role !== 'moderator') return;
 
+  const context = db.mongoDb || db.db ? db : { db };
   await moderatorActionLogsRepo.insert(
     {
       id: uuidv4(),
@@ -27,7 +28,6 @@ export const logModerationAction = async ({
       details,
       createdAt: new Date().toISOString()
     },
-    { db }
+    context
   );
 };
-

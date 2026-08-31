@@ -1,5 +1,5 @@
 import { createCollectionRepo } from './collectionRepo.js';
-export { readDb, updateDb, writeDb, withDb } from './dbRepo.js';
+export { readDb, updateDb, writeDb, withDb, withRepositoryTransaction } from './dbRepo.js';
 import { COLLECTION_KEYS } from '../services/dbSchema.js';
 
 const repositories = Object.fromEntries(
@@ -40,6 +40,7 @@ export const challengeProgressRepo = repositories.challengeProgress;
 export const recommendationEventsRepo = repositories.recommendationEvents;
 export const characterSuggestionsRepo = repositories.characterSuggestions;
 export const divisionSeasonsRepo = repositories.divisionSeasons;
+export const divisionTeamSlotsRepo = repositories.divisionTeamSlots;
 export const feedbackRepo = repositories.feedback;
 export const nicknameChangeLogsRepo = repositories.nicknameChangeLogs;
 export const moderatorActionLogsRepo = repositories.moderatorActionLogs;

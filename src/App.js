@@ -3,37 +3,38 @@ import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'r
 import { LanguageProvider } from './i18n/LanguageContext';
 import { AuthProvider, AuthContext } from './auth/AuthContext';
 import Header from './Header';
-import TournamentPage from './tournamentLogic/TournamentPage';
-import Register from './logLogic/Register';
-import Login from './logLogic/Login';
-import ModeratorPanel from './moderatorLogic/ModeratorPanel';
-import AdminPanel from './adminLogic/AdminPanel';
-import AdminDivisionsPage from './moderatorLogic/AdminDivisionsPage';
-import ProfilePage from './profileLogic/ProfilePage';
-import MessagesPage from './messagesLogic/MessagesPage';
-import ConversationChat from './messagesLogic/ConversationChat';
-import LeaderboardPage from './leaderboardLogic/LeaderboardPage';
-import FeedPage from './feedLogic/FeedPage';
-import Home from './Home';
-import CreateFightPage from './fightLogic/CreateFightPage';
-import FightDetailPage from './fightLogic/FightDetailPage';
-import NotificationsPage from './notificationLogic/NotificationsPage';
-import DivisionsPage from './divisionsLogic/DivisionsPage';
-import PostPage from './postLogic/PostPage';
-import AccountSettings from './auth/AccountSettings';
-import ForgotPassword from './auth/ForgotPassword';
-import ResetPassword from './auth/ResetPassword';
-import VerifyEmail from './auth/VerifyEmail';
-import GlobalChatSystem from './chat/GlobalChatSystem';
 import FeedbackButton from './shared/FeedbackButton';
 import CookieConsent from './legal/CookieConsent';
-import LegalPolicyPage from './legal/LegalPolicyPage';
-import HelpPage from './legal/HelpPage';
 import BuildVersion from './BuildVersion';
 import './App.css';
 
+const TournamentPage = lazy(() => import('./tournamentLogic/TournamentPage'));
+const Register = lazy(() => import('./logLogic/Register'));
+const Login = lazy(() => import('./logLogic/Login'));
+const ModeratorPanel = lazy(() => import('./moderatorLogic/ModeratorPanel'));
+const AdminPanel = lazy(() => import('./adminLogic/AdminPanel'));
+const AdminDivisionsPage = lazy(() => import('./moderatorLogic/AdminDivisionsPage'));
+const ProfilePage = lazy(() => import('./profileLogic/ProfilePage'));
+const MessagesPage = lazy(() => import('./messagesLogic/MessagesPage'));
+const ConversationChat = lazy(() => import('./messagesLogic/ConversationChat'));
+const LeaderboardPage = lazy(() => import('./leaderboardLogic/LeaderboardPage'));
+const FeedPage = lazy(() => import('./feedLogic/FeedPage'));
+const Home = lazy(() => import('./Home'));
+const CreateFightPage = lazy(() => import('./fightLogic/CreateFightPage'));
+const FightDetailPage = lazy(() => import('./fightLogic/FightDetailPage'));
+const NotificationsPage = lazy(() => import('./notificationLogic/NotificationsPage'));
+const DivisionsPage = lazy(() => import('./divisionsLogic/DivisionsPage'));
+const PostPage = lazy(() => import('./postLogic/PostPage'));
+const AccountSettings = lazy(() => import('./auth/AccountSettings'));
+const ForgotPassword = lazy(() => import('./auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./auth/ResetPassword'));
+const VerifyEmail = lazy(() => import('./auth/VerifyEmail'));
+const LegalPolicyPage = lazy(() => import('./legal/LegalPolicyPage'));
+const HelpPage = lazy(() => import('./legal/HelpPage'));
+const GlobalChatSystem = lazy(() => import('./chat/GlobalChatSystem'));
 const CcgApp = lazy(() => import('./ccg/App'));
 const SwoopRacingPage = lazy(() => import('./swoopRacing/SwoopRacingPage'));
+const TronArenaFramePage = lazy(() => import('./tronLogic/TronArenaFramePage'));
 const TronArenaPage = lazy(() => import('./tronLogic/TronArenaPage'));
 
 const RoleRoute = ({ children, roles }) => {
@@ -56,7 +57,8 @@ function AppContent() {
   const isLoggedIn = !!user;
   const isSwoopRoute = location.pathname === '/swoop-racing';
   const isTronRoute = location.pathname === '/tron-arena';
-  const isImmersiveGameRoute = isSwoopRoute || isTronRoute;
+  const isEmbeddedTronRoute = location.pathname === '/tron-game';
+  const isImmersiveGameRoute = isSwoopRoute || isTronRoute || isEmbeddedTronRoute;
   const updateAvailable = false;
 
   if (loading) {
@@ -70,7 +72,9 @@ function AppContent() {
           🔄 New version available! Updating in 3 seconds...
         </div>
       )}
-      <Header isLoggedIn={isLoggedIn} setIsLoggedIn={() => {}} />
+      {!isEmbeddedTronRoute && (
+        <Header isLoggedIn={isLoggedIn} setIsLoggedIn={() => {}} />
+      )}
       <Suspense fallback={<div className="loading">Loading...</div>}>
       <Routes>
         <Route path="/" element={isLoggedIn ? <Navigate to="/feed" replace /> : <Home />} />
@@ -131,15 +135,21 @@ function AppContent() {
         />
         <Route
           path="/tron-arena"
+          element={isLoggedIn ? <TronArenaFramePage /> : <Navigate to="/login" replace />}
+        />
+        <Route
+          path="/tron-game"
           element={isLoggedIn ? <TronArenaPage /> : <Navigate to="/login" replace />}
         />
       </Routes>
       </Suspense>
       {/* Global Chat System - only show when logged in */}
-      {isLoggedIn && !isImmersiveGameRoute && <GlobalChatSystem />}
+      <Suspense fallback={null}>
+        {isLoggedIn && !isImmersiveGameRoute && <GlobalChatSystem />}
+      </Suspense>
       {/* Feedback Button - always visible */}
       {!isImmersiveGameRoute && <FeedbackButton />}
-      <CookieConsent />
+      {!isEmbeddedTronRoute && <CookieConsent />}
       {!isImmersiveGameRoute && <BuildVersion />}
     </div>
   );

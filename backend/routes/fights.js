@@ -1,9 +1,15 @@
 ﻿import express from 'express';
 import { createFight, getFights, getFight, updateFight, deleteFight, endFight, getCategories } from '../controllers/fightController.js';
 import auth from '../middleware/auth.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  commentsRepo,
+  fightsRepo,
+  usersRepo,
+  votesRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
-import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { applyDailyActivityBonusAtomic } from '../utils/coinBonus.js';
 import { commentValidation } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -97,24 +103,27 @@ router.delete('/:id', auth, deleteFight);
 // @access  Public
 router.get('/:id/votes', async (req, res) => {
   try {
-    const db = await readDb();
-    const votes = (db.votes || []).filter((vote) => vote.fightId === req.params.id);
-    const character1Votes = votes.filter((vote) => vote.team === 'A').length;
-    const character2Votes = votes.filter((vote) => vote.team === 'B').length;
-    const totalVotes = votes.length;
-
-    const oneHourAgo = Date.now() - 60 * 60 * 1000;
-    const hourlyVotes = votes.filter((vote) => {
-      const timestamp = new Date(vote.createdAt || 0).getTime();
-      return timestamp >= oneHourAgo;
-    }).length;
+    const fightId = req.params.id;
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const [teamCounts, totalVotes, hourlyVotes, recentVotes] = await Promise.all([
+      votesRepo.groupCountBy('team', { fightId }),
+      votesRepo.countBy({ fightId }),
+      votesRepo.countBy({ fightId, createdAt: { $gte: oneHourAgo } }),
+      votesRepo.findManyBy({ fightId }, { sort: { createdAt: -1 }, limit: 10 })
+    ]);
+    const character1Votes = teamCounts.A || 0;
+    const character2Votes = teamCounts.B || 0;
+    const voterIds = [...new Set(recentVotes.map((vote) => vote.userId).filter(Boolean))];
+    const users = voterIds.length
+      ? await usersRepo.findManyBy({ id: { $in: voterIds } }, { limit: voterIds.length })
+      : [];
 
     res.json({
       character1Votes,
       character2Votes,
       totalVotes,
       hourlyVotes,
-      recentVoters: buildRecentVoters(db, req.params.id)
+      recentVoters: buildRecentVoters({ votes: recentVotes, users }, fightId)
     });
   } catch (error) {
     console.error('Error fetching fight votes:', error);
@@ -130,10 +139,10 @@ router.get('/:id/user-vote/:userId', auth, async (req, res) => {
     if (req.params.userId !== req.user.id) {
       return res.status(403).json({ message: 'Access denied' });
     }
-    const db = await readDb();
-    const vote = (db.votes || []).find(
-      (entry) => entry.fightId === req.params.id && entry.userId === req.params.userId
-    );
+    const vote = await votesRepo.findOneBy({
+      fightId: req.params.id,
+      userId: req.params.userId
+    });
 
     if (!vote) {
       return res.json({ vote: null });
@@ -160,11 +169,23 @@ router.post('/:id/vote', auth, async (req, res) => {
 
     let storedVote;
 
-    await withDb((db) => {
-      const existing = (db.votes || []).find(
-        (entry) => entry.fightId === req.params.id && entry.userId === userId
+    await withRepositoryTransaction(async (context) => {
+      const fight = await fightsRepo.findById(req.params.id, context);
+      if (!fight) {
+        const error = new Error('Fight not found');
+        error.code = 'FIGHT_NOT_FOUND';
+        throw error;
+      }
+      if (fight.status !== 'active') {
+        const error = new Error('Fight is not active');
+        error.code = 'FIGHT_INACTIVE';
+        throw error;
+      }
+      const existing = await votesRepo.findOneBy(
+        { fightId: req.params.id, userId },
+        {},
+        context
       );
-
       if (existing) {
         const error = new Error('Already voted');
         error.code = 'ALREADY_VOTED';
@@ -179,15 +200,29 @@ router.post('/:id/vote', auth, async (req, res) => {
         createdAt: new Date().toISOString()
       };
 
-      db.votes = Array.isArray(db.votes) ? db.votes : [];
-      db.votes.push(storedVote);
-      return db;
+      const result = await votesRepo.insertIfAbsent(
+        { fightId: req.params.id, userId },
+        storedVote,
+        context
+      );
+      if (!result.inserted) {
+        const error = new Error('Already voted');
+        error.code = 'ALREADY_VOTED';
+        throw error;
+      }
+      storedVote = result.item;
     });
 
     res.json({ vote: storedVote });
   } catch (error) {
     if (error.code === 'ALREADY_VOTED') {
       return res.status(400).json({ message: 'You have already voted' });
+    }
+    if (error.code === 'FIGHT_NOT_FOUND') {
+      return res.status(404).json({ message: 'Fight not found' });
+    }
+    if (error.code === 'FIGHT_INACTIVE') {
+      return res.status(400).json({ message: 'Fight is not active' });
     }
     console.error('Error voting on fight:', error);
     res.status(500).json({ message: 'Server error' });
@@ -199,8 +234,17 @@ router.post('/:id/vote', auth, async (req, res) => {
 // @access  Public
 router.get('/:id/comments', async (req, res) => {
   try {
-    const db = await readDb();
-    res.json(buildFightComments(db, req.params.id));
+    const comments = await commentsRepo.findManyBy(
+      { type: 'fight', fightId: req.params.id },
+      { sort: { createdAt: 1 }, limit: 200 }
+    );
+    const authorIds = [...new Set(comments.map((comment) =>
+      comment.authorId || comment.userId
+    ).filter(Boolean))];
+    const users = authorIds.length
+      ? await usersRepo.findManyBy({ id: { $in: authorIds } }, { limit: authorIds.length })
+      : [];
+    res.json(buildFightComments({ comments, users }, req.params.id));
   } catch (error) {
     console.error('Error fetching fight comments:', error);
     res.status(500).json({ message: 'Server error' });
@@ -219,8 +263,8 @@ router.post('/:id/comments', auth, commentValidation, async (req, res) => {
     }
 
     let created;
-    await withDb((db) => {
-      const author = findUserById(db, userId);
+    await withRepositoryTransaction(async (context) => {
+      const author = await usersRepo.findById(userId, context);
       const now = new Date().toISOString();
       created = {
         id: uuidv4(),
@@ -237,12 +281,10 @@ router.post('/:id/comments', auth, commentValidation, async (req, res) => {
         likedBy: []
       };
 
-      db.comments = Array.isArray(db.comments) ? db.comments : [];
-      db.comments.push(created);
+      await commentsRepo.insert(created, context);
       if (author) {
-        applyDailyActivityBonus(db, author, 'comment', 50);
+        await applyDailyActivityBonusAtomic(userId, 'comment', 50, context);
       }
-      return db;
     });
 
     res.status(201).json({

@@ -43,6 +43,9 @@ npm run lint
 npm test -- --watchAll=false --runInBand
 npm run build
 npm audit --omit=dev --audit-level=high
+npm --prefix SR run lint
+npm --prefix SR test
+npm audit --prefix SR --omit=dev --audit-level=high
 cd backend
 npm ci
 npm test -- --runInBand
@@ -52,7 +55,7 @@ NODE_ENV=production npm run preflight:production
 
 The GitHub quality-gate workflow also runs Chromium end-to-end tests. The
 backend deployment runs the production preflight, migrations, PM2 restart and
-a live `/healthz` verification.
+a live `/readyz` verification.
 
 ## 4. Operational checks before promotion
 
@@ -66,7 +69,8 @@ a live `/healthz` verification.
   flows on desktop and mobile.
 - Verify that image uploads reject renamed non-images, SVG files and oversized
   pixel dimensions, and that share snapshots remain staff-only.
-- Put `/healthz` behind an external uptime monitor and alerting.
+- Put `/healthz` behind an external liveness monitor and `/readyz` behind a
+  dependency-aware readiness monitor and alerting.
 - Create an encrypted off-site backup, restore it into a clean environment and
   document recovery time.
 - Run a production-like load test for expected launch traffic and monitor CPU,

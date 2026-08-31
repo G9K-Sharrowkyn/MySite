@@ -39,6 +39,12 @@ jobs:
         run: npm run test:ci
       - name: Build production frontend
         run: npm run build
+      - name: Audit Swoop Racing dependencies
+        run: npm audit --prefix SR --omit=dev --audit-level=high
+      - name: Lint Swoop Racing
+        run: npm --prefix SR run lint
+      - name: Test Swoop Racing
+        run: npm --prefix SR test
 
   backend:
     name: Backend and concurrency regressions

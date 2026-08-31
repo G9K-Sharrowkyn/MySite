@@ -13,6 +13,8 @@
     "preflight:production": "node scripts/preflightProduction.js",
     "verify:deployment": "node scripts/verifyDeployment.js",
     "migrate:mongo": "node scripts/migrateToMongo.js",
+    "audit:mongo-scale": "node --use-system-ca scripts/auditMongoScale.js",
+    "ensure:mongo-indexes": "node --use-system-ca scripts/ensureMongoIndexes.js",
     "migrate:characters:mongo": "node scripts/importStaticCharactersToMongo.js",
     "migrate:character-images:mongo": "node scripts/migrateCharacterImagesToMongo.js",
     "migrate:avatars": "node scripts/migrateDefaultAvatars.js",
@@ -34,6 +36,7 @@
     "node": ">=22.22.0"
   },
   "dependencies": {
+    "@socket.io/redis-adapter": "^8.3.0",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
@@ -50,6 +53,8 @@
     "multer": "^2.0.1",
     "node-cron": "^4.2.1",
     "nodemailer": "^9.0.3",
+    "rate-limit-redis": "^6.0.1",
+    "redis": "^6.2.1",
     "sharp": "^0.35.3",
     "socket.io": "^4.8.1",
     "uuid": "^14.0.1",

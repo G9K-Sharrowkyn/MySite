@@ -2,10 +2,9 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   commentsRepo,
   fightsRepo,
-  readDb,
   usersRepo,
   votesRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { syncRankFromPoints } from '../utils/rankSystem.js';
 import { parsePagination } from '../utils/pagination.js';
@@ -141,11 +140,8 @@ export const createFight = async (req, res) => {
     let createdFight;
     let creator;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -190,10 +186,9 @@ export const createFight = async (req, res) => {
         }
       };
 
-      await fightsRepo.insert(fight, { db });
+      await fightsRepo.insert(fight, context);
       createdFight = fight;
       creator = user;
-      return db;
     });
 
     res.json({
@@ -220,34 +215,37 @@ export const createFight = async (req, res) => {
 export const getFights = async (req, res) => {
   try {
     const { type, category, status } = req.query;
-    const db = await readDb();
-    const fights = await fightsRepo.getAll({ db });
-    const users = await usersRepo.getAll({ db });
-    const votes = await votesRepo.getAll({ db });
-
-    const filtered = fights.filter((fight) => {
-      if (type) {
-        if (type === 'main' && !fight.isOfficial) return false;
-        if (type === 'feed' && fight.isOfficial) return false;
-      }
-      if (category && fight.category !== category) return false;
-      if (status && fight.status !== status) return false;
-      return true;
-    });
-
-    const totalFights = filtered.length;
     const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
       defaultLimit: 10,
       maxLimit: 50
     });
-    const sorted = [...filtered].sort(
-      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    );
+    const query = {
+      ...(type === 'main' ? { isOfficial: true } : {}),
+      ...(type === 'feed' ? { isOfficial: { $ne: true } } : {}),
+      ...(category ? { category } : {}),
+      ...(status ? { status } : {})
+    };
+    const [fights, totalFights] = await Promise.all([
+      fightsRepo.findManyBy(query, {
+        sort: { createdAt: -1 },
+        skip: (pageNumber - 1) * limitNumber,
+        limit: limitNumber
+      }),
+      fightsRepo.countBy(query)
+    ]);
+    const fightIds = fights.map((fight) => fight.id);
+    const creatorIds = [...new Set(fights.map((fight) => fight.createdBy).filter(Boolean))];
+    const [users, votes] = await Promise.all([
+      creatorIds.length
+        ? usersRepo.findManyBy({ id: { $in: creatorIds } }, { limit: creatorIds.length })
+        : [],
+      fightIds.length
+        ? votesRepo.findManyBy({ fightId: { $in: fightIds } })
+        : []
+    ]);
 
     res.json({
-      fights: sorted
-        .slice((pageNumber - 1) * limitNumber, pageNumber * limitNumber)
-        .map((fight) => normalizeFight(fight, { users, votes })),
+      fights: fights.map((fight) => normalizeFight(fight, { users, votes })),
       pagination: {
         currentPage: pageNumber,
         totalPages: Math.ceil(totalFights / limitNumber) || 1,
@@ -267,20 +265,19 @@ export const getFights = async (req, res) => {
 // @access  Public
 export const getFight = async (req, res) => {
   try {
-    const db = await readDb();
-    const fight = await fightsRepo.findById(req.params.id, { db });
+    const fight = await fightsRepo.findById(req.params.id);
     if (!fight) {
       return res.status(404).json({ msg: 'Fight not found' });
     }
 
-    const [users, votes] = await Promise.all([
-      usersRepo.getAll({ db }),
-      votesRepo.getAll({ db })
+    const [users, votes, comments] = await Promise.all([
+      fight.createdBy ? usersRepo.findManyBy({ id: fight.createdBy }, { limit: 1 }) : [],
+      votesRepo.findManyBy({ fightId: fight.id }),
+      commentsRepo.findManyBy(
+        { type: 'fight', fightId: fight.id },
+        { sort: { createdAt: -1 }, limit: 200 }
+      )
     ]);
-    const comments = (await commentsRepo.filter(
-      (comment) => comment.type === 'fight' && comment.fightId === fight.id,
-      { db }
-    )).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
 
     res.json({ ...normalizeFight(fight, { users, votes }), comments });
   } catch (error) {
@@ -296,18 +293,15 @@ export const updateFight = async (req, res) => {
   try {
     let updatedFight;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user || user.role !== 'moderator') {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const fight = await fightsRepo.findById(req.params.id, { db });
+      const fight = await fightsRepo.findById(req.params.id, context);
       if (!fight) {
         const error = new Error('Fight not found');
         error.code = 'FIGHT_NOT_FOUND';
@@ -331,8 +325,7 @@ export const updateFight = async (req, res) => {
       }
 
       fight.updatedAt = new Date().toISOString();
-      updatedFight = fight;
-      return db;
+      updatedFight = await fightsRepo.updateById(req.params.id, () => fight, context);
     });
 
     res.json({ msg: 'Fight updated', fight: updatedFight });
@@ -353,18 +346,15 @@ export const updateFight = async (req, res) => {
 // @access  Private (Moderator only)
 export const deleteFight = async (req, res) => {
   try {
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user || user.role !== 'moderator') {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const fight = await fightsRepo.findById(req.params.id, { db });
+      const fight = await fightsRepo.findById(req.params.id, context);
       if (!fight) {
         const error = new Error('Fight not found');
         error.code = 'FIGHT_NOT_FOUND';
@@ -372,16 +362,9 @@ export const deleteFight = async (req, res) => {
       }
 
       const fightId = fight.id;
-      await fightsRepo.removeById(fightId, { db });
-      await votesRepo.updateAll(
-        (votes) => votes.filter((vote) => vote.fightId !== fightId),
-        { db }
-      );
-      await commentsRepo.updateAll(
-        (comments) => comments.filter((comment) => comment.fightId !== fightId),
-        { db }
-      );
-      return db;
+      await fightsRepo.removeById(fightId, context);
+      await votesRepo.removeManyBy({ fightId }, context);
+      await commentsRepo.removeManyBy({ fightId }, context);
     });
 
     res.json({ msg: 'Fight deleted' });
@@ -424,29 +407,27 @@ export const endFight = async (req, res) => {
   try {
     let updatedFight;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user || user.role !== 'moderator') {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const fight = await fightsRepo.findById(req.params.id, { db });
+      const fight = await fightsRepo.findById(req.params.id, context);
       if (!fight) {
         const error = new Error('Fight not found');
         error.code = 'FIGHT_NOT_FOUND';
         throw error;
       }
 
-      const votes = await votesRepo.getAll({ db });
-      const users = await usersRepo.getAll({ db });
-      const userById = new Map(
-        users.map((entry) => [resolveUserId(entry), entry])
-      );
+      if (fight.status === 'ended') {
+        const error = new Error('Fight already ended');
+        error.code = 'FIGHT_ALREADY_ENDED';
+        throw error;
+      }
+      const votes = await votesRepo.findManyBy({ fightId: fight.id }, {}, context);
       const { teamAVotes, teamBVotes } = countVotesForFight(votes, fight.id);
 
       let winner = 'draw';
@@ -462,57 +443,51 @@ export const endFight = async (req, res) => {
       fight.result.method = 'moderator';
       fight.updatedAt = new Date().toISOString();
 
-      // Update participant stats
-      if (fight.participants && Array.isArray(fight.participants)) {
-        fight.participants.forEach(participant => {
-          const participantUser = userById.get(participant.userId);
-          if (participantUser) {
-            participantUser.stats = participantUser.stats || {};
-            participantUser.stats.fights = participantUser.stats.fights || { total: 0, wins: 0, losses: 0, winRate: 0 };
-            participantUser.stats.fights.total = (participantUser.stats.fights.total || 0) + 1;
-            
-            // Check if this participant won
-            const participantTeam = participant.team || participant.side;
-            const wonFight = (winner === 'A' && ['A', 'teamA', 'fighter1'].includes(participantTeam)) ||
-                           (winner === 'B' && ['B', 'teamB', 'fighter2'].includes(participantTeam));
-            
-            if (winner === 'draw') {
-              // Draw - no win/loss update
-            } else if (wonFight) {
-              participantUser.stats.fights.wins = (participantUser.stats.fights.wins || 0) + 1;
-            } else {
-              participantUser.stats.fights.losses = (participantUser.stats.fights.losses || 0) + 1;
-            }
-            
-            // Update win rate
-            if (participantUser.stats.fights.total > 0) {
-              participantUser.stats.fights.winRate = Math.round((participantUser.stats.fights.wins / participantUser.stats.fights.total) * 100);
-            }
-          }
-        });
+      updatedFight = await fightsRepo.updateById(fight.id, () => fight, context);
+
+      for (const participant of Array.isArray(fight.participants) ? fight.participants : []) {
+        await usersRepo.updateById(participant.userId, (participantUser) => {
+          participantUser.stats = participantUser.stats || {};
+          participantUser.stats.fights = participantUser.stats.fights || {
+            total: 0,
+            wins: 0,
+            losses: 0,
+            winRate: 0
+          };
+          participantUser.stats.fights.total += 1;
+          const participantTeam = participant.team || participant.side;
+          const wonFight =
+            (winner === 'A' && ['A', 'teamA', 'fighter1'].includes(participantTeam)) ||
+            (winner === 'B' && ['B', 'teamB', 'fighter2'].includes(participantTeam));
+          if (winner !== 'draw' && wonFight) participantUser.stats.fights.wins += 1;
+          if (winner !== 'draw' && !wonFight) participantUser.stats.fights.losses += 1;
+          participantUser.stats.fights.winRate = Math.round(
+            (participantUser.stats.fights.wins / participantUser.stats.fights.total) * 100
+          );
+          return participantUser;
+        }, context);
       }
 
       // Award points to users who voted correctly
       if (winner !== 'draw') {
-        votes
-          .filter(
-            (vote) =>
-              vote.fightId === fight.id &&
-              ((winner === 'A' && ['A', 'teamA', 'fighter1'].includes(vote.team)) ||
-                (winner === 'B' && ['B', 'teamB', 'fighter2'].includes(vote.team)))
-          )
-          .forEach((vote) => {
-            const votedUser = userById.get(vote.userId);
-            if (votedUser) {
+        const correctVoterIds = [...new Set(
+          votes
+            .filter((vote) =>
+              (winner === 'A' && ['A', 'teamA', 'fighter1'].includes(vote.team)) ||
+              (winner === 'B' && ['B', 'teamB', 'fighter2'].includes(vote.team))
+            )
+            .map((vote) => vote.userId)
+            .filter(Boolean)
+        )];
+        for (const voterId of correctVoterIds) {
+          await usersRepo.updateById(voterId, (votedUser) => {
               votedUser.stats = votedUser.stats || {};
               votedUser.stats.points = (votedUser.stats.points || 0) + 10;
               syncRankFromPoints(votedUser);
-            }
-          });
+              return votedUser;
+          }, context);
+        }
       }
-
-      updatedFight = fight;
-      return db;
     });
 
     res.json({ msg: 'Fight ended', fight: updatedFight });
@@ -522,6 +497,9 @@ export const endFight = async (req, res) => {
     }
     if (error.code === 'FIGHT_NOT_FOUND') {
       return res.status(404).json({ msg: 'Fight not found' });
+    }
+    if (error.code === 'FIGHT_ALREADY_ENDED') {
+      return res.status(409).json({ msg: 'Fight already ended' });
     }
     console.error('Error ending fight:', error);
     res.status(500).json({ msg: 'Server error' });

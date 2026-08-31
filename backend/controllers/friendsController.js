@@ -3,9 +3,8 @@ import {
   blocksRepo,
   friendRequestsRepo,
   friendshipsRepo,
-  readDb,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { createNotification } from './notificationController.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
@@ -21,19 +20,18 @@ const normalizeUserSummary = (user) => ({
 
 const sortPair = (a, b) => (String(a) < String(b) ? [String(a), String(b)] : [String(b), String(a)]);
 
-const isBlockedEitherWay = async (db, a, b) => {
-  const blocks = await blocksRepo.getAll({ db });
-  return blocks.some(
-    (entry) =>
-      (entry.blockerId === a && entry.blockedId === b) ||
-      (entry.blockerId === b && entry.blockedId === a)
-  );
+const isBlockedEitherWay = async (context, a, b) => {
+  return Boolean(await blocksRepo.findOneBy({
+    $or: [
+      { blockerId: a, blockedId: b },
+      { blockerId: b, blockedId: a }
+    ]
+  }, {}, context));
 };
 
-const areFriends = async (db, a, b) => {
+const areFriends = async (context, a, b) => {
   const [userId1, userId2] = sortPair(a, b);
-  const friendships = await friendshipsRepo.getAll({ db });
-  return friendships.some((entry) => entry.userId1 === userId1 && entry.userId2 === userId2);
+  return Boolean(await friendshipsRepo.findOneBy({ userId1, userId2 }, {}, context));
 };
 
 // GET /api/friends/status/:userId
@@ -43,28 +41,26 @@ export const getFriendStatus = async (req, res) => {
     if (!targetId) return res.status(400).json({ msg: 'User id required' });
     if (targetId === req.user.id) return res.json({ status: 'self' });
 
-    const db = await readDb();
-    const blocked = await isBlockedEitherWay(db, req.user.id, targetId);
+    const blocked = await isBlockedEitherWay(undefined, req.user.id, targetId);
     if (blocked) {
       // Detailed direction is available via /api/blocks/status but we treat as blocked here.
       return res.json({ status: 'blocked' });
     }
 
-    if (await areFriends(db, req.user.id, targetId)) {
+    if (await areFriends(undefined, req.user.id, targetId)) {
       return res.json({ status: 'friends' });
     }
 
-    const requests = await friendRequestsRepo.getAll({ db });
-    const incoming = requests.find(
-      (r) => r.status === 'pending' && r.fromUserId === targetId && r.toUserId === req.user.id
-    );
+    const incoming = await friendRequestsRepo.findOneBy({
+      status: 'pending', fromUserId: targetId, toUserId: req.user.id
+    });
     if (incoming) {
       return res.json({ status: 'incoming', requestId: incoming.id || incoming._id });
     }
 
-    const outgoing = requests.find(
-      (r) => r.status === 'pending' && r.fromUserId === req.user.id && r.toUserId === targetId
-    );
+    const outgoing = await friendRequestsRepo.findOneBy({
+      status: 'pending', fromUserId: req.user.id, toUserId: targetId
+    });
     if (outgoing) {
       return res.json({ status: 'outgoing', requestId: outgoing.id || outgoing._id });
     }
@@ -79,8 +75,9 @@ export const getFriendStatus = async (req, res) => {
 // GET /api/friends
 export const listFriends = async (req, res) => {
   try {
-    const db = await readDb();
-    const friendships = await friendshipsRepo.getAll({ db });
+    const friendships = await friendshipsRepo.findManyBy({
+      $or: [{ userId1: req.user.id }, { userId2: req.user.id }]
+    });
     const friendIds = new Set();
 
     friendships.forEach((entry) => {
@@ -88,10 +85,11 @@ export const listFriends = async (req, res) => {
       if (entry.userId2 === req.user.id) friendIds.add(entry.userId1);
     });
 
-    const users = await usersRepo.getAll({ db });
-    const friends = users
-      .filter((u) => friendIds.has(resolveUserId(u)))
-      .map(normalizeUserSummary);
+    const ids = [...friendIds];
+    const users = ids.length
+      ? await usersRepo.findManyBy({ id: { $in: ids } }, { limit: ids.length })
+      : [];
+    const friends = users.map(normalizeUserSummary);
 
     res.json({ friends });
   } catch (error) {
@@ -106,24 +104,29 @@ export const listFriendsForUser = async (req, res) => {
     const targetId = String(req.params.userId || '').trim().toLowerCase();
     if (!targetId) return res.status(400).json({ msg: 'User id required' });
 
-    const db = await readDb();
-    const users = await usersRepo.getAll({ db });
     const target =
-      users.find((u) => resolveUserId(u) === req.params.userId) ||
-      users.find((u) => (u.username || '').toLowerCase() === targetId);
+      (await usersRepo.findById(req.params.userId)) ||
+      (await usersRepo.findOneBy(
+        { username: targetId },
+        { collation: { locale: 'en', strength: 2 } }
+      ));
     if (!target) return res.status(404).json({ msg: 'User not found' });
 
     const targetResolvedId = resolveUserId(target);
-    const friendships = await friendshipsRepo.getAll({ db });
+    const friendships = await friendshipsRepo.findManyBy({
+      $or: [{ userId1: targetResolvedId }, { userId2: targetResolvedId }]
+    });
     const friendIds = new Set();
     friendships.forEach((entry) => {
       if (entry.userId1 === targetResolvedId) friendIds.add(entry.userId2);
       if (entry.userId2 === targetResolvedId) friendIds.add(entry.userId1);
     });
 
-    const friends = users
-      .filter((u) => friendIds.has(resolveUserId(u)))
-      .map(normalizeUserSummary);
+    const ids = [...friendIds];
+    const users = ids.length
+      ? await usersRepo.findManyBy({ id: { $in: ids } }, { limit: ids.length })
+      : [];
+    const friends = users.map(normalizeUserSummary);
 
     res.json({ friends });
   } catch (error) {
@@ -135,23 +138,29 @@ export const listFriendsForUser = async (req, res) => {
 // GET /api/friends/requests
 export const listFriendRequests = async (req, res) => {
   try {
-    const db = await readDb();
-    const requests = await friendRequestsRepo.getAll({ db });
-    const users = await usersRepo.getAll({ db });
+    const requests = await friendRequestsRepo.findManyBy({
+      status: 'pending',
+      $or: [{ toUserId: req.user.id }, { fromUserId: req.user.id }]
+    }, { sort: { createdAt: -1 }, limit: 200 });
+    const relatedIds = [...new Set(requests.flatMap((entry) => [entry.fromUserId, entry.toUserId]))];
+    const users = relatedIds.length
+      ? await usersRepo.findManyBy({ id: { $in: relatedIds } }, { limit: relatedIds.length })
+      : [];
+    const usersById = new Map(users.map((user) => [resolveUserId(user), user]));
 
     const incoming = [];
     const outgoing = [];
     for (const entry of requests) {
       if (entry.status !== 'pending') continue;
       if (entry.toUserId === req.user.id) {
-        const fromUser = users.find((u) => resolveUserId(u) === entry.fromUserId);
+        const fromUser = usersById.get(entry.fromUserId);
         incoming.push({
           id: entry.id || entry._id,
           from: fromUser ? normalizeUserSummary(fromUser) : { id: entry.fromUserId, username: '', displayName: '', profilePicture: '' },
           createdAt: entry.createdAt
         });
       } else if (entry.fromUserId === req.user.id) {
-        const toUser = users.find((u) => resolveUserId(u) === entry.toUserId);
+        const toUser = usersById.get(entry.toUserId);
         outgoing.push({
           id: entry.id || entry._id,
           to: toUser ? normalizeUserSummary(toUser) : { id: entry.toUserId, username: '', displayName: '', profilePicture: '' },
@@ -178,12 +187,17 @@ export const sendFriendRequest = async (req, res) => {
 
     const now = new Date().toISOString();
     let created;
+    let targetIdForNotification;
+    let senderDisplayName = req.user.username || 'User';
 
-    await withDb(async (db) => {
-      const users = await usersRepo.getAll({ db });
+    await withRepositoryTransaction(async (context) => {
       const target =
-        (toUserId && users.find((u) => resolveUserId(u) === toUserId)) ||
-        (toUsername && users.find((u) => (u.username || '').toLowerCase() === toUsername));
+        (toUserId && await usersRepo.findById(toUserId, 'id', context)) ||
+        (toUsername && await usersRepo.findOneBy(
+          { username: toUsername },
+          { collation: { locale: 'en', strength: 2 } },
+          context
+        ));
 
       if (!target) {
         const error = new Error('User not found');
@@ -197,26 +211,26 @@ export const sendFriendRequest = async (req, res) => {
         throw error;
       }
 
-      const blocked = await isBlockedEitherWay(db, req.user.id, targetId);
+      const blocked = await isBlockedEitherWay(context, req.user.id, targetId);
       if (blocked) {
         const error = new Error('Cannot send request (blocked)');
         error.code = 'BLOCKED';
         throw error;
       }
 
-      if (await areFriends(db, req.user.id, targetId)) {
+      if (await areFriends(context, req.user.id, targetId)) {
         const error = new Error('Already friends');
         error.code = 'ALREADY_FRIENDS';
         throw error;
       }
 
-      const requests = await friendRequestsRepo.getAll({ db });
-      const existing = requests.find(
-        (r) =>
-          r.status === 'pending' &&
-          ((r.fromUserId === req.user.id && r.toUserId === targetId) ||
-            (r.fromUserId === targetId && r.toUserId === req.user.id))
-      );
+      const existing = await friendRequestsRepo.findOneBy({
+        status: 'pending',
+        $or: [
+          { fromUserId: req.user.id, toUserId: targetId },
+          { fromUserId: targetId, toUserId: req.user.id }
+        ]
+      }, {}, context);
       if (existing) {
         const error = new Error('Request already pending');
         error.code = 'REQUEST_EXISTS';
@@ -225,26 +239,36 @@ export const sendFriendRequest = async (req, res) => {
 
       const request = {
         id: uuidv4(),
+        requestKey: sortPair(req.user.id, targetId).join(':'),
         fromUserId: req.user.id,
         toUserId: targetId,
         status: 'pending',
         createdAt: now
       };
-      await friendRequestsRepo.insert(request, { db });
-      created = request;
-
-      const fromUser = users.find((u) => resolveUserId(u) === req.user.id);
-      await createNotification(
-        db,
-        targetId,
-        'friend_request',
-        'New friend request',
-        `${getUserDisplayName(fromUser)} sent you a friend request.`,
-        { fromUserId: req.user.id, requestId: request.id }
+      const inserted = await friendRequestsRepo.insertIfAbsent(
+        { requestKey: request.requestKey, status: 'pending' },
+        request,
+        context
       );
-
-      return db;
+      if (!inserted.inserted) {
+        const error = new Error('Request already pending');
+        error.code = 'REQUEST_EXISTS';
+        throw error;
+      }
+      created = inserted.item;
+      targetIdForNotification = targetId;
+      const fromUser = await usersRepo.findById(req.user.id, 'id', context);
+      senderDisplayName = getUserDisplayName(fromUser) || senderDisplayName;
     });
+
+    await createNotification(
+      null,
+      targetIdForNotification,
+      'friend_request',
+      'New friend request',
+      `${senderDisplayName} sent you a friend request.`,
+      { fromUserId: req.user.id, requestId: created.id }
+    );
 
     res.status(201).json({ request: created });
   } catch (error) {
@@ -267,67 +291,62 @@ export const acceptFriendRequest = async (req, res) => {
 
     const now = new Date().toISOString();
     let friendUserId = null;
+    let acceptorDisplayName = req.user.username || 'User';
 
-    await withDb(async (db) => {
-      const requests = await friendRequestsRepo.getAll({ db });
-      const request = requests.find((r) => (r.id || r._id) === requestId);
+    await withRepositoryTransaction(async (context) => {
+      const request = await friendRequestsRepo.findOneBy({ id: requestId }, {}, context);
       if (!request || request.status !== 'pending' || request.toUserId !== req.user.id) {
         const error = new Error('Request not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
 
-      const blocked = await isBlockedEitherWay(db, request.fromUserId, request.toUserId);
+      const blocked = await isBlockedEitherWay(context, request.fromUserId, request.toUserId);
       if (blocked) {
         const error = new Error('Blocked');
         error.code = 'BLOCKED';
         throw error;
       }
 
-      request.status = 'accepted';
-      request.respondedAt = now;
       friendUserId = request.fromUserId;
+      await friendRequestsRepo.updateById(requestId, (entry) => ({
+        ...entry,
+        status: 'accepted',
+        respondedAt: now
+      }), 'id', context);
 
       const [userId1, userId2] = sortPair(request.fromUserId, request.toUserId);
-      const friendships = await friendshipsRepo.getAll({ db });
-      const exists = friendships.find((f) => f.userId1 === userId1 && f.userId2 === userId2);
-      if (!exists) {
-        await friendshipsRepo.insert(
-          { id: uuidv4(), userId1, userId2, createdAt: now },
-          { db }
-        );
-      }
-
-      // Clean up any reverse pending request
-      await friendRequestsRepo.updateAll((all) => {
-        return all.map((entry) => {
-          if (
-            entry.status === 'pending' &&
-            entry.fromUserId === request.toUserId &&
-            entry.toUserId === request.fromUserId
-          ) {
-            return { ...entry, status: 'cancelled', respondedAt: now };
-          }
-          if ((entry.id || entry._id) === requestId) {
-            return request;
-          }
-          return entry;
-        });
-      }, { db });
-
-      const users = await usersRepo.getAll({ db });
-      const acceptor = users.find((u) => resolveUserId(u) === req.user.id);
-      await createNotification(
-        db,
-        request.fromUserId,
-        'friend_accept',
-        'Friend request accepted',
-        `${getUserDisplayName(acceptor)} accepted your friend request.`,
-        { userId: req.user.id }
+      await friendshipsRepo.insertIfAbsent(
+        { userId1, userId2 },
+        {
+          id: uuidv4(),
+          friendshipKey: `${userId1}:${userId2}`,
+          userId1,
+          userId2,
+          createdAt: now
+        },
+        context
       );
 
-      return db;
+      // Clean up any reverse pending request
+      await friendRequestsRepo.patchManyBy({
+        status: 'pending',
+        fromUserId: request.toUserId,
+        toUserId: request.fromUserId
+      }, { status: 'cancelled', respondedAt: now }, context);
+
+      const acceptor = await usersRepo.findById(req.user.id, 'id', context);
+      acceptorDisplayName = getUserDisplayName(acceptor) || acceptorDisplayName;
     });
+
+    await createNotification(
+      null,
+      friendUserId,
+      'friend_accept',
+      'Friend request accepted',
+      `${acceptorDisplayName} accepted your friend request.`,
+      { userId: req.user.id }
+    );
 
     res.json({ msg: 'Friend request accepted', friendUserId });
   } catch (error) {
@@ -345,20 +364,18 @@ export const declineFriendRequest = async (req, res) => {
     if (!requestId) return res.status(400).json({ msg: 'Request id required' });
     const now = new Date().toISOString();
 
-    await withDb(async (db) => {
-      const requests = await friendRequestsRepo.getAll({ db });
-      const request = requests.find((r) => (r.id || r._id) === requestId);
+    await withRepositoryTransaction(async (context) => {
+      const request = await friendRequestsRepo.findOneBy({ id: requestId }, {}, context);
       if (!request || request.status !== 'pending' || request.toUserId !== req.user.id) {
         const error = new Error('Request not found');
         error.code = 'NOT_FOUND';
         throw error;
       }
-      request.status = 'declined';
-      request.respondedAt = now;
-      await friendRequestsRepo.updateAll((all) => {
-        return all.map((entry) => ((entry.id || entry._id) === requestId ? request : entry));
-      }, { db });
-      return db;
+      await friendRequestsRepo.updateById(requestId, (entry) => ({
+        ...entry,
+        status: 'declined',
+        respondedAt: now
+      }), 'id', context);
     });
 
     res.json({ msg: 'Friend request declined' });
@@ -376,12 +393,7 @@ export const removeFriend = async (req, res) => {
     if (!otherId) return res.status(400).json({ msg: 'User id required' });
 
     const [userId1, userId2] = sortPair(req.user.id, otherId);
-    await withDb(async (db) => {
-      await friendshipsRepo.updateAll((friendships) => {
-        return friendships.filter((entry) => !(entry.userId1 === userId1 && entry.userId2 === userId2));
-      }, { db });
-      return db;
-    });
+    await friendshipsRepo.removeManyBy({ userId1, userId2 });
 
     res.json({ msg: 'Friend removed' });
   } catch (error) {

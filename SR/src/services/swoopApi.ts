@@ -1,4 +1,5 @@
 import type { LeaderboardEntry, TrackId } from '../store/gameStore.ts';
+import { swoopApiUrl } from './apiUrl.ts';
 
 interface LeaderboardResponse {
   leaderboard?: LeaderboardEntry[];
@@ -21,8 +22,8 @@ function readLeaderboard(payload: LeaderboardResponse): LeaderboardEntry[] {
 }
 
 export async function fetchSwoopLeaderboard(trackId: TrackId): Promise<LeaderboardEntry[]> {
-  const response = await fetch(`/api/swoop/leaderboard/${trackId}`, {
-    credentials: 'same-origin',
+  const response = await fetch(swoopApiUrl(`/api/swoop/leaderboard/${trackId}`), {
+    credentials: 'include',
     headers: { Accept: 'application/json' },
   });
   if (!response.ok) throw new Error(`Leaderboard request failed (${response.status}).`);
@@ -31,9 +32,9 @@ export async function fetchSwoopLeaderboard(trackId: TrackId): Promise<Leaderboa
 }
 
 export async function submitSwoopRun(entry: LeaderboardEntry): Promise<LeaderboardEntry[]> {
-  const response = await fetch('/api/swoop/runs', {
+  const response = await fetch(swoopApiUrl('/api/swoop/runs'), {
     method: 'POST',
-    credentials: 'same-origin',
+    credentials: 'include',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',

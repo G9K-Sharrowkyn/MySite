@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { getAuthCookieToken } from '../utils/authCookie.js';
-import { readDb } from '../repositories/index.js';
+import { usersRepo } from '../repositories/index.js';
 
 // Optional auth - allows both authenticated and anonymous users
 export const optionalAuth = async (req, res, next) => {
@@ -23,10 +23,7 @@ export const optionalAuth = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const tokenUser = decoded.user;
-    const db = await readDb();
-    const currentUser = (db.users || []).find(
-      (user) => (user.id || user._id) === (tokenUser?.id || tokenUser?._id)
-    );
+    const currentUser = await usersRepo.findById(tokenUser?.id || tokenUser?._id);
     if (
       currentUser &&
       Number(tokenUser?.tokenVersion || 0) ===

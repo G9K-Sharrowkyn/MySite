@@ -3,16 +3,15 @@ import {
   commentsRepo,
   fightsRepo,
   postsRepo,
-  readDb,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { createNotification } from './notificationController.js';
 import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
-import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { applyDailyActivityBonusAtomic } from '../utils/coinBonus.js';
 import { parsePagination } from '../utils/pagination.js';
 import { getReaction } from '../config/reactionCatalog.js';
 import { getIdempotencyKey } from '../utils/idempotency.js';
@@ -31,27 +30,27 @@ const assertPostActive = (post) => {
   }
 };
 
-const assertCommentTargetActive = async (comment, db) => {
+const normalizeRepoContext = (dbOrContext) =>
+  dbOrContext?.mongoDb || dbOrContext?.db
+    ? dbOrContext
+    : dbOrContext
+      ? { db: dbOrContext }
+      : undefined;
+
+const assertCommentTargetActive = async (comment, dbOrContext) => {
+  const context = normalizeRepoContext(dbOrContext);
   if (comment?.type === 'user_profile') return;
   if (comment?.type === 'fight') {
     const fightId = comment?.fightId || comment?.targetId;
-    const standaloneFight = await fightsRepo.findById(fightId, { db });
+    const standaloneFight = await fightsRepo.findById(fightId, 'id', context);
     if (standaloneFight) return;
-    const fightPost = await postsRepo.findOne(
-      (entry) =>
-        (entry.id || entry._id) === fightId &&
-        entry.type === 'fight',
-      { db }
-    );
+    const fightPost = await postsRepo.findOneBy({ id: fightId, type: 'fight' }, {}, context);
     assertPostActive(fightPost);
     return;
   }
   const postId = comment?.postId || comment?.targetId;
   if (!postId) return;
-  const post = await postsRepo.findOne(
-    (entry) => (entry.id || entry._id) === postId,
-    { db }
-  );
+  const post = await postsRepo.findById(postId, 'id', context);
   assertPostActive(post);
 };
 
@@ -89,9 +88,11 @@ const notifyAdminsForProfanity = async (db, payload) => {
   } = payload || {};
   if (!matches || matches.length === 0) return;
 
-  const admins = await usersRepo.filter(
-    (user) => resolveRole(user) === 'admin',
-    { db }
+  const context = normalizeRepoContext(db);
+  const admins = await usersRepo.findManyBy(
+    { role: 'admin' },
+    { limit: 100 },
+    context
   );
   if (!admins.length) return;
 
@@ -134,6 +135,33 @@ const shouldNotifyReply = (recipient, senderId) => {
   const settings = recipient.notificationSettings;
   if (settings && settings.comments === false) return false;
   return true;
+};
+
+const recordCommentActivity = async (context, userId, now) => {
+  await usersRepo.updateById(userId, (user) => {
+    user.activity = user.activity || {
+      postsCreated: 0,
+      commentsPosted: 0,
+      reactionsGiven: 0,
+      likesReceived: 0,
+      tournamentsWon: 0,
+      tournamentsParticipated: 0
+    };
+    user.activity.commentsPosted += 1;
+    user.stats = user.stats || {};
+    user.stats.comments = (user.stats.comments || 0) + 1;
+    addRankPoints(user, RANK_POINT_VALUES.comment);
+    updateLeveledBadgeProgress(
+      user,
+      'badge_commentator',
+      user.activity.commentsPosted,
+      100,
+      20
+    );
+    user.updatedAt = now;
+    return user;
+  }, 'id', context);
+  await applyDailyActivityBonusAtomic(userId, 'comment', 50, context);
 };
 
 const normalizeComment = (comment, viewerUserId = null) => {
@@ -184,11 +212,8 @@ export const addPostComment = async (req, res) => {
     let createdComment;
     let idempotencyReplay = false;
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => (entry.id || entry._id) === postId,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(postId, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -196,10 +221,7 @@ export const addPostComment = async (req, res) => {
       }
       assertPostActive(post);
 
-      const author = await usersRepo.findOne(
-        (user) => resolveUserId(user) === req.user.id,
-        { db }
-      );
+      const author = await usersRepo.findById(req.user.id, 'id', context);
       if (!author) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -207,25 +229,20 @@ export const addPostComment = async (req, res) => {
       }
 
       if (idempotencyKey) {
-        const existingComment = await commentsRepo.findOne(
-          (comment) =>
-            comment.authorId === req.user.id &&
-            comment.postId === postId &&
-            comment.idempotencyKey === idempotencyKey,
-          { db }
-        );
+        const existingComment = await commentsRepo.findOneBy({
+          authorId: req.user.id,
+          postId,
+          idempotencyKey
+        }, {}, context);
         if (existingComment) {
           createdComment = existingComment;
           idempotencyReplay = true;
-          return db;
+          return;
         }
       }
 
       const parentComment = parentId
-        ? await commentsRepo.findOne(
-            (entry) => resolveCommentId(entry) === parentId,
-            { db }
-          )
+        ? await commentsRepo.findById(parentId, 'id', context)
         : null;
 
       if (parentId) {
@@ -262,11 +279,24 @@ export const addPostComment = async (req, res) => {
         ...(idempotencyKey ? { idempotencyKey } : {})
       };
 
-      await commentsRepo.insert(createdComment, { db });
+      if (idempotencyKey) {
+        const inserted = await commentsRepo.insertIfAbsent(
+          { authorId: req.user.id, postId, idempotencyKey },
+          createdComment,
+          context
+        );
+        if (!inserted.inserted) {
+          createdComment = inserted.item;
+          idempotencyReplay = true;
+          return;
+        }
+      } else {
+        await commentsRepo.insert(createdComment, context);
+      }
 
       const matches = findProfanityMatches(commentText);
       if (matches.length) {
-        await notifyAdminsForProfanity(db, {
+        await notifyAdminsForProfanity(context, {
           author,
           matches,
           text: commentText,
@@ -276,39 +306,17 @@ export const addPostComment = async (req, res) => {
         });
       }
 
-      author.activity = author.activity || {
-        postsCreated: 0,
-        commentsPosted: 0,
-        reactionsGiven: 0,
-        likesReceived: 0,
-        tournamentsWon: 0,
-        tournamentsParticipated: 0
-      };
-      author.activity.commentsPosted += 1;
-      
-      // Update stats.comments for leaderboard
-      if (!author.stats) author.stats = {};
-      author.stats.comments = (author.stats.comments || 0) + 1;
-      
-      addRankPoints(author, RANK_POINT_VALUES.comment);
-      updateLeveledBadgeProgress(
-        author,
-        'badge_commentator',
-        author.activity.commentsPosted,
-        100,
-        20
-      );
-      author.updatedAt = now;
-      applyDailyActivityBonus(db, author, 'comment', 50);
+      await recordCommentActivity(context, req.user.id, now);
 
       if (parentComment) {
-        const parentAuthor = await usersRepo.findOne(
-          (user) => resolveUserId(user) === parentComment.authorId,
-          { db }
+        const parentAuthor = await usersRepo.findById(
+          parentComment.authorId,
+          'id',
+          context
         );
         if (shouldNotifyReply(parentAuthor, req.user.id)) {
           await createNotification(
-            db,
+            context,
             resolveUserId(parentAuthor),
             'comment',
             'New reply',
@@ -324,7 +332,6 @@ export const addPostComment = async (req, res) => {
         }
       }
 
-      return db;
     });
 
     if (idempotencyReplay) {
@@ -345,7 +352,7 @@ export const addPostComment = async (req, res) => {
       return res.status(400).json({ msg: error.message });
     }
     console.error('Error adding post comment:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -355,25 +362,22 @@ export const addPostComment = async (req, res) => {
 export const getPostComments = async (req, res) => {
   const postId = req.params.postId || req.params.id;
   try {
-    const db = await readDb();
-    const post = (db.posts || []).find(
-      (entry) => (entry.id || entry._id) === postId
-    );
+    const post = await postsRepo.findById(postId);
     assertPostActive(post);
-    const filtered = (db.comments || []).filter((comment) => {
-      const isPostComment = comment?.type === 'post' || !comment?.type;
-      return isPostComment && comment.postId === postId;
-    });
-    const sorted = filtered.sort(
-      (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
-    );
     const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
       defaultLimit: 50,
       maxLimit: 100
     });
-    const paged = sorted.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
+    const paged = await commentsRepo.findManyBy(
+      {
+        postId,
+        $or: [{ type: 'post' }, { type: { $exists: false } }]
+      },
+      {
+        sort: { createdAt: 1 },
+        skip: (pageNumber - 1) * limitNumber,
+        limit: limitNumber
+      }
     );
     res.json(
       paged.map((comment) => normalizeComment(comment, req.user?.id || null))
@@ -383,7 +387,7 @@ export const getPostComments = async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error fetching comments:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -396,17 +400,14 @@ export const updateComment = async (req, res) => {
   try {
     let updatedComment;
 
-    await withDb(async (db) => {
-      const comment = await commentsRepo.findOne(
-        (entry) => resolveCommentId(entry) === req.params.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const comment = await commentsRepo.findById(req.params.id, 'id', context);
       if (!comment) {
         const error = new Error('Comment not found');
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
-      await assertCommentTargetActive(comment, db);
+      await assertCommentTargetActive(comment, context);
 
       if (comment.authorId !== req.user.id) {
         const error = new Error('Access denied');
@@ -414,11 +415,12 @@ export const updateComment = async (req, res) => {
         throw error;
       }
 
-      comment.text = text;
-      comment.updatedAt = new Date().toISOString();
-      comment.edited = true;
-      updatedComment = comment;
-      return db;
+      updatedComment = await commentsRepo.updateById(req.params.id, (entry) => ({
+        ...entry,
+        text,
+        updatedAt: new Date().toISOString(),
+        edited: true
+      }), 'id', context);
     });
 
     res.json({
@@ -436,7 +438,7 @@ export const updateComment = async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error updating comment:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -445,21 +447,15 @@ export const updateComment = async (req, res) => {
 // @access  Private
 export const deleteComment = async (req, res) => {
   try {
-    await withDb(async (db) => {
-      const comment = await commentsRepo.findOne(
-        (entry) => resolveCommentId(entry) === req.params.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const comment = await commentsRepo.findById(req.params.id, 'id', context);
       if (!comment) {
         const error = new Error('Comment not found');
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
 
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+      const user = await usersRepo.findById(req.user.id, 'id', context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -476,38 +472,37 @@ export const deleteComment = async (req, res) => {
         throw error;
       }
 
-      const comments = await commentsRepo.getAll({ db });
+      const threadId = comment.threadId || resolveCommentId(comment);
+      const threadComments = await commentsRepo.findManyBy(
+        { threadId },
+        {},
+        context
+      );
       const idsToDelete = new Set();
       const queue = [resolveCommentId(comment)];
-
       while (queue.length > 0) {
         const currentId = queue.pop();
         if (!currentId || idsToDelete.has(currentId)) continue;
         idsToDelete.add(currentId);
-        comments.forEach((entry) => {
-          if (entry.parentId === currentId) {
-            queue.push(resolveCommentId(entry));
-          }
-        });
+        for (const entry of threadComments) {
+          if (entry.parentId === currentId) queue.push(resolveCommentId(entry));
+        }
       }
-
-      await commentsRepo.updateAll(
-        (entries) =>
-          entries.filter((entry) => !idsToDelete.has(resolveCommentId(entry))),
-        { db }
+      const { deletedCount = 0 } = await commentsRepo.removeManyBy(
+        { id: { $in: [...idsToDelete] } },
+        context
       );
       await logModerationAction({
-        db,
+        db: context,
         actor: user,
         action: 'comment.delete',
         targetType: 'comment',
         targetId: req.params.id,
         details: {
           ownComment: comment.authorId === req.user.id,
-          deletedCount: idsToDelete.size
+          deletedCount
         }
       });
-      return db;
     });
 
     res.json({ msg: 'Comment deleted' });
@@ -522,7 +517,7 @@ export const deleteComment = async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
     console.error('Error deleting comment:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -534,35 +529,27 @@ export const toggleCommentLike = async (req, res) => {
     let likes = 0;
     let liked = false;
 
-    await withDb(async (db) => {
-      const comment = await commentsRepo.findOne(
-        (entry) => resolveCommentId(entry) === req.params.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const comment = await commentsRepo.findById(req.params.id, 'id', context);
       if (!comment) {
         const error = new Error('Comment not found');
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
-      await assertCommentTargetActive(comment, db);
+      await assertCommentTargetActive(comment, context);
 
-      comment.likedBy = Array.isArray(comment.likedBy) ? comment.likedBy : [];
-      comment.likes = comment.likes || 0;
-      const alreadyLiked = comment.likedBy.includes(req.user.id);
-
-      if (alreadyLiked) {
-        comment.likedBy = comment.likedBy.filter((id) => id !== req.user.id);
-        comment.likes = Math.max(0, comment.likes - 1);
-        liked = false;
-      } else {
-        comment.likedBy.push(req.user.id);
-        comment.likes += 1;
-        liked = true;
-      }
-
-      likes = comment.likes;
-      comment.updatedAt = new Date().toISOString();
-      return db;
+      await commentsRepo.updateById(req.params.id, (entry) => {
+        entry.likedBy = Array.isArray(entry.likedBy) ? entry.likedBy : [];
+        const alreadyLiked = entry.likedBy.includes(req.user.id);
+        entry.likedBy = alreadyLiked
+          ? entry.likedBy.filter((id) => id !== req.user.id)
+          : [...entry.likedBy, req.user.id];
+        liked = !alreadyLiked;
+        entry.likes = entry.likedBy.length;
+        likes = entry.likes;
+        entry.updatedAt = new Date().toISOString();
+        return entry;
+      }, 'id', context);
     });
 
     res.json({
@@ -578,7 +565,7 @@ export const toggleCommentLike = async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error toggling comment like:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -598,21 +585,15 @@ export const addUserComment = async (req, res) => {
     let createdComment;
     let idempotencyReplay = false;
 
-    await withDb(async (db) => {
-      const targetUser = await usersRepo.findOne(
-        (user) => resolveUserId(user) === userId,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const targetUser = await usersRepo.findById(userId, 'id', context);
       if (!targetUser) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      const author = await usersRepo.findOne(
-        (user) => resolveUserId(user) === req.user.id,
-        { db }
-      );
+      const author = await usersRepo.findById(req.user.id, 'id', context);
       if (!author) {
         const error = new Error('Author not found');
         error.code = 'AUTHOR_NOT_FOUND';
@@ -620,26 +601,21 @@ export const addUserComment = async (req, res) => {
       }
 
       if (idempotencyKey) {
-        const existingComment = await commentsRepo.findOne(
-          (comment) =>
-            comment.authorId === req.user.id &&
-            comment.type === 'user_profile' &&
-            comment.targetId === userId &&
-            comment.idempotencyKey === idempotencyKey,
-          { db }
-        );
+        const existingComment = await commentsRepo.findOneBy({
+          authorId: req.user.id,
+          type: 'user_profile',
+          targetId: userId,
+          idempotencyKey
+        }, {}, context);
         if (existingComment) {
           createdComment = existingComment;
           idempotencyReplay = true;
-          return db;
+          return;
         }
       }
 
       const parentComment = parentId
-        ? await commentsRepo.findOne(
-            (entry) => resolveCommentId(entry) === parentId,
-            { db }
-          )
+        ? await commentsRepo.findById(parentId, 'id', context)
         : null;
       if (parentId) {
         if (
@@ -677,10 +653,23 @@ export const addUserComment = async (req, res) => {
         ...(idempotencyKey ? { idempotencyKey } : {})
       };
 
-      await commentsRepo.insert(createdComment, { db });
+      if (idempotencyKey) {
+        const inserted = await commentsRepo.insertIfAbsent(
+          { authorId: req.user.id, targetId: userId, idempotencyKey },
+          createdComment,
+          context
+        );
+        if (!inserted.inserted) {
+          createdComment = inserted.item;
+          idempotencyReplay = true;
+          return;
+        }
+      } else {
+        await commentsRepo.insert(createdComment, context);
+      }
       const matches = findProfanityMatches(createdComment.text);
       if (matches.length) {
-        await notifyAdminsForProfanity(db, {
+        await notifyAdminsForProfanity(context, {
           author,
           matches,
           text: createdComment.text,
@@ -689,30 +678,7 @@ export const addUserComment = async (req, res) => {
           commentId
         });
       }
-      author.activity = author.activity || {
-        postsCreated: 0,
-        commentsPosted: 0,
-        reactionsGiven: 0,
-        likesReceived: 0,
-        tournamentsWon: 0,
-        tournamentsParticipated: 0
-      };
-      author.activity.commentsPosted += 1;
-      
-      // Update stats.comments for leaderboard
-      if (!author.stats) author.stats = {};
-      author.stats.comments = (author.stats.comments || 0) + 1;
-      
-      addRankPoints(author, RANK_POINT_VALUES.comment);
-      updateLeveledBadgeProgress(
-        author,
-        'badge_commentator',
-        author.activity.commentsPosted,
-        100,
-        20
-      );
-      author.updatedAt = now;
-      return db;
+      await recordCommentActivity(context, req.user.id, now);
     });
 
     if (idempotencyReplay) {
@@ -730,7 +696,7 @@ export const addUserComment = async (req, res) => {
       return res.status(400).json({ msg: error.message });
     }
     console.error('Error adding user profile comment:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -741,13 +707,18 @@ export const getUserComments = async (req, res) => {
   const { userId } = req.params;
 
   try {
-    const comments = (await commentsRepo.filter(
-      (comment) => comment.type === 'user_profile' && comment.targetId === userId
-    )).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const { page, limit } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
+    const comments = await commentsRepo.findManyBy(
+      { type: 'user_profile', targetId: userId },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
+    );
     res.json(comments.map((comment) => normalizeComment(comment)));
   } catch (error) {
     console.error('Error fetching user comments:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -767,13 +738,10 @@ export const addFightComment = async (req, res) => {
     let createdComment;
     let idempotencyReplay = false;
 
-    await withDb(async (db) => {
-      const fight = await fightsRepo.findById(fightId, { db });
+    await withRepositoryTransaction(async (context) => {
+      const fight = await fightsRepo.findById(fightId, 'id', context);
       const fightPost = !fight
-        ? await postsRepo.findOne(
-            (post) => (post.id || post._id) === fightId && post.type === 'fight',
-            { db }
-          )
+        ? await postsRepo.findOneBy({ id: fightId, type: 'fight' }, {}, context)
         : null;
       if (!fight && !fightPost) {
         const error = new Error('Fight not found');
@@ -784,10 +752,7 @@ export const addFightComment = async (req, res) => {
         assertPostActive(fightPost);
       }
 
-      const author = await usersRepo.findOne(
-        (user) => resolveUserId(user) === req.user.id,
-        { db }
-      );
+      const author = await usersRepo.findById(req.user.id, 'id', context);
       if (!author) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -795,26 +760,21 @@ export const addFightComment = async (req, res) => {
       }
 
       if (idempotencyKey) {
-        const existingComment = await commentsRepo.findOne(
-          (comment) =>
-            comment.authorId === req.user.id &&
-            comment.type === 'fight' &&
-            comment.fightId === fightId &&
-            comment.idempotencyKey === idempotencyKey,
-          { db }
-        );
+        const existingComment = await commentsRepo.findOneBy({
+          authorId: req.user.id,
+          type: 'fight',
+          fightId,
+          idempotencyKey
+        }, {}, context);
         if (existingComment) {
           createdComment = existingComment;
           idempotencyReplay = true;
-          return db;
+          return;
         }
       }
 
       const parentComment = parentId
-        ? await commentsRepo.findOne(
-            (entry) => resolveCommentId(entry) === parentId,
-            { db }
-          )
+        ? await commentsRepo.findById(parentId, 'id', context)
         : null;
 
       if (parentId) {
@@ -854,10 +814,23 @@ export const addFightComment = async (req, res) => {
         ...(idempotencyKey ? { idempotencyKey } : {})
       };
 
-      await commentsRepo.insert(createdComment, { db });
+      if (idempotencyKey) {
+        const inserted = await commentsRepo.insertIfAbsent(
+          { authorId: req.user.id, fightId, idempotencyKey },
+          createdComment,
+          context
+        );
+        if (!inserted.inserted) {
+          createdComment = inserted.item;
+          idempotencyReplay = true;
+          return;
+        }
+      } else {
+        await commentsRepo.insert(createdComment, context);
+      }
       const matches = findProfanityMatches(createdComment.text);
       if (matches.length) {
-        await notifyAdminsForProfanity(db, {
+        await notifyAdminsForProfanity(context, {
           author,
           matches,
           text: createdComment.text,
@@ -866,30 +839,7 @@ export const addFightComment = async (req, res) => {
           commentId
         });
       }
-      author.activity = author.activity || {
-        postsCreated: 0,
-        commentsPosted: 0,
-        reactionsGiven: 0,
-        likesReceived: 0,
-        tournamentsWon: 0,
-        tournamentsParticipated: 0
-      };
-      author.activity.commentsPosted += 1;
-      
-      // Update stats.comments for leaderboard
-      if (!author.stats) author.stats = {};
-      author.stats.comments = (author.stats.comments || 0) + 1;
-      
-      addRankPoints(author, RANK_POINT_VALUES.comment);
-      updateLeveledBadgeProgress(
-        author,
-        'badge_commentator',
-        author.activity.commentsPosted,
-        100,
-        20
-      );
-      author.updatedAt = now;
-      return db;
+      await recordCommentActivity(context, req.user.id, now);
     });
 
     if (idempotencyReplay) {
@@ -913,7 +863,7 @@ export const addFightComment = async (req, res) => {
       return res.status(400).json({ msg: error.message });
     }
     console.error('Error adding fight comment:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -923,40 +873,34 @@ export const addFightComment = async (req, res) => {
 export const getFightComments = async (req, res) => {
   const { fightId } = req.params;
   try {
-    const db = await readDb();
-    const standaloneFight = (db.fights || []).find(
-      (fight) => (fight.id || fight._id) === fightId
-    );
-    const fightPost = (db.posts || []).find(
-      (post) =>
-        (post.id || post._id) === fightId &&
-        post.type === 'fight'
-    );
+    const [standaloneFight, fightPost] = await Promise.all([
+      fightsRepo.findById(fightId),
+      postsRepo.findOneBy({ id: fightId, type: 'fight' })
+    ]);
     if (!standaloneFight) {
       assertPostActive(fightPost);
     }
-    const filtered = (db.comments || []).filter(
-      (comment) => comment.type === 'fight' && comment.fightId === fightId
-    );
-    const sorted = filtered.sort(
-      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    );
     const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
       defaultLimit: 50,
       maxLimit: 100
     });
-    const paged = sorted.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
-    );
+    const query = { type: 'fight', fightId };
+    const [paged, totalComments] = await Promise.all([
+      commentsRepo.findManyBy(query, {
+        sort: { createdAt: -1 },
+        skip: (pageNumber - 1) * limitNumber,
+        limit: limitNumber
+      }),
+      commentsRepo.countBy(query)
+    ]);
     const formatted = paged.map((comment) => normalizeComment(comment));
-    res.json({ comments: formatted, length: filtered.length });
+    res.json({ comments: formatted, length: totalComments });
   } catch (error) {
     if (error.code === 'POST_NOT_FOUND') {
       return res.status(404).json({ msg: 'Fight not found' });
     }
     console.error('Error fetching fight comments:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -976,20 +920,17 @@ export const addCommentReaction = async (req, res) => {
     let reactionsSummary = [];
     let updatedComment;
 
-    await withDb(async (db) => {
-      const comment = await commentsRepo.findOne(
-        (entry) => resolveCommentId(entry) === req.params.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const comment = await commentsRepo.findById(req.params.id, 'id', context);
       if (!comment) {
         const error = new Error('Comment not found');
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
-      await assertCommentTargetActive(comment, db);
+      await assertCommentTargetActive(comment, context);
 
-      comment.reactions = Array.isArray(comment.reactions) ? comment.reactions : [];
-      const existingReactionIndex = comment.reactions.findIndex(
+      const currentReactions = Array.isArray(comment.reactions) ? comment.reactions : [];
+      const existingReactionIndex = currentReactions.findIndex(
         (reaction) => reaction.userId === req.user.id
       );
       const isNewReaction = existingReactionIndex === -1;
@@ -1003,22 +944,20 @@ export const addCommentReaction = async (req, res) => {
         reactedAt: now
       };
 
-      if (existingReactionIndex > -1) {
-        comment.reactions[existingReactionIndex] = nextReaction;
-      } else {
-        comment.reactions.push(nextReaction);
-      }
-
-      reactionsSummary = buildReactionSummary(comment.reactions);
-      comment.updatedAt = new Date().toISOString();
-      updatedComment = comment;
+      updatedComment = await commentsRepo.updateById(req.params.id, (entry) => {
+        entry.reactions = Array.isArray(entry.reactions) ? entry.reactions : [];
+        const existingIndex = entry.reactions.findIndex(
+          (storedReaction) => storedReaction.userId === req.user.id
+        );
+        if (existingIndex > -1) entry.reactions[existingIndex] = nextReaction;
+        else entry.reactions.push(nextReaction);
+        entry.updatedAt = now;
+        reactionsSummary = buildReactionSummary(entry.reactions);
+        return entry;
+      }, 'id', context);
 
       if (isNewReaction) {
-        const reactingUser = await usersRepo.findOne(
-          (user) => resolveUserId(user) === req.user.id,
-          { db }
-        );
-        if (reactingUser) {
+        await usersRepo.updateById(req.user.id, (reactingUser) => {
           reactingUser.activity = reactingUser.activity || {
             postsCreated: 0,
             commentsPosted: 0,
@@ -1037,9 +976,9 @@ export const addCommentReaction = async (req, res) => {
             20
           );
           reactingUser.updatedAt = now;
-        }
+          return reactingUser;
+        }, 'id', context);
       }
-      return db;
     });
 
     res.json({
@@ -1055,7 +994,7 @@ export const addCommentReaction = async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error adding comment reaction:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -1067,31 +1006,28 @@ export const removeCommentReaction = async (req, res) => {
     let reactionsSummary = [];
     let removed = false;
 
-    await withDb(async (db) => {
-      const comment = await commentsRepo.findOne(
-        (entry) => resolveCommentId(entry) === req.params.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const comment = await commentsRepo.findById(req.params.id, 'id', context);
       if (!comment) {
         const error = new Error('Comment not found');
         error.code = 'COMMENT_NOT_FOUND';
         throw error;
       }
-      await assertCommentTargetActive(comment, db);
+      await assertCommentTargetActive(comment, context);
 
-      comment.reactions = Array.isArray(comment.reactions) ? comment.reactions : [];
-      const beforeCount = comment.reactions.length;
-      comment.reactions = comment.reactions.filter(
-        (reaction) =>
-          reaction.userId !== req.user.id ||
-          reaction.reactionId !== req.params.reactionId
-      );
-      removed = comment.reactions.length !== beforeCount;
-      reactionsSummary = buildReactionSummary(comment.reactions);
-      if (removed) {
-        comment.updatedAt = new Date().toISOString();
-      }
-      return db;
+      await commentsRepo.updateById(req.params.id, (entry) => {
+        entry.reactions = Array.isArray(entry.reactions) ? entry.reactions : [];
+        const beforeCount = entry.reactions.length;
+        entry.reactions = entry.reactions.filter(
+          (storedReaction) =>
+            storedReaction.userId !== req.user.id ||
+            storedReaction.reactionId !== req.params.reactionId
+        );
+        removed = entry.reactions.length !== beforeCount;
+        reactionsSummary = buildReactionSummary(entry.reactions);
+        if (removed) entry.updatedAt = new Date().toISOString();
+        return entry;
+      }, 'id', context);
     });
 
     if (!removed) {
@@ -1109,6 +1045,6 @@ export const removeCommentReaction = async (req, res) => {
       return res.status(404).json({ msg: 'Post not found' });
     }
     console.error('Error removing comment reaction:', error.message);
-    return res.status(500).json({ message: 'Server error', error: error.message });
+    return res.status(500).json({ message: 'Server error' });
   }
 };

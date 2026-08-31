@@ -1,13 +1,38 @@
 import { v4 as uuidv4 } from 'uuid';
 import bcrypt from 'bcryptjs';
-import { blocksRepo, readDb, nicknameChangeLogsRepo, usersRepo, withDb } from '../repositories/index.js';
+import {
+  blocksRepo,
+  divisionFightsRepo,
+  fightsRepo,
+  nicknameChangeLogsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 import { getRankInfo } from '../utils/rankSystem.js';
 import { getUserDisplayName, normalizeDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
+
+const loadProfileFightDb = async (userId) => {
+  const [divisionFights, fights] = await Promise.all([
+    divisionFightsRepo.findManyBy({
+      $or: [{ 'team1.userId': userId }, { 'team2.userId': userId }]
+    }),
+    fightsRepo.findManyBy({
+      $or: [
+        { 'participants.userId': userId },
+        { 'participants.id': userId },
+        { userId },
+        { createdBy: userId }
+      ]
+    })
+  ]);
+  return { divisionFights, fights };
+};
 
 const getRoleRankOverride = (role) => {
   const safe = String(role || '').toLowerCase();
@@ -95,20 +120,19 @@ const buildProfileResponse = (user, includeEmail = false, db = null) => {
 // @access  Private
 export const getMyProfile = async (req, res) => {
   try {
-    const db = await readDb();
-    const user = await usersRepo.findOne(
-      (entry) => resolveUserId(entry) === req.user.id,
-      { db }
-    );
+    const [user, fightDb] = await Promise.all([
+      usersRepo.findById(req.user.id),
+      loadProfileFightDb(req.user.id)
+    ]);
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
 
-    res.json(buildProfileResponse(user, true, db));
+    res.json(buildProfileResponse(user, true, fightDb));
   } catch (error) {
     console.error('Error fetching my profile:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -117,16 +141,12 @@ export const getMyProfile = async (req, res) => {
 // @access  Public
 export const getProfile = async (req, res) => {
   try {
-    const db = await readDb();
-    const lookup = String(req.params.userId || '').toLowerCase();
+    const lookup = String(req.params.userId || '');
     const user =
-      (await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.params.userId,
-        { db }
-      )) ||
-      (await usersRepo.findOne(
-        (entry) => (entry.username || '').toLowerCase() === lookup,
-        { db }
+      (await usersRepo.findById(lookup)) ||
+      (await usersRepo.findOneBy(
+        { username: lookup },
+        { collation: { locale: 'en', strength: 2 } }
       ));
 
     if (!user) {
@@ -136,29 +156,39 @@ export const getProfile = async (req, res) => {
     // Hard block: if viewer is authenticated and either side blocked the other, deny.
     const viewerId = req.user?.id;
     if (viewerId) {
-      const blocks = await blocksRepo.getAll({ db });
       const targetId = resolveUserId(user);
-      const blocked =
-        blocks.some((b) => b.blockerId === viewerId && b.blockedId === targetId) ||
-        blocks.some((b) => b.blockerId === targetId && b.blockedId === viewerId);
+      const blocked = await blocksRepo.findOneBy({
+        $or: [
+          { blockerId: viewerId, blockedId: targetId },
+          { blockerId: targetId, blockedId: viewerId }
+        ]
+      });
       if (blocked) {
         return res.status(403).json({ msg: 'Access denied' });
       }
     }
 
-    res.json(buildProfileResponse(user, false, db));
+    const fightDb = await loadProfileFightDb(resolveUserId(user));
+    res.json(buildProfileResponse(user, false, fightDb));
   } catch (error) {
     console.error('Error fetching profile:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // @desc    Get all user profiles (public data only)
 // @route   GET /api/profile/all
 // @access  Public
-export const getAllProfiles = async (_req, res) => {
+export const getAllProfiles = async (req, res) => {
   try {
-    const users = await usersRepo.getAll();
+    const { page, limit } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
+    const users = await usersRepo.findManyBy(
+      {},
+      { sort: { username: 1 }, skip: (page - 1) * limit, limit }
+    );
     const profiles = users.map((user) => ({
       id: resolveUserId(user),
       username: user.username,
@@ -167,7 +197,7 @@ export const getAllProfiles = async (_req, res) => {
     res.json(profiles);
   } catch (error) {
     console.error('Error fetching all profiles:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -197,72 +227,65 @@ export const updateProfile = async (req, res) => {
       }
     }
 
-    let updatedUser;
-    await withDb(async (db) => {
-      updatedUser = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
-      if (!updatedUser) {
+    const updatedUser = await withRepositoryTransaction(async (context) => {
+      let nicknameLog = null;
+      const stored = await usersRepo.updateById(req.user.id, (storedUser) => {
+        storedUser.profile = storedUser.profile || {};
+        const previousDisplayName = getUserDisplayName(storedUser);
+
+        if (description !== undefined) {
+          storedUser.profile.description = description;
+          storedUser.profile.bio = description;
+        }
+
+        if (profilePicture !== undefined) {
+          storedUser.profile.profilePicture = profilePicture;
+          storedUser.profile.avatar = profilePicture;
+        }
+
+        if (backgroundImage !== undefined) {
+          storedUser.profile.backgroundImage = backgroundImage;
+        }
+
+        if (selectedCharacters !== undefined) {
+          storedUser.profile.favoriteCharacters = selectedCharacters;
+        }
+
+        if (normalizedDisplayName !== undefined) {
+          storedUser.profile.displayName = normalizedDisplayName;
+        } else if (!storedUser.profile.displayName) {
+          storedUser.profile.displayName = storedUser.username;
+        }
+
+        const nextDisplayName = getUserDisplayName(storedUser);
+        const now = new Date().toISOString();
+        storedUser.profile.lastActive = now;
+        storedUser.updatedAt = now;
+
+        if (nextDisplayName !== previousDisplayName) {
+          nicknameLog = {
+            id: uuidv4(),
+            userId: resolveUserId(storedUser),
+            username: storedUser.username,
+            previousDisplayName,
+            nextDisplayName,
+            changedAt: now
+          };
+        }
+        return storedUser;
+      }, context);
+
+      if (!stored) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      updatedUser.profile = updatedUser.profile || {};
-      const previousDisplayName = getUserDisplayName(updatedUser);
-
-      if (description !== undefined) {
-        updatedUser.profile.description = description;
-        updatedUser.profile.bio = description;
+      if (nicknameLog) {
+        await nicknameChangeLogsRepo.insert(nicknameLog, context);
       }
-
-      if (profilePicture !== undefined) {
-        updatedUser.profile.profilePicture = profilePicture;
-        updatedUser.profile.avatar = profilePicture;
-      }
-
-      if (backgroundImage !== undefined) {
-        updatedUser.profile.backgroundImage = backgroundImage;
-      }
-
-      if (selectedCharacters !== undefined) {
-        updatedUser.profile.favoriteCharacters = selectedCharacters;
-      }
-
-      if (normalizedDisplayName !== undefined) {
-        updatedUser.profile.displayName = normalizedDisplayName;
-      } else if (!updatedUser.profile.displayName) {
-        updatedUser.profile.displayName = updatedUser.username;
-      }
-
-      const nextDisplayName = getUserDisplayName(updatedUser);
-      const now = new Date().toISOString();
-      updatedUser.profile.lastActive = now;
-      updatedUser.updatedAt = now;
-
-      if (nextDisplayName !== previousDisplayName) {
-        await nicknameChangeLogsRepo.insert(
-          {
-            id: uuidv4(),
-            userId: resolveUserId(updatedUser),
-            username: updatedUser.username,
-            previousDisplayName,
-            nextDisplayName,
-            changedAt: now
-          },
-          { db }
-        );
-      }
-
-      return db;
+      return stored;
     });
-
-    if (!updatedUser) {
-      const error = new Error('User not found');
-      error.code = 'USER_NOT_FOUND';
-      throw error;
-    }
 
     res.json({ msg: 'Profile updated', user: buildProfileResponse(updatedUser, true) });
   } catch (error) {
@@ -270,7 +293,7 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ msg: 'User not found' });
     }
     console.error('Error updating profile:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -283,17 +306,14 @@ export const getNicknameChangeLogs = async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
-    const logs = await nicknameChangeLogsRepo.getAll();
-    const sorted = [...logs]
-      .sort(
-        (a, b) =>
-          new Date(b.changedAt || 0).getTime() - new Date(a.changedAt || 0).getTime()
-      )
-      .slice(0, 200);
+    const sorted = await nicknameChangeLogsRepo.findManyBy(
+      {},
+      { sort: { changedAt: -1 }, limit: 200 }
+    );
     res.json(sorted);
   } catch (error) {
     console.error('Error fetching nickname change logs:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -320,11 +340,8 @@ export const changeUserRole = async (req, res) => {
 
   try {
     let updatedUser = null;
-    await withDb(async (db) => {
-      const adminUser = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === actorId,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const adminUser = await usersRepo.findById(actorId, context);
 
       if (!adminUser || adminUser.role !== 'admin') {
         const error = new Error('Only admins can change user roles.');
@@ -339,12 +356,13 @@ export const changeUserRole = async (req, res) => {
         throw error;
       }
 
-      const targetUser = await usersRepo.findOne(
-        (entry) =>
-          resolveUserId(entry) === targetUserId ||
-          (entry.username || '').toLowerCase() === targetUserId.toLowerCase(),
-        { db }
-      );
+      const targetUser =
+        (await usersRepo.findById(targetUserId, context)) ||
+        (await usersRepo.findOneBy(
+          { username: targetUserId },
+          { collation: { locale: 'en', strength: 2 } },
+          context
+        ));
 
       if (!targetUser) {
         const error = new Error('Target user not found.');
@@ -367,15 +385,17 @@ export const changeUserRole = async (req, res) => {
       const previousRole = targetUser.role || 'user';
       if (previousRole === nextRole) {
         updatedUser = targetUser;
-        return db;
+        return;
       }
 
-      targetUser.role = nextRole;
-      targetUser.updatedAt = new Date().toISOString();
-      updatedUser = targetUser;
+      updatedUser = await usersRepo.updateById(resolveUserId(targetUser), (storedUser) => {
+        storedUser.role = nextRole;
+        storedUser.updatedAt = new Date().toISOString();
+        return storedUser;
+      }, context);
 
       await logModerationAction({
-        db,
+        db: context,
         actor: adminUser,
         action: 'user.role_change',
         targetType: 'user',
@@ -387,7 +407,6 @@ export const changeUserRole = async (req, res) => {
         }
       });
 
-      return db;
     });
 
     return res.json({
@@ -427,9 +446,21 @@ export const searchProfiles = async (req, res) => {
       return res.status(400).json({ msg: 'Query is required' });
     }
 
-    const q = query.toLowerCase();
-    const users = await usersRepo.filter((user) =>
-      (user.username || '').toLowerCase().includes(q)
+    const escapedQuery = String(query)
+      .trim()
+      .slice(0, 80)
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (!escapedQuery) {
+      return res.status(400).json({ msg: 'Query is required' });
+    }
+    const users = await usersRepo.findManyBy(
+      {
+        $or: [
+          { username: { $regex: escapedQuery, $options: 'i' } },
+          { 'profile.displayName': { $regex: escapedQuery, $options: 'i' } }
+        ]
+      },
+      { sort: { username: 1 }, limit: 20 }
     );
 
     const result = users.map((user) => ({
@@ -442,16 +473,28 @@ export const searchProfiles = async (req, res) => {
     res.json(result);
   } catch (error) {
     console.error('Error searching profiles:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
 // @desc    Get user leaderboard
 // @route   GET /api/profile/leaderboard
 // @access  Public
-export const getLeaderboard = async (_req, res) => {
+export const getLeaderboard = async (req, res) => {
   try {
-    const users = (await usersRepo.getAll()).map((user) => {
+    const { page, limit } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
+    const leaderboardUsers = await usersRepo.findManyBy(
+      {},
+      {
+        sort: { 'stats.points': -1, 'stats.fightsWon': -1, username: 1 },
+        skip: (page - 1) * limit,
+        limit
+      }
+    );
+    const users = leaderboardUsers.map((user) => {
       const stats = user.stats || {};
       const rankInfo = getRankInfo(stats.points || 0);
       return {
@@ -469,15 +512,9 @@ export const getLeaderboard = async (_req, res) => {
       };
     });
 
-    const sorted = users.sort((a, b) => {
-      if (b.points !== a.points) return b.points - a.points;
-      if (b.victories !== a.victories) return b.victories - a.victories;
-      return a.username.localeCompare(b.username);
-    });
-
-    res.json(sorted);
+    res.json(users);
   } catch (error) {
     console.error('Error fetching leaderboard:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };

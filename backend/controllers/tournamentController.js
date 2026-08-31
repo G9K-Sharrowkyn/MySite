@@ -1,10 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
   charactersRepo,
-  readDb,
   tournamentsRepo,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
 import {
@@ -12,6 +11,7 @@ import {
   getCatalogOptionMap,
   groupCatalogOptionsByCategory
 } from '../data/chooseYourWeaponCatalog.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const TOURNAMENT_MODE_CHARACTER = 'character';
 const TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON = 'choose_your_weapon';
@@ -368,20 +368,59 @@ const buildTournamentResponse = (context, tournament) => {
   };
 };
 
-export const getAllTournaments = async (_req, res) => {
-  try {
-    const db = await readDb();
-    const tournaments = await tournamentsRepo.getAll({ db });
-    const [users, characters] = await Promise.all([
-      usersRepo.getAll({ db }),
-      charactersRepo.getAll({ db })
-    ]);
-    const context = { users, characters };
-    const sorted = tournaments.slice().sort(
-      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    );
+const getTournamentReferenceIds = (tournament) => {
+  const userIds = new Set([tournament?.createdBy]);
+  const characterIds = new Set();
+  const collectParticipant = (participant) => {
+    if (!participant || typeof participant !== 'object') return;
+    if (participant.userId) userIds.add(participant.userId);
+    if (participant.characterId) characterIds.add(participant.characterId);
+    (participant.characterIds || []).forEach((id) => characterIds.add(id));
+  };
+  (tournament?.participants || []).forEach(collectParticipant);
+  (tournament?.brackets || []).forEach((round) => {
+    (round.matches || []).forEach((match) => {
+      collectParticipant(match.player1);
+      collectParticipant(match.player2);
+      collectParticipant(match.winner);
+      if (typeof match.winner === 'string') userIds.add(match.winner);
+    });
+  });
+  userIds.delete(undefined);
+  userIds.delete(null);
+  characterIds.delete(undefined);
+  characterIds.delete(null);
+  return { userIds: [...userIds], characterIds: [...characterIds] };
+};
 
-    res.json(sorted.map((tournament) => buildTournamentResponse(context, tournament)));
+const loadTournamentContext = async (tournaments, context) => {
+  const list = Array.isArray(tournaments) ? tournaments : [tournaments];
+  const userIds = new Set();
+  const characterIds = new Set();
+  list.forEach((tournament) => {
+    const refs = getTournamentReferenceIds(tournament);
+    refs.userIds.forEach((id) => userIds.add(id));
+    refs.characterIds.forEach((id) => characterIds.add(id));
+  });
+  const users = userIds.size
+    ? await usersRepo.findManyBy({ id: { $in: [...userIds] } }, {}, context)
+    : [];
+  const characters = characterIds.size
+    ? await charactersRepo.findManyBy({ id: { $in: [...characterIds] } }, {}, context)
+    : [];
+  return { users, characters };
+};
+
+export const getAllTournaments = async (req, res) => {
+  try {
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const tournaments = await tournamentsRepo.findManyBy(
+      {},
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
+    );
+    const context = await loadTournamentContext(tournaments);
+
+    res.json(tournaments.map((tournament) => buildTournamentResponse(context, tournament)));
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -392,20 +431,12 @@ export const getTournamentById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const db = await readDb();
-    const tournament = await tournamentsRepo.findOne(
-      (entry) => entry.id === id,
-      { db }
-    );
+    const tournament = await tournamentsRepo.findById(id);
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
     }
 
-    const [users, characters] = await Promise.all([
-      usersRepo.getAll({ db }),
-      charactersRepo.getAll({ db })
-    ]);
-    res.json(buildTournamentResponse({ users, characters }, tournament));
+    res.json(buildTournamentResponse(await loadTournamentContext(tournament), tournament));
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server Error');
@@ -527,11 +558,8 @@ export const createTournament = async (req, res) => {
 
     let createdTournament;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
 
       // Any logged in user can create tournament now, not just moderators
       if (!user) {
@@ -595,9 +623,8 @@ export const createTournament = async (req, res) => {
         updatedAt: new Date().toISOString()
       };
 
-      await tournamentsRepo.insert(newTournament, { db });
+      await tournamentsRepo.insert(newTournament, context);
       createdTournament = newTournament;
-      return db;
     });
 
     res.status(201).json(createdTournament);
@@ -616,21 +643,15 @@ export const startTournament = async (req, res) => {
   try {
     let updatedTournament;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!isStaff(user)) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const tournament = await tournamentsRepo.findOne(
-        (entry) => entry.id === id,
-        { db }
-      );
+      const tournament = await tournamentsRepo.findById(id, context);
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -649,7 +670,12 @@ export const startTournament = async (req, res) => {
         throw error;
       }
 
-      const users = await usersRepo.getAll({ db });
+      const participantIds = [...new Set((tournament.participants || [])
+        .map((participant) => participant.userId)
+        .filter(Boolean))];
+      const users = participantIds.length
+        ? await usersRepo.findManyBy({ id: { $in: participantIds } }, {}, context)
+        : [];
       const userById = new Map(
         users.map((entry) => [resolveUserId(entry), entry])
       );
@@ -680,8 +706,11 @@ export const startTournament = async (req, res) => {
       };
       tournament.updatedAt = new Date().toISOString();
 
-      updatedTournament = tournament;
-      return db;
+      updatedTournament = await tournamentsRepo.updateById(
+        tournament.id,
+        () => tournament,
+        context
+      );
     });
 
     res.json({
@@ -711,21 +740,15 @@ export const advanceMatch = async (req, res) => {
   try {
     let updatedTournament;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!isStaff(user)) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const tournament = await tournamentsRepo.findOne(
-        (entry) => entry.id === id,
-        { db }
-      );
+      const tournament = await tournamentsRepo.findById(id, context);
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -768,8 +791,11 @@ export const advanceMatch = async (req, res) => {
       tournament.stats.completedMatches += 1;
       tournament.updatedAt = new Date().toISOString();
 
-      updatedTournament = tournament;
-      return db;
+      updatedTournament = await tournamentsRepo.updateById(
+        tournament.id,
+        () => tournament,
+        context
+      );
     });
 
     res.json({
@@ -806,11 +832,8 @@ export const voteInTournament = async (req, res) => {
     let safeMatch;
     let totalVotes = 0;
 
-    await withDb(async (db) => {
-      const tournament = await tournamentsRepo.findOne(
-        (entry) => entry.id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const tournament = await tournamentsRepo.findById(id, context);
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -878,7 +901,7 @@ export const voteInTournament = async (req, res) => {
       safeMatch = applyTournamentVoteVisibility(tournament, match);
       totalVotes =
         (safeMatch?.votes?.player1 || 0) + (safeMatch?.votes?.player2 || 0);
-      return db;
+      await tournamentsRepo.updateById(tournament.id, () => tournament, context);
     });
 
     res.json({
@@ -910,11 +933,7 @@ export const getTournamentBrackets = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const db = await readDb();
-    const tournament = await tournamentsRepo.findOne(
-      (entry) => entry.id === id,
-      { db }
-    );
+    const tournament = await tournamentsRepo.findById(id);
 
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
@@ -951,21 +970,15 @@ export const updateTournament = async (req, res) => {
   try {
     let updated;
 
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!isStaff(user)) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const tournament = await tournamentsRepo.findOne(
-        (entry) => entry.id === id,
-        { db }
-      );
+      const tournament = await tournamentsRepo.findById(id, context);
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -1011,8 +1024,11 @@ export const updateTournament = async (req, res) => {
         );
       }
       tournament.updatedAt = new Date().toISOString();
-      updated = tournament;
-      return db;
+      updated = await tournamentsRepo.updateById(
+        tournament.id,
+        () => tournament,
+        context
+      );
     });
 
     res.json(updated);
@@ -1038,11 +1054,8 @@ export const joinTournament = async (req, res) => {
   try {
     let updatedTournament;
 
-    await withDb(async (db) => {
-      const tournament = await tournamentsRepo.findOne(
-        (entry) => entry.id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const tournament = await tournamentsRepo.findById(id, context);
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -1077,10 +1090,7 @@ export const joinTournament = async (req, res) => {
       const settings = getTournamentSettings(tournament);
       const isLoadoutMode = settings.mode === TOURNAMENT_MODE_CHOOSE_YOUR_WEAPON;
 
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+      const user = await usersRepo.findById(req.user.id, context);
 
       if (isLoadoutMode) {
         const requestedSelectionIds = Array.from(new Set(toStringArray(selectionIds)));
@@ -1152,7 +1162,11 @@ export const joinTournament = async (req, res) => {
           throw error;
         }
 
-        const allCharacters = await charactersRepo.getAll({ db });
+        const allCharacters = await charactersRepo.findManyBy(
+          { id: { $in: safeCharacterIds } },
+          {},
+          context
+        );
         const characterMap = new Map(allCharacters.map((character) => [character.id, character]));
         const characters = safeCharacterIds.map((entryId) => characterMap.get(entryId));
 
@@ -1196,12 +1210,17 @@ export const joinTournament = async (req, res) => {
           tournamentsWon: 0,
           tournamentsParticipated: 0
         };
-        user.activity.tournamentsParticipated += 1;
+        user.activity.tournamentsParticipated =
+          Number(user.activity.tournamentsParticipated || 0) + 1;
+        await usersRepo.updateById(user.id, () => user, context);
       }
 
       tournament.updatedAt = new Date().toISOString();
-      updatedTournament = tournament;
-      return db;
+      updatedTournament = await tournamentsRepo.updateById(
+        tournament.id,
+        () => tournament,
+        context
+      );
     });
 
     res.json({ msg: 'Successfully joined tournament', tournament: updatedTournament });
@@ -1234,11 +1253,8 @@ export const leaveTournament = async (req, res) => {
   try {
     let updatedTournament;
 
-    await withDb(async (db) => {
-      const tournament = await tournamentsRepo.findOne(
-        (entry) => entry.id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const tournament = await tournamentsRepo.findById(id, context);
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -1264,20 +1280,21 @@ export const leaveTournament = async (req, res) => {
       }
 
       tournament.participants.splice(participantIndex, 1);
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+      const user = await usersRepo.findById(req.user.id, context);
       if (user?.activity?.tournamentsParticipated) {
         user.activity.tournamentsParticipated = Math.max(
           0,
           user.activity.tournamentsParticipated - 1
         );
+        await usersRepo.updateById(user.id, () => user, context);
       }
 
       tournament.updatedAt = new Date().toISOString();
-      updatedTournament = tournament;
-      return db;
+      updatedTournament = await tournamentsRepo.updateById(
+        tournament.id,
+        () => tournament,
+        context
+      );
     });
 
     res.json({ msg: 'Successfully left tournament', tournament: updatedTournament });
@@ -1298,11 +1315,7 @@ export const getAvailableCharacters = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const db = await readDb();
-    const tournament = await tournamentsRepo.findOne(
-      (entry) => entry.id === id,
-      { db }
-    );
+    const tournament = await tournamentsRepo.findById(id);
     
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
@@ -1321,8 +1334,18 @@ export const getAvailableCharacters = async (req, res) => {
     // Get all taken characters from participants
     const takenCharacters = tournament.participants?.flatMap(p => p.characterIds || []) || [];
     
-    // Filter characters
-    const allCharacters = await charactersRepo.getAll({ db });
+    const blockedIds = [...new Set([...excludedCharacters, ...takenCharacters])];
+    const selectedPowerLevels = allowedTiers.filter((tier) =>
+      CHARACTER_POWER_LEVELS.has(tier)
+    );
+    const characterQuery = blockedIds.length ? { id: { $nin: blockedIds } } : {};
+    if (selectedPowerLevels.length) {
+      characterQuery.division = { $in: selectedPowerLevels };
+    }
+    const allCharacters = await charactersRepo.findManyBy(
+      characterQuery,
+      { sort: { name: 1 }, limit: 5000 }
+    );
     let availableCharacters = allCharacters.filter(char => {
       // Check if excluded
       if (excludedCharacters.includes(char.id)) return false;
@@ -1350,11 +1373,7 @@ export const getTournamentLoadoutOptions = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const db = await readDb();
-    const tournament = await tournamentsRepo.findOne(
-      (entry) => entry.id === id,
-      { db }
-    );
+    const tournament = await tournamentsRepo.findById(id);
 
     if (!tournament) {
       return res.status(404).json({ msg: 'Tournament not found' });
@@ -1412,11 +1431,8 @@ export const deleteTournament = async (req, res) => {
   const userId = resolveUserId(req.user);
 
   try {
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === userId,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(userId, context);
 
       if (!user) {
         const error = new Error('User not found');
@@ -1424,10 +1440,7 @@ export const deleteTournament = async (req, res) => {
         throw error;
       }
 
-      const tournament = await tournamentsRepo.findOne(
-        (entry) => entry.id === id,
-        { db }
-      );
+      const tournament = await tournamentsRepo.findById(id, context);
       if (!tournament) {
         const error = new Error('Tournament not found');
         error.code = 'NOT_FOUND';
@@ -1452,7 +1465,7 @@ export const deleteTournament = async (req, res) => {
       }
 
       await logModerationAction({
-        db,
+        db: context,
         actor: user,
         action: 'tournament.delete',
         targetType: 'tournament',
@@ -1463,8 +1476,7 @@ export const deleteTournament = async (req, res) => {
           name: tournament.name || tournament.title || ''
         }
       });
-      await tournamentsRepo.removeById(id, { db });
-      return db;
+      await tournamentsRepo.removeById(id, context);
     });
 
     res.json({ msg: 'Tournament deleted successfully' });

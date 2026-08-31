@@ -1,4 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
+import {
+  coinTransactionsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 
@@ -77,6 +82,63 @@ export const applyDailyActivityBonus = (db, user, activity, amountOverride) => {
   });
 
   return { applied: true, balance: user.coins.balance || 0, amount, action };
+};
+
+export const applyDailyActivityBonusAtomic = async (
+  userId,
+  activity,
+  amountOverride,
+  transactionContext
+) => {
+  const action = normalizeActivity(activity);
+  if (!userId || !action) return { applied: false, balance: 0 };
+  const amount =
+    Number.isFinite(amountOverride) && amountOverride > 0
+      ? amountOverride
+      : DAILY_ACTIVITY_REWARDS[action] || 0;
+  if (!amount) return { applied: false, balance: 0 };
+
+  const execute = async (context) => {
+    const now = new Date();
+    const todayKey = getLocalDateKey(now);
+    let result = { applied: false, balance: 0 };
+    const updatedUser = await usersRepo.updateById(userId, (user) => {
+      ensureCoinAccount(user);
+      if (user.coins.dailyActivity?.[action] === todayKey) {
+        result = { applied: false, balance: user.coins.balance || 0 };
+        return user;
+      }
+      user.coins.balance = (user.coins.balance || 0) + amount;
+      user.coins.totalEarned = (user.coins.totalEarned || 0) + amount;
+      user.coins.dailyActivity[action] = todayKey;
+      user.virtualCoins = user.coins.balance;
+      result = {
+        applied: true,
+        balance: user.coins.balance,
+        amount,
+        action
+      };
+      return user;
+    }, 'id', context);
+
+    if (!updatedUser) return { applied: false, balance: 0 };
+    if (result.applied) {
+      await coinTransactionsRepo.insert({
+        id: uuidv4(),
+        userId,
+        amount,
+        type: 'daily_activity',
+        description: `Daily ${action} bonus`,
+        balance: result.balance,
+        createdAt: now.toISOString()
+      }, context);
+    }
+    return result;
+  };
+
+  return transactionContext
+    ? execute(transactionContext)
+    : withRepositoryTransaction(execute);
 };
 
 // Legacy helper kept for compatibility (defaults to login bonus).

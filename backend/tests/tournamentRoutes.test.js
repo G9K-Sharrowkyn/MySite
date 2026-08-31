@@ -123,6 +123,21 @@ describe('Tournament integrity', () => {
     expect(db.tournaments[1].brackets[0].matches[0].voters).toHaveLength(0);
   });
 
+  test('serializes concurrent joins so one character cannot be claimed twice', async () => {
+    const join = (user) => request(app)
+      .post('/tournaments/recruiting-tournament/join')
+      .set('x-auth-token', tokenFor(user))
+      .send({ characterIds: ['allowed-character'] });
+
+    const responses = await Promise.all([join(users[0]), join(users[1])]);
+    expect(responses.map((response) => response.statusCode).sort()).toEqual([200, 400]);
+
+    const db = await readDb();
+    const tournament = db.tournaments.find((entry) => entry.id === 'recruiting-tournament');
+    expect(tournament.participants).toHaveLength(1);
+    expect(tournament.participants[0].characterIds).toEqual(['allowed-character']);
+  });
+
   test('allows only staff updates and ignores protected tournament fields', async () => {
     const forbidden = await request(app)
       .put('/tournaments/recruiting-tournament')

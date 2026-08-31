@@ -1,6 +1,17 @@
 ﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  betsRepo,
+  challengeProgressRepo,
+  charactersRepo,
+  coinTransactionsRepo,
+  commentsRepo,
+  divisionFightsRepo,
+  fightsRepo,
+  storePurchasesRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import auth from '../middleware/auth.js';
 import {
@@ -11,9 +22,6 @@ import {
 const router = express.Router();
 
 const resolveUserId = (user) => user?.id || user?._id;
-
-const findUserById = (db, userId) =>
-  (db.users || []).find((entry) => resolveUserId(entry) === userId);
 
 const requireSelf = (req, res, next) => {
   if (req.params.userId !== req.user.id && req.user.role !== 'admin') {
@@ -38,7 +46,7 @@ const ensureCoinAccount = (user) => {
   }
 };
 
-const addCoinTransaction = (db, user, amount, type, description) => {
+const applyCoinTransaction = (user, amount) => {
   ensureCoinAccount(user);
   user.coins.balance = (user.coins.balance || 0) + amount;
   user.virtualCoins = user.coins.balance;
@@ -49,17 +57,6 @@ const addCoinTransaction = (db, user, amount, type, description) => {
     user.coins.totalSpent = (user.coins.totalSpent || 0) + Math.abs(amount);
   }
 
-  db.coinTransactions = Array.isArray(db.coinTransactions) ? db.coinTransactions : [];
-  db.coinTransactions.push({
-    id: uuidv4(),
-    _id: uuidv4(),
-    userId: resolveUserId(user),
-    amount,
-    type,
-    description,
-    balance: user.coins.balance,
-    createdAt: new Date().toISOString()
-  });
 };
 
 const DAILY_TASK_TEMPLATES = [
@@ -91,11 +88,8 @@ const DAILY_TASK_TEMPLATES = [
 
 const getTodayKey = () => new Date().toISOString().slice(0, 10);
 
-const ensureDailyProgress = (db, userId) => {
-  db.challengeProgress = Array.isArray(db.challengeProgress)
-    ? db.challengeProgress
-    : [];
-  let entry = db.challengeProgress.find((item) => item.userId === userId);
+const ensureDailyProgress = async (context, userId) => {
+  let entry = await challengeProgressRepo.findOneBy({ userId }, {}, context);
   const todayKey = getTodayKey();
 
   if (!entry) {
@@ -111,7 +105,7 @@ const ensureDailyProgress = (db, userId) => {
         claimed: false
       }))
     };
-    db.challengeProgress.push(entry);
+    await challengeProgressRepo.insert(entry, context);
     return entry;
   }
 
@@ -127,6 +121,7 @@ const ensureDailyProgress = (db, userId) => {
       completed: false,
       claimed: false
     }));
+    entry = await challengeProgressRepo.updateById(entry.id, () => entry, context);
   }
 
   return entry;
@@ -187,11 +182,12 @@ router.get('/search', auth, async (req, res) => {
       return res.json([]);
     }
 
-    const db = await readDb();
-    const results = (db.users || [])
-      .filter((user) => (user.username || '').toLowerCase().includes(q))
-      .slice(0, 20)
-      .map((user) => ({
+    const escaped = String(q).slice(0, 80).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const matchingUsers = await usersRepo.findManyBy(
+      { username: { $regex: escaped, $options: 'i' } },
+      { sort: { username: 1 }, limit: 20 }
+    );
+    const results = matchingUsers.map((user) => ({
         id: resolveUserId(user),
         username: user.username,
         displayName: getUserDisplayName(user),
@@ -218,15 +214,15 @@ router.post('/claim-daily-task', auth, async (req, res) => {
     let updatedTask;
     let newBalance = 0;
 
-    await withDb((db) => {
-      const user = findUserById(db, userId);
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(userId, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      const progress = ensureDailyProgress(db, userId);
+      const progress = await ensureDailyProgress(context, userId);
       const task = progress.tasks.find((item) => item.id === taskId);
       if (!task) {
         const error = new Error('Task not found');
@@ -239,14 +235,29 @@ router.post('/claim-daily-task', auth, async (req, res) => {
         task.progress = task.target;
       }
 
-      if (!task.claimed) {
+      const shouldReward = !task.claimed;
+      if (shouldReward) {
         task.claimed = true;
-        addCoinTransaction(db, user, task.reward, 'earned', 'Daily task reward');
       }
-
+      await challengeProgressRepo.updateById(progress.id, () => progress, context);
+      let updatedUser = user;
+      if (shouldReward) {
+        updatedUser = await usersRepo.updateById(userId, (storedUser) => {
+          applyCoinTransaction(storedUser, task.reward);
+          return storedUser;
+        }, context);
+        await coinTransactionsRepo.insert({
+          id: uuidv4(),
+          userId,
+          amount: task.reward,
+          type: 'earned',
+          description: 'Daily task reward',
+          balance: updatedUser.coins.balance,
+          createdAt: new Date().toISOString()
+        }, context);
+      }
       updatedTask = task;
-      newBalance = user.coins?.balance || 0;
-      return db;
+      newBalance = updatedUser.coins?.balance || 0;
     });
 
     res.json({ task: updatedTask, balance: newBalance });
@@ -265,20 +276,9 @@ router.post('/claim-daily-task', auth, async (req, res) => {
 // GET /api/users/:userId/coins
 router.get('/:userId/coins', auth, requireSelf, async (req, res) => {
   try {
-    let coins = 0;
-    await withDb((db) => {
-      const user = findUserById(db, req.params.userId);
-      if (!user) {
-        const error = new Error('User not found');
-        error.code = 'USER_NOT_FOUND';
-        throw error;
-      }
-
-      ensureCoinAccount(user);
-      coins = user.coins.balance || 0;
-      return db;
-    });
-    res.json({ coins });
+    const user = await usersRepo.findById(req.params.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ coins: user.coins?.balance || 0 });
   } catch (error) {
     if (error.code === 'USER_NOT_FOUND') {
       return res.status(404).json({ message: 'User not found' });
@@ -291,9 +291,9 @@ router.get('/:userId/coins', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/coin-history
 router.get('/:userId/coin-history', auth, requireSelf, async (req, res) => {
   try {
-    const db = await readDb();
-    const history = (db.coinTransactions || []).filter(
-      (entry) => entry.userId === req.params.userId
+    const history = await coinTransactionsRepo.findManyBy(
+      { userId: req.params.userId },
+      { sort: { createdAt: -1 }, limit: 200 }
     );
     res.json(history);
   } catch (error) {
@@ -305,9 +305,9 @@ router.get('/:userId/coin-history', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/inventory
 router.get('/:userId/inventory', auth, requireSelf, async (req, res) => {
   try {
-    const db = await readDb();
-    const inventory = (db.storePurchases || []).filter(
-      (entry) => entry.userId === req.params.userId
+    const inventory = await storePurchasesRepo.findManyBy(
+      { userId: req.params.userId },
+      { sort: { purchasedAt: -1 }, limit: 200 }
     );
     res.json(inventory);
   } catch (error) {
@@ -319,11 +319,9 @@ router.get('/:userId/inventory', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/daily-tasks
 router.get('/:userId/daily-tasks', auth, requireSelf, async (req, res) => {
   try {
-    let tasks = [];
-    await withDb((db) => {
-      const progress = ensureDailyProgress(db, req.params.userId);
-      tasks = progress.tasks || [];
-      return db;
+    const tasks = await withRepositoryTransaction(async (context) => {
+      const progress = await ensureDailyProgress(context, req.params.userId);
+      return progress.tasks || [];
     });
     res.json(tasks);
   } catch (error) {
@@ -335,8 +333,7 @@ router.get('/:userId/daily-tasks', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/achievements
 router.get('/:userId/achievements', async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -350,9 +347,14 @@ router.get('/:userId/achievements', async (req, res) => {
 // GET /api/users/:userId/betting-history
 router.get('/:userId/betting-history', auth, requireSelf, async (req, res) => {
   try {
-    const db = await readDb();
-    const bets = (db.bets || []).filter((bet) => bet.userId === req.params.userId);
-    const fightsById = new Map((db.fights || []).map((fight) => [fight.id, fight]));
+    const bets = await betsRepo.findManyBy(
+      { userId: req.params.userId },
+      { sort: { createdAt: -1 }, limit: 200 }
+    );
+    const fightIds = [...new Set(bets.map((bet) => bet.fightId).filter(Boolean))];
+    const fightsById = new Map((fightIds.length
+      ? await fightsRepo.findManyBy({ id: { $in: fightIds } }, { limit: fightIds.length })
+      : []).map((fight) => [fight.id, fight]));
 
     const history = bets.map((bet) => {
       const fight = fightsById.get(bet.fightId);
@@ -379,11 +381,14 @@ router.get('/:userId/betting-history', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/current-bets
 router.get('/:userId/current-bets', auth, requireSelf, async (req, res) => {
   try {
-    const db = await readDb();
-    const bets = (db.bets || []).filter(
-      (bet) => bet.userId === req.params.userId && bet.status === 'pending'
+    const bets = await betsRepo.findManyBy(
+      { userId: req.params.userId, status: 'pending' },
+      { sort: { createdAt: -1 }, limit: 100 }
     );
-    const fightsById = new Map((db.fights || []).map((fight) => [fight.id, fight]));
+    const fightIds = [...new Set(bets.map((bet) => bet.fightId).filter(Boolean))];
+    const fightsById = new Map((fightIds.length
+      ? await fightsRepo.findManyBy({ id: { $in: fightIds } }, { limit: fightIds.length })
+      : []).map((fight) => [fight.id, fight]));
 
     const active = bets.map((bet) => {
       const fight = fightsById.get(bet.fightId);
@@ -408,8 +413,7 @@ router.get('/:userId/current-bets', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/profile
 router.get('/:userId/profile', async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -463,8 +467,7 @@ router.put(
         'backgroundImage'
       ]);
       let updatedProfile;
-      await withDb((db) => {
-        const user = findUserById(db, req.params.userId);
+      const user = await usersRepo.updateById(req.params.userId, (user) => {
         if (!user) {
           const error = new Error('User not found');
           error.code = 'USER_NOT_FOUND';
@@ -479,8 +482,13 @@ router.put(
         });
         user.updatedAt = new Date().toISOString();
         updatedProfile = user.profile;
-        return db;
+        return user;
       });
+      if (!user) {
+        const error = new Error('User not found');
+        error.code = 'USER_NOT_FOUND';
+        throw error;
+      }
 
       res.json(updatedProfile);
     } catch (error) {
@@ -496,16 +504,20 @@ router.put(
 // GET /api/users/:userId/profile-comments
 router.get('/:userId/profile-comments', async (req, res) => {
   try {
-    const db = await readDb();
-    const comments = (db.comments || [])
-      .filter(
-        (comment) =>
-          (comment.type === 'user_profile' || comment.type === 'profile') &&
-          comment.targetId === req.params.userId
-      )
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
-      .map((comment) => {
-        const author = findUserById(db, comment.authorId);
+    const storedComments = await commentsRepo.findManyBy(
+      {
+        type: { $in: ['user_profile', 'profile'] },
+        targetId: req.params.userId
+      },
+      { sort: { createdAt: -1 }, limit: 200 }
+    );
+    const authorIds = [...new Set(storedComments.map((comment) => comment.authorId).filter(Boolean))];
+    const authors = authorIds.length
+      ? await usersRepo.findManyBy({ id: { $in: authorIds } }, { limit: authorIds.length })
+      : [];
+    const authorsById = new Map(authors.map((user) => [resolveUserId(user), user]));
+    const comments = storedComments.map((comment) => {
+        const author = authorsById.get(comment.authorId);
         return {
           id: comment.id || comment._id,
           content: comment.text || comment.content || '',
@@ -541,14 +553,14 @@ router.post('/:userId/profile-comments', auth, commentValidation, async (req, re
     }
 
     let created;
-    await withDb((db) => {
-      const author = findUserById(db, authorId);
+    await withRepositoryTransaction(async (context) => {
+      const author = await usersRepo.findById(authorId, context);
       if (!author) {
         const error = new Error('Author not found');
         error.code = 'AUTHOR_NOT_FOUND';
         throw error;
       }
-      if (!findUserById(db, req.params.userId)) {
+      if (!await usersRepo.findById(req.params.userId, context)) {
         const error = new Error('Profile not found');
         error.code = 'PROFILE_NOT_FOUND';
         throw error;
@@ -571,10 +583,8 @@ router.post('/:userId/profile-comments', auth, commentValidation, async (req, re
         likedBy: []
       };
 
-      db.comments = Array.isArray(db.comments) ? db.comments : [];
-      db.comments.push(comment);
+      await commentsRepo.insert(comment, context);
       created = comment;
-      return db;
     });
 
     res.status(201).json({
@@ -605,8 +615,7 @@ router.post('/:userId/profile-comments', auth, commentValidation, async (req, re
 // GET /api/users/:userId/division-records
 router.get('/:userId/division-records', async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -636,11 +645,14 @@ router.get('/:userId/division-records', async (req, res) => {
 // GET /api/users/:userId/fight-history
 router.get('/:userId/fight-history', async (req, res) => {
   try {
-    const db = await readDb();
-    const fights = (db.divisionFights || []).filter(
-      (fight) =>
-        fight.team1?.userId === req.params.userId ||
-        fight.team2?.userId === req.params.userId
+    const fights = await divisionFightsRepo.findManyBy(
+      {
+        $or: [
+          { 'team1.userId': req.params.userId },
+          { 'team2.userId': req.params.userId }
+        ]
+      },
+      { sort: { createdAt: -1 }, limit: 200 }
     );
 
     const history = fights.map((fight) => {
@@ -682,16 +694,20 @@ router.get('/:userId/fight-history', async (req, res) => {
 // GET /api/users/:userId/profile-analysis
 router.get('/:userId/profile-analysis', auth, requireSelf, async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
     const favorites = user.profile?.favoriteCharacters || [];
     const favoriteCharacters = Array.isArray(favorites) ? favorites : [];
-    const favoriteUniverses = (db.characters || [])
-      .filter((character) => favoriteCharacters.includes(character.id))
+    const favoriteCharacterRows = favoriteCharacters.length
+      ? await charactersRepo.findManyBy(
+          { id: { $in: favoriteCharacters } },
+          { limit: favoriteCharacters.length }
+        )
+      : [];
+    const favoriteUniverses = favoriteCharacterRows
       .map((character) => character.universe)
       .filter(Boolean);
 
@@ -716,8 +732,7 @@ router.get('/:userId/profile-analysis', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/behavior
 router.get('/:userId/behavior', auth, requireSelf, async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -730,8 +745,13 @@ router.get('/:userId/behavior', auth, requireSelf, async (req, res) => {
       characterUsage[characterId] = (characterUsage[characterId] || 0) + 1;
     });
 
-    const mostUsedCharacters = (db.characters || [])
-      .filter((character) => favoriteCharacters.includes(character.id))
+    const characterRows = favoriteCharacters.length
+      ? await charactersRepo.findManyBy(
+          { id: { $in: favoriteCharacters } },
+          { limit: favoriteCharacters.length }
+        )
+      : [];
+    const mostUsedCharacters = characterRows
       .map((character) => ({
         id: character.id,
         universe: character.universe
@@ -751,8 +771,7 @@ router.get('/:userId/behavior', auth, requireSelf, async (req, res) => {
 // GET /api/users/:userId/champion-status
 router.get('/:userId/champion-status', async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }

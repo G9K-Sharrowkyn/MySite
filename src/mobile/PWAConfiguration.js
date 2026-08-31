@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { apiFetch } from '../utils/apiFetch';
 import './PWAConfiguration.css';
 
 const PWAConfiguration = () => {
@@ -14,7 +15,7 @@ const PWAConfiguration = () => {
   const fetchVapidPublicKey = useCallback(async () => {
     if (vapidPublicKey) return vapidPublicKey;
     try {
-      const response = await fetch('/api/push/vapid-public-key');
+      const response = await apiFetch('/api/push/vapid-public-key');
       const data = await response.json();
       const publicKey = data?.publicKey || '';
       if (publicKey) setVapidPublicKey(publicKey);
@@ -133,7 +134,7 @@ const PWAConfiguration = () => {
       setPushSubscription(subscription);
       
       // Send subscription to server
-      await fetch('/api/push/subscribe', {
+      await apiFetch('/api/push/subscribe', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +154,7 @@ const PWAConfiguration = () => {
         setPushSubscription(null);
         
         // Remove subscription from server
-        await fetch('/api/push/unsubscribe', {
+        await apiFetch('/api/push/unsubscribe', {
           method: 'POST',
         headers: {
           'Content-Type': 'application/json',

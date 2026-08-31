@@ -2,8 +2,16 @@
 import { v4 as uuidv4 } from 'uuid';
 import auth from '../middleware/auth.js';
 import moderatorAuth from '../middleware/moderatorAuth.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  charactersRepo,
+  divisionFightsRepo,
+  divisionSeasonsRepo,
+  divisionTeamSlotsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { getRankInfo } from '../utils/rankSystem.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const router = express.Router();
 
@@ -51,9 +59,6 @@ const getDefaultSeasonBanner = (season) => {
 };
 
 const resolveUserId = (user) => user?.id || user?._id;
-
-const findUserById = (db, userId) =>
-  db.users.find((entry) => resolveUserId(entry) === userId);
 
 const getDivisionInfo = (divisionId) =>
   DEFAULT_DIVISIONS.find((division) => division.id === divisionId) || {
@@ -196,6 +201,33 @@ const ensureSeasons = (db) => {
   });
 };
 
+const ensureSeasonRecords = async (context) => {
+  const existing = await divisionSeasonsRepo.getAll(context);
+  const db = { divisionSeasons: existing };
+  ensureSeasons(db);
+  const normalizedIds = new Set(db.divisionSeasons.map((season) => season.id));
+  for (const season of existing) {
+    if (!normalizedIds.has(season.id)) {
+      await divisionSeasonsRepo.removeById(season.id, context);
+    }
+  }
+  for (const season of db.divisionSeasons) {
+    const current = existing.find((entry) => entry.id === season.id);
+    if (current) {
+      if (JSON.stringify(current) !== JSON.stringify(season)) {
+        await divisionSeasonsRepo.updateById(season.id, () => season, context);
+      }
+    } else {
+      await divisionSeasonsRepo.insertIfAbsent({ id: season.id }, season, context);
+    }
+  }
+  return db.divisionSeasons;
+};
+
+const loadSeasonDb = async (context) => ({
+  divisionSeasons: await ensureSeasonRecords(context)
+});
+
 const getSeasonById = (db, seasonId) => {
   ensureSeasons(db);
   return db.divisionSeasons.find((season) => season.id === seasonId) || null;
@@ -206,17 +238,13 @@ const withSeasonStatus = (season, now = new Date()) => {
   return { ...season, status: getSeasonStatus(season, now) };
 };
 
-const cleanupDivisionTeams = (db, divisionId) => {
-  let removed = 0;
+const cleanupDivisionTeams = async (context, divisionId) => {
   const now = new Date().toISOString();
-  (db.users || []).forEach((user) => {
-    if (user.divisions?.[divisionId]) {
-      delete user.divisions[divisionId];
-      user.updatedAt = now;
-      removed += 1;
-    }
-  });
-  return removed;
+  const query = { [`divisions.${divisionId}`]: { $exists: true } };
+  const result = await usersRepo.patchManyBy(query, { updatedAt: now }, context);
+  await usersRepo.unsetManyBy(query, [`divisions.${divisionId}`], context);
+  await divisionTeamSlotsRepo.removeManyBy({ divisionId }, context);
+  return result.matchedCount;
 };
 
 const getDivisionDefinitions = (db) => {
@@ -260,28 +288,31 @@ const runSeasonScheduler = async (now = new Date()) => {
   let cleanedTeams = 0;
   const nowIso = now.toISOString();
 
-  await withDb((db) => {
-    ensureSeasons(db);
-
-    db.divisionSeasons.forEach((season) => {
+  await withRepositoryTransaction(async (context) => {
+    const seasons = await ensureSeasonRecords(context);
+    for (const season of seasons) {
       const startAt = season.startAt ? new Date(season.startAt) : null;
       const endAt = season.endAt ? new Date(season.endAt) : null;
+      let changed = false;
 
       if (season.isLocked && startAt && now >= startAt && (!endAt || now < endAt)) {
         season.isLocked = false;
         season.updatedAt = nowIso;
         activated += 1;
+        changed = true;
       }
 
       if (!season.isLocked && endAt && now >= endAt) {
         season.isLocked = true;
         season.updatedAt = nowIso;
         deactivated += 1;
-        cleanedTeams += cleanupDivisionTeams(db, season.id);
+        cleanedTeams += await cleanupDivisionTeams(context, season.id);
+        changed = true;
       }
-    });
-
-    return db;
+      if (changed) {
+        await divisionSeasonsRepo.updateById(season.id, () => season, context);
+      }
+    }
   });
 
   return { activated, deactivated, cleanedTeams, timestamp: nowIso };
@@ -344,6 +375,55 @@ const normalizeVoteTeam = (value) => {
     return 'draw';
   }
   return null;
+};
+
+const ensureDivisionSlots = async (divisionId, context) => {
+  const users = await usersRepo.findManyBy({
+    [`divisions.${divisionId}.team`]: { $exists: true }
+  }, {}, context);
+  for (const user of users) {
+    const team = normalizeTeam(user.divisions?.[divisionId]?.team);
+    const characterIds = [...new Set([
+      getCharacterId(team?.mainCharacter),
+      getCharacterId(team?.secondaryCharacter)
+    ].filter(Boolean))];
+    for (const characterId of characterIds) {
+      await divisionTeamSlotsRepo.insertIfAbsent(
+        { divisionId, characterId },
+        {
+          id: uuidv4(),
+          divisionId,
+          characterId,
+          userId: resolveUserId(user),
+          createdAt: user.divisions?.[divisionId]?.joinedAt || new Date().toISOString()
+        },
+        context
+      );
+    }
+  }
+};
+
+const reserveDivisionTeam = async (divisionId, userId, selectedIds, context) => {
+  await ensureDivisionSlots(divisionId, context);
+  await divisionTeamSlotsRepo.removeManyBy({ divisionId, userId }, context);
+  for (const characterId of selectedIds) {
+    const result = await divisionTeamSlotsRepo.insertIfAbsent(
+      { divisionId, characterId },
+      {
+        id: uuidv4(),
+        divisionId,
+        characterId,
+        userId,
+        createdAt: new Date().toISOString()
+      },
+      context
+    );
+    if (!result.inserted && result.item?.userId !== userId) {
+      const error = new Error('Selected characters are already taken.');
+      error.code = 'CHARACTER_TAKEN';
+      throw error;
+    }
+  }
 };
 
 const normalizeVoteVisibility = (value) => {
@@ -623,8 +703,7 @@ const buildUserTeamMap = (user) => {
 // Seasons: list
 router.get('/seasons', async (_req, res) => {
   try {
-    const db = await readDb();
-    ensureSeasons(db);
+    const db = await loadSeasonDb();
     const now = new Date();
     res.json(db.divisionSeasons.map((season) => withSeasonStatus(season, now)));
   } catch (error) {
@@ -649,15 +728,8 @@ router.post('/seasons', [auth, moderatorAuth], async (req, res) => {
 
     let createdSeason;
 
-    await withDb((db) => {
-      ensureSeasons(db);
-      const exists = db.divisionSeasons.find((season) => season.id === id);
-      if (exists) {
-        const error = new Error('Season already exists');
-        error.code = 'SEASON_EXISTS';
-        throw error;
-      }
-
+    await withRepositoryTransaction(async (context) => {
+      await ensureSeasonRecords(context);
       const nowIso = new Date().toISOString();
       const isRegular = id === 'regular' || name?.toLowerCase() === 'regular people';
       const defaultBanner = isRegular ? '/site/regularpeople.jpg' : `/characters/${name}.jpg`;
@@ -673,8 +745,16 @@ router.post('/seasons', [auth, moderatorAuth], async (req, res) => {
         updatedAt: nowIso
       };
 
-      db.divisionSeasons.push(createdSeason);
-      return db;
+      const result = await divisionSeasonsRepo.insertIfAbsent(
+        { id },
+        createdSeason,
+        context
+      );
+      if (!result.inserted) {
+        const error = new Error('Season already exists');
+        error.code = 'SEASON_EXISTS';
+        throw error;
+      }
     });
 
     res.status(201).json({ msg: 'Season created', season: createdSeason });
@@ -699,9 +779,9 @@ router.patch('/seasons/:seasonId', [auth, moderatorAuth], async (req, res) => {
 
     let updatedSeason;
 
-    await withDb((db) => {
-      ensureSeasons(db);
-      const season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
+    await withRepositoryTransaction(async (context) => {
+      await ensureSeasonRecords(context);
+      const season = await divisionSeasonsRepo.findById(req.params.seasonId, context);
       if (!season) {
         const error = new Error('Season not found');
         error.code = 'SEASON_NOT_FOUND';
@@ -717,8 +797,11 @@ router.patch('/seasons/:seasonId', [auth, moderatorAuth], async (req, res) => {
       if (accentColor !== undefined) season.accentColor = accentColor;
       if (description !== undefined) season.description = description;
       season.updatedAt = nowIso;
-      updatedSeason = season;
-      return db;
+      updatedSeason = await divisionSeasonsRepo.updateById(
+        season.id,
+        () => season,
+        context
+      );
     });
 
     res.json({ msg: 'Season updated', season: withSeasonStatus(updatedSeason) });
@@ -735,9 +818,9 @@ router.patch('/seasons/:seasonId', [auth, moderatorAuth], async (req, res) => {
 router.post('/seasons/:seasonId/activate', [auth, moderatorAuth], async (req, res) => {
   try {
     let season;
-    await withDb((db) => {
-      ensureSeasons(db);
-      season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
+    await withRepositoryTransaction(async (context) => {
+      await ensureSeasonRecords(context);
+      season = await divisionSeasonsRepo.findById(req.params.seasonId, context);
       if (!season) {
         const error = new Error('Season not found');
         error.code = 'SEASON_NOT_FOUND';
@@ -747,7 +830,7 @@ router.post('/seasons/:seasonId/activate', [auth, moderatorAuth], async (req, re
       season.isLocked = false;
       season.startAt = nowIso;
       season.updatedAt = nowIso;
-      return db;
+      season = await divisionSeasonsRepo.updateById(season.id, () => season, context);
     });
 
     res.json({ msg: 'Season activated', season: withSeasonStatus(season) });
@@ -765,9 +848,9 @@ router.post('/seasons/:seasonId/deactivate', [auth, moderatorAuth], async (req, 
   try {
     let season;
     let removedTeams = 0;
-    await withDb((db) => {
-      ensureSeasons(db);
-      season = db.divisionSeasons.find((entry) => entry.id === req.params.seasonId);
+    await withRepositoryTransaction(async (context) => {
+      await ensureSeasonRecords(context);
+      season = await divisionSeasonsRepo.findById(req.params.seasonId, context);
       if (!season) {
         const error = new Error('Season not found');
         error.code = 'SEASON_NOT_FOUND';
@@ -777,8 +860,8 @@ router.post('/seasons/:seasonId/deactivate', [auth, moderatorAuth], async (req, 
       season.isLocked = true;
       season.startAt = null; // prevent scheduler from re-activating after manual lock
       season.updatedAt = nowIso;
-      removedTeams = cleanupDivisionTeams(db, season.id);
-      return db;
+      removedTeams = await cleanupDivisionTeams(context, season.id);
+      season = await divisionSeasonsRepo.updateById(season.id, () => season, context);
     });
 
     res.json({
@@ -809,14 +892,12 @@ router.post('/seasons/run-scheduler', [auth, moderatorAuth], async (_req, res) =
 // Global division stats for moderator panel
 router.get('/stats', async (_req, res) => {
   try {
-    const db = await readDb();
-    ensureSeasons(db);
-    const fights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
-    const activeFights = fights.filter((fight) => fight.status === 'active').length;
-    const titleFights = fights.filter((fight) => fight.fightType === 'title').length;
-    const contenderMatches = fights.filter(
-      (fight) => fight.fightType === 'contender'
-    ).length;
+    const db = await loadSeasonDb();
+    const [activeFights, titleFights, contenderMatches] = await Promise.all([
+      divisionFightsRepo.countBy({ status: 'active' }),
+      divisionFightsRepo.countBy({ fightType: 'title' }),
+      divisionFightsRepo.countBy({ fightType: 'contender' })
+    ]);
 
     res.json({
       totalDivisions: getDivisionDefinitions(db).length,
@@ -838,15 +919,22 @@ router.get('/power-tiers', async (_req, res) => {
 // Basic divisions list
 router.get('/', async (_req, res) => {
   try {
-    const db = await readDb();
-    const fights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
+    const db = await loadSeasonDb();
     const definitions = getDivisionDefinitions(db);
 
-    const divisions = definitions.map((division) => {
-      const stats = buildDivisionStats(division.id, db);
-      const championUser = (db.users || []).find(
-        (user) => user.divisions?.[division.id]?.isChampion
-      );
+    const divisions = await Promise.all(definitions.map(async (division) => {
+      const divisionQuery = { divisionId: division.id };
+      const [activeTeams, totalOfficialFights, totalVotes, championUser, recentFights] =
+        await Promise.all([
+          usersRepo.countBy({ [`divisions.${division.id}`]: { $exists: true } }),
+          divisionFightsRepo.countBy(divisionQuery),
+          divisionFightsRepo.sumArrayLengthBy('votes', divisionQuery),
+          usersRepo.findOneBy({ [`divisions.${division.id}.isChampion`]: true }),
+          divisionFightsRepo.findManyBy(
+            divisionQuery,
+            { sort: { createdAt: -1 }, limit: 3 }
+          )
+        ]);
       const currentChampion = championUser
         ? {
             name: championUser.username,
@@ -858,13 +946,7 @@ router.get('/', async (_req, res) => {
           }
         : null;
 
-      const recentFights = fights
-        .filter((fight) => fight.divisionId === division.id)
-        .sort(
-          (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-        )
-        .slice(0, 3)
-        .map((fight) => ({
+      const recentFightSummaries = recentFights.map((fight) => ({
           id: fight.id || fight._id,
           teamA: fight.teamA || fight.fight?.teamA || '',
           teamB: fight.teamB || fight.fight?.teamB || '',
@@ -873,13 +955,15 @@ router.get('/', async (_req, res) => {
 
       return {
         ...division,
-        averageVotes: stats.averageVotes,
-        activeTeams: stats.activeTeams,
+        averageVotes: totalOfficialFights
+          ? Math.round(totalVotes / totalOfficialFights)
+          : 0,
+        activeTeams,
         currentChampion,
-        recentFights,
+        recentFights: recentFightSummaries,
         seasonStatus: division.seasonStatus || 'locked'
       };
-    });
+    }));
 
     res.json(divisions);
   } catch (error) {
@@ -891,8 +975,7 @@ router.get('/', async (_req, res) => {
 // User divisions
 router.get('/user', auth, async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.user.id);
+    const user = await usersRepo.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
@@ -907,8 +990,7 @@ router.get('/user', auth, async (req, res) => {
 // User teams map
 router.get('/user-teams/:userId', async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.params.userId);
+    const user = await usersRepo.findById(req.params.userId);
     if (!user) {
       return res.json({});
     }
@@ -921,12 +1003,13 @@ router.get('/user-teams/:userId', async (req, res) => {
 });
 
 // Active fights across divisions
-router.get('/active-fights', async (_req, res) => {
+router.get('/active-fights', async (req, res) => {
   try {
-    const db = await readDb();
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
     const now = new Date();
-    const fights = (db.divisionFights || []).filter(
-      (fight) => fight.status === 'active'
+    const fights = await divisionFightsRepo.findManyBy(
+      { status: 'active' },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
     );
     res.json(fights.map((fight) => applyDivisionVoteVisibility(fight, now)));
   } catch (error) {
@@ -947,11 +1030,8 @@ router.post('/vote', auth, async (req, res) => {
 
     let updatedFight;
 
-    await withDb((db) => {
-      db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
-      const fight = db.divisionFights.find(
-        (entry) => (entry.id || entry._id) === fightId
-      );
+    await withRepositoryTransaction(async (context) => {
+      const fight = await divisionFightsRepo.findById(fightId, context);
       if (!fight) {
         const error = new Error('Fight not found');
         error.code = 'NOT_FOUND';
@@ -988,8 +1068,11 @@ router.post('/vote', auth, async (req, res) => {
         team: vote.team === 'team1' ? 'A' : vote.team === 'team2' ? 'B' : 'draw'
       }));
 
-      updatedFight = fight;
-      return db;
+      updatedFight = await divisionFightsRepo.updateById(
+        fight.id,
+        () => fight,
+        context
+      );
     });
 
     const safeFight = applyDivisionVoteVisibility(updatedFight, new Date());
@@ -1016,12 +1099,13 @@ router.post('/vote', auth, async (req, res) => {
 });
 
 // Betting fights placeholder
-router.get('/betting-fights', async (_req, res) => {
+router.get('/betting-fights', async (req, res) => {
   try {
-    const db = await readDb();
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
     const now = new Date();
-    const fights = (db.divisionFights || []).filter(
-      (fight) => fight.bettingCloses
+    const fights = await divisionFightsRepo.findManyBy(
+      { bettingCloses: { $exists: true } },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
     );
     res.json(fights.map((fight) => applyDivisionVoteVisibility(fight, now)));
   } catch (error) {
@@ -1033,13 +1117,14 @@ router.get('/betting-fights', async (_req, res) => {
 // Leaderboards placeholder
 router.get('/leaderboards', async (_req, res) => {
   try {
-    const db = await readDb();
     const leaderboards = {};
 
-    DEFAULT_DIVISIONS.forEach((division) => {
-      const teams = (db.users || [])
-        .filter((user) => user.divisions?.[division.id]?.team)
-        .map((user) => {
+    for (const division of DEFAULT_DIVISIONS) {
+      const users = await usersRepo.findManyBy(
+        { [`divisions.${division.id}.team`]: { $exists: true } },
+        { sort: { [`divisions.${division.id}.wins`]: -1 }, limit: 100 }
+      );
+      const teams = users.map((user) => {
           const divisionData = user.divisions?.[division.id] || {};
           const team = normalizeTeam(divisionData.team) || { fighters: [] };
           return {
@@ -1051,10 +1136,9 @@ router.get('/leaderboards', async (_req, res) => {
             averageVotes: 0,
             isChampion: Boolean(divisionData.isChampion)
           };
-        })
-        .sort((a, b) => b.wins - a.wins);
+        });
       leaderboards[division.id] = teams;
-    });
+    }
 
     res.json(leaderboards);
   } catch (error) {
@@ -1066,12 +1150,18 @@ router.get('/leaderboards', async (_req, res) => {
 // Championship history placeholder
 router.get('/championship-history', async (_req, res) => {
   try {
-    const db = await readDb();
     const historyByDivision = {};
 
-    DEFAULT_DIVISIONS.forEach((division) => {
-      historyByDivision[division.id] = buildChampionshipHistory(division.id, db);
-    });
+    for (const division of DEFAULT_DIVISIONS) {
+      const users = await usersRepo.findManyBy(
+        { [`divisions.${division.id}.championshipHistory`]: { $exists: true } },
+        { limit: 100 }
+      );
+      historyByDivision[division.id] = buildChampionshipHistory(
+        division.id,
+        { users }
+      );
+    }
 
     res.json(historyByDivision);
   } catch (error) {
@@ -1096,38 +1186,18 @@ router.post('/join', auth, async (req, res) => {
       getCharacterId(team.secondaryCharacter)
     ].filter(Boolean);
 
-    await withDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      const season = getSeasonById(db, divisionId);
+      const season = getSeasonById(await loadSeasonDb(context), divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
         error.code = 'DIVISION_LOCKED';
-        throw error;
-      }
-
-      const takenByOthers = (db.users || []).some((entry) => {
-        if (resolveUserId(entry) === resolveUserId(user)) {
-          return false;
-        }
-        const division = entry.divisions?.[divisionId];
-        if (!division?.team) return false;
-        const otherTeam = normalizeTeam(division.team);
-        const ids = [
-          getCharacterId(otherTeam?.mainCharacter),
-          getCharacterId(otherTeam?.secondaryCharacter)
-        ].filter(Boolean);
-        return selectedIds.some((id) => ids.includes(id));
-      });
-
-      if (takenByOthers) {
-        const error = new Error('Selected characters are already taken.');
-        error.code = 'CHARACTER_TAKEN';
         throw error;
       }
 
@@ -1137,6 +1207,13 @@ router.post('/join', auth, async (req, res) => {
         error.code = 'INVALID_TEAM';
         throw error;
       }
+
+      await reserveDivisionTeam(
+        divisionId,
+        resolveUserId(user),
+        selectedIds,
+        context
+      );
 
       user.divisions = user.divisions || {};
       user.divisions[divisionId] = {
@@ -1153,8 +1230,7 @@ router.post('/join', auth, async (req, res) => {
         contenderStatus: { isNumberOneContender: false }
       };
       user.updatedAt = new Date().toISOString();
-
-      return db;
+      await usersRepo.updateById(user.id, () => user, context);
     });
 
     res.json({ msg: 'Successfully joined division' });
@@ -1184,8 +1260,8 @@ router.post('/leave', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Division ID is required' });
     }
 
-    await withDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -1202,7 +1278,11 @@ router.post('/leave', auth, async (req, res) => {
         delete user.divisions[divisionId];
       }
       user.updatedAt = new Date().toISOString();
-      return db;
+      await divisionTeamSlotsRepo.removeManyBy({
+        divisionId,
+        userId: resolveUserId(user)
+      }, context);
+      await usersRepo.updateById(user.id, () => user, context);
     });
 
     res.json({ msg: 'Successfully left division' });
@@ -1222,18 +1302,15 @@ router.post('/leave', auth, async (req, res) => {
 router.get('/:divisionId/taken-characters', async (req, res) => {
   try {
     const { divisionId } = req.params;
-    const db = await readDb();
-    const takenCharacters = [];
-
-    (db.users || []).forEach((user) => {
-      const division = user.divisions?.[divisionId];
-      const team = normalizeTeam(division?.team);
-      if (!team) return;
-      const ids = [
-        getCharacterId(team.mainCharacter),
-        getCharacterId(team.secondaryCharacter)
-      ].filter(Boolean);
-      ids.forEach((id) => takenCharacters.push(id));
+    let takenCharacters = [];
+    await withRepositoryTransaction(async (context) => {
+      await ensureDivisionSlots(divisionId, context);
+      const slots = await divisionTeamSlotsRepo.findManyBy(
+        { divisionId },
+        { projection: { characterId: 1 } },
+        context
+      );
+      takenCharacters = slots.map((slot) => slot.characterId).filter(Boolean);
     });
 
     res.json({ takenCharacters });
@@ -1246,8 +1323,20 @@ router.get('/:divisionId/taken-characters', async (req, res) => {
 // Division stats
 router.get('/:divisionId/stats', async (req, res) => {
   try {
-    const db = await readDb();
-    const stats = buildDivisionStats(req.params.divisionId, db);
+    const divisionId = req.params.divisionId;
+    const query = { divisionId };
+    const [activeTeams, totalOfficialFights, totalVotes] = await Promise.all([
+      usersRepo.countBy({ [`divisions.${divisionId}`]: { $exists: true } }),
+      divisionFightsRepo.countBy(query),
+      divisionFightsRepo.sumArrayLengthBy('votes', query)
+    ]);
+    const stats = {
+      activeTeams,
+      totalOfficialFights,
+      averageVotes: totalOfficialFights
+        ? Math.round(totalVotes / totalOfficialFights)
+        : 0
+    };
     res.json(stats);
   } catch (error) {
     console.error('Error getting division stats:', error);
@@ -1258,8 +1347,11 @@ router.get('/:divisionId/stats', async (req, res) => {
 // Division champion
 router.get('/:divisionId/champion', async (req, res) => {
   try {
-    const db = await readDb();
-    const champion = buildChampion(req.params.divisionId, db);
+    const divisionId = req.params.divisionId;
+    const championUser = await usersRepo.findOneBy({
+      [`divisions.${divisionId}.isChampion`]: true
+    });
+    const champion = buildChampion(divisionId, { users: championUser ? [championUser] : [] });
     res.json({ champion });
   } catch (error) {
     console.error('Error getting division champion:', error);
@@ -1270,8 +1362,12 @@ router.get('/:divisionId/champion', async (req, res) => {
 // Championship history for division
 router.get('/:divisionId/championship-history', async (req, res) => {
   try {
-    const db = await readDb();
-    res.json(buildChampionshipHistory(req.params.divisionId, db));
+    const divisionId = req.params.divisionId;
+    const users = await usersRepo.findManyBy(
+      { [`divisions.${divisionId}.championshipHistory`]: { $exists: true } },
+      { limit: 100 }
+    );
+    res.json(buildChampionshipHistory(divisionId, { users }));
   } catch (error) {
     console.error('Error getting championship history:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -1281,7 +1377,7 @@ router.get('/:divisionId/championship-history', async (req, res) => {
 // Overview data for all divisions
 router.get('/overview', async (_req, res) => {
   try {
-    const db = await readDb();
+    const db = await loadSeasonDb();
     const now = new Date();
     const stats = {};
     const champions = {};
@@ -1289,30 +1385,50 @@ router.get('/overview', async (_req, res) => {
     const activeFights = {};
     const championshipHistory = {};
 
-    const fights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
     const divisions = getDivisionDefinitions(db).filter(
       (division) => division.seasonStatus === 'active'
     );
 
-    divisions.forEach((division) => {
-      stats[division.id] = buildDivisionStats(division.id, db);
-      champions[division.id] = buildChampion(division.id, db);
-      titleFights[division.id] = fights
-        .filter(
-          (fight) =>
-            fight.divisionId === division.id &&
-            fight.fightType === 'title' &&
-            fight.status === 'active'
-        )
-        .map((fight) => applyDivisionVoteVisibility(fight, now));
-      activeFights[division.id] = fights
-        .filter(
-          (fight) =>
-            fight.divisionId === division.id && fight.status === 'active'
-        )
-        .map((fight) => applyDivisionVoteVisibility(fight, now));
-      championshipHistory[division.id] = buildChampionshipHistory(division.id, db);
-    });
+    for (const division of divisions) {
+      const divisionId = division.id;
+      const divisionQuery = { divisionId };
+      const [activeTeams, totalOfficialFights, totalVotes, championUser, titles, active, historyUsers] =
+        await Promise.all([
+          usersRepo.countBy({ [`divisions.${divisionId}`]: { $exists: true } }),
+          divisionFightsRepo.countBy(divisionQuery),
+          divisionFightsRepo.sumArrayLengthBy('votes', divisionQuery),
+          usersRepo.findOneBy({ [`divisions.${divisionId}.isChampion`]: true }),
+          divisionFightsRepo.findManyBy(
+            { divisionId, fightType: 'title', status: 'active' },
+            { sort: { createdAt: -1 }, limit: 100 }
+          ),
+          divisionFightsRepo.findManyBy(
+            { divisionId, status: 'active' },
+            { sort: { createdAt: -1 }, limit: 100 }
+          ),
+          usersRepo.findManyBy(
+            { [`divisions.${divisionId}.championshipHistory`]: { $exists: true } },
+            { limit: 100 }
+          )
+        ]);
+      stats[divisionId] = {
+        activeTeams,
+        totalOfficialFights,
+        averageVotes: totalOfficialFights
+          ? Math.round(totalVotes / totalOfficialFights)
+          : 0
+      };
+      champions[divisionId] = buildChampion(
+        divisionId,
+        { users: championUser ? [championUser] : [] }
+      );
+      titleFights[divisionId] = titles.map((fight) => applyDivisionVoteVisibility(fight, now));
+      activeFights[divisionId] = active.map((fight) => applyDivisionVoteVisibility(fight, now));
+      championshipHistory[divisionId] = buildChampionshipHistory(
+        divisionId,
+        { users: historyUsers }
+      );
+    }
 
     res.json({
       stats,
@@ -1330,16 +1446,14 @@ router.get('/overview', async (_req, res) => {
 // Title fights for division
 router.get('/:divisionId/title-fights', async (req, res) => {
   try {
-    const db = await readDb();
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
     const now = new Date();
-    const fights = db.divisionFights || [];
+    const fights = await divisionFightsRepo.findManyBy({
+      divisionId: req.params.divisionId,
+      fightType: 'title',
+      status: 'active'
+    }, { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit });
     const titleFights = fights
-      .filter(
-      (fight) =>
-        fight.divisionId === req.params.divisionId &&
-        fight.fightType === 'title' &&
-        fight.status === 'active'
-      )
       .map((fight) => applyDivisionVoteVisibility(fight, now));
     res.json({ titleFights });
   } catch (error) {
@@ -1351,14 +1465,13 @@ router.get('/:divisionId/title-fights', async (req, res) => {
 // Active fights for division
 router.get('/:divisionId/active-fights', async (req, res) => {
   try {
-    const db = await readDb();
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
     const now = new Date();
-    const fights = db.divisionFights || [];
+    const fights = await divisionFightsRepo.findManyBy({
+      divisionId: req.params.divisionId,
+      status: 'active'
+    }, { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit });
     const activeFights = fights
-      .filter(
-      (fight) =>
-        fight.divisionId === req.params.divisionId && fight.status === 'active'
-      )
       .map((fight) => applyDivisionVoteVisibility(fight, now));
     res.json({ activeFights });
   } catch (error) {
@@ -1370,20 +1483,27 @@ router.get('/:divisionId/active-fights', async (req, res) => {
 // Contender matches for division
 router.get('/:divisionId/contender-matches', async (req, res) => {
   try {
-    const db = await readDb();
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
     const now = new Date();
-    const fights = (db.divisionFights || []).filter(
-      (fight) =>
-        fight.divisionId === req.params.divisionId &&
-        fight.fightType === 'contender'
+    const fights = await divisionFightsRepo.findManyBy(
+      { divisionId: req.params.divisionId, fightType: 'contender' },
+      { sort: { createdAt: -1 }, skip: (page - 1) * limit, limit }
     );
+    const userIds = [...new Set(fights.flatMap((fight) => [
+      fight.team1?.userId,
+      fight.team2?.userId
+    ]).filter(Boolean))];
+    const users = userIds.length
+      ? await usersRepo.findManyBy({ id: { $in: userIds } })
+      : [];
+    const userMap = new Map(users.map((user) => [resolveUserId(user), user]));
 
     const withChallengers = fights.map((fight) => {
       const challenger1 = fight.team1?.userId
-        ? findUserById(db, fight.team1.userId)
+        ? userMap.get(fight.team1.userId)
         : null;
       const challenger2 = fight.team2?.userId
-        ? findUserById(db, fight.team2.userId)
+        ? userMap.get(fight.team2.userId)
         : null;
       return applyDivisionVoteVisibility({
         ...fight,
@@ -1402,10 +1522,12 @@ router.get('/:divisionId/contender-matches', async (req, res) => {
 // Division members (public for local mode)
 router.get('/:divisionId/members', async (req, res) => {
   try {
-    const db = await readDb();
-    const members = (db.users || [])
-      .filter((user) => user.divisions?.[req.params.divisionId])
-      .map((user) => ({
+    const { page, limit } = parsePagination(req.query, { defaultLimit: 50, maxLimit: 100 });
+    const users = await usersRepo.findManyBy(
+      { [`divisions.${req.params.divisionId}`]: { $exists: true } },
+      { sort: { username: 1 }, skip: (page - 1) * limit, limit }
+    );
+    const members = users.map((user) => ({
         id: resolveUserId(user),
         username: user.username,
         profilePicture:
@@ -1429,24 +1551,24 @@ router.post('/:divisionId/title-fight', [auth, moderatorAuth], async (req, res) 
 
     let createdFight;
 
-    await withDb((db) => {
-      const season = getSeasonById(db, req.params.divisionId);
+    await withRepositoryTransaction(async (context) => {
+      const season = getSeasonById(await loadSeasonDb(context), req.params.divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
         error.code = 'DIVISION_LOCKED';
         throw error;
       }
 
-      const champion = (db.users || []).find(
-        (user) => user.divisions?.[req.params.divisionId]?.isChampion
-      );
+      const champion = await usersRepo.findOneBy({
+        [`divisions.${req.params.divisionId}.isChampion`]: true
+      }, {}, context);
       if (!champion) {
         const error = new Error('No champion found for this division');
         error.code = 'NO_CHAMPION';
         throw error;
       }
 
-      const challenger = findUserById(db, challengerId);
+      const challenger = await usersRepo.findById(challengerId, context);
       if (!challenger) {
         const error = new Error('Challenger not found');
         error.code = 'CHALLENGER_NOT_FOUND';
@@ -1461,7 +1583,7 @@ router.post('/:divisionId/title-fight', [auth, moderatorAuth], async (req, res) 
         throw error;
       }
 
-      const author = buildAuthor(findUserById(db, req.user.id));
+      const author = buildAuthor(await usersRepo.findById(req.user.id, context));
       createdFight = buildDivisionFight({
         divisionId: req.params.divisionId,
         fightType: 'title',
@@ -1472,9 +1594,7 @@ router.post('/:divisionId/title-fight', [auth, moderatorAuth], async (req, res) 
         voteVisibility: req.body.voteVisibility
       });
 
-      db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
-      db.divisionFights.push(createdFight);
-      return db;
+      await divisionFightsRepo.insert(createdFight, context);
     });
 
     res.json({ msg: 'Title fight created', fight: createdFight });
@@ -1512,16 +1632,16 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
 
     let createdFight;
 
-    await withDb((db) => {
-      const season = getSeasonById(db, req.params.divisionId);
+    await withRepositoryTransaction(async (context) => {
+      const season = getSeasonById(await loadSeasonDb(context), req.params.divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
         error.code = 'DIVISION_LOCKED';
         throw error;
       }
 
-      const challenger1 = findUserById(db, challenger1Id);
-      const challenger2 = findUserById(db, challenger2Id);
+      const challenger1 = await usersRepo.findById(challenger1Id, context);
+      const challenger2 = await usersRepo.findById(challenger2Id, context);
       if (!challenger1 || !challenger2) {
         const error = new Error('Challenger not found');
         error.code = 'CHALLENGER_NOT_FOUND';
@@ -1536,7 +1656,7 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
         throw error;
       }
 
-      const author = buildAuthor(findUserById(db, req.user.id));
+      const author = buildAuthor(await usersRepo.findById(req.user.id, context));
       createdFight = buildDivisionFight({
         divisionId: req.params.divisionId,
         fightType: 'contender',
@@ -1547,9 +1667,7 @@ router.post('/:divisionId/contender-match', [auth, moderatorAuth], async (req, r
         voteVisibility: req.body.voteVisibility
       });
 
-      db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
-      db.divisionFights.push(createdFight);
-      return db;
+      await divisionFightsRepo.insert(createdFight, context);
     });
 
     res.json({ msg: 'Contender match created', fight: createdFight });
@@ -1577,15 +1695,15 @@ router.post('/register-team', auth, async (req, res) => {
       return res.status(400).json({ msg: 'Invalid team data' });
     }
 
-    await withDb((db) => {
-      const season = getSeasonById(db, divisionId);
+    await withRepositoryTransaction(async (context) => {
+      const season = getSeasonById(await loadSeasonDb(context), divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
         error.code = 'DIVISION_LOCKED';
         throw error;
       }
 
-      const user = findUserById(db, userId);
+      const user = await usersRepo.findById(userId, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -1593,6 +1711,8 @@ router.post('/register-team', auth, async (req, res) => {
       }
 
       const team = normalizeTeam({ fighters });
+      const selectedIds = [...new Set(fighters.map(getCharacterId).filter(Boolean))];
+      await reserveDivisionTeam(divisionId, userId, selectedIds, context);
       user.divisions = user.divisions || {};
       user.divisions[divisionId] = {
         team,
@@ -1604,7 +1724,7 @@ router.post('/register-team', auth, async (req, res) => {
         isChampion: false
       };
       user.updatedAt = new Date().toISOString();
-      return db;
+      await usersRepo.updateById(user.id, () => user, context);
     });
 
     res.json({ msg: 'Team registered' });
@@ -1614,6 +1734,9 @@ router.post('/register-team', auth, async (req, res) => {
     }
     if (error.code === 'DIVISION_LOCKED') {
       return res.status(403).json({ msg: error.message });
+    }
+    if (error.code === 'CHARACTER_TAKEN') {
+      return res.status(400).json({ msg: error.message });
     }
     console.error('Error registering team:', error);
     res.status(500).json({ msg: 'Server error' });
@@ -1631,8 +1754,8 @@ router.post('/create-fight', [auth, moderatorAuth], async (req, res) => {
     const fightType = isTitle ? 'title' : 'official';
     let createdFight;
 
-    await withDb((db) => {
-      const season = getSeasonById(db, divisionId);
+    await withRepositoryTransaction(async (context) => {
+      const season = getSeasonById(await loadSeasonDb(context), divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
         error.code = 'DIVISION_LOCKED';
@@ -1658,9 +1781,7 @@ router.post('/create-fight', [auth, moderatorAuth], async (req, res) => {
         voteVisibility: req.body.voteVisibility
       });
 
-      db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
-      db.divisionFights.push(createdFight);
-      return db;
+      await divisionFightsRepo.insert(createdFight, context);
     });
 
     res.json({ msg: 'Fight created', fight: createdFight });
@@ -1696,16 +1817,16 @@ router.post('/create-official-fight', [auth, moderatorAuth], async (req, res) =>
     const fightType = isTitle ? 'title' : isContender ? 'contender' : 'official';
     let createdFight;
 
-    await withDb((db) => {
-      const season = getSeasonById(db, divisionId);
+    await withRepositoryTransaction(async (context) => {
+      const season = getSeasonById(await loadSeasonDb(context), divisionId);
       if (!season || getSeasonStatus(season) !== 'active') {
         const error = new Error('Division is locked');
         error.code = 'DIVISION_LOCKED';
         throw error;
       }
 
-      const user1 = findUserById(db, team1Id);
-      const user2 = findUserById(db, team2Id);
+      const user1 = await usersRepo.findById(team1Id, context);
+      const user2 = await usersRepo.findById(team2Id, context);
       const team1 = buildTeamFromUser(user1, divisionId);
       const team2 = buildTeamFromUser(user2, divisionId);
       if (!team1 || !team2) {
@@ -1726,9 +1847,7 @@ router.post('/create-official-fight', [auth, moderatorAuth], async (req, res) =>
         voteVisibility: req.body.voteVisibility
       });
 
-      db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
-      db.divisionFights.push(createdFight);
-      return db;
+      await divisionFightsRepo.insert(createdFight, context);
     });
 
     res.json({ msg: 'Official fight created', fight: createdFight });
@@ -1750,19 +1869,11 @@ router.post('/lock-expired-fights', [auth, moderatorAuth], async (_req, res) => 
     const now = new Date();
     let lockedCount = 0;
 
-    await withDb((db) => {
-      db.divisionFights = Array.isArray(db.divisionFights) ? db.divisionFights : [];
-      db.divisionFights.forEach((fight) => {
-        if (fight.status === 'active' && fight.endTime && new Date(fight.endTime) < now) {
-          fight.status = 'locked';
-          if (fight.fight) {
-            fight.fight.status = 'locked';
-          }
-          lockedCount += 1;
-        }
-      });
-      return db;
-    });
+    const result = await divisionFightsRepo.patchManyBy(
+      { status: 'active', endTime: { $lt: now.toISOString() } },
+      { status: 'locked', 'fight.status': 'locked' }
+    );
+    lockedCount = result.matchedCount;
 
     res.json({ msg: 'Expired fights locked', lockedCount });
   } catch (error) {

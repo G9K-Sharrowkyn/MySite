@@ -65,21 +65,35 @@ import blocksRoutes from './routes/blocks.js';
 import swoopRoutes from './routes/swoop.js';
 import tronRoutes from './routes/tron.js';
 import './jobs/tournamentScheduler.js'; // Initialize tournament scheduler
-import { notificationsRepo } from './repositories/index.js';
-import { usersRepo } from './repositories/index.js';
-import { readDb } from './repositories/index.js';
+import {
+  charactersRepo,
+  notificationsRepo,
+  postsRepo,
+  usersRepo
+} from './repositories/index.js';
 import {
   assertProductionDatabaseConfiguration,
+  checkDatabaseHealth,
   closeDb,
-  readDb as warmupReadDb,
   verifyProductionDatabaseCapabilities
 } from './services/jsonDb.js';
 import { getCharacterMediaById } from './services/characterMedia.js';
+import { loadBuiltInCharacterCatalog } from './services/characterCatalog.js';
 import { initTronNamespace } from './realtime/tronArena.js';
 import { assertEmailConfiguration } from './services/emailService.js';
 import { getAuthCookieToken } from './utils/authCookie.js';
+import { getUploadsRoot } from './utils/uploadFiles.js';
+import {
+  closeSocketRedisAdapter,
+  configureSocketRedisAdapter,
+  createRedisRateLimitStore
+} from './services/socketRedisAdapter.js';
 import { assertProductionLegalConfiguration } from './config/legalConfig.js';
-import { assertProductionRuntimeConfiguration } from './config/runtimeConfig.js';
+import {
+  assertProductionRuntimeConfiguration,
+  isBackgroundJobsAuthority,
+  isTronRealtimeAuthority
+} from './config/runtimeConfig.js';
 import authMiddleware from './middleware/authMiddleware.js';
 import {
   decodeSafeDataImage,
@@ -97,6 +111,7 @@ const chatStore = {
 };
 const app = express();
 const PORT = process.env.PORT || 5000;
+let socketAdapterState = { enabled: false };
 assertEmailConfiguration();
 assertProductionDatabaseConfiguration();
 assertProductionLegalConfiguration();
@@ -316,6 +331,43 @@ const resolveCharacterImageByName = async (name, db) => {
   const dbCharacters = Array.isArray(db?.characters) ? db.characters : [];
   const image = findCharacterImage(name, dbCharacters);
   return normalizeCharacterAssetPath(image || '');
+};
+
+const escapeRegex = (value) =>
+  String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const loadShareContext = async (postId) => {
+  const post = await postsRepo.findById(postId);
+  if (!post) return { post: null, db: { characters: [] } };
+
+  const characterNames = [...new Set([
+    ...splitFightTeamMembers(post?.fight?.teamA),
+    ...splitFightTeamMembers(post?.fight?.teamB)
+  ].filter(Boolean))].slice(0, 20);
+  if (characterNames.length === 0) {
+    return { post, db: { characters: [] } };
+  }
+
+  const normalizedNames = new Set(characterNames.map(normalizeCharacterKey));
+  const builtInMatches = (await loadBuiltInCharacterCatalog()).filter((character) =>
+    normalizedNames.has(normalizeCharacterKey(character.name))
+  );
+  const storedMatches = (await Promise.all(
+    characterNames.map((name) =>
+      charactersRepo.findOneBy({
+        name: { $regex: `^${escapeRegex(name)}$`, $options: 'i' }
+      })
+    )
+  )).filter(Boolean);
+
+  const byName = new Map(
+    builtInMatches.map((character) => [normalizeCharacterKey(character.name), character])
+  );
+  for (const character of storedMatches) {
+    const key = normalizeCharacterKey(character.name);
+    byName.set(key, { ...(byName.get(key) || {}), ...character });
+  }
+  return { post, db: { characters: [...byName.values()] } };
 };
 
 const toCharacterThumbPath = (assetPath) => {
@@ -732,7 +784,7 @@ const buildShareMetaTags = async (req, post, db, options = {}) => {
         : 'Check this post'),
     160
   );
-  const resolvedDb = db || (await readDb().catch(() => null));
+  const resolvedDb = db || { characters: [] };
   const image =
     options.imageUrl ||
     (await resolvePostImage(post, resolvedDb, {
@@ -861,9 +913,23 @@ const io = new Server(server, {
   }
 });
 
-// Socket.io maps for tracking users
-const activeUsers = new Map(); // Track active users in global chat
-const userSocketMap = new Map(); // Map userId to socketId for private messages
+const getActiveChatUsers = async () => {
+  const sockets = await io.fetchSockets();
+  const usersById = new Map();
+  for (const connectedSocket of sockets) {
+    const user = connectedSocket.data?.chatUser;
+    if (user?.userId) usersById.set(user.userId, user);
+  }
+  return Array.from(usersById.values());
+};
+
+const broadcastActiveChatUsers = async () => {
+  try {
+    io.emit('active-users', await getActiveChatUsers());
+  } catch (error) {
+    console.warn('Could not refresh global chat presence:', error?.message || error);
+  }
+};
 
 const authenticateSocket = async (socket, next) => {
   const authToken = socket.handshake?.auth?.token;
@@ -891,10 +957,7 @@ const authenticateSocket = async (socket, next) => {
       return next(new Error('Invalid authentication token'));
     }
 
-    const db = await readDb();
-    const storedUser = (db.users || []).find(
-      (entry) => (entry?.id || entry?._id) === userId
-    );
+    const storedUser = await usersRepo.findById(userId);
     if (!storedUser) {
       return next(new Error('User account was not found'));
     }
@@ -933,8 +996,19 @@ io.engine.on('connection_error', (err) => {
 // CCG namespace socket handling
 const ccgNamespace = io.of('/ccg');
 ccgNamespace.use(authenticateSocket);
-const ccgRoomPlayers = {};
 const ccgCardsPath = path.join(__dirname, 'ccg', 'data', 'cards.json');
+const normalizeCcgRoomId = (roomId) => {
+  const normalized = typeof roomId === 'string' ? roomId.trim() : '';
+  return /^[a-z0-9_-]{1,100}$/i.test(normalized) ? normalized : null;
+};
+const getCcgRoomPlayers = async (roomId, excludedSocketId = null) => {
+  const roomSockets = await ccgNamespace.in(roomId).fetchSockets();
+  return roomSockets
+    .filter((roomSocket) => roomSocket.id !== excludedSocketId)
+    .map((roomSocket) => roomSocket.data?.ccgPlayer)
+    .filter(Boolean)
+    .map(({ id, username }) => ({ id, username }));
+};
 const secureShuffle = (items) => {
   const shuffled = [...items];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
@@ -948,12 +1022,9 @@ const secureShuffle = (items) => {
 };
 
 ccgNamespace.on('connection', (socket) => {
-  socket.on('joinRoom', ({ roomId } = {}) => {
-    const normalizedRoomId =
-      typeof roomId === 'string' ? roomId.trim() : '';
-    if (!/^[a-z0-9_-]{1,100}$/i.test(normalizedRoomId)) {
-      return;
-    }
+  socket.on('joinRoom', async ({ roomId } = {}) => {
+    const normalizedRoomId = normalizeCcgRoomId(roomId);
+    if (!normalizedRoomId) return;
     const joinedCcgRooms = [...socket.rooms].filter(
       (joinedRoomId) => joinedRoomId !== socket.id
     );
@@ -961,11 +1032,8 @@ ccgNamespace.on('connection', (socket) => {
       socket.emit('gameError', { message: 'Too many joined rooms.' });
       return;
     }
-    if (!ccgRoomPlayers[normalizedRoomId]) {
-      ccgRoomPlayers[normalizedRoomId] = {};
-    }
-    const existingPlayers = Object.values(ccgRoomPlayers[normalizedRoomId]);
-    if (ccgRoomPlayers[normalizedRoomId][socket.id]) {
+    const existingPlayers = await getCcgRoomPlayers(normalizedRoomId);
+    if (joinedCcgRooms.includes(normalizedRoomId)) {
       socket.emit('playersUpdate', existingPlayers);
       return;
     }
@@ -982,18 +1050,20 @@ ccgNamespace.on('connection', (socket) => {
       socket.emit('gameError', { message: 'Room is full.' });
       return;
     }
-    socket.join(normalizedRoomId);
-    ccgRoomPlayers[normalizedRoomId][socket.id] = {
+    socket.data.ccgPlayer = {
       id: socket.user.id,
       username: socket.user.username
     };
-    const players = Object.values(ccgRoomPlayers[normalizedRoomId]);
+    await socket.join(normalizedRoomId);
+    const players = await getCcgRoomPlayers(normalizedRoomId);
     ccgNamespace.to(normalizedRoomId).emit('playersUpdate', players);
   });
 
   socket.on('startGame', async ({ roomId } = {}) => {
-    if (!ccgRoomPlayers[roomId]?.[socket.id]) return;
-    if (Object.keys(ccgRoomPlayers[roomId]).length !== 2) {
+    const normalizedRoomId = normalizeCcgRoomId(roomId);
+    if (!normalizedRoomId || !socket.rooms.has(normalizedRoomId)) return;
+    const players = await getCcgRoomPlayers(normalizedRoomId);
+    if (players.length !== 2) {
       socket.emit('gameError', { message: 'Two players are required.' });
       return;
     }
@@ -1001,31 +1071,34 @@ ccgNamespace.on('connection', (socket) => {
       const raw = await readFile(ccgCardsPath, 'utf-8');
       const fullDeck = JSON.parse(raw);
       const shuffled = secureShuffle(fullDeck).slice(0, 40);
-      ccgNamespace.to(roomId).emit('gameStart', { deck: shuffled });
+      ccgNamespace.to(normalizedRoomId).emit('gameStart', { deck: shuffled });
     } catch (err) {
       console.error('Error loading CCG cards.json:', err);
     }
   });
 
   socket.on('playMove', ({ roomId, move } = {}) => {
-    if (!ccgRoomPlayers[roomId]?.[socket.id]) return;
-    socket.to(roomId).emit('opponentMove', move);
+    const normalizedRoomId = normalizeCcgRoomId(roomId);
+    if (!normalizedRoomId || !socket.rooms.has(normalizedRoomId)) return;
+    socket.to(normalizedRoomId).emit('opponentMove', move);
   });
 
-  socket.on('disconnecting', () => {
-    for (const roomId of socket.rooms) {
-      if (ccgRoomPlayers[roomId]) {
-        delete ccgRoomPlayers[roomId][socket.id];
-        const players = Object.values(ccgRoomPlayers[roomId]);
-        ccgNamespace.to(roomId).emit(
-          'playersUpdate',
-          players
-        );
-        if (players.length === 0) delete ccgRoomPlayers[roomId];
-      }
+  socket.on('disconnecting', async () => {
+    const joinedRooms = [...socket.rooms].filter(
+      (roomId) => roomId !== socket.id && normalizeCcgRoomId(roomId)
+    );
+    socket.data.ccgPlayer = null;
+    for (const roomId of joinedRooms) {
+      const players = await getCcgRoomPlayers(roomId, socket.id);
+      ccgNamespace.to(roomId).emit('playersUpdate', players);
     }
   });
 });
+
+// Initialize shared realtime and rate-limit storage before accepting routes.
+// In a single-process deployment without REDIS_URL, express-rate-limit safely
+// falls back to its local in-memory store.
+socketAdapterState = await configureSocketRedisAdapter(io);
 
 // Security Middleware
 app.use(helmet({
@@ -1086,7 +1159,13 @@ const shareRenderLimitMax =
   Number(process.env.SHARE_RENDER_RATE_LIMIT_MAX) ||
   (isDev ? 300 : 30);
 
+const distributedRateLimit = (prefix) => {
+  const store = createRedisRateLimitStore(prefix);
+  return store ? { store } : {};
+};
+
 const limiter = rateLimit({
+  ...distributedRateLimit('vvv:rate-limit:api:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: apiLimitMax,
   message: 'Too many requests from this IP, please try again later.',
@@ -1104,6 +1183,7 @@ const limiter = rateLimit({
 });
 
 const loginAuthLimiter = rateLimit({
+  ...distributedRateLimit('vvv:rate-limit:login:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: loginAuthLimitMax,
   message: 'Too many login attempts, please try again later.',
@@ -1118,6 +1198,7 @@ const loginAuthLimiter = rateLimit({
 });
 
 const registerAuthLimiter = rateLimit({
+  ...distributedRateLimit('vvv:rate-limit:register:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: registerAuthLimitMax,
   message: 'Too many registration attempts, please try again later.',
@@ -1132,6 +1213,7 @@ const registerAuthLimiter = rateLimit({
 });
 
 const googleAuthLimiter = rateLimit({
+  ...distributedRateLimit('vvv:rate-limit:google:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: googleAuthLimitMax,
   message: 'Too many Google sign-in attempts, please try again later.',
@@ -1146,6 +1228,7 @@ const googleAuthLimiter = rateLimit({
 });
 
 const passwordAuthLimiter = rateLimit({
+  ...distributedRateLimit('vvv:rate-limit:password:'),
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: passwordAuthLimitMax,
   message: 'Too many password reset attempts, please try again later.',
@@ -1160,6 +1243,7 @@ const passwordAuthLimiter = rateLimit({
 });
 
 const shareRenderLimiter = rateLimit({
+  ...distributedRateLimit('vvv:rate-limit:share:'),
   windowMs: 60 * 1000,
   max: shareRenderLimitMax,
   message: 'Too many share preview requests. Please try again later.',
@@ -1224,12 +1308,28 @@ app.use((req, res, next) => {
 
 app.use(
   '/uploads',
-  express.static(path.join(__dirname, 'uploads'), {
+  express.static(getUploadsRoot(), {
     maxAge: '30d',
     immutable: true,
     etag: true
   })
 );
+
+// Character records intentionally use site-relative `/characters/...` URLs.
+// Serve the shipped catalog from the API as well as from the React frontend so
+// images also work in local/API previews and on deployments sharing one host.
+app.use(
+  '/characters',
+  express.static(path.join(__dirname, '..', 'public', 'characters'), {
+    maxAge: '7d',
+    etag: true,
+    lastModified: true
+  })
+);
+
+app.get('/placeholder-character.png', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'placeholder-character.png'));
+});
 
 app.get('/api/media/characters/:id', async (req, res) => {
   try {
@@ -1261,12 +1361,15 @@ app.get('/api/media/characters/:id', async (req, res) => {
   }
 });
 
-initTronNamespace(io);
+if (isTronRealtimeAuthority()) {
+  initTronNamespace(io);
+} else {
+  console.log('TRON realtime authority is disabled on this API process.');
+}
 
 // Make io accessible to routes
 app.use((req, res, next) => {
   req.io = io; // Make Socket.io available to routes
-  req.userSocketMap = userSocketMap; // Make userSocketMap available to routes
   next();
 });
 
@@ -1363,11 +1466,8 @@ app.get([
   '/api/share/post/:id/image.jpg'
 ], async (req, res) => {
   try {
-    const db = await readDb();
     const postId = req.params.id;
-    const post =
-      (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
-      null;
+    const { post, db } = await loadShareContext(postId);
     if (!post) {
       return res.status(404).send('Post not found.');
     }
@@ -1418,11 +1518,8 @@ app.get(
   requireShareSnapshotStaff,
   async (req, res) => {
   try {
-    const db = await readDb();
     const postId = req.params.id;
-    const post =
-      (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
-      null;
+    const { post, db } = await loadShareContext(postId);
     if (!post) {
       return res.status(404).send('Post not found.');
     }
@@ -1476,11 +1573,8 @@ app.get(
 
 app.get(['/share/post/:id', '/api/share/post/:id'], async (req, res) => {
   try {
-    const db = await readDb();
     const postId = req.params.id;
-    const post =
-      (db.posts || []).find((entry) => (entry.id || entry._id) === postId) ||
-      null;
+    const { post, db } = await loadShareContext(postId);
     if (!post) {
       return res.status(404).send('Post not found.');
     }
@@ -1531,6 +1625,24 @@ app.get(['/healthz', '/api/health'], (req, res) => {
   }
 );
 
+app.get('/readyz', async (req, res) => {
+  try {
+    const database = await checkDatabaseHealth();
+    const redisRequired = Boolean(String(process.env.REDIS_URL || '').trim());
+    if (redisRequired && !socketAdapterState.enabled) {
+      return res.status(503).json({ ok: false, database, redis: 'unavailable' });
+    }
+    return res.status(200).json({
+      ok: true,
+      database: database.mode,
+      redis: socketAdapterState.enabled ? 'connected' : 'not-configured'
+    });
+  } catch (error) {
+    console.error('Readiness check failed:', error?.message || error);
+    return res.status(503).json({ ok: false });
+  }
+});
+
 // Division seasons scheduler (auto + manual trigger support)
 const DIVISION_SCHEDULER_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 let divisionSchedulerTimer = null;
@@ -1546,7 +1658,9 @@ const startDivisionScheduler = () => {
   }, DIVISION_SCHEDULER_INTERVAL_MS);
 };
 
-startDivisionScheduler();
+if (isBackgroundJobsAuthority() && process.env.NODE_ENV !== 'test') {
+  startDivisionScheduler();
+}
 
 // Basic route or static frontend for production
 if (process.env.NODE_ENV === 'production') {
@@ -1583,11 +1697,8 @@ if (process.env.NODE_ENV === 'production') {
 
   app.get('/post/:id', async (req, res) => {
     try {
-      const db = await readDb();
       const postId = req.params.id;
-      const post = (db.posts || []).find(
-        (entry) => (entry.id || entry._id) === postId
-      );
+      const { post, db } = await loadShareContext(postId);
 
       const html = await getIndexHtml();
       const frontendOrigin = resolveFrontendOrigin(req);
@@ -1660,7 +1771,6 @@ io.on('connection', (socket) => {
   console.log('New client connected:', socket.id);
   const authUser = socket.user;
   socket.join(`user:${authUser.id}`);
-  userSocketMap.set(authUser.id, socket.id);
   const socketRateBuckets = new Map();
   const consumeSocketAllowance = (key, limit, windowMs) => {
     const now = Date.now();
@@ -1686,12 +1796,7 @@ io.on('connection', (socket) => {
     let trustedUsername = authUser.username;
     let trustedProfilePicture = authUser.profilePicture;
     try {
-      // NOTE: repositories default to local JSON snapshots unless a db context is provided.
-      // On production we run on MongoDB, so read the active DB first.
-      const db = await readDb();
-      const storedUser =
-        (db?.users || []).find((entry) => (entry?.id || entry?._id) === trustedUserId) ||
-        (await usersRepo.findOne((entry) => (entry.id || entry._id) === trustedUserId, { db }));
+      const storedUser = await usersRepo.findById(trustedUserId);
       if (storedUser) {
         trustedUsername = storedUser.username || trustedUsername;
         trustedProfilePicture =
@@ -1704,12 +1809,11 @@ io.on('connection', (socket) => {
       console.warn('join-chat: failed to resolve stored user profile:', error?.message || error);
     }
 
-    // Store user info
-    activeUsers.set(socket.id, {
+    socket.data.chatUser = {
       userId: trustedUserId,
       username: trustedUsername,
       profilePicture: trustedProfilePicture
-    });
+    };
 
     // Notify others that user joined
     socket.broadcast.emit('user-joined', {
@@ -1718,8 +1822,8 @@ io.on('connection', (socket) => {
       profilePicture: trustedProfilePicture
     });
 
-    // Send active users list
-    socket.emit('active-users', Array.from(activeUsers.values()));
+    // Redis-backed adapters make this list include users connected to every API process.
+    await broadcastActiveChatUsers();
 
     // Load recent chat messages
     try {
@@ -1728,8 +1832,10 @@ io.on('connection', (socket) => {
       // Make sure avatars reflect the current profile, not the cached chat snapshot.
       let profilePictureByUserId = new Map();
       try {
-        const db = await readDb();
-        const users = Array.isArray(db?.users) ? db.users : [];
+        const userIds = [...new Set(recentMessages.map((message) => message.userId).filter(Boolean))];
+        const users = userIds.length
+          ? await usersRepo.findManyBy({ id: { $in: userIds } }, { limit: userIds.length })
+          : [];
         profilePictureByUserId = new Map(
           users
             .map((u) => {
@@ -1771,14 +1877,13 @@ io.on('connection', (socket) => {
       console.warn(`Rejected socket identity mismatch for ${socket.id}`);
       return;
     }
-    userSocketMap.set(authUser.id, socket.id);
   });
 
   // Handle sending messages
   socket.on('send-message', async (messageData) => {
     const text =
       typeof messageData?.text === 'string' ? messageData.text.trim() : '';
-    if (!text || text.length > 2000 || !activeUsers.has(socket.id)) {
+    if (!text || text.length > 2000 || !socket.data.chatUser) {
       socket.emit('chat-error', { message: 'Invalid chat message.' });
       return;
     }
@@ -1789,7 +1894,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const user = activeUsers.get(socket.id);
+    const user = socket.data.chatUser;
 
     try {
       const newMessage = await chatStore.addMessage({
@@ -1828,7 +1933,7 @@ io.on('connection', (socket) => {
       messageId.length > 100 ||
       !emoji ||
       emoji.length > 16 ||
-      !activeUsers.has(socket.id)
+      !socket.data.chatUser
     ) {
       return;
     }
@@ -1836,7 +1941,7 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const user = activeUsers.get(socket.id);
+    const user = socket.data.chatUser;
 
     try {
       const reactionUpdate = await chatStore.addReaction({
@@ -1862,10 +1967,10 @@ io.on('connection', (socket) => {
 
   // User typing indicator
   socket.on('typing', (isTyping) => {
-    if (!activeUsers.has(socket.id)) return;
+    if (!socket.data.chatUser) return;
     if (!consumeSocketAllowance('typing', 30, 10 * 1000)) return;
     
-    const user = activeUsers.get(socket.id);
+    const user = socket.data.chatUser;
     socket.broadcast.emit('user-typing', {
       userId: user.userId,
       username: user.username,
@@ -1874,50 +1979,42 @@ io.on('connection', (socket) => {
   });
 
   // Handle disconnect
-  socket.on('disconnect', (reason) => {
-    const user = activeUsers.get(socket.id);
+  socket.on('disconnect', async (reason) => {
+    const user = socket.data.chatUser;
     if (user) {
-      activeUsers.delete(socket.id);
-      
-      // Remove from userSocketMap
-      userSocketMap.forEach((socketId, userId) => {
-        if (socketId === socket.id) {
-          userSocketMap.delete(userId);
-        }
-      });
-      
+      socket.data.chatUser = null;
       // Notify others that user left
       socket.broadcast.emit('user-left', {
         userId: user.userId,
         username: user.username
       });
+      await broadcastActiveChatUsers();
     }
     console.log('Client disconnected:', socket.id, reason);
   });
 });
 
-// One-time migration: Remove message-type notifications (they should only be on chat icon)
-(async () => {
-  try {
-    const notifications = await notificationsRepo.getAll();
-    const messageNotifications =
-      notifications?.filter((n) => n.type === 'message') || [];
-    if (messageNotifications.length > 0) {
-      await notificationsRepo.updateAll((items) =>
-        items.filter((n) => n.type !== 'message')
-      );
-      console.log(`Cleaned up ${messageNotifications.length} message notifications from bell`);
+// Run maintenance once on the designated background authority, not on every
+// horizontally scaled API process.
+if (isBackgroundJobsAuthority() && process.env.NODE_ENV !== 'test') {
+  (async () => {
+    try {
+      const { deletedCount = 0 } = await notificationsRepo.removeManyBy({
+        type: 'message'
+      });
+      if (deletedCount > 0) {
+        console.log(`Cleaned up ${deletedCount} message notifications from bell`);
+      }
+    } catch (err) {
+      console.error('Migration error:', err);
     }
-  } catch (err) {
-    console.error('Migration error:', err);
-  }
-})();
+  })();
+}
 
 // Refuse traffic until production storage is reachable and transaction-safe.
 let startupDatabaseWarmupMs = null;
 if (process.env.NODE_ENV === 'production') {
   const warmupStartedAt = Date.now();
-  await warmupReadDb();
   await verifyProductionDatabaseCapabilities();
   startupDatabaseWarmupMs = Date.now() - warmupStartedAt;
 }
@@ -1938,21 +2035,14 @@ server.listen(PORT, () => {
     : 'local';
   console.log(`Database mode: ${databaseLabel}`);
   console.log(`Server is running on port ${PORT}`);
+  console.log(
+    `Socket.IO transport: ${socketAdapterState.enabled ? 'redis' : 'single-process'}`
+  );
 
   if (startupDatabaseWarmupMs !== null) {
     console.log(
       `Mongo startup verification completed in ${startupDatabaseWarmupMs}ms`
     );
-  } else if (databaseLabel === 'mongo') {
-    // Development convenience; production has already passed the mandatory check.
-    const warmupStartedAt = Date.now();
-    warmupReadDb()
-      .then(() => {
-        console.log(`Mongo cache warmup completed in ${Date.now() - warmupStartedAt}ms`);
-      })
-      .catch((error) => {
-        console.error('Mongo cache warmup failed:', error?.message || error);
-      });
   }
 });
 
@@ -1980,6 +2070,7 @@ const gracefulShutdown = async (signal) => {
       });
     }
     await closeDb();
+    await closeSocketRedisAdapter();
     clearTimeout(forceExitTimer);
     process.exit(0);
   } catch (error) {

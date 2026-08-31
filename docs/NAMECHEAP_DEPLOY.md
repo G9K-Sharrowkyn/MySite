@@ -16,6 +16,7 @@ Create `.env.production` in the project root (same level as `package.json`):
 ```
 REACT_APP_API_URL=https://api.versusversevault.com
 REACT_APP_SOCKET_URL=https://api.versusversevault.com
+REACT_APP_TRON_SOCKET_URL=https://api.versusversevault.com
 REACT_APP_CCG_API_URL=https://api.versusversevault.com/api/ccg
 ```
 
@@ -101,12 +102,43 @@ JWT_SECRET=your_long_random_secret
 FRONTEND_URL=https://versusversevault.com
 API_ORIGIN=https://api.versusversevault.com
 MONGO_CACHE_TTL_MS=0
+UPLOADS_DIR=/home/USERNAME/site-uploads
+TRON_REALTIME_ROLE=authority
+BACKGROUND_JOBS_ROLE=authority
+MULTI_INSTANCE=false
+REDIS_URL=
 ```
 
 Use a randomly generated JWT secret of at least 32 characters. Configure SMTP,
 the legal operator/contact values and the primary administrator, then run
-`npm run preflight:production`. Save and **Restart** only after the preflight
-passes.
+`npm run audit:mongo-scale` inside the backend directory first. The audit is
+read-only and reports duplicate identities or missing unique indexes. If it
+reports no duplicate groups, run `npm run ensure:mongo-indexes` once, then run
+the audit again and finally `npm run preflight:production`. The index command
+changes database indexes but never edits or deletes application records. Save
+and **Restart** only after the audit and preflight both pass.
+
+Create the directory configured as `UPLOADS_DIR` once in cPanel. It stores
+avatars, profile backgrounds and uploaded character images outside the
+replaceable backend application folder, so a new deployment does not erase
+them. Database records contain only their public `/uploads/...` paths.
+
+When the API is moved to more than one physical server, `UPLOADS_DIR` must be a
+shared mounted volume or be replaced with object storage. A separate local
+folder on each server is not sufficient because an image uploaded through one
+instance would be missing on the others.
+
+The Namecheap setup above runs one authoritative TRON simulation process. If
+the HTTP API is later copied to multiple servers, keep exactly one separate
+Node process with `TRON_REALTIME_ROLE=authority` and set the remaining API
+processes to `TRON_REALTIME_ROLE=disabled`. Keep the tournament scheduler on
+that same single process with `BACKGROUND_JOBS_ROLE=authority`; set it to
+`disabled` on every additional API process. Point
+`REACT_APP_TRON_SOCKET_URL` at that authority. Set `MULTI_INSTANCE=true` and
+the same `REDIS_URL` on every process so Socket.IO events from chat,
+notifications and HTTP workers are shared. This prevents two servers from
+creating different versions of the same TRON room; MongoDB remains shared for
+durable data and monthly leaderboards.
 
 ---
 
@@ -122,7 +154,7 @@ Make sure Atlas allows your hosting server IP:
 ## 7) Verify
 
 - Frontend: https://versusversevault.com
-- Backend: https://api.versusversevault.com/healthz (must return JSON with
+- Backend readiness: https://api.versusversevault.com/readyz (must return JSON with
   `"ok": true`)
 - Check cPanel Node.js logs if something fails.
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import BadgeCollection from './BadgeCollection';
+import { apiFetch } from '../utils/apiFetch';
 import './BadgesPage.css';
 
 const BadgesPage = () => {
@@ -47,7 +48,7 @@ const BadgesPage = () => {
       setLoading(true);
       
       // Pobierz odznaki użytkownika
-      const userResponse = await fetch('/api/badges/user', {
+      const userResponse = await apiFetch('/api/badges/user', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -61,7 +62,7 @@ const BadgesPage = () => {
       setUserBadges(userData.badges || []);
       
       // Pobierz wszystkie dostępne odznaki
-      const allResponse = await fetch('/api/badges/all', {
+      const allResponse = await apiFetch('/api/badges/all', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }

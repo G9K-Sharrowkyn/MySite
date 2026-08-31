@@ -3,7 +3,6 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import sharp from 'sharp';
-import { fileURLToPath } from 'url';
 import {
   changeUserRole,
   getMyProfile,
@@ -14,24 +13,31 @@ import {
 import { getLeaderboard, getUserStats, getUserAchievements } from '../controllers/statsController.js';
 import auth from '../middleware/auth.js';
 import authOptional from '../middleware/authOptional.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  divisionFightsRepo,
+  fightsRepo,
+  usersRepo
+} from '../repositories/index.js';
 import { isPrimaryAdminEmail } from '../utils/primaryAdmin.js';
 import { buildProfileFights } from '../utils/profileFights.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { profileUpdateValidation } from '../middleware/validation.js';
-import { removeManagedUpload } from '../utils/uploadFiles.js';
+import {
+  getUploadDirectory,
+  removeManagedUpload
+} from '../utils/uploadFiles.js';
 import {
   isAllowedImageMimeType,
   isUnsafeImageError,
   isValidUploadedImage,
   MAX_IMAGE_INPUT_PIXELS
 } from '../utils/imageSecurity.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const router = express.Router();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const uploadDir = path.resolve(__dirname, '..', 'uploads', 'backgrounds');
-const avatarDir = path.resolve(__dirname, '..', 'uploads', 'avatars');
+const uploadDir = getUploadDirectory('backgrounds');
+const avatarDir = getUploadDirectory('avatars');
 fs.mkdirSync(uploadDir, { recursive: true });
 fs.mkdirSync(avatarDir, { recursive: true });
 
@@ -70,8 +76,6 @@ const saveOptimizedImage = async (file, targetDir, { maxWidth, maxHeight, qualit
   return filename;
 };
 
-const resolveUserId = (user) => user?.id || user?._id;
-
 // @route   GET api/profile
 // @desc    Get current user's profile
 // @access  Private
@@ -91,8 +95,15 @@ router.get('/all', auth, async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
-    const db = await readDb();
-    const users = (db.users || []).map(user => ({
+    const { page, limit } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 100
+    });
+    const storedUsers = await usersRepo.findManyBy(
+      {},
+      { sort: { username: 1 }, skip: (page - 1) * limit, limit }
+    );
+    const users = storedUsers.map(user => ({
       id: user.id,
       username: user.username,
       displayName: getUserDisplayName(user),
@@ -156,23 +167,19 @@ router.post('/avatar', auth, imageUpload.single('avatar'), async (req, res) => {
     });
     avatarPath = `/uploads/avatars/${avatarFilename}`;
     let previousAvatar = '';
-    await withDb((db) => {
-      const user = (db.users || []).find(
-        (entry) => resolveUserId(entry) === req.user.id
-      );
-      if (!user) {
+    const user = await usersRepo.updateById(req.user.id, (storedUser) => {
+      storedUser.profile = storedUser.profile || {};
+      previousAvatar = storedUser.profile.profilePicture || storedUser.profile.avatar || '';
+      storedUser.profile.profilePicture = avatarPath;
+      storedUser.profile.avatar = avatarPath;
+      storedUser.updatedAt = new Date().toISOString();
+      return storedUser;
+    });
+    if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
-      }
-
-      user.profile = user.profile || {};
-      previousAvatar = user.profile.profilePicture || user.profile.avatar || '';
-      user.profile.profilePicture = avatarPath;
-      user.profile.avatar = avatarPath;
-      user.updatedAt = new Date().toISOString();
-      return db;
-    });
+    }
     if (previousAvatar && previousAvatar !== avatarPath) {
       await removeManagedUpload(previousAvatar).catch((error) => {
         console.warn('Could not remove previous avatar:', error.message);
@@ -221,22 +228,18 @@ router.post('/background-upload', auth, imageUpload.single('background'), async 
     });
     backgroundPath = `/uploads/backgrounds/${backgroundFilename}`;
     let previousBackground = '';
-    await withDb((db) => {
-      const user = (db.users || []).find(
-        (entry) => resolveUserId(entry) === req.user.id
-      );
-      if (!user) {
+    const user = await usersRepo.updateById(req.user.id, (storedUser) => {
+      storedUser.profile = storedUser.profile || {};
+      previousBackground = storedUser.profile.backgroundImage || '';
+      storedUser.profile.backgroundImage = backgroundPath;
+      storedUser.updatedAt = new Date().toISOString();
+      return storedUser;
+    });
+    if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
-      }
-
-      user.profile = user.profile || {};
-      previousBackground = user.profile.backgroundImage || '';
-      user.profile.backgroundImage = backgroundPath;
-      user.updatedAt = new Date().toISOString();
-      return db;
-    });
+    }
     if (previousBackground && previousBackground !== backgroundPath) {
       await removeManagedUpload(previousBackground).catch((error) => {
         console.warn('Could not remove previous background:', error.message);
@@ -271,22 +274,18 @@ router.post('/background-upload', auth, imageUpload.single('background'), async 
 router.delete('/background', auth, async (req, res) => {
   try {
     let previousBackground = '';
-    await withDb((db) => {
-      const user = (db.users || []).find(
-        (entry) => resolveUserId(entry) === req.user.id
-      );
-      if (!user) {
+    const user = await usersRepo.updateById(req.user.id, (storedUser) => {
+      storedUser.profile = storedUser.profile || {};
+      previousBackground = storedUser.profile.backgroundImage || '';
+      storedUser.profile.backgroundImage = '';
+      storedUser.updatedAt = new Date().toISOString();
+      return storedUser;
+    });
+    if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
-      }
-
-      user.profile = user.profile || {};
-      previousBackground = user.profile.backgroundImage || '';
-      user.profile.backgroundImage = '';
-      user.updatedAt = new Date().toISOString();
-      return db;
-    });
+    }
     await removeManagedUpload(previousBackground).catch((error) => {
       console.warn('Could not remove profile background file:', error.message);
     });
@@ -321,13 +320,27 @@ router.get('/:userId/stats', (req, res) => {
 // @route   GET api/profile/:userId/fights
 // @desc    Get user's fights
 // @access  Public
-router.get('/:userId/fights', (req, res) => {
-  return readDb()
-    .then((db) => res.json(buildProfileFights(db, req.params.userId)))
-    .catch((error) => {
-      console.error('Error fetching profile fights:', error);
-      res.status(500).json({ message: 'Server error' });
-    });
+router.get('/:userId/fights', async (req, res) => {
+  try {
+    const userId = req.params.userId;
+    const [divisionFights, fights] = await Promise.all([
+      divisionFightsRepo.findManyBy({
+        $or: [{ 'team1.userId': userId }, { 'team2.userId': userId }]
+      }),
+      fightsRepo.findManyBy({
+        $or: [
+          { 'participants.userId': userId },
+          { 'participants.id': userId },
+          { userId },
+          { createdBy: userId }
+        ]
+      })
+    ]);
+    res.json(buildProfileFights({ divisionFights, fights }, userId));
+  } catch (error) {
+    console.error('Error fetching profile fights:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 // @route   GET api/profile/:userId/achievements

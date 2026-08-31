@@ -1,6 +1,10 @@
 import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { legalConsentsRepo, usersRepo, withDb } from '../repositories/index.js';
+import {
+  legalConsentsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import auth from '../middleware/auth.js';
 import { getLegalConfig } from '../config/legalConfig.js';
 
@@ -18,7 +22,7 @@ router.post('/consent', auth, async (req, res) => {
       functional: (preferences.functional ?? functional) !== false
     };
 
-    await withDb(async (db) => {
+    await withRepositoryTransaction(async (context) => {
       await legalConsentsRepo.insert(
         {
           id: uuidv4(),
@@ -27,23 +31,19 @@ router.post('/consent', auth, async (req, res) => {
           policyVersion: getLegalConfig().policyVersion,
           createdAt: new Date().toISOString()
         },
-        { db }
+        context
       );
 
-      const user = await usersRepo.findOne(
-        (entry) => entry.id === userId || entry._id === userId,
-        { db }
-      );
-      if (user) {
+      await usersRepo.updateById(userId, (user) => {
         user.privacy = user.privacy || {};
         user.privacy.cookieConsent = {
           given: true,
           ...normalized,
           date: new Date().toISOString()
         };
-      }
-
-      return db;
+        user.updatedAt = new Date().toISOString();
+        return user;
+      }, context);
     });
 
     res.json({ message: 'Consent saved' });

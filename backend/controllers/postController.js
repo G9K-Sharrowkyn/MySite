@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from 'uuid';
 import {
   commentsRepo,
+  charactersRepo,
   messagesRepo,
   postsRepo,
-  readDb,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { autoTagPost } from '../utils/tagging.js';
 import { createNotification } from './notificationController.js';
@@ -13,11 +13,12 @@ import { findProfanityMatches } from '../utils/profanity.js';
 import { addRankPoints, getRankInfo, RANK_POINT_VALUES, updateLeveledBadgeProgress } from '../utils/rankSystem.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 import { logModerationAction } from '../utils/moderationAudit.js';
-import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { applyDailyActivityBonusAtomic } from '../utils/coinBonus.js';
 import { parseLimit, parsePagination } from '../utils/pagination.js';
 import { getReaction } from '../config/reactionCatalog.js';
 import { sanitizePostPhotos } from '../utils/imageSecurity.js';
 import { getIdempotencyKey } from '../utils/idempotency.js';
+import { isMongoMode } from '../services/jsonDb.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
 const resolveRole = (user) => user?.role || 'user';
@@ -265,12 +266,59 @@ const buildCommentCountByPostId = (comments = []) => {
   return counts;
 };
 
+const buildActivePostQuery = ({ category, group, authorId } = {}) => {
+  const conditions = [{ 'moderation.deleted.isDeleted': { $ne: true } }];
+  if (authorId) conditions.push({ authorId });
+  const normalizedGroup = normalizePostGroup(group);
+  if (normalizedGroup) conditions.push({ group: normalizedGroup });
+
+  const normalizedCategory = String(category || '').toLowerCase();
+  if (normalizedCategory && normalizedCategory !== 'all') {
+    if (normalizedCategory === 'fight') {
+      conditions.push({ type: 'fight' });
+    } else if (normalizedCategory === 'discussion') {
+      conditions.push({ type: { $ne: 'fight' } });
+      conditions.push({
+        $or: [
+          { category: 'discussion' },
+          { category: { $exists: false } },
+          { category: null },
+          { category: '' }
+        ]
+      });
+    } else {
+      conditions.push({ type: { $ne: 'fight' }, category: normalizedCategory });
+    }
+  }
+  return conditions.length === 1 ? conditions[0] : { $and: conditions };
+};
+
+const loadPostResponseContext = async (posts) => {
+  const authorIds = [...new Set(posts.map((post) => post.authorId).filter(Boolean))];
+  const postIds = [...new Set(posts.map((post) => post.id || post._id).filter(Boolean))];
+  const [users, comments] = await Promise.all([
+    authorIds.length ? usersRepo.findManyBy({ id: { $in: authorIds } }) : [],
+    postIds.length
+      ? commentsRepo.findManyBy(
+          {
+            postId: { $in: postIds },
+            $or: [{ type: 'post' }, { type: { $exists: false } }]
+          },
+          { projection: { postId: 1, type: 1 } }
+        )
+      : []
+  ]);
+  return { users, commentCounts: buildCommentCountByPostId(comments) };
+};
+
 const notifyAdminsForProfanity = async (db, payload) => {
   const { author, postId, text, matches } = payload || {};
   if (!matches || matches.length === 0) return;
-  const admins = await usersRepo.filter(
-    (user) => resolveRole(user) === 'admin',
-    { db }
+  const context = db?.mongoDb || db?.db ? db : db ? { db } : undefined;
+  const admins = await usersRepo.findManyBy(
+    { role: 'admin' },
+    { limit: 100 },
+    context
   );
   if (!admins.length) return;
 
@@ -295,46 +343,41 @@ const notifyAdminsForProfanity = async (db, payload) => {
 export const getAllPosts = async (req, res) => {
   const { sortBy = 'createdAt', category, group } = req.query;
   try {
-    const db = await readDb();
     const viewerUserId = req.user?.id || null;
     const now = new Date();
-    const normalizedCategory = String(category || '').toLowerCase();
-    const normalizedGroup = normalizePostGroup(group);
-    let filteredPosts = (db.posts || []).filter((post) => !isPostSoftDeleted(post));
-    const commentCounts = buildCommentCountByPostId(db.comments || []);
-
-    if (normalizedGroup) {
-      filteredPosts = filteredPosts.filter(
-        (post) => normalizePostGroup(post?.group) === normalizedGroup
-      );
-    }
-
-    if (normalizedCategory && normalizedCategory !== 'all') {
-      if (normalizedCategory === 'fight') {
-        filteredPosts = filteredPosts.filter((post) => post.type === 'fight');
-      } else {
-        filteredPosts = filteredPosts.filter((post) => {
-          if (post.type === 'fight') return false;
-          const postCategory = String(
-            post.category || (post.type !== 'fight' ? 'discussion' : '')
-          ).toLowerCase();
-          return postCategory === normalizedCategory;
-        });
-      }
-    }
-
-    const sortedPosts = sortPosts(filteredPosts, sortBy);
     const { page: pageNumber, limit: limitNumber } = parsePagination(req.query, {
       defaultLimit: 10,
       maxLimit: 50
     });
-    const pagedPosts = sortedPosts.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
-    );
+    const query = buildActivePostQuery({ category, group });
+    const skip = (pageNumber - 1) * limitNumber;
+    const [totalPosts, pagedPosts] = await Promise.all([
+      postsRepo.countBy(query),
+      sortBy === 'likes'
+        ? isMongoMode()
+          ? import('../services/mongoDb.js').then(({ aggregateMongoDocuments }) =>
+              aggregateMongoDocuments('posts', [
+                { $match: query },
+                { $set: { _likeCount: { $size: { $ifNull: ['$likes', []] } } } },
+                { $sort: { _likeCount: -1, createdAt: -1 } },
+                { $skip: skip },
+                { $limit: limitNumber },
+                { $unset: ['_id', '_likeCount'] }
+              ])
+            )
+          : postsRepo
+              .findManyBy(query)
+              .then((posts) => sortPosts(posts, 'likes').slice(skip, skip + limitNumber))
+        : postsRepo.findManyBy(query, {
+            sort: { createdAt: -1 },
+            skip,
+            limit: limitNumber
+          })
+    ]);
+    const { users, commentCounts } = await loadPostResponseContext(pagedPosts);
 
     const postsWithUserInfo = pagedPosts.map((post) => {
-      const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
+      const normalized = normalizePostForResponse(post, users, { viewerUserId, now });
       const postId = normalized.id;
       return {
         ...normalized,
@@ -345,9 +388,9 @@ export const getAllPosts = async (req, res) => {
 
     res.json({
       posts: postsWithUserInfo,
-      totalPosts: filteredPosts.length,
+      totalPosts,
       currentPage: pageNumber,
-      totalPages: Math.ceil(filteredPosts.length / limitNumber)
+      totalPages: Math.ceil(totalPosts / limitNumber)
     });
   } catch (err) {
     console.error('Error fetching all posts from JSON:', err.message);
@@ -360,29 +403,16 @@ export const getPostsByUser = async (req, res) => {
   const { category } = req.query; // Filter by category: 'all', 'fight', 'discussion', 'article', 'question'
 
   try {
-    const db = await readDb();
     const viewerUserId = req.user?.id || null;
     const now = new Date();
-    let posts = (db.posts || []).filter(
-      (post) => post.authorId === userId && !isPostSoftDeleted(post)
+    const sorted = await postsRepo.findManyBy(
+      buildActivePostQuery({ category, authorId: userId }),
+      { sort: { createdAt: -1 } }
     );
-
-    // Apply category filter if specified
-    if (category && category !== 'all') {
-      if (category === 'fight') {
-        // Fights have type='fight'
-        posts = posts.filter((post) => post.type === 'fight');
-      } else {
-        // Other categories (discussion, article, question) are stored in post.category
-        posts = posts.filter((post) => post.category === category || post.type === category);
-      }
-    }
-
-    const sorted = sortPosts(posts, 'createdAt');
-    const commentCounts = buildCommentCountByPostId(db.comments || []);
+    const { users, commentCounts } = await loadPostResponseContext(sorted);
 
     const postsWithUserInfo = sorted.map((post) => {
-      const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
+      const normalized = normalizePostForResponse(post, users, { viewerUserId, now });
       const postId = normalized.id;
       return {
         ...normalized,
@@ -402,20 +432,26 @@ export const getPostById = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const db = await readDb();
     const viewerUserId = req.user?.id || null;
     const now = new Date();
-    const post = findPostById(db.posts, id);
+    const post = await postsRepo.findById(id);
 
     if (!post || isPostSoftDeleted(post)) {
       return res.status(404).json({ msg: 'Post not found' });
     }
 
-    const normalized = normalizePostForResponse(post, db.users, { viewerUserId, now });
-    const commentCount = (db.comments || []).filter((comment) => {
-      const isPostComment = comment?.type === 'post' || !comment?.type;
-      return isPostComment && comment.postId === normalized.id;
-    }).length;
+    const [author, commentCount] = await Promise.all([
+      usersRepo.findById(post.authorId),
+      commentsRepo.countBy({
+        postId: post.id || post._id,
+        $or: [{ type: 'post' }, { type: { $exists: false } }]
+      })
+    ]);
+    const normalized = normalizePostForResponse(
+      post,
+      author ? [author] : [],
+      { viewerUserId, now }
+    );
 
     res.json({
       ...normalized,
@@ -478,12 +514,10 @@ export const createPost = async (req, res) => {
     let idempotencyReplay = false;
     const resolvedCategory = postType === 'fight' ? null : (category || 'discussion');
     const resolvedGroup = normalizePostGroup(group);
+    const characters = await charactersRepo.findManyBy({}, { limit: 5000 });
 
-    await withDb(async (db) => {
-      author = await usersRepo.findOne(
-        (user) => resolveUserId(user) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      author = await usersRepo.findById(req.user.id, 'id', context);
       if (!author) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -497,17 +531,15 @@ export const createPost = async (req, res) => {
       }
 
       if (idempotencyKey) {
-        const existingPost = await postsRepo.findOne(
-          (post) =>
-            post.authorId === req.user.id &&
-            post.idempotencyKey === idempotencyKey &&
-            !isPostSoftDeleted(post),
-          { db }
-        );
+        const existingPost = await postsRepo.findOneBy({
+          authorId: req.user.id,
+          idempotencyKey,
+          'moderation.deleted.isDeleted': { $ne: true }
+        }, {}, context);
         if (existingPost) {
           createdPost = existingPost;
           idempotencyReplay = true;
-          return db;
+          return;
         }
       }
 
@@ -581,7 +613,7 @@ export const createPost = async (req, res) => {
         };
       }
 
-      const autoTagPayload = autoTagPost(db, {
+      const autoTagPayload = autoTagPost({ characters }, {
         title,
         content,
         teamA: postData.fight?.teamA || teamA,
@@ -592,11 +624,24 @@ export const createPost = async (req, res) => {
       postData.tags = autoTagPayload.tags;
       postData.autoTags = autoTagPayload.autoTags;
 
-      await postsRepo.insert(postData, { db });
+      if (idempotencyKey) {
+        const inserted = await postsRepo.insertIfAbsent(
+          { authorId: req.user.id, idempotencyKey },
+          postData,
+          context
+        );
+        if (!inserted.inserted) {
+          createdPost = inserted.item;
+          idempotencyReplay = true;
+          return;
+        }
+      } else {
+        await postsRepo.insert(postData, context);
+      }
 
       const matches = findProfanityMatches(`${title} ${content}`);
       if (matches.length) {
-        await notifyAdminsForProfanity(db, {
+        await notifyAdminsForProfanity(context, {
           author,
           postId: postData.id,
           text: content,
@@ -604,8 +649,9 @@ export const createPost = async (req, res) => {
         });
       }
 
-        if (!author.activity) {
-          author.activity = {
+      author = await usersRepo.updateById(req.user.id, (storedAuthor) => {
+        if (!storedAuthor.activity) {
+          storedAuthor.activity = {
             postsCreated: 0,
             commentsPosted: 0,
             reactionsGiven: 0,
@@ -614,28 +660,29 @@ export const createPost = async (req, res) => {
             tournamentsParticipated: 0
           };
         }
-        author.activity.postsCreated += 1;
+        storedAuthor.activity.postsCreated += 1;
         if (postType === 'fight') {
-          author.activity.fightsCreated = (author.activity.fightsCreated || 0) + 1;
+          storedAuthor.activity.fightsCreated = (storedAuthor.activity.fightsCreated || 0) + 1;
           updateLeveledBadgeProgress(
-            author,
+            storedAuthor,
             'badge_manager',
-            author.activity.fightsCreated,
+            storedAuthor.activity.fightsCreated,
             20,
             20
           );
         }
         
         // Update stats.posts for leaderboard
-        if (!author.stats) author.stats = {};
-        author.stats.posts = (author.stats.posts || 0) + 1;
+        if (!storedAuthor.stats) storedAuthor.stats = {};
+        storedAuthor.stats.posts = (storedAuthor.stats.posts || 0) + 1;
         
-        addRankPoints(author, RANK_POINT_VALUES.post);
-        author.updatedAt = now.toISOString();
-        applyDailyActivityBonus(db, author, 'post', 100);
+        addRankPoints(storedAuthor, RANK_POINT_VALUES.post);
+        storedAuthor.updatedAt = now.toISOString();
+        return storedAuthor;
+      }, 'id', context);
+      await applyDailyActivityBonusAtomic(req.user.id, 'post', 100, context);
 
       createdPost = postData;
-      return db;
     });
 
     if (idempotencyReplay) {
@@ -672,6 +719,7 @@ export const updatePost = async (req, res) => {
   try {
     let responsePayload;
     const now = new Date();
+    const characters = await charactersRepo.findManyBy({}, { limit: 5000 });
 
     const resolveLockTime = (duration) => {
       if (!duration) {
@@ -692,11 +740,8 @@ export const updatePost = async (req, res) => {
       return new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
     };
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -704,10 +749,7 @@ export const updatePost = async (req, res) => {
       }
       assertPostActive(post);
 
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+      const user = await usersRepo.findById(req.user.id, 'id', context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -817,7 +859,7 @@ export const updatePost = async (req, res) => {
       delete post.teamB;
       delete post.voteVisibility;
 
-      const autoTagPayload = autoTagPost(db, {
+      const autoTagPayload = autoTagPost({ characters }, {
         title: post.title,
         content: post.content,
         teamA: post.fight?.teamA || '',
@@ -829,20 +871,26 @@ export const updatePost = async (req, res) => {
       post.autoTags = autoTagPayload.autoTags;
 
       post.updatedAt = now.toISOString();
+      await postsRepo.updateById(id, () => post, 'id', context);
 
       const viewerUserId = req.user?.id || null;
-      const normalized = normalizePostForResponse(post, db.users || [], { viewerUserId, now });
-      const commentCount = (db.comments || []).filter((comment) => {
-        const isPostComment = comment?.type === 'post' || !comment?.type;
-        return isPostComment && comment.postId === normalized.id;
-      }).length;
+      const author = post.authorId
+        ? await usersRepo.findById(post.authorId, 'id', context)
+        : null;
+      const normalized = normalizePostForResponse(post, [author].filter(Boolean), {
+        viewerUserId,
+        now
+      });
+      const commentCount = await commentsRepo.countBy({
+        postId: normalized.id,
+        $or: [{ type: 'post' }, { type: { $exists: false } }]
+      }, context);
 
       responsePayload = {
         ...normalized,
         commentCount,
         reactionsSummary: buildReactionSummary(post.reactions || [])
       };
-      return db;
     });
 
     res.json(responsePayload);
@@ -868,21 +916,15 @@ export const deletePost = async (req, res) => {
   const { id } = req.params;
 
   try {
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
         throw error;
       }
 
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+      const user = await usersRepo.findById(req.user.id, 'id', context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -910,8 +952,9 @@ export const deletePost = async (req, res) => {
         reason: String(req.body?.reason || '').trim()
       };
       post.updatedAt = now;
+      await postsRepo.updateById(id, () => post, 'id', context);
       await logModerationAction({
-        db,
+        db: context,
         actor: user,
         action: 'post.delete',
         targetType: 'post',
@@ -922,7 +965,6 @@ export const deletePost = async (req, res) => {
           reason: post.moderation?.deleted?.reason || ''
         }
       });
-      return db;
     });
 
     res.json({ msg: 'Post deleted successfully' });
@@ -943,19 +985,21 @@ export const deletePost = async (req, res) => {
 
 export const getDeletedPosts = async (req, res) => {
   try {
-    const db = await readDb();
-    const actor = await usersRepo.findOne(
-      (entry) => resolveUserId(entry) === req.user.id,
-      { db }
-    );
+    const actor = await usersRepo.findById(req.user.id);
     if (!actor || (actor.role !== 'admin' && actor.role !== 'moderator')) {
       return res.status(403).json({ msg: 'Access denied' });
     }
 
-    const deleted = (db.posts || [])
-      .filter((post) => isPostSoftDeleted(post))
-      .sort((a, b) => new Date(b.moderation?.deleted?.deletedAt || 0) - new Date(a.moderation?.deleted?.deletedAt || 0))
-      .map((post) => normalizePostForResponse(post, db.users));
+    const limit = parseLimit(req.query.limit, { fallback: 50, max: 100 });
+    const deletedPosts = await postsRepo.findManyBy(
+      { 'moderation.deleted.isDeleted': true },
+      { sort: { 'moderation.deleted.deletedAt': -1 }, limit }
+    );
+    const authorIds = [...new Set(deletedPosts.map((post) => post.authorId).filter(Boolean))];
+    const authors = authorIds.length
+      ? await usersRepo.findManyBy({ id: { $in: authorIds } }, { limit: authorIds.length })
+      : [];
+    const deleted = deletedPosts.map((post) => normalizePostForResponse(post, authors));
     return res.json({ posts: deleted });
   } catch (err) {
     console.error('Error fetching deleted posts:', err.message);
@@ -967,21 +1011,15 @@ export const restorePost = async (req, res) => {
   const { id } = req.params;
   try {
     let restoredPost = null;
-    await withDb(async (db) => {
-      const actor = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const actor = await usersRepo.findById(req.user.id, 'id', context);
       if (!actor || (actor.role !== 'admin' && actor.role !== 'moderator')) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
       }
 
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1003,9 +1041,10 @@ export const restorePost = async (req, res) => {
       };
       post.updatedAt = new Date().toISOString();
       restoredPost = post;
+      await postsRepo.updateById(id, () => post, 'id', context);
 
       await logModerationAction({
-        db,
+        db: context,
         actor,
         action: 'post.restore',
         targetType: 'post',
@@ -1014,7 +1053,6 @@ export const restorePost = async (req, res) => {
           postType: post.type || 'unknown'
         }
       });
-      return db;
     });
 
     return res.json({ msg: 'Post restored successfully', post: restoredPost });
@@ -1034,11 +1072,8 @@ export const toggleLike = async (req, res) => {
     let likesCount = 0;
     let isLiked = false;
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1046,34 +1081,24 @@ export const toggleLike = async (req, res) => {
       }
       assertPostActive(post);
 
-      post.likes = Array.isArray(post.likes) ? post.likes : [];
-      const index = post.likes.findIndex((like) => like.userId === req.user.id);
+      const existingLikes = Array.isArray(post.likes) ? post.likes : [];
+      const index = existingLikes.findIndex((like) => like.userId === req.user.id);
       const wasLiked = index > -1;
+      isLiked = !wasLiked;
+      const now = new Date().toISOString();
+      await postsRepo.updateById(id, (storedPost) => {
+        storedPost.likes = Array.isArray(storedPost.likes) ? storedPost.likes : [];
+        const storedIndex = storedPost.likes.findIndex((like) => like.userId === req.user.id);
+        if (storedIndex > -1) storedPost.likes.splice(storedIndex, 1);
+        else storedPost.likes.push({ userId: req.user.id, likedAt: now });
+        isLiked = storedIndex === -1;
+        likesCount = storedPost.likes.length;
+        storedPost.updatedAt = now;
+        return storedPost;
+      }, 'id', context);
 
-      if (wasLiked) {
-        post.likes.splice(index, 1);
-        isLiked = false;
-
-        const author = await usersRepo.findOne(
-          (entry) => resolveUserId(entry) === post.authorId,
-          { db }
-        );
-        if (author?.activity) {
-          author.activity.likesReceived = Math.max(
-            0,
-            Number(author.activity.likesReceived || 0) - 1
-          );
-          author.updatedAt = new Date().toISOString();
-        }
-      } else {
-        post.likes.push({ userId: req.user.id, likedAt: new Date().toISOString() });
-        isLiked = true;
-
-        const author = await usersRepo.findOne(
-          (entry) => resolveUserId(entry) === post.authorId,
-          { db }
-        );
-        if (author) {
+      if (post.authorId) {
+        await usersRepo.updateById(post.authorId, (author) => {
           author.activity = author.activity || {
             postsCreated: 0,
             likesReceived: 0,
@@ -1081,13 +1106,14 @@ export const toggleLike = async (req, res) => {
             tournamentsWon: 0,
             tournamentsParticipated: 0
           };
-          author.activity.likesReceived += 1;
-        }
+          author.activity.likesReceived = Math.max(
+            0,
+            Number(author.activity.likesReceived || 0) + (isLiked ? 1 : -1)
+          );
+          author.updatedAt = now;
+          return author;
+        }, 'id', context);
       }
-
-      likesCount = post.likes.length;
-      post.updatedAt = new Date().toISOString();
-      return db;
     });
 
     res.json({
@@ -1112,11 +1138,8 @@ export const voteInPoll = async (req, res) => {
     let optionVotes = 0;
     let totalVotes = 0;
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1136,8 +1159,8 @@ export const voteInPoll = async (req, res) => {
         throw error;
       }
 
-      post.poll.votes = post.poll.votes || { voters: [] };
-      const alreadyVoted = post.poll.votes.voters.find(
+      const currentVotes = post.poll.votes || { voters: [] };
+      const alreadyVoted = currentVotes.voters.find(
         (vote) => vote.userId === req.user.id
       );
       if (alreadyVoted) {
@@ -1146,18 +1169,25 @@ export const voteInPoll = async (req, res) => {
         throw error;
       }
 
-      post.poll.votes.voters.push({
-        userId: req.user.id,
-        optionIndex,
-        votedAt: new Date().toISOString()
-      });
-
-      optionVotes = post.poll.votes.voters.filter(
-        (vote) => vote.optionIndex === optionIndex
-      ).length;
-      totalVotes = post.poll.votes.voters.length;
-      post.updatedAt = new Date().toISOString();
-      return db;
+      await postsRepo.updateById(id, (storedPost) => {
+        storedPost.poll.votes = storedPost.poll.votes || { voters: [] };
+        if (storedPost.poll.votes.voters.some((vote) => vote.userId === req.user.id)) {
+          const error = new Error('User already voted in this poll');
+          error.code = 'ALREADY_VOTED';
+          throw error;
+        }
+        storedPost.poll.votes.voters.push({
+          userId: req.user.id,
+          optionIndex,
+          votedAt: new Date().toISOString()
+        });
+        optionVotes = storedPost.poll.votes.voters.filter(
+          (vote) => vote.optionIndex === optionIndex
+        ).length;
+        totalVotes = storedPost.poll.votes.voters.length;
+        storedPost.updatedAt = new Date().toISOString();
+        return storedPost;
+      }, 'id', context);
     });
 
     res.json({
@@ -1188,20 +1218,30 @@ export const getOfficialFights = async (req, res) => {
   const limit = parseLimit(req.query.limit, { fallback: 10, max: 50 });
 
   try {
-    const db = await readDb();
     const viewerUserId = req.user?.id || null;
     const now = new Date();
-    const fights = db.posts.filter(
-      (post) => post.isOfficial && post.type === 'fight' && post.fight?.status === 'active'
-    );
-    const sorted = sortPosts(fights, 'createdAt').slice(0, limit);
-    const fightsWithUserInfo = sorted.map((post) =>
-      normalizePostForResponse(post, db.users, { viewerUserId, now })
+    const query = {
+      isOfficial: true,
+      type: 'fight',
+      'fight.status': 'active',
+      'moderation.deleted.isDeleted': { $ne: true }
+    };
+    const [fights, totalFights] = await Promise.all([
+      postsRepo.findManyBy(query, { sort: { createdAt: -1 }, limit }),
+      postsRepo.countBy(query)
+    ]);
+    const { users, commentCounts } = await loadPostResponseContext(fights);
+    const fightsWithUserInfo = fights.map((post) =>
+      normalizePostForResponse(post, users, {
+        viewerUserId,
+        now,
+        commentCount: commentCounts.get(post.id || post._id) || 0
+      })
     );
 
     res.json({
       fights: fightsWithUserInfo,
-      totalFights: fights.length
+      totalFights
     });
   } catch (err) {
     console.error('Error fetching official fights:', err.message);
@@ -1217,11 +1257,8 @@ export const voteInFight = async (req, res) => {
     let updatedVotes;
     let updatedFight;
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1307,7 +1344,7 @@ export const voteInFight = async (req, res) => {
       updatedVotes = votes;
       updatedFight = post.fight;
       post.updatedAt = new Date().toISOString();
-      return db;
+      await postsRepo.updateById(id, () => post, 'id', context);
     });
 
     const now = new Date();
@@ -1361,11 +1398,8 @@ export const addReaction = async (req, res) => {
   try {
     let reactionsArray = [];
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1387,44 +1421,44 @@ export const addReaction = async (req, res) => {
         reactedAt: new Date().toISOString()
       };
 
-      if (existingReactionIndex > -1) {
-        post.reactions[existingReactionIndex] = nextReaction;
-      } else {
-        post.reactions.push(nextReaction);
-      }
+      await postsRepo.updateById(id, (storedPost) => {
+        storedPost.reactions = Array.isArray(storedPost.reactions) ? storedPost.reactions : [];
+        const storedIndex = storedPost.reactions.findIndex(
+          (storedReaction) => storedReaction.userId === req.user.id
+        );
+        if (storedIndex > -1) storedPost.reactions[storedIndex] = nextReaction;
+        else storedPost.reactions.push(nextReaction);
+        reactionsArray = buildReactionSummary(storedPost.reactions);
+        storedPost.updatedAt = new Date().toISOString();
+        return storedPost;
+      }, 'id', context);
 
-      reactionsArray = buildReactionSummary(post.reactions);
-
-      post.updatedAt = new Date().toISOString();
-
-      const reactingUser = await usersRepo.findOne(
-        (user) => resolveUserId(user) === req.user.id,
-        { db }
-      );
-      if (reactingUser) {
+      if (await usersRepo.findById(req.user.id, 'id', context)) {
         if (isNewReaction) {
-          reactingUser.activity = reactingUser.activity || {
-            postsCreated: 0,
-            commentsPosted: 0,
-            reactionsGiven: 0,
-            likesReceived: 0,
-            tournamentsWon: 0,
-            tournamentsParticipated: 0
-          };
-          reactingUser.activity.reactionsGiven += 1;
-          addRankPoints(reactingUser, RANK_POINT_VALUES.reaction);
-          updateLeveledBadgeProgress(
-            reactingUser,
-            'badge_reactive',
-            reactingUser.activity.reactionsGiven,
-            100,
-            20
-          );
-          reactingUser.updatedAt = new Date().toISOString();
+          await usersRepo.updateById(req.user.id, (reactingUser) => {
+            reactingUser.activity = reactingUser.activity || {
+              postsCreated: 0,
+              commentsPosted: 0,
+              reactionsGiven: 0,
+              likesReceived: 0,
+              tournamentsWon: 0,
+              tournamentsParticipated: 0
+            };
+            reactingUser.activity.reactionsGiven += 1;
+            addRankPoints(reactingUser, RANK_POINT_VALUES.reaction);
+            updateLeveledBadgeProgress(
+              reactingUser,
+              'badge_reactive',
+              reactingUser.activity.reactionsGiven,
+              100,
+              20
+            );
+            reactingUser.updatedAt = new Date().toISOString();
+            return reactingUser;
+          }, 'id', context);
         }
-        applyDailyActivityBonus(db, reactingUser, 'reaction', 50);
+        await applyDailyActivityBonusAtomic(req.user.id, 'reaction', 50, context);
       }
-      return db;
     });
 
     res.json({
@@ -1447,11 +1481,8 @@ export const removeReaction = async (req, res) => {
     let reactionsArray = [];
     let removed = false;
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, 'id', context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1459,23 +1490,19 @@ export const removeReaction = async (req, res) => {
       }
       assertPostActive(post);
 
-      post.reactions = Array.isArray(post.reactions) ? post.reactions : [];
-      const beforeCount = post.reactions.length;
-
-      post.reactions = post.reactions.filter((reaction) => {
-        if (reaction.userId !== req.user.id) {
-          return true;
-        }
-        if (!reactionId) {
-          return false;
-        }
-        return reaction.reactionId !== reactionId;
-      });
-
-      removed = post.reactions.length !== beforeCount;
-      reactionsArray = buildReactionSummary(post.reactions);
-      post.updatedAt = new Date().toISOString();
-      return db;
+      await postsRepo.updateById(id, (storedPost) => {
+        storedPost.reactions = Array.isArray(storedPost.reactions) ? storedPost.reactions : [];
+        const beforeCount = storedPost.reactions.length;
+        storedPost.reactions = storedPost.reactions.filter((storedReaction) => {
+          if (storedReaction.userId !== req.user.id) return true;
+          if (!reactionId) return false;
+          return storedReaction.reactionId !== reactionId;
+        });
+        removed = storedPost.reactions.length !== beforeCount;
+        reactionsArray = buildReactionSummary(storedPost.reactions);
+        storedPost.updatedAt = new Date().toISOString();
+        return storedPost;
+      }, 'id', context);
     });
 
     if (!removed) {
@@ -1535,22 +1562,17 @@ export const createUserChallenge = async (req, res) => {
     let opponent;
     let idempotencyReplay = false;
     const resolvedGroup = normalizePostGroup(group);
+    const characters = await charactersRepo.findManyBy({}, { limit: 5000 });
 
-    await withDb(async (db) => {
-      challenger = await usersRepo.findOne(
-        (user) => resolveUserId(user) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      challenger = await usersRepo.findById(req.user.id, context);
       if (!challenger) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      opponent = await usersRepo.findOne(
-        (user) => resolveUserId(user) === opponentId,
-        { db }
-      );
+      opponent = await usersRepo.findById(opponentId, context);
       if (!opponent) {
         const error = new Error('Opponent not found');
         error.code = 'OPPONENT_NOT_FOUND';
@@ -1564,21 +1586,20 @@ export const createUserChallenge = async (req, res) => {
       }
 
       if (idempotencyKey) {
-        const existingPost = await postsRepo.findOne(
-          (post) =>
-            post.authorId === req.user.id &&
-            post.idempotencyKey === idempotencyKey &&
-            !isPostSoftDeleted(post),
-          { db }
+        const existingPost = await postsRepo.findOneBy(
+          {
+            authorId: req.user.id,
+            idempotencyKey,
+            deletedAt: { $exists: false }
+          },
+          {},
+          context
         );
         if (existingPost) {
           createdPost = existingPost;
-          opponent = await usersRepo.findOne(
-            (user) => resolveUserId(user) === existingPost.fight?.opponentId,
-            { db }
-          );
+          opponent = await usersRepo.findById(existingPost.fight?.opponentId, context);
           idempotencyReplay = true;
-          return db;
+          return;
         }
       }
 
@@ -1638,7 +1659,7 @@ export const createUserChallenge = async (req, res) => {
         }
       };
 
-      const autoTagPayload = autoTagPost(db, {
+      const autoTagPayload = autoTagPost({ characters }, {
         title,
         content,
         teamA: challengerTeam,
@@ -1648,11 +1669,23 @@ export const createUserChallenge = async (req, res) => {
       postData.tags = autoTagPayload.tags;
       postData.autoTags = autoTagPayload.autoTags;
 
-      await postsRepo.insert(postData, { db });
+      const insertResult = idempotencyKey
+        ? await postsRepo.insertIfAbsent(
+            { authorId: req.user.id, idempotencyKey },
+            postData,
+            context
+          )
+        : { item: await postsRepo.insert(postData, context), inserted: true };
+      if (!insertResult.inserted) {
+        createdPost = insertResult.item;
+        opponent = await usersRepo.findById(createdPost.fight?.opponentId, context);
+        idempotencyReplay = true;
+        return;
+      }
 
       // Create notification for opponent
       await createNotification(
-        db,
+        context,
         resolveUserId(opponent),
         'fight_challenge',
         'Nowe wyzwanie na walkę!',
@@ -1681,11 +1714,12 @@ export const createUserChallenge = async (req, res) => {
         read: false,
         deleted: false,
         createdAt: now.toISOString()
-      }, { db });
+      }, context);
 
       // Update challenger activity
-        if (!challenger.activity) {
-          challenger.activity = {
+      challenger = await usersRepo.updateById(req.user.id, (storedUser) => {
+        if (!storedUser.activity) {
+          storedUser.activity = {
             postsCreated: 0,
             commentsPosted: 0,
             reactionsGiven: 0,
@@ -1694,21 +1728,23 @@ export const createUserChallenge = async (req, res) => {
             tournamentsParticipated: 0
           };
         }
-        challenger.activity.postsCreated += 1;
-        challenger.activity.fightsCreated = (challenger.activity.fightsCreated || 0) + 1;
+        storedUser.activity.postsCreated += 1;
+        storedUser.activity.fightsCreated = (storedUser.activity.fightsCreated || 0) + 1;
         updateLeveledBadgeProgress(
-          challenger,
+          storedUser,
           'badge_manager',
-          challenger.activity.fightsCreated,
+          storedUser.activity.fightsCreated,
           20,
           20
         );
-        addRankPoints(challenger, RANK_POINT_VALUES.post);
-        challenger.updatedAt = now.toISOString();
-        applyDailyActivityBonus(db, challenger, 'post', 100);
+        addRankPoints(storedUser, RANK_POINT_VALUES.post);
+        storedUser.updatedAt = now.toISOString();
+        return storedUser;
+      }, context);
+      await applyDailyActivityBonusAtomic(req.user.id, 'post', 100, context);
+      challenger = await usersRepo.findById(req.user.id, context);
 
       createdPost = postData;
-      return db;
     });
 
     if (idempotencyReplay) {
@@ -1761,11 +1797,8 @@ export const respondToChallenge = async (req, res) => {
     let updatedPost;
     let challenger;
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1808,13 +1841,10 @@ export const respondToChallenge = async (req, res) => {
         post.updatedAt = now;
 
         // Notify challenger
-        challenger = await usersRepo.findOne(
-          (user) => resolveUserId(user) === post.fight.challengerId,
-          { db }
-        );
+        challenger = await usersRepo.findById(post.fight.challengerId, context);
         if (challenger) {
           await createNotification(
-            db,
+            context,
             resolveUserId(challenger),
             'fight_rejected',
             'Wyzwanie odrzucone',
@@ -1826,8 +1856,8 @@ export const respondToChallenge = async (req, res) => {
           );
         }
 
-        updatedPost = post;
-        return db;
+        updatedPost = await postsRepo.updateById(id, () => post, context);
+        return;
       }
 
       // Opponent accepted - set their team
@@ -1838,13 +1868,10 @@ export const respondToChallenge = async (req, res) => {
       post.updatedAt = now;
 
       // Notify challenger that opponent responded
-      challenger = await usersRepo.findOne(
-        (user) => resolveUserId(user) === post.fight.challengerId,
-        { db }
-      );
+      challenger = await usersRepo.findById(post.fight.challengerId, context);
       if (challenger) {
         await createNotification(
-          db,
+          context,
           resolveUserId(challenger),
           'fight_response',
           'Odpowiedź na wyzwanie!',
@@ -1857,10 +1884,7 @@ export const respondToChallenge = async (req, res) => {
         );
 
         // Send private message
-        const opponent = await usersRepo.findOne(
-          (user) => resolveUserId(user) === req.user.id,
-          { db }
-        );
+        const opponent = await usersRepo.findById(req.user.id, context);
         if (opponent) {
           await messagesRepo.insert({
             id: uuidv4(),
@@ -1876,12 +1900,11 @@ export const respondToChallenge = async (req, res) => {
             read: false,
             deleted: false,
             createdAt: now
-          }, { db });
+          }, context);
         }
       }
 
-      updatedPost = post;
-      return db;
+      updatedPost = await postsRepo.updateById(id, () => post, context);
     });
 
     res.json({
@@ -1919,11 +1942,8 @@ export const approveChallenge = async (req, res) => {
   try {
     let updatedPost;
 
-    await withDb(async (db) => {
-      const post = await postsRepo.findOne(
-        (entry) => entry.id === id || entry._id === id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const post = await postsRepo.findById(id, context);
       if (!post) {
         const error = new Error('Post not found');
         error.code = 'POST_NOT_FOUND';
@@ -1957,13 +1977,10 @@ export const approveChallenge = async (req, res) => {
         post.updatedAt = now.toISOString();
 
         // Notify opponent
-        const opponent = await usersRepo.findOne(
-          (user) => resolveUserId(user) === post.fight.opponentId,
-          { db }
-        );
+        const opponent = await usersRepo.findById(post.fight.opponentId, context);
         if (opponent) {
           await createNotification(
-            db,
+            context,
             resolveUserId(opponent),
             'fight_cancelled',
             'Walka anulowana',
@@ -1975,8 +1992,8 @@ export const approveChallenge = async (req, res) => {
           );
         }
 
-        updatedPost = post;
-        return db;
+        updatedPost = await postsRepo.updateById(id, () => post, context);
+        return;
       }
 
       // Calculate lock time based on vote duration
@@ -2002,13 +2019,10 @@ export const approveChallenge = async (req, res) => {
       };
 
       // Notify opponent that fight is live
-      const opponent = await usersRepo.findOne(
-        (user) => resolveUserId(user) === post.fight.opponentId,
-        { db }
-      );
+      const opponent = await usersRepo.findById(post.fight.opponentId, context);
       if (opponent) {
         await createNotification(
-          db,
+          context,
           resolveUserId(opponent),
           'fight_approved',
           'Walka zatwierdzona!',
@@ -2020,8 +2034,7 @@ export const approveChallenge = async (req, res) => {
         );
       }
 
-      updatedPost = post;
-      return db;
+      updatedPost = await postsRepo.updateById(id, () => post, context);
     });
 
     res.json({
@@ -2051,43 +2064,57 @@ export const approveChallenge = async (req, res) => {
 // @access  Private
 export const getPendingChallenges = async (req, res) => {
   try {
-    const db = await readDb();
     const userId = req.user.id;
-
-    const challenges = db.posts.filter((post) => {
-      if (post.type !== 'fight' || !post.fight) return false;
-      if (post.fight.fightMode !== 'user_vs_user') return false;
-
-      // Challenges where user is opponent and needs to respond
-      const awaitingResponse =
-        post.fight.opponentId === userId &&
-        post.fight.status === 'pending_opponent';
-
-      // Challenges where user is challenger and needs to approve
-      const awaitingApproval =
-        post.fight.challengerId === userId &&
-        post.fight.status === 'pending_approval';
-
-      return awaitingResponse || awaitingApproval;
+    const nowIso = new Date().toISOString();
+    const challenges = await withRepositoryTransaction(async (context) => {
+      const expired = await postsRepo.findManyBy(
+        {
+          type: 'fight',
+          'fight.fightMode': 'user_vs_user',
+          'fight.status': 'pending_opponent',
+          'fight.expiresAt': { $lt: nowIso },
+          'fight.opponentId': userId
+        },
+        { limit: 100 },
+        context
+      );
+      await Promise.all(expired.map((post) =>
+        postsRepo.updateById(post.id, (storedPost) => {
+          storedPost.fight.status = 'expired';
+          storedPost.updatedAt = nowIso;
+          return storedPost;
+        }, context)
+      ));
+      return postsRepo.findManyBy(
+        {
+          type: 'fight',
+          'fight.fightMode': 'user_vs_user',
+          $or: [
+            {
+              'fight.opponentId': userId,
+              'fight.status': 'pending_opponent',
+              'fight.expiresAt': { $gte: nowIso }
+            },
+            {
+              'fight.challengerId': userId,
+              'fight.status': 'pending_approval'
+            }
+          ]
+        },
+        { sort: { createdAt: -1 }, limit: 100 },
+        context
+      );
     });
-
-    // Check for expired challenges and update them
-    const now = new Date();
-    const processedChallenges = [];
-
-    for (const post of challenges) {
-      if (
-        post.fight.status === 'pending_opponent' &&
-        new Date(post.fight.expiresAt) < now
-      ) {
-        // Mark as expired (will be persisted separately if needed)
-        post.fight.status = 'expired';
-      }
-
-      if (post.fight.status !== 'expired') {
-        processedChallenges.push(normalizePostForResponse(post, db.users));
-      }
-    }
+    const participantIds = [...new Set(challenges.flatMap((post) => [
+      post.fight?.challengerId,
+      post.fight?.opponentId
+    ]).filter(Boolean))];
+    const users = participantIds.length
+      ? await usersRepo.findManyBy({ id: { $in: participantIds } }, { limit: participantIds.length })
+      : [];
+    const processedChallenges = challenges.map((post) =>
+      normalizePostForResponse(post, users)
+    );
 
     res.json({
       challenges: processedChallenges,
@@ -2115,17 +2142,18 @@ export const searchUsersForChallenge = async (req, res) => {
   }
 
   try {
-    const db = await readDb();
-    const searchTerm = q.toLowerCase();
-
-    const matchingUsers = db.users
-      .filter((user) => {
-        const userId = resolveUserId(user);
-        if (userId === req.user.id) return false; // Exclude self
-        return user.username.toLowerCase().includes(searchTerm);
-      })
-      .slice(0, 10)
-        .map((user) => ({
+    const escapedSearch = String(q)
+      .trim()
+      .slice(0, 80)
+      .replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const users = await usersRepo.findManyBy(
+      {
+        id: { $ne: req.user.id },
+        username: { $regex: escapedSearch, $options: 'i' }
+      },
+      { sort: { username: 1 }, limit: 10 }
+    );
+    const matchingUsers = users.map((user) => ({
           id: resolveUserId(user),
           username: user.username,
           profilePicture: user.profile?.profilePicture || user.profile?.avatar || '',

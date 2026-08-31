@@ -8,9 +8,9 @@ import {
   emailVerificationTokensRepo,
   legalConsentsRepo,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
-import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { applyDailyActivityBonusAtomic } from '../utils/coinBonus.js';
 import {
   sendEmailVerificationEmail,
   sendPasswordResetEmail,
@@ -58,19 +58,21 @@ const hasRequiredLegalConsent = (consent) =>
   consent?.privacyPolicy === true &&
   consent?.minimumAgeConfirmed === true;
 
-const saveRegistrationConsent = async (db, userId, source) => {
+const buildRegistrationConsent = (userId, source) => ({
+  id: uuidv4(),
+  userId,
+  termsOfService: true,
+  privacyPolicy: true,
+  minimumAgeConfirmed: true,
+  policyVersion: getLegalConfig().policyVersion,
+  source,
+  createdAt: new Date().toISOString()
+});
+
+const saveRegistrationConsent = async (context, userId, source) => {
   await legalConsentsRepo.insert(
-    {
-      id: uuidv4(),
-      userId,
-      termsOfService: true,
-      privacyPolicy: true,
-      minimumAgeConfirmed: true,
-      policyVersion: getLegalConfig().policyVersion,
-      source,
-      createdAt: new Date().toISOString()
-    },
-    { db }
+    buildRegistrationConsent(userId, source),
+    context
   );
 };
 
@@ -146,21 +148,23 @@ const sanitizeUsernameSource = (value) =>
     .replace(/[^a-z0-9]+/g, '')
     .slice(0, 18);
 
-const generateUniqueUsername = (users, { name, email }) => {
+const generateUniqueUsername = async (context, { name, email }) => {
   const emailPart = sanitizeUsernameSource((email || '').split('@')[0]);
   const namePart = sanitizeUsernameSource(name);
   const base = namePart || emailPart || `user${Date.now().toString().slice(-5)}`;
-  const existing = new Set(
-    users.map((user) => (user.username || '').toLowerCase())
+  const isAvailable = async (candidate) => !await usersRepo.findOneBy(
+    { username: candidate },
+    { collation: { locale: 'en', strength: 2 } },
+    context
   );
 
-  if (!existing.has(base)) {
+  if (await isAvailable(base)) {
     return base;
   }
 
   for (let i = 1; i <= 9999; i += 1) {
     const candidate = `${base}${i}`;
-    if (!existing.has(candidate.toLowerCase())) {
+    if (await isAvailable(candidate)) {
       return candidate;
     }
   }
@@ -216,19 +220,12 @@ const buildAuthResponse = (user) => ({
 const testTokenResponse = (token) =>
   process.env.NODE_ENV === 'test' || isE2eTestMode() ? { token } : {};
 
-const ensureEmailVerificationToken = async (db, userId, email) => {
+const ensureEmailVerificationToken = async (context, userId, email) => {
   const now = Date.now();
-  await emailVerificationTokensRepo.updateAll(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.userId === userId && entry.usedAt == null) {
-          entry.usedAt = now;
-          entry.replacedAt = now;
-        }
-      });
-      return entries;
-    },
-    { db }
+  await emailVerificationTokensRepo.patchManyBy(
+    { userId, usedAt: null },
+    { usedAt: now, replacedAt: now },
+    context
   );
 
   const token = crypto.randomBytes(32).toString('hex');
@@ -242,13 +239,13 @@ const ensureEmailVerificationToken = async (db, userId, email) => {
       expiresAt: now + VERIFICATION_TOKEN_TTL_MS,
       usedAt: null
     },
-    { db }
+    context
   );
 
   return token;
 };
 
-const issueStaffTwoFactorChallenge = async (db, user) => {
+const issueStaffTwoFactorChallenge = async (context, user) => {
   const userId = resolveUserId(user);
   const email = normalizeEmail(user.email || '');
   if (!userId || !email) {
@@ -265,17 +262,15 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
 
   // Keep previous pending challenges to avoid invalidating a code/token pair
   // when a user accidentally triggers login twice. Clean up only stale entries.
-  await authChallengesRepo.updateAll(
-    (challenges) =>
-      challenges.filter((entry) => {
-        if (entry.purpose !== 'login_2fa') {
-          return true;
-        }
-        const expired = Number(entry.expiresAt || 0) <= Date.now();
-        const consumed = entry.usedAt != null;
-        return !(expired || consumed);
-      }),
-    { db }
+  await authChallengesRepo.removeManyBy(
+    {
+      purpose: 'login_2fa',
+      $or: [
+        { expiresAt: { $lte: Date.now() } },
+        { usedAt: { $exists: true, $ne: null } }
+      ]
+    },
+    context
   );
 
   await authChallengesRepo.insert(
@@ -292,7 +287,7 @@ const issueStaffTwoFactorChallenge = async (db, user) => {
       expiresAt: Date.now() + TWO_FACTOR_TTL_MS,
       usedAt: null
     },
-    { db }
+    context
   );
 
   await sendTwoFactorCodeEmail(email, code);
@@ -432,38 +427,37 @@ export const register = async (req, res) => {
     });
 
     let verificationToken = null;
-    await withDb(async (db) => {
-      await usersRepo.updateAll((users) => {
-        const emailTaken = users.some(
-          (user) => normalizeEmail(user.email || '') === normalizedEmail
-        );
-        if (emailTaken) {
-          const error = new Error('Email is already in use.');
-          error.code = 'EMAIL_IN_USE';
-          throw error;
-        }
+    await withRepositoryTransaction(async (context) => {
+      const [emailTaken, usernameTaken] = await Promise.all([
+        usersRepo.findOneBy(
+          { email: normalizedEmail },
+          { collation: { locale: 'en', strength: 2 } },
+          context
+        ),
+        usersRepo.findOneBy(
+          { username: trimmedUsername },
+          { collation: { locale: 'en', strength: 2 } },
+          context
+        )
+      ]);
+      if (emailTaken) {
+        const error = new Error('Email is already in use.');
+        error.code = 'EMAIL_IN_USE';
+        throw error;
+      }
+      if (usernameTaken) {
+        const error = new Error('Username is already taken.');
+        error.code = 'USERNAME_TAKEN';
+        throw error;
+      }
 
-        const usernameTaken = users.some(
-          (user) => (user.username || '').toLowerCase() === trimmedUsername.toLowerCase()
-        );
-        if (usernameTaken) {
-          const error = new Error('Username is already taken.');
-          error.code = 'USERNAME_TAKEN';
-          throw error;
-        }
-
-        users.push(newUser);
-        return users;
-      }, { db });
-
+      await usersRepo.insert(newUser, context);
       verificationToken = await ensureEmailVerificationToken(
-        db,
+        context,
         newUser.id,
         normalizedEmail
       );
-      await saveRegistrationConsent(db, newUser.id, 'local_registration');
-
-      return db;
+      await saveRegistrationConsent(context, newUser.id, 'local_registration');
     });
 
     let verificationEmailSent = true;
@@ -507,11 +501,22 @@ export const register = async (req, res) => {
   } catch (error) {
     console.error('Registration error:', error);
 
+    if (error?.code === 11000) {
+      const duplicateField = Object.keys(error.keyPattern || {})[0];
+      if (duplicateField === 'email') {
+        return res.status(400).json({ msg: 'Email is already in use.' });
+      }
+      if (duplicateField === 'username') {
+        return res.status(400).json({ msg: 'Username is already taken.' });
+      }
+      return res.status(409).json({ msg: 'This account already exists.' });
+    }
+
     if (error.code === 'EMAIL_IN_USE' || error.code === 'USERNAME_TAKEN') {
       return res.status(400).json({ msg: error.message });
     }
 
-    res.status(500).json({ msg: 'Server error. ' + error.message });
+    res.status(500).json({ msg: 'Server error.' });
   }
 };
 
@@ -528,8 +533,9 @@ export const login = async (req, res) => {
 
   try {
     const normalizedEmail = normalizeEmail(email);
-    const user = await usersRepo.findOne(
-      (entry) => normalizeEmail(entry.email || '') === normalizedEmail
+    const user = await usersRepo.findOneBy(
+      { email: normalizedEmail },
+      { collation: { locale: 'en', strength: 2 } }
     );
 
     if (!user) {
@@ -554,15 +560,10 @@ export const login = async (req, res) => {
     }
 
     if (requireEmailVerification && !user.emailVerified) {
-      await withDb(async (db) => {
-        const token = await ensureEmailVerificationToken(
-          db,
-          resolveUserId(user),
-          normalizedEmail
-        );
-        await sendEmailVerificationEmail(normalizedEmail, token);
-        return db;
-      });
+      const token = await withRepositoryTransaction((context) =>
+        ensureEmailVerificationToken(context, resolveUserId(user), normalizedEmail)
+      );
+      await sendEmailVerificationEmail(normalizedEmail, token);
 
       return res.status(403).json({
         msg: 'Please verify your email before logging in.',
@@ -574,28 +575,28 @@ export const login = async (req, res) => {
     const now = new Date().toISOString();
     let responseUser = user;
     let challenge = null;
-    await withDb(async (db) => {
-      const storedUser = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === resolveUserId(user),
-        { db }
-      );
-      if (storedUser) {
+    responseUser = await withRepositoryTransaction(async (context) => {
+      const stored = await usersRepo.updateById(resolveUserId(user), (storedUser) => {
         if (!storedUser.id) {
           storedUser.id = uuidv4();
         }
         ensurePrimaryAdminRole(storedUser);
-        applyDailyActivityBonus(db, storedUser, 'login', 50);
         storedUser.profile = storedUser.profile || {};
         storedUser.profile.lastActive = now;
         storedUser.updatedAt = now;
-        responseUser = storedUser;
-
-        if (isStaffRole(storedUser.role)) {
-          challenge = await issueStaffTwoFactorChallenge(db, storedUser);
-        }
-      }
-      return db;
+        return storedUser;
+      }, context);
+      if (!stored) return null;
+      await applyDailyActivityBonusAtomic(resolveUserId(stored), 'login', 50, context);
+      return usersRepo.findById(resolveUserId(stored), context);
     });
+
+    if (!responseUser) {
+      return res.status(401).json({ msg: 'User account was not found.' });
+    }
+    if (isStaffRole(responseUser.role)) {
+      challenge = await issueStaffTwoFactorChallenge(undefined, responseUser);
+    }
 
     if (challenge) {
       return res.status(202).json({
@@ -609,7 +610,7 @@ export const login = async (req, res) => {
     return finalizeLoginResponse(res, responseUser);
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ msg: 'Server error. ' + error.message });
+    res.status(500).json({ msg: 'Server error.' });
   }
 };
 
@@ -637,68 +638,65 @@ export const loginWithGoogle = async (req, res) => {
     let responseUser = null;
     let created = false;
 
-    await withDb(async (db) => {
-      await usersRepo.updateAll((users) => {
-        let user = users.find(
-          (entry) => normalizeEmail(entry.email || '') === normalizedEmail
-        );
+    await withRepositoryTransaction(async (context) => {
+      let user = await usersRepo.findOneBy(
+        { email: normalizedEmail },
+        { collation: { locale: 'en', strength: 2 } },
+        context
+      );
 
-        if (!user) {
-          if (!hasRequiredLegalConsent(consent)) {
-            const error = new Error(
-              'Accept the Terms of Service, acknowledge the Privacy Policy and confirm the minimum age before creating an account.'
-            );
-            error.code = 'LEGAL_CONSENT_REQUIRED';
-            throw error;
-          }
-          const username = generateUniqueUsername(users, {
-            name: googlePayload.name,
-            email: normalizedEmail
-          });
-          const randomPassword = uuidv4();
-          const salt = bcrypt.genSaltSync(10);
-          const hashedPassword = bcrypt.hashSync(randomPassword, salt);
-          user = buildNewUser({
-            username,
-            email: normalizedEmail,
-            passwordHash: hashedPassword
-          });
-          user.profile.displayName =
-            (googlePayload.name || '').trim() || username;
-          user.authProvider = 'google';
-          user.googleId = googlePayload.sub || '';
-          user.emailVerified = true;
-          created = true;
-          users.push(user);
+      if (!user) {
+        if (!hasRequiredLegalConsent(consent)) {
+          const error = new Error(
+            'Accept the Terms of Service, acknowledge the Privacy Policy and confirm the minimum age before creating an account.'
+          );
+          error.code = 'LEGAL_CONSENT_REQUIRED';
+          throw error;
         }
-
-        user.profile = user.profile || {};
-        if (!user.profile.displayName) {
-          user.profile.displayName = user.username;
-        }
-        if (googlePayload.picture && needsDefaultAvatar(user.profile.profilePicture)) {
-          user.profile.profilePicture = googlePayload.picture;
-          user.profile.avatar = googlePayload.picture;
-        } else {
-          if (needsDefaultAvatar(user.profile.profilePicture)) {
-            user.profile.profilePicture = DEFAULT_AVATAR;
-          }
-          if (needsDefaultAvatar(user.profile.avatar)) {
-            user.profile.avatar = user.profile.profilePicture || DEFAULT_AVATAR;
-          }
-        }
-
-        if (!user.googleId && googlePayload.sub) {
-          user.googleId = googlePayload.sub;
-        }
+        const username = await generateUniqueUsername(context, {
+          name: googlePayload.name,
+          email: normalizedEmail
+        });
+        const randomPassword = uuidv4();
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = bcrypt.hashSync(randomPassword, salt);
+        user = buildNewUser({
+          username,
+          email: normalizedEmail,
+          passwordHash: hashedPassword
+        });
+        user.profile.displayName = (googlePayload.name || '').trim() || username;
         user.authProvider = 'google';
+        user.googleId = googlePayload.sub || '';
         user.emailVerified = true;
-        if (!user.id) {
-          user.id = uuidv4();
-        }
-        ensurePrimaryAdminRole(user);
+        created = true;
+        await usersRepo.insert(user, context);
+      }
 
-        const suspension = getActiveSuspension(user);
+      const userId = resolveUserId(user);
+      responseUser = await usersRepo.updateById(userId, (storedUser) => {
+        storedUser.profile = storedUser.profile || {};
+        if (!storedUser.profile.displayName) {
+          storedUser.profile.displayName = storedUser.username;
+        }
+        if (googlePayload.picture && needsDefaultAvatar(storedUser.profile.profilePicture)) {
+          storedUser.profile.profilePicture = googlePayload.picture;
+          storedUser.profile.avatar = googlePayload.picture;
+        } else {
+          if (needsDefaultAvatar(storedUser.profile.profilePicture)) {
+            storedUser.profile.profilePicture = DEFAULT_AVATAR;
+          }
+          if (needsDefaultAvatar(storedUser.profile.avatar)) {
+            storedUser.profile.avatar = storedUser.profile.profilePicture || DEFAULT_AVATAR;
+          }
+        }
+        if (!storedUser.googleId && googlePayload.sub) {
+          storedUser.googleId = googlePayload.sub;
+        }
+        storedUser.authProvider = 'google';
+        storedUser.emailVerified = true;
+        ensurePrimaryAdminRole(storedUser);
+        const suspension = getActiveSuspension(storedUser);
         if (suspension) {
           const error = new Error(
             suspension.type === 'time'
@@ -709,40 +707,20 @@ export const loginWithGoogle = async (req, res) => {
           error.details = suspension;
           throw error;
         }
+        storedUser.profile.lastActive = now;
+        storedUser.updatedAt = now;
+        return storedUser;
+      }, context);
 
-        applyDailyActivityBonus(db, user, 'login', 50);
-        user.profile.lastActive = now;
-        user.updatedAt = now;
-        responseUser = user;
-        return users;
-      }, { db });
-
+      await applyDailyActivityBonusAtomic(userId, 'login', 50, context);
+      responseUser = await usersRepo.findById(userId, context);
       if (created) {
-        await saveRegistrationConsent(
-          db,
-          resolveUserId(responseUser),
-          'google_registration'
-        );
+        await saveRegistrationConsent(context, userId, 'google_registration');
       }
-
-      return db;
     });
 
     if (isStaffRole(responseUser.role)) {
-      const challenge = await withDb(async (db) => {
-        const storedUser = await usersRepo.findOne(
-          (entry) => resolveUserId(entry) === resolveUserId(responseUser),
-          { db }
-        );
-        if (!storedUser) {
-          throw new Error('User not found for challenge');
-        }
-        if (!storedUser.id) {
-          storedUser.id = uuidv4();
-        }
-        ensurePrimaryAdminRole(storedUser);
-        return issueStaffTwoFactorChallenge(db, storedUser);
-      });
+      const challenge = await issueStaffTwoFactorChallenge(undefined, responseUser);
 
       return res.status(202).json({
         requires2FA: true,
@@ -798,9 +776,7 @@ export const changePassword = async (req, res) => {
   }
 
   try {
-    const user = await usersRepo.findOne(
-      (u) => resolveUserId(u) === userId
-    );
+    const user = await usersRepo.findById(userId);
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -858,9 +834,7 @@ export const updateTimezone = async (req, res) => {
   }
 
   try {
-    const user = await usersRepo.findOne(
-      (u) => resolveUserId(u) === userId
-    );
+    const user = await usersRepo.findById(userId);
 
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -887,8 +861,9 @@ export const forgotPassword = async (req, res) => {
 
   try {
     const normalizedEmail = normalizeEmail(email);
-    const user = await usersRepo.findOne(
-      (u) => normalizeEmail(u.email) === normalizedEmail
+    const user = await usersRepo.findOneBy(
+      { email: normalizedEmail },
+      { collation: { locale: 'en', strength: 2 } }
     );
 
     // Always return success message (security best practice - don't reveal if email exists)
@@ -935,11 +910,13 @@ export const resetPassword = async (req, res) => {
 
   try {
     const tokenHash = hashOneTimeToken(token);
-    const user = await usersRepo.findOne(
-      (u) =>
-        (u.resetPasswordTokenHash === tokenHash || u.resetPasswordToken === token) &&
-        u.resetPasswordExpiry > Date.now()
-    );
+    const user = await usersRepo.findOneBy({
+      $or: [
+        { resetPasswordTokenHash: tokenHash },
+        { resetPasswordToken: token }
+      ],
+      resetPasswordExpiry: { $gt: Date.now() }
+    });
 
     if (!user) {
       return res.status(400).json({ msg: 'Invalid or expired reset token' });
@@ -969,9 +946,7 @@ export const resetPassword = async (req, res) => {
 
 export const establishSession = async (req, res) => {
   try {
-    const user = await usersRepo.findOne(
-      (entry) => resolveUserId(entry) === resolveUserId(req.user)
-    );
+    const user = await usersRepo.findById(resolveUserId(req.user));
     if (!user) {
       return res.status(401).json({ msg: 'User account was not found.' });
     }
@@ -1014,13 +989,15 @@ export const verifyEmail = async (req, res) => {
   try {
     const tokenHash = hashOneTimeToken(token);
     let verifiedUser = null;
-    await withDb(async (db) => {
-      const verificationRecord = await emailVerificationTokensRepo.findOne(
-        (entry) =>
-          (entry.tokenHash === tokenHash || entry.token === token) &&
-          entry.usedAt == null &&
-          Number(entry.expiresAt || 0) > Date.now(),
-        { db }
+    await withRepositoryTransaction(async (context) => {
+      const verificationRecord = await emailVerificationTokensRepo.findOneBy(
+        {
+          $or: [{ tokenHash }, { token }],
+          usedAt: null,
+          expiresAt: { $gt: Date.now() }
+        },
+        {},
+        context
       );
 
       if (!verificationRecord) {
@@ -1029,21 +1006,26 @@ export const verifyEmail = async (req, res) => {
         throw error;
       }
 
-      verificationRecord.usedAt = Date.now();
-      const user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === verificationRecord.userId,
-        { db }
+      await emailVerificationTokensRepo.updateById(
+        verificationRecord.id,
+        (record) => {
+          record.usedAt = Date.now();
+          return record;
+        },
+        context
       );
+      const user = await usersRepo.findById(verificationRecord.userId, context);
       if (!user) {
         const error = new Error('User not found.');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      user.emailVerified = true;
-      user.updatedAt = new Date().toISOString();
-      verifiedUser = user;
-      return db;
+      verifiedUser = await usersRepo.updateById(verificationRecord.userId, (storedUser) => {
+        storedUser.emailVerified = true;
+        storedUser.updatedAt = new Date().toISOString();
+        return storedUser;
+      }, context);
     });
 
     return res.json({
@@ -1074,22 +1056,22 @@ export const resendVerificationEmail = async (req, res) => {
   const normalizedEmail = normalizeEmail(rawEmail);
   try {
     let token = null;
-    await withDb(async (db) => {
-      const user = await usersRepo.findOne(
-        (entry) => normalizeEmail(entry.email || '') === normalizedEmail,
-        { db }
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findOneBy(
+        { email: normalizedEmail },
+        { collation: { locale: 'en', strength: 2 } },
+        context
       );
 
       if (!user || user.emailVerified) {
-        return db;
+        return;
       }
 
       token = await ensureEmailVerificationToken(
-        db,
+        context,
         resolveUserId(user),
         normalizedEmail
       );
-      return db;
     });
 
     if (token) {
@@ -1125,12 +1107,11 @@ export const verifyLoginTwoFactor = async (req, res) => {
 
     let authenticatedUser = null;
     let verificationFailure = null;
-    await withDb(async (db) => {
-      const challenge = await authChallengesRepo.findOne(
-        (entry) =>
-          entry.id === challengeId &&
-          entry.purpose === 'login_2fa',
-        { db }
+    await withRepositoryTransaction(async (context) => {
+      const challenge = await authChallengesRepo.findOneBy(
+        { id: challengeId, purpose: 'login_2fa' },
+        {},
+        context
       );
       if (!challenge) {
         const error = new Error('Challenge not found.');
@@ -1162,28 +1143,32 @@ export const verifyLoginTwoFactor = async (req, res) => {
           Buffer.from(suppliedDigest, 'utf8')
         );
       if (!digestMatches) {
-        challenge.attempts = Number(challenge.attempts || 0) + 1;
-        challenge.lastFailedAt = Date.now();
-        if (challenge.attempts >= maxAttempts) {
-          challenge.usedAt = Date.now();
-        }
+        await authChallengesRepo.updateById(challengeId, (storedChallenge) => {
+          storedChallenge.attempts = Number(storedChallenge.attempts || 0) + 1;
+          storedChallenge.lastFailedAt = Date.now();
+          if (storedChallenge.attempts >= maxAttempts) {
+            storedChallenge.usedAt = Date.now();
+          }
+          return storedChallenge;
+        }, context);
         verificationFailure = 'Invalid security code.';
-        return db;
+        return;
       }
 
-      challenge.usedAt = Date.now();
-      challenge.code = null;
-      challenge.codeDigest = null;
+      await authChallengesRepo.updateById(challengeId, (storedChallenge) => {
+        storedChallenge.usedAt = Date.now();
+        storedChallenge.code = null;
+        storedChallenge.codeDigest = null;
+        return storedChallenge;
+      }, context);
       // Resolve by challenge userId first to avoid matching a different account
       // that happens to share the same email (e.g. legacy local + google account).
-      let user = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === challenge.userId,
-        { db }
-      );
+      let user = await usersRepo.findById(challenge.userId, context);
       if (!user) {
-        user = await usersRepo.findOne(
-          (entry) => normalizeEmail(entry.email || '') === normalizeEmail(challenge.email || ''),
-          { db }
+        user = await usersRepo.findOneBy(
+          { email: normalizeEmail(challenge.email || '') },
+          { collation: { locale: 'en', strength: 2 } },
+          context
         );
       }
       if (!user) {
@@ -1198,10 +1183,6 @@ export const verifyLoginTwoFactor = async (req, res) => {
         throw error;
       }
 
-      if (!user.id) {
-        user.id = uuidv4();
-      }
-      ensurePrimaryAdminRole(user);
       const suspension = getActiveSuspension(user);
       if (suspension) {
         const error = new Error(
@@ -1212,12 +1193,16 @@ export const verifyLoginTwoFactor = async (req, res) => {
         error.code = 'ACCOUNT_SUSPENDED';
         throw error;
       }
-      user.profile = user.profile || {};
-      user.profile.lastActive = new Date().toISOString();
-      user.updatedAt = new Date().toISOString();
-      applyDailyActivityBonus(db, user, 'login', 50);
-      authenticatedUser = user;
-      return db;
+      const userId = resolveUserId(user);
+      authenticatedUser = await usersRepo.updateById(userId, (storedUser) => {
+        ensurePrimaryAdminRole(storedUser);
+        storedUser.profile = storedUser.profile || {};
+        storedUser.profile.lastActive = new Date().toISOString();
+        storedUser.updatedAt = new Date().toISOString();
+        return storedUser;
+      }, context);
+      await applyDailyActivityBonusAtomic(userId, 'login', 50, context);
+      authenticatedUser = await usersRepo.findById(userId, context);
     });
 
     if (verificationFailure) {

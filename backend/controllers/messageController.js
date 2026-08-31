@@ -2,12 +2,11 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   blocksRepo,
   messagesRepo,
-  readDb,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
-import { applyDailyActivityBonus } from '../utils/coinBonus.js';
+import { applyDailyActivityBonusAtomic } from '../utils/coinBonus.js';
 import { parsePagination } from '../utils/pagination.js';
 
 const resolveUserId = (user) => user?.id || user?._id;
@@ -70,31 +69,27 @@ export const sendMessage = async (req, res) => {
     const now = new Date().toISOString();
     let createdMessage;
 
-    await withDb(async (db) => {
-      const blocks = await blocksRepo.getAll({ db });
-      const isBlocked =
-        blocks.some((b) => b.blockerId === req.user.id && b.blockedId === normalizedRecipientId) ||
-        blocks.some((b) => b.blockerId === normalizedRecipientId && b.blockedId === req.user.id);
+    await withRepositoryTransaction(async (context) => {
+      const isBlocked = Boolean(await blocksRepo.findOneBy({
+        $or: [
+          { blockerId: req.user.id, blockedId: normalizedRecipientId },
+          { blockerId: normalizedRecipientId, blockedId: req.user.id }
+        ]
+      }, {}, context));
       if (isBlocked) {
         const error = new Error('Messaging is blocked');
         error.code = 'BLOCKED';
         throw error;
       }
 
-      const sender = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === req.user.id,
-        { db }
-      );
+      const sender = await usersRepo.findById(req.user.id, 'id', context);
       if (!sender) {
         const error = new Error('Sender not found');
         error.code = 'SENDER_NOT_FOUND';
         throw error;
       }
 
-      const recipient = await usersRepo.findOne(
-        (entry) => resolveUserId(entry) === normalizedRecipientId,
-        { db }
-      );
+      const recipient = await usersRepo.findById(normalizedRecipientId, 'id', context);
       if (!recipient) {
         const error = new Error('Recipient not found');
         error.code = 'RECIPIENT_NOT_FOUND';
@@ -116,14 +111,13 @@ export const sendMessage = async (req, res) => {
         createdAt: now
       };
 
-      await messagesRepo.insert(message, { db });
+      await messagesRepo.insert(message, context);
       createdMessage = message;
-      applyDailyActivityBonus(db, sender, 'message', 50);
+      await applyDailyActivityBonusAtomic(resolveUserId(sender), 'message', 50, context);
 
       // Don't create bell notifications for messages - only chat icon counter
       // Messages have their own notification system (unread count on chat icon)
 
-      return db;
     });
 
     // Emit Socket.IO event if available
@@ -143,7 +137,7 @@ export const sendMessage = async (req, res) => {
       return res.status(403).json({ msg: 'Cannot message this user.' });
     }
     console.error('Error sending message:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -158,50 +152,44 @@ export const getMessages = async (req, res) => {
       maxLimit: 100
     });
 
-    const db = await readDb();
-    const messages = await messagesRepo.getAll({ db });
-    const users = await usersRepo.getAll({ db });
-
-    const filtered = messages.filter((message) => {
-      if (message.deleted) return false;
-      if (type === 'sent') {
-        return message.senderId === req.user.id;
-      }
-      if (type === 'received') {
-        return message.recipientId === req.user.id;
-      }
-      return (
-        message.senderId === req.user.id || message.recipientId === req.user.id
-      );
-    });
-
-    const sorted = [...filtered].sort(
-      (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-    );
-    const paged = sorted.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
-    );
-
-    const unreadCount = messages.filter(
-      (message) =>
-        message.recipientId === req.user.id && !message.read && !message.deleted
-    ).length;
+    const participantQuery = type === 'sent'
+      ? { senderId: req.user.id }
+      : type === 'received'
+        ? { recipientId: req.user.id }
+        : { $or: [{ senderId: req.user.id }, { recipientId: req.user.id }] };
+    const query = { ...participantQuery, deleted: { $ne: true } };
+    const [paged, totalMessages, unreadCount] = await Promise.all([
+      messagesRepo.findManyBy(query, {
+        sort: { createdAt: -1 },
+        skip: (pageNumber - 1) * limitNumber,
+        limit: limitNumber
+      }),
+      messagesRepo.countBy(query),
+      messagesRepo.countBy({
+        recipientId: req.user.id,
+        read: { $ne: true },
+        deleted: { $ne: true }
+      })
+    ]);
+    const userIds = [...new Set(paged.flatMap((message) => [message.senderId, message.recipientId]).filter(Boolean))];
+    const users = userIds.length
+      ? await usersRepo.findManyBy({ id: { $in: userIds } }, { limit: userIds.length })
+      : [];
 
     res.json({
       messages: paged.map((message) => normalizeMessage(message, users)),
       pagination: {
         currentPage: pageNumber,
-        totalPages: Math.ceil(filtered.length / limitNumber) || 1,
-        totalMessages: filtered.length,
-        hasNext: pageNumber * limitNumber < filtered.length,
+        totalPages: Math.ceil(totalMessages / limitNumber) || 1,
+        totalMessages,
+        hasNext: pageNumber * limitNumber < totalMessages,
         hasPrev: pageNumber > 1
       },
       unreadCount
     });
   } catch (error) {
     console.error('Error fetching messages:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -210,12 +198,7 @@ export const getMessages = async (req, res) => {
 // @access  Private
 export const getMessage = async (req, res) => {
   try {
-    const db = await readDb();
-    const message = await messagesRepo.findOne(
-      (entry) => entry.id === req.params.id || entry._id === req.params.id,
-      { db }
-    );
-    const users = await usersRepo.getAll({ db });
+    const message = await messagesRepo.findById(req.params.id);
 
     if (!message) {
       return res.status(404).json({ msg: 'Message not found' });
@@ -228,24 +211,20 @@ export const getMessage = async (req, res) => {
     let updatedMessage = message;
     if (message.recipientId === req.user.id && !message.read) {
       const now = new Date().toISOString();
-      await withDb(async (updateDb) => {
-        const target = await messagesRepo.findOne(
-          (entry) => entry.id === message.id || entry._id === message._id,
-          { db: updateDb }
-        );
-        if (target) {
-          target.read = true;
-          target.readAt = now;
-          updatedMessage = target;
-        }
-        return updateDb;
-      });
+      updatedMessage = await messagesRepo.updateById(req.params.id, (target) => ({
+        ...target,
+        read: true,
+        readAt: now
+      }));
     }
+
+    const userIds = [message.senderId, message.recipientId].filter(Boolean);
+    const users = await usersRepo.findManyBy({ id: { $in: userIds } }, { limit: userIds.length });
 
     res.json(normalizeMessage(updatedMessage, users));
   } catch (error) {
     console.error('Error fetching message:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -254,32 +233,22 @@ export const getMessage = async (req, res) => {
 // @access  Private
 export const deleteMessage = async (req, res) => {
   try {
-    let found;
-
-    await messagesRepo.updateAll((messages) => {
-      const message = messages.find(
-        (entry) => entry.id === req.params.id || entry._id === req.params.id
-      );
-      if (!message) {
+    const existing = await messagesRepo.findById(req.params.id);
+    if (!existing) {
         const error = new Error('Message not found');
         error.code = 'MESSAGE_NOT_FOUND';
         throw error;
-      }
-
-      if (
-        message.senderId !== req.user.id &&
-        message.recipientId !== req.user.id
-      ) {
+    }
+    if (existing.senderId !== req.user.id && existing.recipientId !== req.user.id) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
-      }
-
-      message.deleted = true;
-      message.deletedAt = new Date().toISOString();
-      found = message;
-      return messages;
-    });
+    }
+    const found = await messagesRepo.updateById(req.params.id, (message) => ({
+      ...message,
+      deleted: true,
+      deletedAt: new Date().toISOString()
+    }));
 
     res.json({ msg: 'Message deleted', message: normalizeMessage(found) });
   } catch (error) {
@@ -290,7 +259,7 @@ export const deleteMessage = async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
     console.error('Error deleting message:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -299,26 +268,22 @@ export const deleteMessage = async (req, res) => {
 // @access  Private
 export const markAsRead = async (req, res) => {
   try {
-    await messagesRepo.updateAll((messages) => {
-      const message = messages.find(
-        (entry) => entry.id === req.params.id || entry._id === req.params.id
-      );
-      if (!message) {
+    const message = await messagesRepo.findById(req.params.id);
+    if (!message) {
         const error = new Error('Message not found');
         error.code = 'MESSAGE_NOT_FOUND';
         throw error;
-      }
-
-      if (message.recipientId !== req.user.id) {
+    }
+    if (message.recipientId !== req.user.id) {
         const error = new Error('Access denied');
         error.code = 'ACCESS_DENIED';
         throw error;
-      }
-
-      message.read = true;
-      message.readAt = new Date().toISOString();
-      return messages;
-    });
+    }
+    await messagesRepo.updateById(req.params.id, (entry) => ({
+      ...entry,
+      read: true,
+      readAt: new Date().toISOString()
+    }));
 
     res.json({ msg: 'Message marked as read' });
   } catch (error) {
@@ -329,7 +294,7 @@ export const markAsRead = async (req, res) => {
       return res.status(403).json({ msg: 'Access denied' });
     }
     console.error('Error marking message as read:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -344,48 +309,32 @@ export const getConversation = async (req, res) => {
     });
     const otherUserId = req.params.userId;
 
-    const db = await readDb();
-    const messages = await messagesRepo.getAll({ db });
-    const users = await usersRepo.getAll({ db });
+    const conversationQuery = {
+      deleted: { $ne: true },
+      $or: [
+        { senderId: req.user.id, recipientId: otherUserId },
+        { senderId: otherUserId, recipientId: req.user.id }
+      ]
+    };
+    const [paged, totalMessages, otherUser, currentUser] = await Promise.all([
+      messagesRepo.findManyBy(conversationQuery, {
+        sort: { createdAt: 1 },
+        skip: (pageNumber - 1) * limitNumber,
+        limit: limitNumber
+      }),
+      messagesRepo.countBy(conversationQuery),
+      usersRepo.findById(otherUserId),
+      usersRepo.findById(req.user.id)
+    ]);
 
-    const filtered = messages.filter(
-      (message) =>
-        !message.deleted &&
-        ((message.senderId === req.user.id &&
-          message.recipientId === otherUserId) ||
-          (message.senderId === otherUserId &&
-            message.recipientId === req.user.id))
-    );
+    await messagesRepo.patchManyBy({
+      senderId: otherUserId,
+      recipientId: req.user.id,
+      read: { $ne: true },
+      deleted: { $ne: true }
+    }, { read: true, readAt: new Date().toISOString() });
 
-    const sorted = [...filtered].sort(
-      (a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
-    );
-    const paged = sorted.slice(
-      (pageNumber - 1) * limitNumber,
-      pageNumber * limitNumber
-    );
-
-    await withDb(async (updateDb) => {
-      await messagesRepo.updateAll((allMessages) => {
-        allMessages.forEach((message) => {
-          if (
-            message.senderId === otherUserId &&
-            message.recipientId === req.user.id &&
-            !message.read
-          ) {
-            message.read = true;
-            message.readAt = new Date().toISOString();
-          }
-        });
-        return allMessages;
-      }, { db: updateDb });
-      return updateDb;
-    });
-
-    const otherUser = await usersRepo.findOne(
-      (entry) => resolveUserId(entry) === otherUserId,
-      { db }
-    );
+    const users = [otherUser, currentUser].filter(Boolean);
 
     res.json({
       messages: paged.map((message) => normalizeMessage(message, users)),
@@ -400,15 +349,15 @@ export const getConversation = async (req, res) => {
         : null,
       pagination: {
         currentPage: pageNumber,
-        totalPages: Math.ceil(filtered.length / limitNumber) || 1,
-        totalMessages: filtered.length,
-        hasNext: pageNumber * limitNumber < filtered.length,
+        totalPages: Math.ceil(totalMessages / limitNumber) || 1,
+        totalMessages,
+        hasNext: pageNumber * limitNumber < totalMessages,
         hasPrev: pageNumber > 1
       }
     });
   } catch (error) {
     console.error('Error fetching conversation:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
@@ -417,15 +366,15 @@ export const getConversation = async (req, res) => {
 // @access  Private
 export const getUnreadCount = async (req, res) => {
   try {
-    const messages = await messagesRepo.getAll();
-    const unreadCount = messages.filter(
-      (message) =>
-        message.recipientId === req.user.id && !message.read && !message.deleted
-    ).length;
+    const unreadCount = await messagesRepo.countBy({
+      recipientId: req.user.id,
+      read: { $ne: true },
+      deleted: { $ne: true }
+    });
 
     res.json({ unreadCount });
   } catch (error) {
     console.error('Error fetching unread count:', error.message);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    res.status(500).json({ message: 'Server error' });
   }
 };

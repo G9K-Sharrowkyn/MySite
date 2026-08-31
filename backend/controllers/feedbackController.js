@@ -2,7 +2,7 @@ import {
   charactersRepo,
   feedbackRepo,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { v4 as uuidv4 } from 'uuid';
 import { logModerationAction } from '../utils/moderationAudit.js';
@@ -11,6 +11,8 @@ import {
   buildCharacterMediaPath,
   ingestCharacterMediaFromSource
 } from '../services/characterMedia.js';
+import { createNotification } from './notificationController.js';
+import { parsePagination } from '../utils/pagination.js';
 
 const normalizeTags = (tags) => {
   if (!Array.isArray(tags)) {
@@ -100,34 +102,19 @@ export const submitFeedback = async (req, res) => {
       adminNotes: null
     };
 
-    await withDb(async (db) => {
-      await feedbackRepo.insert(feedback, { db });
-
-      // Send notification to all admins
-      const admins = await usersRepo.filter((user) => user.role === 'admin', {
-        db
-      });
-      const notificationText =
-        type === 'user'
-          ? `New user report: ${reportedUser}`
-          : `New ${type} report: ${title}`;
-
-      admins.forEach((admin) => {
-        if (!admin.notifications) {
-          admin.notifications = [];
-        }
-        admin.notifications.push({
-          id: uuidv4(),
-          type: 'feedback',
-          text: notificationText,
-          feedbackId: feedback.id,
-          read: false,
-          createdAt: new Date().toISOString()
-        });
-      });
-
-      return db;
-    });
+    await feedbackRepo.insert(feedback);
+    const admins = await usersRepo.findManyBy({ role: 'admin' }, { limit: 100 });
+    const notificationText = type === 'user'
+      ? `New user report: ${reportedUser}`
+      : `New ${type} report: ${title}`;
+    await Promise.all(admins.map((admin) => createNotification(
+      null,
+      admin.id || admin._id,
+      'feedback',
+      'New feedback report',
+      notificationText,
+      { feedbackId: feedback.id }
+    )));
 
     res.json({ 
       msg: 'Feedback submitted successfully',
@@ -148,15 +135,19 @@ export const getFeedback = async (req, res) => {
 
     const { status, type } = req.query;
 
-    let feedback = await feedbackRepo.getAll();
-
-    if (status && status !== 'all') {
-      feedback = feedback.filter(f => f.status === status);
-    }
-
-    if (type && type !== 'all') {
-      feedback = feedback.filter(f => f.type === type);
-    }
+    const { page, limit } = parsePagination(req.query, {
+      defaultLimit: 50,
+      maxLimit: 200
+    });
+    const query = {
+      ...(status && status !== 'all' ? { status } : {}),
+      ...(type && type !== 'all' ? { type } : {})
+    };
+    let feedback = await feedbackRepo.findManyBy(query, {
+      sort: { createdAt: -1 },
+      skip: (page - 1) * limit,
+      limit
+    });
     feedback = feedback.map((entry) =>
       entry?.type === 'character'
         ? {
@@ -165,9 +156,6 @@ export const getFeedback = async (req, res) => {
           }
         : entry
     );
-
-    // Sort by newest first
-    feedback.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     res.json(feedback);
   } catch (err) {
@@ -191,26 +179,24 @@ export const updateFeedbackStatus = async (req, res) => {
     }
 
     let updatedFeedback = null;
-    await withDb(async (db) => {
-      const actorUser = await usersRepo.findOne(
-        (entry) => (entry.id || entry._id) === req.user.id,
-        { db }
-      );
-      updatedFeedback = await feedbackRepo.findById(id, { db });
+    await withRepositoryTransaction(async (context) => {
+      const actorUser = await usersRepo.findById(req.user.id, context);
+      const current = await feedbackRepo.findById(id, context);
+      updatedFeedback = current;
       if (!updatedFeedback) {
-        return db;
+        return;
       }
 
       const previousStatus = updatedFeedback.status;
-      updatedFeedback.status = status;
-      updatedFeedback.adminNotes = adminNotes || updatedFeedback.adminNotes;
-
-      if (status === 'resolved') {
-        updatedFeedback.resolvedAt = new Date().toISOString();
-      }
+      updatedFeedback = await feedbackRepo.updateById(id, (stored) => {
+        stored.status = status;
+        stored.adminNotes = adminNotes || stored.adminNotes;
+        if (status === 'resolved') stored.resolvedAt = new Date().toISOString();
+        return stored;
+      }, context);
 
       await logModerationAction({
-        db,
+        db: context,
         actor: actorUser || req.user,
         action: 'feedback.status_update',
         targetType: 'feedback',
@@ -222,7 +208,6 @@ export const updateFeedbackStatus = async (req, res) => {
         }
       });
 
-      return db;
     });
 
     if (!updatedFeedback) {
@@ -244,20 +229,17 @@ export const deleteFeedback = async (req, res) => {
 
     const { id } = req.params;
     let deleted = false;
-    await withDb(async (db) => {
-      const actorUser = await usersRepo.findOne(
-        (entry) => (entry.id || entry._id) === req.user.id,
-        { db }
-      );
-      const existing = await feedbackRepo.findById(id, { db });
+    await withRepositoryTransaction(async (context) => {
+      const actorUser = await usersRepo.findById(req.user.id, context);
+      const existing = await feedbackRepo.findById(id, context);
       if (!existing) {
-        return db;
+        return;
       }
-      const removed = await feedbackRepo.removeById(id, { db });
+      const removed = await feedbackRepo.removeById(id, context);
       deleted = Boolean(removed);
       if (deleted) {
         await logModerationAction({
-          db,
+          db: context,
           actor: actorUser || req.user,
           action: 'feedback.delete',
           targetType: 'feedback',
@@ -268,7 +250,6 @@ export const deleteFeedback = async (req, res) => {
           }
         });
       }
-      return db;
     });
 
     if (!deleted) {
@@ -324,20 +305,17 @@ export const approveCharacterSuggestion = async (req, res) => {
     let characterCreated = false;
     let newCharacter = null;
 
-    await withDb(async (db) => {
-      const actorUser = await usersRepo.findOne(
-        (entry) => (entry.id || entry._id) === req.user.id,
-        { db }
-      );
+    await withRepositoryTransaction(async (context) => {
+      const actorUser = await usersRepo.findById(req.user.id, context);
       const actorName = actorUser?.username || req.user.username || 'moderator';
-      const feedback = await feedbackRepo.findById(id, { db });
+      const feedback = await feedbackRepo.findById(id, context);
 
       if (
         !feedback ||
         feedback.type !== 'character' ||
         feedback.status === 'approved'
       ) {
-        return db;
+        return;
       }
 
       // Create new character
@@ -359,15 +337,18 @@ export const approveCharacterSuggestion = async (req, res) => {
         approvedBy: actorName
       };
 
-      await charactersRepo.insert(character, { db });
+      await charactersRepo.insert(character, context);
       newCharacter = character;
 
       // Update feedback status
-      feedback.status = 'approved';
-      feedback.resolvedAt = new Date().toISOString();
-      feedback.adminNotes = `Character approved and added to database by ${actorName}`;
+      await feedbackRepo.updateById(id, (stored) => {
+        stored.status = 'approved';
+        stored.resolvedAt = new Date().toISOString();
+        stored.adminNotes = `Character approved and added to database by ${actorName}`;
+        return stored;
+      }, context);
       await logModerationAction({
-        db,
+        db: context,
         actor: actorUser || req.user,
         action: 'feedback.character_approved',
         targetType: 'feedback',
@@ -379,7 +360,6 @@ export const approveCharacterSuggestion = async (req, res) => {
       });
 
       characterCreated = true;
-      return db;
     });
 
     if (!characterCreated) {

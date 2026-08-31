@@ -34,8 +34,9 @@ export const sendPushToUser = async (userId, payload) => {
     return;
   }
 
-  const subscriptions = await pushSubscriptionsRepo.filter(
-    (entry) => entry.userId === userId && entry.subscription
+  const subscriptions = await pushSubscriptionsRepo.findManyBy(
+    { userId, subscription: { $exists: true } },
+    { limit: 100 }
   );
   if (!subscriptions.length) {
     return;
@@ -59,12 +60,9 @@ export const sendPushToUser = async (userId, payload) => {
   );
 
   if (invalidEndpoints.length > 0) {
-    await pushSubscriptionsRepo.updateAll((entries) =>
-      entries.filter(
-        (entry) =>
-          !invalidEndpoints.includes(entry.subscription?.endpoint)
-      )
-    );
+    await pushSubscriptionsRepo.removeManyBy({
+      'subscription.endpoint': { $in: invalidEndpoints }
+    });
   }
 };
 

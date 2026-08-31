@@ -38,4 +38,50 @@ export const assertProductionRuntimeConfiguration = () => {
       'PRIMARY_ADMIN_EMAIL must be a valid email address in production.'
     );
   }
+
+  if (!readValue('UPLOADS_DIR')) {
+    throw new Error('UPLOADS_DIR must point to persistent storage in production.');
+  }
+
+  const tronRole = readValue('TRON_REALTIME_ROLE') || 'authority';
+  if (!['authority', 'disabled'].includes(tronRole)) {
+    throw new Error('TRON_REALTIME_ROLE must be authority or disabled.');
+  }
+
+  const workerCount = Number.parseInt(
+    readValue('WEB_CONCURRENCY') || readValue('NODE_APP_INSTANCE_COUNT') || '1',
+    10
+  );
+  if (tronRole === 'authority' && Number.isFinite(workerCount) && workerCount > 1) {
+    throw new Error(
+      'TRON rooms require one authoritative realtime process. Run the TRON authority with WEB_CONCURRENCY=1 and set TRON_REALTIME_ROLE=disabled on additional API processes.'
+    );
+  }
+
+  const backgroundJobsRole = readValue('BACKGROUND_JOBS_ROLE') || 'authority';
+  if (!['authority', 'disabled'].includes(backgroundJobsRole)) {
+    throw new Error('BACKGROUND_JOBS_ROLE must be authority or disabled.');
+  }
+  if (
+    backgroundJobsRole === 'authority' &&
+    Number.isFinite(workerCount) &&
+    workerCount > 1
+  ) {
+    throw new Error(
+      'Scheduled jobs require one authority process. Run it with WEB_CONCURRENCY=1 and set BACKGROUND_JOBS_ROLE=disabled on additional API processes.'
+    );
+  }
+
+  const multiInstance = readValue('MULTI_INSTANCE').toLowerCase() === 'true';
+  if ((multiInstance || workerCount > 1) && !readValue('REDIS_URL')) {
+    throw new Error(
+      'REDIS_URL is required when MULTI_INSTANCE=true or more than one Node worker is configured.'
+    );
+  }
 };
+
+export const isTronRealtimeAuthority = () =>
+  (readValue('TRON_REALTIME_ROLE') || 'authority') === 'authority';
+
+export const isBackgroundJobsAuthority = () =>
+  (readValue('BACKGROUND_JOBS_ROLE') || 'authority') === 'authority';

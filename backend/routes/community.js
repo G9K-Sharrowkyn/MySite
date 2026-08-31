@@ -1,22 +1,25 @@
 ﻿import express from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  communityCharacterRankingsRepo,
+  communityDiscussionsRepo,
+  communityHotDebatesRepo,
+  communityPollsRepo,
+  usersRepo
+} from '../repositories/index.js';
 import auth from '../middleware/auth.js';
 
 const router = express.Router();
 
 const resolveUserId = (user) => user?.id || user?._id;
 
-const findUserById = (db, userId) =>
-  (db.users || []).find((entry) => resolveUserId(entry) === userId);
-
 // GET /api/community/discussions
 router.get('/discussions', async (_req, res) => {
   try {
-    const db = await readDb();
-    const discussions = (db.communityDiscussions || [])
-      .slice()
-      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    const discussions = await communityDiscussionsRepo.findManyBy(
+      {},
+      { sort: { createdAt: -1 }, limit: 100 }
+    );
     res.json(discussions);
   } catch (error) {
     console.error('Error fetching discussions:', error);
@@ -34,10 +37,9 @@ router.post('/discussions', auth, async (req, res) => {
     }
 
     let created;
-    await withDb((db) => {
-      const user = findUserById(db, userId);
-      const now = new Date().toISOString();
-      created = {
+    const user = await usersRepo.findById(userId);
+    const now = new Date().toISOString();
+    created = {
         id: uuidv4(),
         title: title.trim(),
         content: content.trim(),
@@ -61,13 +63,7 @@ router.post('/discussions', auth, async (req, res) => {
               isModerator: false
             }
       };
-
-      db.communityDiscussions = Array.isArray(db.communityDiscussions)
-        ? db.communityDiscussions
-        : [];
-      db.communityDiscussions.unshift(created);
-      return db;
-    });
+    await communityDiscussionsRepo.insert(created);
 
     res.status(201).json(created);
   } catch (error) {
@@ -79,8 +75,7 @@ router.post('/discussions', auth, async (req, res) => {
 // GET /api/community/hot-debates
 router.get('/hot-debates', async (_req, res) => {
   try {
-    const db = await readDb();
-    res.json(db.communityHotDebates || []);
+    res.json(await communityHotDebatesRepo.findManyBy({}, { limit: 100 }));
   } catch (error) {
     console.error('Error fetching hot debates:', error);
     res.status(500).json({ message: 'Server error' });
@@ -90,8 +85,7 @@ router.get('/hot-debates', async (_req, res) => {
 // GET /api/community/character-rankings
 router.get('/character-rankings', async (_req, res) => {
   try {
-    const db = await readDb();
-    res.json(db.communityCharacterRankings || []);
+    res.json(await communityCharacterRankingsRepo.findManyBy({}, { limit: 100 }));
   } catch (error) {
     console.error('Error fetching character rankings:', error);
     res.status(500).json({ message: 'Server error' });
@@ -101,8 +95,7 @@ router.get('/character-rankings', async (_req, res) => {
 // GET /api/community/polls
 router.get('/polls', async (_req, res) => {
   try {
-    const db = await readDb();
-    res.json(db.communityPolls || []);
+    res.json(await communityPollsRepo.findManyBy({}, { limit: 100 }));
   } catch (error) {
     console.error('Error fetching polls:', error);
     res.status(500).json({ message: 'Server error' });

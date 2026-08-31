@@ -7,7 +7,7 @@ dotenv.config({ path: path.join(backendRoot, '.env') });
 dotenv.config({ path: path.join(backendRoot, '.env.production') });
 
 const port = Number.parseInt(process.env.PORT || '5000', 10);
-const healthUrl = `http://127.0.0.1:${port}/healthz`;
+const healthUrl = `http://127.0.0.1:${port}/readyz`;
 const timeoutMs = Number.parseInt(process.env.DEPLOY_HEALTH_TIMEOUT_MS || '30000', 10);
 const deadline = Date.now() + timeoutMs;
 let lastError;

@@ -1,7 +1,15 @@
 ﻿import express from 'express';
 import bcrypt from 'bcryptjs';
 import auth from '../middleware/auth.js';
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  commentsRepo,
+  getRepository,
+  moderatorActionLogsRepo,
+  postsRepo,
+  tournamentsRepo,
+  usersRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { clearAuthCookie } from '../utils/authCookie.js';
 import { getLegalConfig } from '../config/legalConfig.js';
 import { removeManagedUploads } from '../utils/uploadFiles.js';
@@ -9,9 +17,6 @@ import { removeManagedUploads } from '../utils/uploadFiles.js';
 const router = express.Router();
 
 const resolveUserId = (user) => user?.id || user?._id;
-
-const findUserById = (db, userId) =>
-  (db.users || []).find((entry) => resolveUserId(entry) === userId);
 
 const sanitizeAccountForExport = (user) => {
   const copy = structuredClone(user);
@@ -174,6 +179,69 @@ const recordReferencesUser = (record, userId, username = '', email = '') => {
     record.user?._id === userId ||
     record.data?.userId === userId ||
     record.metadata?.userId === userId
+  );
+};
+
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildUserReferenceQuery = (userId, username = '', email = '') => {
+  const clauses = [
+    ...[
+      'userId',
+      'authorId',
+      'senderId',
+      'recipientId',
+      'createdBy',
+      'creatorId',
+      'submittedById',
+      'fromUserId',
+      'toUserId',
+      'blockerId',
+      'blockedId',
+      'userId1',
+      'userId2',
+      'actorId',
+      'targetUserId',
+      'participants',
+      'participants.id',
+      'participants._id',
+      'participants.userId',
+      'members',
+      'members.id',
+      'members._id',
+      'members.userId',
+      'team1.userId',
+      'team2.userId',
+      'owner.userId',
+      'user.id',
+      'user._id',
+      'data.userId',
+      'metadata.userId'
+    ].map((path) => ({ [path]: userId }))
+  ];
+  if (username) {
+    const usernameRegex = new RegExp(`^${escapeRegex(username)}$`, 'i');
+    clauses.push(
+      { submittedBy: usernameRegex },
+      { authorUsername: usernameRegex },
+      { username: usernameRegex }
+    );
+  }
+  if (email) {
+    const emailRegex = new RegExp(`^${escapeRegex(email)}$`, 'i');
+    clauses.push({ email: emailRegex }, { userEmail: emailRegex });
+  }
+  return { $or: clauses };
+};
+
+const updateRecord = (repo, record, updater, context) => {
+  const id = record?.id ?? record?._id;
+  if (id === undefined || id === null) return Promise.resolve(undefined);
+  return repo.updateById(
+    id,
+    updater,
+    record?.id !== undefined ? 'id' : '_id',
+    context
   );
 };
 
@@ -416,8 +484,8 @@ router.post('/cookie-consent', auth, async (req, res) => {
   try {
     const { analytics, marketing, functional } = req.body;
 
-    await withDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -433,7 +501,7 @@ router.post('/cookie-consent', auth, async (req, res) => {
         functional: functional !== false
       };
       user.updatedAt = new Date().toISOString();
-      return db;
+      await usersRepo.updateById(user.id, () => user, context);
     });
 
     res.json({ msg: 'Cookie consent updated successfully' });
@@ -453,27 +521,26 @@ router.post('/cookie-consent', auth, async (req, res) => {
  */
 router.post('/export-data', auth, async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.user.id);
+    const user = await usersRepo.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
 
     const userData = {
       account: sanitizeAccountForExport(user),
-      data: Object.fromEntries(
-        USER_EXPORT_COLLECTIONS.map((collection) => [
+      data: Object.fromEntries(await Promise.all(
+        USER_EXPORT_COLLECTIONS.map(async (collection) => [
           collection,
-          (db[collection] || []).filter((record) =>
-            recordReferencesUser(
-              record,
-              req.user.id,
-              user.username,
-              user.email
-            )
-          )
+          (await getRepository(collection).findManyBy(
+            buildUserReferenceQuery(req.user.id, user.username, user.email)
+          )).filter((record) => recordReferencesUser(
+            record,
+            req.user.id,
+            user.username,
+            user.email
+          ))
         ])
-      ),
+      )),
       exportDate: new Date().toISOString(),
       format: 'JSON'
     };
@@ -504,8 +571,8 @@ router.delete('/delete-account', auth, async (req, res) => {
     const deletionDate = new Date().toISOString();
     let profileUploads = [];
 
-    await withDb(async (db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -527,31 +594,56 @@ router.delete('/delete-account', auth, async (req, res) => {
         user.profile?.avatar,
         user.profile?.backgroundImage
       ];
-      const authoredPostIds = new Set(
-        (db.posts || [])
-          .filter((post) => post.authorId === userId)
-          .map((post) => post.id || post._id)
+      const authoredPosts = await postsRepo.findManyBy(
+        { authorId: userId },
+        { projection: { id: 1 } },
+        context
       );
+      const authoredPostIds = authoredPosts
+        .map((post) => post.id ?? post._id)
+        .filter((id) => id !== undefined && id !== null);
 
-      db.users = (db.users || []).filter(
-        (entry) => resolveUserId(entry) !== userId
-      );
-      db.posts = (db.posts || [])
-        .filter((post) => post.authorId !== userId)
-        .map((post) => removeUserFromPostInteractions(post, userId));
-      db.comments = (db.comments || [])
-        .filter(
-          (comment) =>
-            comment.authorId !== userId &&
-            !authoredPostIds.has(comment.postId)
-        )
-        .map((comment) => ({
-          ...comment,
-          likedBy: (comment.likedBy || []).filter((id) => id !== userId),
-          reactions: (comment.reactions || []).filter(
+      const interactedPosts = await postsRepo.findManyBy({
+        $or: [
+          { likes: userId },
+          { 'reactions.userId': userId },
+          { 'poll.votes.voters.userId': userId },
+          { 'fight.votes.voters.userId': userId }
+        ]
+      }, {}, context);
+      for (const post of interactedPosts) {
+        if (post.authorId !== userId) {
+          await updateRecord(
+            postsRepo,
+            post,
+            (draft) => removeUserFromPostInteractions(draft, userId),
+            context
+          );
+        }
+      }
+
+      await commentsRepo.removeManyBy({
+        $or: [
+          { authorId: userId },
+          ...(authoredPostIds.length ? [{ postId: { $in: authoredPostIds } }] : [])
+        ]
+      }, context);
+      const interactedComments = await commentsRepo.findManyBy({
+        $or: [
+          { likedBy: userId },
+          { 'reactions.userId': userId }
+        ]
+      }, {}, context);
+      for (const comment of interactedComments) {
+        await updateRecord(commentsRepo, comment, (draft) => ({
+          ...draft,
+          likedBy: (draft.likedBy || []).filter((id) => id !== userId),
+          reactions: (draft.reactions || []).filter(
             (reaction) => reaction.userId !== userId
           )
-        }));
+        }), context);
+      }
+      await postsRepo.removeManyBy({ authorId: userId }, context);
 
       const removeReferencedRecords = [
         'notifications',
@@ -579,32 +671,54 @@ router.delete('/delete-account', auth, async (req, res) => {
         'emailVerificationTokens',
         'authChallenges'
       ];
-      removeReferencedRecords.forEach((collection) => {
-        db[collection] = (db[collection] || []).filter(
-          (record) =>
-            !recordReferencesUser(record, userId, user.username, user.email)
-        );
-      });
+      const referenceQuery = buildUserReferenceQuery(
+        userId,
+        user.username,
+        user.email
+      );
+      for (const collection of removeReferencedRecords) {
+        await getRepository(collection).removeManyBy(referenceQuery, context);
+      }
 
-      db.tournaments = (db.tournaments || [])
-        .filter(
-          (tournament) =>
-            tournament.createdBy !== userId && tournament.creatorId !== userId
-        )
-        .map((tournament) => removeUserFromTournament(tournament, userId));
-      db.moderatorActionLogs = (db.moderatorActionLogs || []).map((entry) => {
-        if (entry.actorId !== userId && entry.targetUserId !== userId) return entry;
-        return {
-          ...entry,
-          actorId: entry.actorId === userId ? null : entry.actorId,
+      await tournamentsRepo.removeManyBy({
+        $or: [{ createdBy: userId }, { creatorId: userId }]
+      }, context);
+      const affectedTournaments = await tournamentsRepo.findManyBy({
+        $or: [
+          { participants: userId },
+          { 'participants.id': userId },
+          { 'participants._id': userId },
+          { 'participants.userId': userId },
+          { 'brackets.matches.player1.userId': userId },
+          { 'brackets.matches.player2.userId': userId },
+          { 'brackets.matches.winner.userId': userId },
+          { 'winner.userId': userId }
+        ]
+      }, {}, context);
+      for (const tournament of affectedTournaments) {
+        await updateRecord(
+          tournamentsRepo,
+          tournament,
+          (draft) => removeUserFromTournament(draft, userId),
+          context
+        );
+      }
+
+      const moderationEntries = await moderatorActionLogsRepo.findManyBy({
+        $or: [{ actorId: userId }, { targetUserId: userId }]
+      }, {}, context);
+      for (const entry of moderationEntries) {
+        await updateRecord(moderatorActionLogsRepo, entry, (draft) => ({
+          ...draft,
+          actorId: draft.actorId === userId ? null : draft.actorId,
           actorUsername:
-            entry.actorId === userId ? 'Deleted user' : entry.actorUsername,
+            draft.actorId === userId ? 'Deleted user' : draft.actorUsername,
           targetUserId:
-            entry.targetUserId === userId ? null : entry.targetUserId,
+            draft.targetUserId === userId ? null : draft.targetUserId,
           personalDataErasedAt: deletionDate
-        };
-      });
-      return db;
+        }), context);
+      }
+      await usersRepo.removeById(userId, context);
     });
 
     await removeManagedUploads(profileUploads).catch((error) => {
@@ -634,8 +748,7 @@ router.delete('/delete-account', auth, async (req, res) => {
  */
 router.get('/settings', auth, async (req, res) => {
   try {
-    const db = await readDb();
-    const user = findUserById(db, req.user.id);
+    const user = await usersRepo.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
@@ -662,8 +775,8 @@ router.put('/settings', auth, async (req, res) => {
   try {
     const { dataProcessing, marketing, profiling } = req.body;
 
-    await withDb((db) => {
-      const user = findUserById(db, req.user.id);
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(req.user.id, context);
       if (!user) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
@@ -678,7 +791,7 @@ router.put('/settings', auth, async (req, res) => {
         updatedAt: new Date().toISOString()
       };
       user.updatedAt = new Date().toISOString();
-      return db;
+      await usersRepo.updateById(user.id, () => user, context);
     });
 
     res.json({ msg: 'Privacy settings updated successfully' });

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { getOptimizedImageProps } from '../utils/placeholderImage';
 import './CharacterSelector.css';
 
 const getApiBaseUrl = () => {
@@ -122,6 +123,20 @@ const CharacterSelector = ({ characters: externalCharacters = null, selectedChar
     onSelect(character);
   };
 
+  const handleImageError = (event, character) => {
+    const image = event.currentTarget;
+    if (image.dataset.fullFallbackApplied !== '1' && character?.image) {
+      image.dataset.fullFallbackApplied = '1';
+      image.src = character.image;
+      image.removeAttribute('srcset');
+      image.removeAttribute('sizes');
+      return;
+    }
+
+    image.onerror = null;
+    image.src = '/placeholder-character.png';
+  };
+
   if (loading) return <div className="character-selector-loading">Loading characters...</div>;
 
   return (
@@ -144,7 +159,21 @@ const CharacterSelector = ({ characters: externalCharacters = null, selectedChar
               onClick={() => handleSelect(character)}
               title={character.name}
             >
-              <span className="character-name">{character.name}</span>
+              <img
+                {...getOptimizedImageProps(
+                  character.image || '/placeholder-character.png',
+                  { size: 44 }
+                )}
+                className="character-suggestion-image"
+                alt={`${character.name} portrait`}
+                onError={(event) => handleImageError(event, character)}
+              />
+              <span className="character-suggestion-copy">
+                <span className="character-name">{character.name}</span>
+                {character.universe && (
+                  <span className="character-universe">{character.universe}</span>
+                )}
+              </span>
             </div>
           ))}
         </div>

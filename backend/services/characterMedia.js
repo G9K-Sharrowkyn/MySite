@@ -11,18 +11,14 @@ import {
   fetchTrustedImageBuffer,
   sanitizeImageForStorage
 } from '../utils/imageSecurity.js';
+import { getUploadDirectory } from '../utils/uploadFiles.js';
 
 const COLLECTION = 'characterMedia';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const LOCAL_PUBLIC_CHARACTERS_DIR = path.join(REPO_ROOT, 'public', 'characters');
-const LOCAL_UPLOADED_CHARACTERS_DIR = path.join(
-  REPO_ROOT,
-  'backend',
-  'uploads',
-  'characters'
-);
+const LOCAL_UPLOADED_CHARACTERS_DIR = getUploadDirectory('characters');
 
 const sanitizeCharacterId = (value) => String(value || '').trim();
 

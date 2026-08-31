@@ -107,6 +107,11 @@ function trackFilePersistence(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   base: '/swoop-racing/',
+  define: {
+    'import.meta.env.VITE_API_URL': JSON.stringify(
+      process.env.VITE_API_URL || process.env.REACT_APP_API_URL || '',
+    ),
+  },
   build: {
     outDir: path.resolve(import.meta.dirname, '../public/swoop-racing'),
     emptyOutDir: true,

@@ -1,10 +1,65 @@
 import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
-import * as BABYLON from '@babylonjs/core';
+import { Engine } from '@babylonjs/core/Engines/engine.js';
+import { FollowCamera } from '@babylonjs/core/Cameras/followCamera.js';
+import { GlowLayer } from '@babylonjs/core/Layers/glowLayer.js';
+import { HemisphericLight } from '@babylonjs/core/Lights/hemisphericLight.js';
+import { PointLight } from '@babylonjs/core/Lights/pointLight.js';
+import { Material } from '@babylonjs/core/Materials/material.js';
+import { PBRMaterial } from '@babylonjs/core/Materials/PBR/pbrMaterial.js';
+import { StandardMaterial } from '@babylonjs/core/Materials/standardMaterial.js';
+import { DynamicTexture } from '@babylonjs/core/Materials/Textures/dynamicTexture.js';
+import { Color3, Color4 } from '@babylonjs/core/Maths/math.color.js';
+import { Scalar } from '@babylonjs/core/Maths/math.scalar.js';
+import { Vector2, Vector3 } from '@babylonjs/core/Maths/math.vector.js';
+import { CreateBox } from '@babylonjs/core/Meshes/Builders/boxBuilder.js';
+import { CreateCapsule } from '@babylonjs/core/Meshes/Builders/capsuleBuilder.js';
+import { CreateCylinder } from '@babylonjs/core/Meshes/Builders/cylinderBuilder.js';
+import { CreateGround } from '@babylonjs/core/Meshes/Builders/groundBuilder.js';
+import { CreateLineSystem } from '@babylonjs/core/Meshes/Builders/linesBuilder.js';
+import { CreateRibbon } from '@babylonjs/core/Meshes/Builders/ribbonBuilder.js';
+import { CreateSphere } from '@babylonjs/core/Meshes/Builders/sphereBuilder.js';
+import { CreateTorus } from '@babylonjs/core/Meshes/Builders/torusBuilder.js';
+import { Mesh } from '@babylonjs/core/Meshes/mesh.js';
+import { TransformNode } from '@babylonjs/core/Meshes/transformNode.js';
+import { ParticleSystem } from '@babylonjs/core/Particles/particleSystem.js';
+import { Scene } from '@babylonjs/core/scene.js';
 import { AuthContext } from '../auth/AuthContext';
 import { useLanguage } from '../i18n/LanguageContext';
+import { apiFetch } from '../utils/apiFetch';
 import { normalizeTronLanguage, tronMonthLabel, tronPhaseLabel, tronRoomError, tronText } from './tronI18n';
 import './TronArenaPage.css';
+
+const BABYLON = {
+  Color3,
+  Color4,
+  DynamicTexture,
+  Engine,
+  FollowCamera,
+  GlowLayer,
+  HemisphericLight,
+  Material,
+  Mesh,
+  MeshBuilder: {
+    CreateBox,
+    CreateCapsule,
+    CreateCylinder,
+    CreateGround,
+    CreateLineSystem,
+    CreateRibbon,
+    CreateSphere,
+    CreateTorus
+  },
+  ParticleSystem,
+  PBRMaterial,
+  PointLight,
+  Scalar,
+  Scene,
+  StandardMaterial,
+  TransformNode,
+  Vector2,
+  Vector3
+};
 
 const DEFAULT_ROOM_ID = 'public';
 const FALLBACK_ARENA_SIZE = 72;
@@ -57,7 +112,11 @@ const sanitizeRoomId = (value) => {
 };
 
 const resolveTronSocketUrl = () => {
-  const configuredUrl = String(process.env.REACT_APP_SOCKET_URL || '').trim();
+  const configuredUrl = String(
+    process.env.REACT_APP_TRON_SOCKET_URL ||
+    process.env.REACT_APP_SOCKET_URL ||
+    ''
+  ).trim();
   if (typeof window === 'undefined') return configuredUrl || 'http://localhost:5000';
   const { hostname, port, protocol, origin } = window.location;
   if (port === '3000') return `${protocol}//${hostname}:5000`;
@@ -938,7 +997,7 @@ const TronArenaPage = () => {
   useEffect(() => {
     const controller = new AbortController();
     setLeaderboardLoading(true);
-    fetch(`/api/tron/leaderboard?month=${encodeURIComponent(leaderboardMonth)}`, {
+    apiFetch(`/api/tron/leaderboard?month=${encodeURIComponent(leaderboardMonth)}`, {
       signal: controller.signal,
       credentials: 'include'
     })

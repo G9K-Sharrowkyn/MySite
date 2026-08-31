@@ -98,6 +98,18 @@ export const updateCollection = async (...args) => {
 export const getDbPath = () =>
   (isMongoMode() ? 'mongo' : getLocalDbPath());
 
+export const checkDatabaseHealth = async () => {
+  if (isMongoMode()) {
+    const { getMongoDb } = await loadMongoApi();
+    const db = await getMongoDb();
+    await db.command({ ping: 1 });
+    return { mode: 'mongo', ok: true };
+  }
+
+  await readLocalDb();
+  return { mode: 'local', ok: true };
+};
+
 export const closeDb = async () => {
   if (!isMongoMode()) return;
   const { closeMongo } = await loadMongoApi();

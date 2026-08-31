@@ -3,9 +3,8 @@ import {
   blocksRepo,
   friendRequestsRepo,
   friendshipsRepo,
-  readDb,
   usersRepo,
-  withDb
+  withRepositoryTransaction
 } from '../repositories/index.js';
 import { getUserDisplayName } from '../utils/userDisplayName.js';
 
@@ -22,16 +21,15 @@ const normalizeUserSummary = (user) => ({
 // GET /api/blocks
 export const listBlockedUsers = async (req, res) => {
   try {
-    const db = await readDb();
-    const blocks = await blocksRepo.getAll({ db });
+    const blocks = await blocksRepo.findManyBy({ blockerId: req.user.id });
     const blockedIds = blocks
       .filter((entry) => entry.blockerId === req.user.id)
       .map((entry) => entry.blockedId);
 
-    const users = await usersRepo.getAll({ db });
-    const blocked = users
-      .filter((u) => blockedIds.includes(resolveUserId(u)))
-      .map(normalizeUserSummary);
+    const users = blockedIds.length
+      ? await usersRepo.findManyBy({ id: { $in: blockedIds } }, { limit: blockedIds.length })
+      : [];
+    const blocked = users.map(normalizeUserSummary);
     res.json({ blocked });
   } catch (error) {
     console.error('Error listing blocks:', error?.message || error);
@@ -48,45 +46,38 @@ export const blockUser = async (req, res) => {
     }
     const now = new Date().toISOString();
 
-    await withDb(async (db) => {
-      const users = await usersRepo.getAll({ db });
-      const target = users.find((u) => resolveUserId(u) === targetId);
+    await withRepositoryTransaction(async (context) => {
+      const target = await usersRepo.findById(targetId, 'id', context);
       if (!target) {
         const error = new Error('User not found');
         error.code = 'USER_NOT_FOUND';
         throw error;
       }
 
-      const blocks = await blocksRepo.getAll({ db });
-      const exists = blocks.find((b) => b.blockerId === req.user.id && b.blockedId === targetId);
-      if (!exists) {
-        await blocksRepo.insert(
-          { id: uuidv4(), blockerId: req.user.id, blockedId: targetId, createdAt: now },
-          { db }
-        );
-      }
+      await blocksRepo.insertIfAbsent(
+        { blockerId: req.user.id, blockedId: targetId },
+        {
+          id: uuidv4(),
+          blockKey: `${req.user.id}:${targetId}`,
+          blockerId: req.user.id,
+          blockedId: targetId,
+          createdAt: now
+        },
+        context
+      );
 
       // Remove friendship
       const [userId1, userId2] = sortPair(req.user.id, targetId);
-      await friendshipsRepo.updateAll((friendships) => {
-        return friendships.filter((entry) => !(entry.userId1 === userId1 && entry.userId2 === userId2));
-      }, { db });
+      await friendshipsRepo.removeManyBy({ userId1, userId2 }, context);
 
       // Cancel any pending friend requests both directions
-      await friendRequestsRepo.updateAll((requests) => {
-        return requests.map((entry) => {
-          if (
-            entry.status === 'pending' &&
-            ((entry.fromUserId === req.user.id && entry.toUserId === targetId) ||
-              (entry.fromUserId === targetId && entry.toUserId === req.user.id))
-          ) {
-            return { ...entry, status: 'cancelled', respondedAt: now };
-          }
-          return entry;
-        });
-      }, { db });
-
-      return db;
+      await friendRequestsRepo.patchManyBy({
+        status: 'pending',
+        $or: [
+          { fromUserId: req.user.id, toUserId: targetId },
+          { fromUserId: targetId, toUserId: req.user.id }
+        ]
+      }, { status: 'cancelled', respondedAt: now }, context);
     });
 
     res.json({ msg: 'User blocked' });
@@ -103,12 +94,7 @@ export const unblockUser = async (req, res) => {
     const targetId = String(req.params.userId || '').trim();
     if (!targetId) return res.status(400).json({ msg: 'Invalid user' });
 
-    await withDb(async (db) => {
-      await blocksRepo.updateAll((blocks) => {
-        return blocks.filter((entry) => !(entry.blockerId === req.user.id && entry.blockedId === targetId));
-      }, { db });
-      return db;
-    });
+    await blocksRepo.removeManyBy({ blockerId: req.user.id, blockedId: targetId });
 
     res.json({ msg: 'User unblocked' });
   } catch (error) {
@@ -118,8 +104,12 @@ export const unblockUser = async (req, res) => {
 };
 
 export const isBlocked = async (db, a, b) => {
-  const blocks = await blocksRepo.getAll({ db });
-  return blocks.some((entry) => entry.blockerId === a && entry.blockedId === b);
+  const context = db?.mongoDb || db?.db ? db : db ? { db } : undefined;
+  return Boolean(await blocksRepo.findOneBy(
+    { blockerId: a, blockedId: b },
+    {},
+    context
+  ));
 };
 
 // GET /api/blocks/status/:userId
@@ -127,11 +117,11 @@ export const getBlockStatus = async (req, res) => {
   try {
     const targetId = String(req.params.userId || '').trim();
     if (!targetId) return res.status(400).json({ msg: 'User id required' });
-    const db = await readDb();
-    const blocks = await blocksRepo.getAll({ db });
-    const blocked = blocks.some((b) => b.blockerId === req.user.id && b.blockedId === targetId);
-    const blockedBy = blocks.some((b) => b.blockerId === targetId && b.blockedId === req.user.id);
-    res.json({ blocked, blockedBy });
+    const [blocked, blockedBy] = await Promise.all([
+      blocksRepo.findOneBy({ blockerId: req.user.id, blockedId: targetId }),
+      blocksRepo.findOneBy({ blockerId: targetId, blockedId: req.user.id })
+    ]);
+    res.json({ blocked: Boolean(blocked), blockedBy: Boolean(blockedBy) });
   } catch (error) {
     console.error('Error getting block status:', error?.message || error);
     res.status(500).json({ msg: 'Server error' });

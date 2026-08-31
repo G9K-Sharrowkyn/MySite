@@ -1,5 +1,14 @@
-import { readDb, withDb } from '../repositories/index.js';
+import {
+  commentsRepo,
+  fightsRepo,
+  messagesRepo,
+  postsRepo,
+  usersRepo,
+  votesRepo,
+  withRepositoryTransaction
+} from '../repositories/index.js';
 import { getRankInfo, syncRankFromPoints } from '../utils/rankSystem.js';
+import { parseLimit } from '../utils/pagination.js';
 
 // Achievement definitions
 const ACHIEVEMENTS = {
@@ -163,8 +172,7 @@ const ACHIEVEMENTS = {
 };
 
 // Helper function to check and award achievements
-function checkAndAwardAchievements(db, userId, achievementType, currentCount) {
-  const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
+function checkAndAwardAchievements(user, achievementType, currentCount) {
   if (!user) return [];
   
   if (!user.achievements) {
@@ -210,8 +218,7 @@ function checkAndAwardAchievements(db, userId, achievementType, currentCount) {
 }
 
 // Helper function to check streak achievements
-function checkStreakAchievements(db, userId, currentStreak) {
-  const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
+function checkStreakAchievements(user, currentStreak) {
   if (!user) return [];
   
   if (!user.achievements) {
@@ -259,33 +266,36 @@ function checkStreakAchievements(db, userId, currentStreak) {
 // @route   GET /api/stats/site
 // @access  Public
 export const getSiteStats = async (req, res) => {
-  const db = await readDb();
-  const totalUsers = (db.users || []).length;
-  const totalFights = (db.fights || []).length;
-  const activeFights = (db.fights || []).filter((f) => f.status === 'active').length;
-  const totalVotes = (db.votes || []).length;
-  const totalComments = (db.comments || []).length;
-  const totalMessages = (db.messages || []).length;
-
-  // Calculate most popular categories
-  const categoryStats = {};
-  (db.fights || []).forEach((fight) => {
-    if (fight.category) {
-      categoryStats[fight.category] = (categoryStats[fight.category] || 0) + 1;
-    }
-  });
+  const [
+    totalUsers,
+    totalFights,
+    activeFights,
+    totalVotes,
+    totalComments,
+    totalMessages,
+    categoryStats,
+    commentActivity,
+    voteActivity
+  ] = await Promise.all([
+    usersRepo.countBy({}),
+    fightsRepo.countBy({}),
+    fightsRepo.countBy({ status: 'active' }),
+    votesRepo.countBy({}),
+    commentsRepo.countBy({}),
+    messagesRepo.countBy({}),
+    fightsRepo.groupCountBy('category'),
+    commentsRepo.groupCountBy('authorId'),
+    votesRepo.groupCountBy('userId')
+  ]);
 
   const mostPopularCategory = Object.keys(categoryStats).reduce((a, b) => 
     categoryStats[a] > categoryStats[b] ? a : b, 'Mixed'
   );
 
   // Calculate most active users (by comments and votes)
-  const userActivity = {};
-  (db.comments || []).forEach((comment) => {
-    userActivity[comment.authorId] = (userActivity[comment.authorId] || 0) + 1;
-  });
-  (db.votes || []).forEach((vote) => {
-    userActivity[vote.userId] = (userActivity[vote.userId] || 0) + 1;
+  const userActivity = { ...commentActivity };
+  Object.entries(voteActivity).forEach(([userId, count]) => {
+    userActivity[userId] = (userActivity[userId] || 0) + count;
   });
 
   const mostActiveUserId = Object.keys(userActivity).reduce((a, b) => 
@@ -293,7 +303,7 @@ export const getSiteStats = async (req, res) => {
   );
 
   const mostActiveUser = mostActiveUserId
-    ? (db.users || []).find((u) => u.id === mostActiveUserId || u._id === mostActiveUserId)
+    ? await usersRepo.findById(mostActiveUserId)
     : null;
 
   res.json({
@@ -320,21 +330,19 @@ export const getUserStats = async (req, res) => {
   const { userId } = req.params;
   
   try {
-    const db = await readDb();
-    const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
+    const user = await usersRepo.findById(userId);
     
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
     }
     
     // Calculate additional stats
-    const userFights = (db.fights || []).filter(
-      (fight) => Array.isArray(fight.participants) && fight.participants.some((p) => p.userId === userId)
-    );
-    
-    const userPosts = (db.posts || []).filter((p) => p.userId === userId || p.authorId === userId);
-    const userComments = (db.comments || []).filter((c) => c.userId === userId || c.authorId === userId);
-    const userVotes = (db.votes || []).filter((v) => v.userId === userId);
+    const [userFights, postCount, commentCount, voteCount] = await Promise.all([
+      fightsRepo.findManyBy({ 'participants.userId': userId }),
+      postsRepo.countBy({ $or: [{ userId }, { authorId: userId }] }),
+      commentsRepo.countBy({ $or: [{ userId }, { authorId: userId }] }),
+      votesRepo.countBy({ userId })
+    ]);
     
     const stats = {
       ...user.stats,
@@ -345,9 +353,9 @@ export const getUserStats = async (req, res) => {
         winRate: userFights.length > 0 ? 
           (userFights.filter(f => f.winner === userId).length / userFights.length * 100).toFixed(1) : 0
       },
-      posts: userPosts.length,
-      comments: userComments.length,
-      votes: userVotes.length,
+      posts: postCount,
+      comments: commentCount,
+      votes: voteCount,
       achievements: user.achievements || [],
       level: Math.floor((user.stats?.experience || 0) / 100) + 1,
       experienceToNextLevel: 100 - ((user.stats?.experience || 0) % 100)
@@ -364,23 +372,21 @@ export const getUserStats = async (req, res) => {
 // @route   GET /api/stats/fight/:fightId
 // @access  Public
 export const getFightStats = async (req, res) => {
-  const db = await readDb();
-
   const fightId = req.params.fightId;
-  const fight = (db.fights || []).find((f) => f.id === fightId);
+  const fight = await fightsRepo.findById(fightId);
 
   if (!fight) {
     return res.status(404).json({ msg: 'Walka nie znaleziona' });
   }
 
   // Get vote statistics
-  const fightVotes = (db.votes || []).filter((v) => v.fightId === fightId);
+  const fightVotes = await votesRepo.findManyBy({ fightId });
   const fighter1Votes = fightVotes.filter(v => v.choice === 'fighter1').length;
   const fighter2Votes = fightVotes.filter(v => v.choice === 'fighter2').length;
   const totalVotes = fightVotes.length;
 
   // Get comment statistics
-  const fightComments = (db.comments || []).filter((c) => c.fightId === fightId);
+  const fightComments = await commentsRepo.findManyBy({ fightId });
   const totalComments = fightComments.length;
   const totalCommentLikes = fightComments.reduce((sum, comment) => 
     sum + (comment.likes || 0), 0
@@ -429,8 +435,7 @@ export const getUserAchievements = async (req, res) => {
   const { userId } = req.params;
   
   try {
-    const db = await readDb();
-    const user = (db.users || []).find((u) => u.id === userId || u._id === userId);
+    const user = await usersRepo.findById(userId);
     
     if (!user) {
       return res.status(404).json({ msg: 'User not found' });
@@ -495,14 +500,19 @@ export const awardAchievement = async (req, res) => {
   
   try {
     let awardedAchievements = [];
-    await withDb(async (db) => {
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(userId, context);
+      if (!user) return;
       awardedAchievements = checkAndAwardAchievements(
-        db,
-        userId,
+        user,
         achievementType,
         currentCount
       );
-      return db;
+      if (awardedAchievements.length > 0) {
+        user.stats = user.stats || {};
+        user.stats.achievements = user.achievements.length;
+        await usersRepo.updateById(userId, () => user, context);
+      }
     });
     
     res.json({ 
@@ -520,9 +530,15 @@ export const awardStreakAchievement = async (req, res) => {
   
   try {
     let awardedAchievements = [];
-    await withDb(async (db) => {
-      awardedAchievements = checkStreakAchievements(db, userId, currentStreak);
-      return db;
+    await withRepositoryTransaction(async (context) => {
+      const user = await usersRepo.findById(userId, context);
+      if (!user) return;
+      awardedAchievements = checkStreakAchievements(user, currentStreak);
+      if (awardedAchievements.length > 0) {
+        user.stats = user.stats || {};
+        user.stats.achievements = user.achievements.length;
+        await usersRepo.updateById(userId, () => user, context);
+      }
     });
     
     res.json({ 
@@ -543,7 +559,8 @@ const leaderboardCache = {
 };
 
 export const getLeaderboard = async (req, res) => {
-  const { type = 'experience', limit = 10 } = req.query;
+  const { type = 'experience' } = req.query;
+  const limit = parseLimit(req.query.limit, { fallback: 10, max: 100 });
   const cacheKey = `${type}-${limit}`;
   
   // Check cache
@@ -555,10 +572,20 @@ export const getLeaderboard = async (req, res) => {
   }
   
   try {
-    const db = await readDb();
-    
-    // Get all users and use their cached stats instead of calculating
-    let users = (db.users || []).map((user) => {
+    const sortByType = {
+      experience: { 'stats.experience': -1, id: 1 },
+      points: { 'stats.points': -1, id: 1 },
+      fights: { 'stats.fights.total': -1, id: 1 },
+      victories: { 'stats.fights.wins': -1, id: 1 }
+    };
+    const leaderboardUsers = type === 'achievements'
+      ? await usersRepo.findTopByArrayLength('achievements', limit)
+      : await usersRepo.findManyBy(
+          {},
+          { sort: sortByType[type] || sortByType.experience, limit }
+        );
+
+    const users = leaderboardUsers.map((user) => {
       // Use pre-calculated stats from user profile
       const stats = user.stats || {};
       const fights = stats.fights || {};
@@ -586,28 +613,7 @@ export const getLeaderboard = async (req, res) => {
       };
     });
     
-    // Sort by the specified type
-    switch (type) {
-      case 'experience':
-        users.sort((a, b) => (b.experience || 0) - (a.experience || 0));
-        break;
-      case 'points':
-        users.sort((a, b) => (b.points || 0) - (a.points || 0));
-        break;
-      case 'achievements':
-        users.sort((a, b) => (b.achievements || 0) - (a.achievements || 0));
-        break;
-      case 'fights':
-        users.sort((a, b) => (b.fights || 0) - (a.fights || 0));
-        break;
-      case 'victories':
-        users.sort((a, b) => (b.victories || 0) - (a.victories || 0));
-        break;
-      default:
-        users.sort((a, b) => (b.experience || 0) - (a.experience || 0));
-    }
-    
-    const leaderboard = users.slice(0, limit);
+    const leaderboard = users;
     
     // Update cache
     leaderboardCache.data = leaderboard;

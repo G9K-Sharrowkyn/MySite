@@ -31,6 +31,7 @@ export default function SwoopRacingPage() {
 
   useEffect(() => {
     const header = document.querySelector('.header');
+    const iframe = iframeRef.current;
     const updateHeight = () => {
       const headerHeight = header?.getBoundingClientRect().height || 0;
       setGameHeight(Math.max(MIN_GAME_HEIGHT, window.innerHeight - headerHeight));
@@ -46,6 +47,7 @@ export default function SwoopRacingPage() {
     return () => {
       window.removeEventListener('resize', updateHeight);
       observer?.disconnect();
+      if (iframe) iframe.src = 'about:blank';
     };
   }, []);
 

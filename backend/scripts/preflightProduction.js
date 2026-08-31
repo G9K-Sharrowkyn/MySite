@@ -13,7 +13,6 @@ const { assertEmailConfiguration } = await import('../services/emailService.js')
 const {
   assertProductionDatabaseConfiguration,
   closeDb,
-  readDb,
   verifyProductionDatabaseCapabilities
 } = await import('../services/jsonDb.js');
 const { assertProductionLegalConfiguration } = await import(
@@ -22,13 +21,16 @@ const { assertProductionLegalConfiguration } = await import(
 const { assertProductionRuntimeConfiguration } = await import(
   '../config/runtimeConfig.js'
 );
+const { verifyUploadStorage } = await import('../utils/uploadFiles.js');
 
 assertEmailConfiguration();
 assertProductionDatabaseConfiguration();
 assertProductionLegalConfiguration();
 assertProductionRuntimeConfiguration();
-await readDb();
+await verifyUploadStorage();
 await verifyProductionDatabaseCapabilities();
 await closeDb();
 
-console.log('Production preflight passed: auth, MongoDB, SMTP and legal configuration.');
+console.log(
+  'Production preflight passed: auth, MongoDB, SMTP, uploads and legal configuration.'
+);

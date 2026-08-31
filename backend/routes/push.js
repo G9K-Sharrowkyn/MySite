@@ -19,23 +19,23 @@ router.post('/subscribe', auth, async (req, res) => {
     }
     const resolvedUserId = req.user.id;
 
-    await pushSubscriptionsRepo.updateAll((subscriptions) => {
-      const existing = subscriptions.find(
-        (entry) => entry.subscription?.endpoint === subscription.endpoint
-      );
-      if (!existing) {
-        subscriptions.push({
-          id: uuidv4(),
-          userId: resolvedUserId,
-          subscription,
-          createdAt: new Date().toISOString()
-        });
-      } else if (resolvedUserId && existing.userId !== resolvedUserId) {
-        existing.userId = resolvedUserId;
+    const { item, inserted } = await pushSubscriptionsRepo.insertIfAbsent(
+      { 'subscription.endpoint': subscription.endpoint },
+      {
+        id: uuidv4(),
+        userId: resolvedUserId,
+        subscription,
+        createdAt: new Date().toISOString()
       }
-
-      return subscriptions;
-    });
+    );
+    if (!inserted && resolvedUserId && item.userId !== resolvedUserId) {
+      await pushSubscriptionsRepo.updateById(item.id, (stored) => {
+        stored.userId = resolvedUserId;
+        stored.subscription = subscription;
+        stored.updatedAt = new Date().toISOString();
+        return stored;
+      });
+    }
 
     res.json({ message: 'Subscribed' });
   } catch (error) {
@@ -52,13 +52,10 @@ router.post('/unsubscribe', auth, async (req, res) => {
       return res.status(400).json({ message: 'Subscription is required' });
     }
 
-    await pushSubscriptionsRepo.updateAll((subscriptions) =>
-      subscriptions.filter(
-        (entry) =>
-          entry.subscription?.endpoint !== subscription.endpoint ||
-          entry.userId !== req.user.id
-      )
-    );
+    await pushSubscriptionsRepo.removeManyBy({
+      userId: req.user.id,
+      'subscription.endpoint': subscription.endpoint
+    });
 
     res.json({ message: 'Unsubscribed' });
   } catch (error) {
