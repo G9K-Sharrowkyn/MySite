@@ -1,0 +1,279 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Universe after universe has fallen before his might.",
+      "Turns DC Earth and everyone in it into stone.",
+      "Monitor ranks him on the same threat level as Spectre.",
+      "Destroys a planet with a glance.",
+      "Absorbs the Heart of Darkness."
+    ],
+    "dossier": {
+      "advantage": "Dominion over dimensions and souls. Trigon is not just a physical threat — he attacks the opponent's very essence and imposes his will on entire worlds.",
+      "mentality": "Pure evil and sadistic narcissism. He does not fight to survive, but for total domination and humiliation of all life.",
+      "quote": "Your world is mine. Your souls are my toys. Trigon is coming!",
+      "style": "Magical domination and infernal pressure. He uses hellish power to destroy the minds and bodies of enemies before they can grasp the scale of the threat."
+    },
+    "name": "Trigon",
+    "profile": {
+      "powers": [
+        "Reality manipulation, infernal magic, soul absorption, and near-unbounded energy projection."
+      ],
+      "tools": [
+        "Ability to create demon armies and corrupt heroes.",
+        "Dimensional control, allowing him to dictate the battlefield and appear where the opponent has no comfortable answer."
+      ],
+      "weaknesses": [
+        "In some realms, full manifestation still requires a proper passage or weakened dimensional barriers.",
+        "Arrogance can make him dismiss seemingly minor threats for too long."
+      ]
+    },
+    "stats": {
+      "battleIq": 94,
+      "durability": 98,
+      "experience": 99,
+      "hax": 98,
+      "skills": 82,
+      "speed": 92,
+      "stamina": 99,
+      "strength": 98,
+      "style": 95
+    },
+    "version": "Post-Crisis",
+    "victories": [
+      "Trophy Room includes Superman's Suit.",
+      "Stomps the JLA + Teen Titans.",
+      "Slaughters The Divine.",
+      "Dissipates Psimon's atoms across reality.",
+      "Ares."
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Possesses Ultimate Nullifier, a weapon that can destroy the entire universe.",
+      "Galactus must exist or the universe dies.",
+      "Galactus' attack encompasses three solar systems.",
+      "The whole universe was at risk of destruction when Galactus fought.",
+      "Sends Sphinx back in time to relive his life over and over for an eternity."
+    ],
+    "dossier": {
+      "advantage": "Power Cosmic and existential scale. Galactus does not fight - he executes a consumption process. He controls the universe's fundamental forces at an unimaginable level.",
+      "mentality": "An amoral force of nature. He does not kill from hatred, but from hunger. He sees planets and gods as fuel required to maintain cosmic balance.",
+      "quote": "I am not a god. I am not a monster. I am Galactus. I am inevitability.",
+      "style": "Cosmic manipulation and erasure. He uses the Power Cosmic to break down matter, absorb energy, and impose his will on entire worlds."
+    },
+    "name": "Galactus",
+    "profile": {
+      "powers": [
+        "Power Cosmic and cosmic-scale manipulation of matter and energy."
+      ],
+      "tools": [
+        "Ultimate Nullifier (in extreme cases) - a weapon capable of destroying entire continuums.",
+        "Ability to create heralds who carry out his will."
+      ],
+      "weaknesses": [
+        "Hunger - his power drops drastically when he does not consume planets."
+      ]
+    },
+    "stats": {
+      "battleIq": 96,
+      "durability": 99,
+      "experience": 99,
+      "hax": 99,
+      "skills": 85,
+      "speed": 94,
+      "stamina": 92,
+      "strength": 99,
+      "style": 94
+    },
+    "version": "Earth-616",
+    "victories": [
+      "Mephisto.",
+      "Sphinx.",
+      "Celestial.",
+      "Terrax.",
+      "Tyrant."
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Hungry Galactus • Material Space",
+      "a_curve": "95,94,93,94,95",
+      "b_curve": "96,95,94,95,96",
+      "yellow_wave": "20,25,22,28,24,30,26,35",
+      "phase_1": "In material space, Trigon does not get the bonus of his own realm, but a starving Galactus also does not operate with the full scale of his cosmic edge.",
+      "phase_2": "Galactus uses the Power Cosmic to impose his own order on the fight, yet hunger gives Trigon more time to build metaphysical pressure.",
+      "phase_3": "In a longer clash, Trigon starts to turn the pressure back, but in material space Galactus still wins slightly more often through greater energy scale and durability.",
+      "analysis": "Hunger weakens Galactus heavily, yet in material space it still leaves him a slight edge. This is one of his narrowest winning scenarios.",
+      "s2_label": "Fed Galactus • Material Space",
+      "s2_a_curve": "95,91,86,80,74",
+      "s2_b_curve": "96,97,98,99,100",
+      "s2_phase_1": "In material space, a well-fed Galactus fights at his highest level from the very start.",
+      "s2_phase_2": "Energy scale, durability, and matter control allow him to strip more and more initiative away from Trigon.",
+      "s2_phase_3": "At this level of power, Galactus more and more often pushes Trigon onto the defensive and closes the fight on his own terms.",
+      "s2_analysis": "This is the most favorable version of the fight for Galactus: high satiation clearly tilts the clash in his favor.",
+      "s3_label": "Hungry Galactus • Trigon's Realm",
+      "s3_a_curve": "95,97,99,100,100",
+      "s3_b_curve": "96,89,74,52,28",
+      "s3_phase_1": "Inside Trigon's realm, the nature of the battlefield itself favors infernal pressure more than cosmic stabilization from the start.",
+      "s3_phase_2": "Hunger strips Galactus of part of the scale he needs to impose his own conditions against Trigon's full metaphysical presence.",
+      "s3_phase_3": "In that configuration, Trigon most often takes over through realm control, soul pressure, and corruption of the fight's very logic.",
+      "s3_analysis": "This is one of the worst variants for Galactus: hunger weakens him precisely when he is fighting on ground that fully belongs to Trigon.",
+      "s4_label": "Fed Galactus • Trigon's Realm",
+      "s4_a_curve": "95,96,97,98,98",
+      "s4_b_curve": "96,95,94,93,92",
+      "s4_phase_1": "Even a well-fed Galactus does not get the same comfort in Trigon's realm that he enjoys in material space.",
+      "s4_phase_2": "Full Power Cosmic scale keeps him in the fight and prevents a quick collapse, but the realm itself still pushes the clash toward metaphysics.",
+      "s4_phase_3": "This is the closest fight inside Trigon's realm: Galactus is far more dangerous here than in starvation, yet Trigon's own dimension still tilts the clash his way more often.",
+      "s4_analysis": "Galactus's satiation greatly reduces the edge of Trigon's realm, but it does not erase it completely."
+    },
+    "fight-card": {
+      "fight_title": "Trigon vs Galactus"
+    },
+    "fight-simulation": {
+      "label": "Hungry Galactus • Material Space",
+      "opening": "Galactus enters the fight in material space, but hunger limits his ability to impose full superiority quickly from the start.",
+      "mid_fight": "Trigon uses every moment of delay to push the clash toward something more metaphysical than purely cosmic.",
+      "late_fight": "Galactus still has enough scale to stay ahead, but he does so far less comfortably than in satiation.",
+      "end_condition": "Galactus wins very narrowly, more often through endurance and scale than through full domination.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_actor": "b",
+      "phase_1_title": "Cosmic Exchange",
+      "phase_1_a_label": "Pressure",
+      "phase_1_a_value": "95",
+      "phase_1_b_label": "Scale",
+      "phase_1_b_value": "96",
+      "phase_1_event": "Galactus starts with the edge in scale, but from the opening it is already clear that hunger has taken away some of his certainty and finishing power.",
+      "phase_2_animation": "clash-lock",
+      "phase_2_title": "Metaphysical Entry",
+      "phase_2_event": "Trigon begins pushing the clash toward soul pressure, corruption, and dimensional stress.",
+      "phase_2_branch_a": "Galactus still answers with greater raw scale.",
+      "phase_2_branch_b": "Trigon meaningfully narrows the gap.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "infinite-attrition",
+      "phase_3_title": "Minimal Edge",
+      "phase_3_event": "In material space, Galactus still closes the fight more often, but only after dragging it back his way with difficulty.",
+      "phase_3_branch_a": "This is one of his narrowest winning variants.",
+      "phase_3_branch_b": "Trigon loses, but is not easily dominated.",
+      "s2_label": "Fed Galactus • Material Space",
+      "s2_phase_1_animation": "cosmic-salvo",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Power Cosmic Scale",
+      "s2_phase_1_a_label": "Pressure",
+      "s2_phase_1_a_value": "95",
+      "s2_phase_1_b_label": "Satiation",
+      "s2_phase_1_b_value": "100",
+      "s2_phase_1_event": "A well-fed Galactus enters the fight from the start, using the full scale of the Power Cosmic.",
+      "s2_phase_2_animation": "void-clash",
+      "s2_phase_2_title": "Initiative Seized",
+      "s2_phase_2_event": "Energy scale, durability, and matter control strip more and more room away from Trigon to impose his own logic on the fight.",
+      "s2_phase_2_branch_a": "Trigon remains metaphysically dangerous.",
+      "s2_phase_2_branch_b": "Galactus pushes him onto the defensive more and more often.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "celestial-purge",
+      "s2_phase_3_title": "Cosmic Advantage",
+      "s2_phase_3_event": "Galactus closes the fight on his own terms before Trigon's soul pressure and corruption can take control of the clash.",
+      "s2_phase_3_branch_a": "This is the most favorable variant for Galactus.",
+      "s2_phase_3_branch_b": "In material space and at high satiation, he leads very clearly.",
+      "s2_end_condition": "Galactus wins clearly in material space when he is not fighting in starvation.",
+      "s3_label": "Hungry Galactus • Trigon's Realm",
+      "s3_phase_1_animation": "shadow-surge",
+      "s3_phase_1_actor": "a",
+      "s3_phase_1_title": "Trigon's Realm",
+      "s3_phase_1_a_label": "Realm",
+      "s3_phase_1_a_value": "100",
+      "s3_phase_1_b_label": "Hunger",
+      "s3_phase_1_b_value": "90",
+      "s3_phase_1_event": "Trigon's own dimension pushes the fight toward infernal pressure from the start, while Galactus's hunger robs him of part of the scale he needs.",
+      "s3_phase_2_animation": "clash-lock",
+      "s3_phase_2_title": "Conditions Collapse",
+      "s3_phase_2_event": "Galactus fails to take control of the course of the fight. Trigon's realm dictates the pace and conditions of the clash.",
+      "s3_phase_2_branch_a": "The Power Cosmic does not disappear, but it becomes less comfortable to use.",
+      "s3_phase_2_branch_b": "Trigon takes over both the tempo and the nature of the clash.",
+      "s3_phase_3_actor": "a",
+      "s3_phase_3_animation": "void-absorption",
+      "s3_phase_3_title": "Full Takeover",
+      "s3_phase_3_event": "Trigon takes control through realm pressure, soul corruption, and contamination of the fight's very logic.",
+      "s3_phase_3_branch_a": "This is one of the worst variants for Galactus.",
+      "s3_phase_3_branch_b": "Trigon wins here very clearly.",
+      "s3_end_condition": "Trigon wins in his own realm when Galactus enters it in starvation.",
+      "s4_label": "Fed Galactus • Trigon's Realm",
+      "s4_phase_1_animation": "void-clash",
+      "s4_phase_1_actor": "b",
+      "s4_phase_1_title": "Full Scale versus Realm",
+      "s4_phase_1_a_label": "Realm",
+      "s4_phase_1_a_value": "99",
+      "s4_phase_1_b_label": "Satiation",
+      "s4_phase_1_b_value": "96",
+      "s4_phase_1_event": "A fed Galactus enters the fight far more dangerous than in starvation, but Trigon's realm immediately takes away his full freedom to impose his own conditions.",
+      "s4_phase_2_animation": "clash-lock",
+      "s4_phase_2_title": "Closest Clash",
+      "s4_phase_2_event": "The full scale of the Power Cosmic keeps Galactus in the fight, yet Trigon's realm still pushes the battle beyond a clean exchange of cosmic scale.",
+      "s4_phase_2_branch_a": "Galactus is genuinely fighting for the win here.",
+      "s4_phase_2_branch_b": "Trigon still has the edge of home ground.",
+      "s4_phase_3_actor": "a",
+      "s4_phase_3_animation": "shadow-surge",
+      "s4_phase_3_title": "The Realm Tips It",
+      "s4_phase_3_event": "A fed Galactus can fight on even terms for a long time, but Trigon's realm ultimately gives its master the win.",
+      "s4_phase_3_branch_a": "Galactus is very dangerous, but not enough to break the ground advantage.",
+      "s4_phase_3_branch_b": "Trigon wins lightly, not overwhelmingly.",
+      "s4_end_condition": "Trigon still wins more often even against a fed Galactus if the fight takes place inside his own realm."
+    },
+    "final-summary": {
+      "line_1": "This is a clash between two different orders of power: Galactus's cosmic consumption and Trigon's metaphysical domination.",
+      "line_2": "What matters most is how well fed Galactus is and whether Trigon is fighting in his own realm.",
+      "line_3": "The more the fight tilts toward a fully fed Galactus or Trigon's own domain, the more the entire balance of the clash changes.",
+      "winner": "Galactus leads in material space. Trigon gains enormously in his own realm."
+    },
+    "tactical-board": {
+      "lane": "The winner must control the dimension where the fight takes place.",
+      "subtitle": "Devourer versus Demon"
+    },
+    "verdict-matrix": {
+      "header": "VERDICT MATRIX",
+      "subtitle": "Verdict depends on Galactus's satiation level and the battlefield",
+      "col_1": "HUNGRY GALACTUS",
+      "col_2": "FED GALACTUS",
+      "row_1": "MATERIAL SPACE",
+      "row_2": "TRIGON'S REALM",
+      "case_1": "Galactus 5.5/10. In material space he still has the edge through scale and the Power Cosmic, but hunger clearly weakens his ability to close the fight quickly against Trigon.",
+      "case_2": "Galactus 9/10. Well fed and fighting in material space, he gets the most favorable version of this matchup: greater energy scale and greater stability.",
+      "case_3": "Trigon 9/10. A starving Galactus inside Trigon's realm lands in the worst possible configuration: weaker cosmic pressure and a battlefield subordinated to the infernal ruler's will.",
+      "case_4": "Trigon 6/10. A fed Galactus is much more dangerous in the realm than he is in starvation, but Trigon's own dimension still tilts the fight his way more often.",
+      "case_1_winner": "b",
+      "case_2_winner": "b",
+      "case_3_winner": "a",
+      "case_4_winner": "a"
+    },
+    "x-factor": {
+      "a_bonus": "10",
+      "a_bonus_label": "OWN REALM",
+      "a_value": "50",
+      "b_bonus": "15",
+      "b_bonus_label": "SATIATION LEVEL",
+      "b_value": "50",
+      "factor": "SATIATION LEVEL VS OWN REALM",
+      "mechanika": "A well-fed Galactus and a Trigon fighting in his own realm are not the same versions of these characters as their weaker forms in neutral space.",
+      "implikacja": "The more the fight tilts toward a fully fed Galactus or a battlefield that belongs to Trigon, the less ordinary stats are enough to describe the outcome.",
+      "psychologia": "Galactus wants to consume and stabilize. Trigon wants to corrupt and dominate. Whichever side keeps its preferred state and environment longer changes the entire nature of the clash.",
+      "regen": "BATTLE CONDITIONS"
+    }
+  }
+}

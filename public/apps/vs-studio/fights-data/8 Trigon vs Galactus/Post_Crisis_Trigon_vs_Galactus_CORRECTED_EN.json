@@ -1,0 +1,287 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "In The Terror of Trigon, takes over Earth and turns its inhabitants, including its heroes, to stone.",
+      "Is described as the ruler of hundreds of conquered worlds, capable of draining souls and subjugating entire populations.",
+      "The Monitor classifies him as a threat in the same category as the Spectre — a statement about threat level, not automatic equality with every Spectre feat.",
+      "Destroys a planet with a mere glance, demonstrating cosmic-scale power projection.",
+      "Can transmute matter, manipulate energy and souls, and alter the conditions of existence on a scale far beyond ordinary physical combat."
+    ],
+    "dossier": {
+      "advantage": "Trigon's most dangerous advantage is his ability to affect the soul, essence, and dimensional structure of the fight. Within his own domain, he can impose metaphysical conditions far more easily than in a neutral reality.",
+      "mentality": "Ancient, cunning, and sadistically arrogant. Trigon can plan on an enormous scale, but he often allows seemingly minor threats to act for too long, lowering his tactical efficiency despite his immense experience.",
+      "quote": "Your world is mine. Your souls are my playthings. Trigon comes!",
+      "style": "Metaphysical domination rather than a conventional energy exchange. Trigon attacks the body, soul, mind, and dimensional structure, trying to subjugate the very nature of the battlefield."
+    },
+    "name": "Trigon",
+    "profile": {
+      "powers": [
+        "Reality manipulation, infernal magic, transmutation, soul absorption and control, energy projection, and dimensional authority."
+      ],
+      "tools": [
+        "Corrupting and subjugating beings and entire worlds.",
+        "Attacks on soul and essence that bypass the need to defeat an opponent purely through physical damage.",
+        "Full environmental advantage inside his own domain — without assuming that foreign powers automatically cease to function there."
+      ],
+      "weaknesses": [
+        "Full manifestation outside his own domain may depend on the conditions of passage between dimensions.",
+        "Sadistic arrogance can cause him to underestimate an opponent for too long.",
+        "His transmutation and soul attacks are not automatic durability negation against every cosmic form of existence."
+      ]
+    },
+    "stats": {
+      "battleIq": 90,
+      "durability": 98,
+      "experience": 99,
+      "hax": 99,
+      "skills": 82,
+      "speed": 92,
+      "stamina": 99,
+      "strength": 98,
+      "style": 96
+    },
+    "version": "Post-Crisis · New Earth",
+    "victories": [
+      "Global conquest of Earth in The Terror of Trigon",
+      "Teen Titans and Earth's heroes during full manifestation",
+      "Hundreds of conquered worlds",
+      "Psimon — his atoms scattered across reality",
+      "Numerous beings and souls subjugated throughout his interdimensional empire"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "After being unleashed in Annihilation, releases energy that destroys more than three star systems and a massive portion of the Annihilation Wave.",
+      "Fights Mephisto inside his own hellish realm and begins consuming the energy of the domain itself, forcing Mephisto to yield.",
+      "Sends the Sphinx back into the past and traps him in a repeating cycle of his own life.",
+      "His history includes battles with Celestials, Tyrant, and other cosmic entities operating on a scale far beyond a single world.",
+      "His existence fulfills a fundamental cosmological function in Marvel's balance, though this does not mean he is physically impossible to kill."
+    ],
+    "dossier": {
+      "advantage": "Galactus possesses the greater raw scale of the Power Cosmic and exceptionally broad control over matter and energy. Crucially for this matchup, he can function inside magical domains and consume their energy rather than automatically losing his tools there.",
+      "mentality": "An amoral cosmic force of nature and an extraordinarily experienced analyst of energy. He does not fight for sport — once he understands the structure of a threat, he tries to consume it, dismantle it, or convert it into a resource.",
+      "quote": "I am not a god. I am not a monster. I am Galactus. I am inevitability.",
+      "style": "Cosmic manipulation of matter and energy, absorption, transmutation, barriers, and spacetime interference. Inside a foreign domain, he can attempt to understand its energetic structure and begin consuming it."
+    },
+    "name": "Galactus",
+    "profile": {
+      "powers": [
+        "The Power Cosmic, matter and energy manipulation, absorption, transmutation, barriers, spacetime interaction, and cosmic perception."
+      ],
+      "tools": [
+        "The ability to consume magical and infernal dimensional energy as well.",
+        "A broad arsenal allowing him to fight not only through raw output, but also through absorption, transmutation, and energy control.",
+        "Ultimate Nullifier — historically associated with Galactus, but EXCLUDED from the baseline matchup and treated as a separate scenario."
+      ],
+      "weaknesses": [
+        "His power level is extremely dependent on how well fed he is.",
+        "Moderate hunger reduces his ability to end a fight quickly; extreme starvation can drop him to a level where he loses to opponents far below his maximum."
+      ]
+    },
+    "stats": {
+      "battleIq": 94,
+      "durability": 99,
+      "experience": 100,
+      "hax": 99,
+      "skills": 85,
+      "speed": 94,
+      "stamina": 96,
+      "strength": 99,
+      "style": 96
+    },
+    "version": "Earth-616 · Standard / Fed-State Variable",
+    "victories": [
+      "Mephisto — inside his own domain",
+      "Sphinx",
+      "Celestial",
+      "Terrax",
+      "Tyrant"
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Moderately Hungry Galactus • Material World",
+      "a_curve": "94,94,93,92,91",
+      "b_curve": "95,95,96,96,97",
+      "yellow_wave": "20,25,22,28,24,30,26,35",
+      "phase_1": "Trigon immediately tries to bypass pure physicality and attack Galactus's soul, essence, and dimensional structure.",
+      "phase_2": "Moderate hunger limits Galactus's reserves, but does not remove his broad control over matter and energy or his ability to answer metaphysical pressure.",
+      "phase_3": "In neutral reality, Galactus more often maintains the greater scale and closes the fight before Trigon can impose the full conditions of his own domain.",
+      "analysis": "A moderately hungry Galactus is still the favorite in the material world, but not to the point of automatic domination.",
+      "s2_label": "Well-Fed Galactus • Material World",
+      "s2_a_curve": "94,91,87,82,77",
+      "s2_b_curve": "96,97,98,99,100",
+      "s2_phase_1": "A well-fed Galactus begins with enough stored energy to impose immense cosmic pressure without needing to conserve power.",
+      "s2_phase_2": "The Power Cosmic, barriers, absorption, and matter control make it difficult for Trigon to convert soul and essence attacks into a quick finisher.",
+      "s2_phase_3": "In a neutral world, Galactus's fed state gives him enough margin to decisively take over and finish the encounter more often.",
+      "s2_analysis": "This is Galactus's strongest baseline scenario without the Ultimate Nullifier. Trigon remains dangerous through hax, but usually loses the battle of scale and control.",
+      "s3_label": "Moderately Hungry Galactus • Trigon's Domain",
+      "s3_a_curve": "96,97,98,97,96",
+      "s3_b_curve": "94,93,92,91,90",
+      "s3_phase_1": "Trigon's domain immediately amplifies his control over soul, essence, and the dimensional conditions of the fight.",
+      "s3_phase_2": "Galactus does not lose the Power Cosmic, but moderate hunger limits how much energy he can devote simultaneously to defense, counterattack, and analysis of the foreign dimension.",
+      "s3_phase_3": "Trigon more often exploits the home-domain advantage before Galactus fully understands its structure and begins consuming it effectively.",
+      "s3_analysis": "His own realm gives Trigon a real but not absolute advantage. Galactus still has credible paths to victory.",
+      "s4_label": "Well-Fed Galactus • Trigon's Domain",
+      "s4_a_curve": "96,95,94,93,92",
+      "s4_b_curve": "96,96,97,97,98",
+      "s4_phase_1": "Trigon holds the battlefield advantage, but a well-fed Galactus has enough energy to defend on multiple layers while simultaneously analyzing the domain.",
+      "s4_phase_2": "The longer the fight lasts, the more ambiguous the domain advantage becomes: Trigon increases metaphysical pressure, but Galactus can begin consuming the realm's energy.",
+      "s4_phase_3": "At high saturation, Galactus slightly more often overcomes the home-field advantage before Trigon can subjugate his essence.",
+      "s4_analysis": "This is nearly an even fight. Trigon's home domain compensates for much of Galactus's advantage, but does not guarantee victory."
+    },
+    "fight-card": {
+      "fight_title": "Post-Crisis Trigon vs Galactus"
+    },
+    "fight-simulation": {
+      "label": "Moderately Hungry Galactus • Material World",
+      "opening": "Trigon immediately attacks not only with energy, but also through soul and essence. Galactus answers with barriers and the Power Cosmic, trying to understand the nature of his opponent.",
+      "mid_fight": "Moderate hunger means Galactus cannot endlessly spend maximum energy, but the neutral environment denies Trigon the full advantage of his domain.",
+      "late_fight": "Galactus increasingly pulls the battle back toward exchanges of matter, energy, and absorption that he controls more effectively.",
+      "end_condition": "Galactus wins more often through greater scale and more stable access to cosmic resources in neutral reality.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_actor": "b",
+      "phase_1_title": "Cosmos vs Essence",
+      "phase_1_a_label": "Soul",
+      "phase_1_a_value": "100",
+      "phase_1_b_label": "Power Cosmic",
+      "phase_1_b_value": "99",
+      "phase_1_event": "Trigon tries to bypass Galactus's manifestation and directly pressure his essence, but Galactus is not an ordinary biological soul trapped inside a body.",
+      "phase_2_animation": "void-clash",
+      "phase_2_title": "Structural Analysis",
+      "phase_2_event": "Galactus begins analyzing Trigon's infernal energy and looks for a way to translate it into a form he can consume or disperse.",
+      "phase_2_branch_a": "Trigon deepens the metaphysical pressure and destabilizes Galactus's manifestation.",
+      "phase_2_branch_b": "Galactus maintains his barriers and forces the battle back toward the energy layer he controls better.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "celestial-purge",
+      "phase_3_title": "Neutral-Reality Advantage",
+      "phase_3_event": "Without Trigon's full domain advantage, Galactus more often maintains control long enough to close the fight.",
+      "phase_3_branch_a": "Trigon finds a path to the essence and reverses the battle.",
+      "phase_3_branch_b": "Galactus breaks through the pressure and ends the fight through superior scale.",
+      "s2_label": "Well-Fed Galactus • Material World",
+      "s2_phase_1_animation": "cosmic-salvo",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Full Saturation",
+      "s2_phase_1_a_label": "Metaphysics",
+      "s2_phase_1_a_value": "99",
+      "s2_phase_1_b_label": "Reserves",
+      "s2_phase_1_b_value": "100",
+      "s2_phase_1_event": "A well-fed Galactus can maintain cosmic barriers and full offense from the start without the limitations associated with hunger.",
+      "s2_phase_2_animation": "void-clash",
+      "s2_phase_2_title": "Power Cosmic Control",
+      "s2_phase_2_event": "Trigon still possesses dangerous soul and essence attacks, but Galactus has enough reserves to defend, analyze, and counterattack simultaneously.",
+      "s2_phase_2_branch_a": "Trigon forces a metaphysical breach and creates a finishing opportunity.",
+      "s2_phase_2_branch_b": "Galactus maintains the energy advantage and increasingly restricts the demon's room to operate.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "celestial-purge",
+      "s2_phase_3_title": "Cosmic Closure",
+      "s2_phase_3_event": "In the material world, Galactus's full reserves let him end the duel far more often before his essence can be taken over.",
+      "s2_phase_3_branch_a": "Trigon exploits a rare hax opening and reverses the outcome.",
+      "s2_phase_3_branch_b": "Galactus wins through scale, absorption, and energy control.",
+      "s2_end_condition": "A well-fed Galactus wins decisively in the material world.",
+      "s3_label": "Moderately Hungry Galactus • Trigon's Domain",
+      "s3_phase_1_animation": "shadow-surge",
+      "s3_phase_1_actor": "a",
+      "s3_phase_1_title": "Home Realm",
+      "s3_phase_1_a_label": "Domain",
+      "s3_phase_1_a_value": "100",
+      "s3_phase_1_b_label": "Reserves",
+      "s3_phase_1_b_value": "86",
+      "s3_phase_1_event": "Trigon imposes the metaphysical conditions of his own realm from the first moment, while Galactus must split limited reserves between defense and analysis.",
+      "s3_phase_2_animation": "clash-lock",
+      "s3_phase_2_title": "Race for the Domain",
+      "s3_phase_2_event": "Trigon tries to subjugate Galactus's essence while Galactus tries to understand the dimension's energetic structure and begin consuming it.",
+      "s3_phase_2_branch_a": "Trigon reaches the essence before Galactus completes his analysis.",
+      "s3_phase_2_branch_b": "Galactus begins absorbing part of the domain's energy and reduces the home-field advantage.",
+      "s3_phase_3_actor": "a",
+      "s3_phase_3_animation": "void-absorption",
+      "s3_phase_3_title": "Domain Advantage",
+      "s3_phase_3_event": "With moderate hunger, Trigon slightly more often exploits his realm faster than Galactus can convert it into fuel.",
+      "s3_phase_3_branch_a": "Trigon subjugates the essence and wins.",
+      "s3_phase_3_branch_b": "Galactus breaks through the domain and reverses the duel.",
+      "s3_end_condition": "Trigon wins slightly more often in his own domain against a moderately hungry Galactus.",
+      "s4_label": "Well-Fed Galactus • Trigon's Domain",
+      "s4_phase_1_animation": "void-clash",
+      "s4_phase_1_actor": "b",
+      "s4_phase_1_title": "Domain vs Full Reserves",
+      "s4_phase_1_a_label": "Domain",
+      "s4_phase_1_a_value": "100",
+      "s4_phase_1_b_label": "Saturation",
+      "s4_phase_1_b_value": "100",
+      "s4_phase_1_event": "Both sides begin with their key advantage: Trigon has his own realm, while Galactus has full energy reserves.",
+      "s4_phase_2_animation": "infinite-attrition",
+      "s4_phase_2_title": "The Domain Becomes Fuel",
+      "s4_phase_2_event": "Trigon increases pressure on soul and essence, but Galactus increasingly understands the realm's structure and begins treating its energy as a resource.",
+      "s4_phase_2_branch_a": "Trigon closes the metaphysical grip before domain consumption gains momentum.",
+      "s4_phase_2_branch_b": "Galactus absorbs enough of the domain's energy to strip away Trigon's home-field advantage.",
+      "s4_phase_3_actor": "b",
+      "s4_phase_3_animation": "cosmic-salvo",
+      "s4_phase_3_title": "Slight Galactus Advantage",
+      "s4_phase_3_event": "At full saturation, Galactus slightly more often survives the metaphysical pressure long enough to begin turning the domain itself against Trigon.",
+      "s4_phase_3_branch_a": "Trigon completes an essence attack and wins.",
+      "s4_phase_3_branch_b": "Galactus consumes the structure of the battlefield and takes over the duel.",
+      "s4_end_condition": "A well-fed Galactus slightly more often wins even inside Trigon's domain."
+    },
+    "final-summary": {
+      "line_1": "In a strict Post-Crisis Trigon vs standard Galactus matchup without the Ultimate Nullifier, Galactus remains the favorite in neutral reality.",
+      "line_2": "Trigon's own domain gives him an enormous metaphysical advantage, but it is not an automatic cage for the Power Cosmic: Galactus has fought inside a hellish dimension and begun consuming its energy.",
+      "line_3": "The largest variable is Galactus's fed state. Moderate hunger narrows the gap; extreme starvation can reverse the outcome, while the Ultimate Nullifier must be treated separately because allowing it radically shifts the matchup toward Galactus.",
+      "winner": "Galactus leads in neutral reality. Inside Trigon's domain the fight becomes close, but the battlefield alone does not guarantee the demon victory."
+    },
+    "tactical-board": {
+      "lane": "Can Trigon subjugate Galactus's essence before Galactus understands the structure of his domain and begins consuming it?",
+      "subtitle": "Essence vs Cosmic Consumption"
+    },
+    "verdict-matrix": {
+      "header": "VERDICT MATRIX",
+      "subtitle": "Strict Post-Crisis Trigon · no Ultimate Nullifier",
+      "col_1": "MODERATELY HUNGRY GALACTUS",
+      "col_2": "WELL-FED GALACTUS",
+      "row_1": "MATERIAL WORLD",
+      "row_2": "TRIGON'S DOMAIN",
+      "case_1": "Galactus 6.5/10. Moderate hunger limits his reserves, but in neutral reality he still more often maintains the Power Cosmic advantage and closes the fight.",
+      "case_2": "Galactus 8/10. Well-fed and fighting in the material world, he holds a clear advantage in scale, stability, absorption, and control over matter and energy.",
+      "case_3": "Trigon 6.5/10. His own domain gives him the advantage in pressure on soul and essence, while Galactus's moderate hunger slows the analysis and consumption of the dimension.",
+      "case_4": "Galactus 5.5/10. At full saturation, he can survive the metaphysical pressure long enough to begin consuming the domain's energy, so Trigon's home field is no longer enough for a reliable advantage.",
+      "case_1_winner": "b",
+      "case_2_winner": "b",
+      "case_3_winner": "a",
+      "case_4_winner": "b"
+    },
+    "x-factor": {
+      "a_bonus": "15",
+      "a_bonus_label": "HOME DOMAIN",
+      "a_value": "50",
+      "b_bonus": "20",
+      "b_bonus_label": "FED STATE",
+      "b_value": "50",
+      "factor": "TRIGON'S DOMAIN VS GALACTUS'S CONSUMPTION",
+      "mechanika": "Trigon's domain amplifies his authority over soul, essence, and dimensional conditions, but it does not disable the Power Cosmic. Galactus has precedent for fighting a demonic ruler in his own hell and beginning to consume the dimension itself.",
+      "implikacja": "A prolonged battle inside the domain does not automatically favor Trigon. Each passing moment may intensify the demon's metaphysical pressure, but it may also allow Galactus to analyze and consume more of the realm's energetic structure.",
+      "psychologia": "Galactus's most important variable is his actual level of hunger. Moderately weakened, he remains a cosmic powerhouse; extremely starved, he can lose to Trigon even outside the demon's own domain.",
+      "regen": "NULLIFIER SEPARATE: GALACTUS ~9/10"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Statistical favorite",
+      "favorite_side": "b"
+    }
+  }
+}

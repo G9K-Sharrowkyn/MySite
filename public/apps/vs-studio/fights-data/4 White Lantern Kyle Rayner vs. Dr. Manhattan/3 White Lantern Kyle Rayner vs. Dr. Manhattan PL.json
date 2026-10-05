@@ -1,0 +1,216 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Przetrwał Source Wall i wrócił z Life Equation.",
+      "Wymazuje Source Titanów z istnienia używając Life Equation.",
+      "Jego moc niemal destabilizuje samą rzeczywistość.",
+      "Nieświadomie tworzy życie samą swoją obecnością.",
+      "Zmienia The Source — kod, na którym opiera się rzeczywistość."
+    ],
+    "dossier": {
+      "advantage": "Ogromna wszechstronność i regeneracja. Białe światło pozwala mu leczyć rany, odtwarzać materię i dostosowywać swoje odpowiedzi do skrajnie różnych zagrożeń.",
+      "mentality": "Kreatywny, zdeterminowany i elastyczny pod presją. Kyle nie walczy schematem — improwizuje, szybko się dostosowuje i potrafi eskalować moc, gdy sytuacja wymaga czegoś więcej niż zwykłej wymiany.",
+      "quote": "W najjaśniejszy dzień nastanie światło, by oczyścić duszę i naprawić zło. Gdy zapadnie mrok, spójrz w niebiosa - nadchodzi nowy świt, niech stanie się światło!",
+      "style": "Kreatywna walka konstruktami białego światła. Wykorzystuje moc całego spektrum, by tworzyć niezwykle szeroki wachlarz rozwiązań ofensywnych i defensywnych."
+    },
+    "name": "White Lantern Kyle Rayner",
+    "profile": {
+      "powers": [
+        "Dostęp do spektrum White Lantern, tworzenie konstruktów, leczenie, manipulacja siłą życia i teleportacja."
+      ],
+      "tools": [
+        "Life Equation oraz wszechstronność pierścienia w ataku, obronie, leczeniu i odtwarzaniu."
+      ],
+      "weaknesses": [
+        "Zależność od pierścienia i koncentracji przy efektach najwyższego poziomu.",
+        "Najsilniejsze rezultaty, zwłaszcza przy Life Equation, nadal wymagają odpowiedniego okna i pełnej kontroli."
+      ]
+    },
+    "stats": {
+      "battleIq": 88,
+      "durability": 94,
+      "experience": 86,
+      "hax": 95,
+      "skills": 82,
+      "speed": 94,
+      "stamina": 93,
+      "strength": 90,
+      "style": 84
+    },
+    "version": "New52",
+    "victories": [
+      "Relic",
+      "Third Army",
+      "Oblivion",
+      "Godkillers",
+      "Guardians of the Universe"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Doświadcza wszystkich linii czasu jednocześnie.",
+      "Utrzymuje swoją teraźniejszość w wielu stanach czasoprzestrzeni.",
+      "Przetrwał całkowitą dezintegrację.",
+      "Odparowuje Metrona i Owlmana.",
+      "Manipuluje historią Metaverse i przekształca New 52, a potem cofa własne zmiany jednym aktem woli (Doomsday Clock)."
+    ],
+    "dossier": {
+      "advantage": "Widzi wszystkie linie czasowe na raz i przyszłość walki, zanim ta się zacznie.",
+      "mentality": "Zdystansowany obserwator o chłodnym, fatalistycznym spojrzeniu. Manhattan nie reaguje jak zwykły człowiek, bo postrzega wydarzenia jako część już istniejącego ciągu przyczyn i skutków.",
+      "quote": "Tak. Teraz widzę. Wszystko się kończy.",
+      "style": "Pełna kontrola nad materią i atomami. Nie walczy w tradycyjny sposób — dezintegruje cele, przestawia ich strukturę albo usuwa je z przebiegu starcia jednym aktem woli."
+    },
+    "name": "Dr. Manhattan",
+    "profile": {
+      "powers": [
+        "Manipulacja atomowa, dezintegracja i rekonstrukcja materii, samoodbudowa oraz jednoczesna percepcja czasu."
+      ],
+      "tools": [
+        "Interwencja w czasoprzestrzeń i ingerencja przyczynowa zamiast klasycznej walki."
+      ],
+      "weaknesses": [
+        "Cząsteczki tachionów mogą zakłócać jego percepcję czasu, ograniczając go do 'tu i teraz'.",
+        "Emocjonalny dystans i fatalizm mogą opóźniać moment, w którym zdecyduje się działać naprawdę rozstrzygająco."
+      ]
+    },
+    "stats": {
+      "battleIq": 95,
+      "durability": 99,
+      "experience": 86,
+      "hax": 100,
+      "skills": 44,
+      "speed": 96,
+      "stamina": 100,
+      "strength": 82,
+      "style": 48
+    },
+    "version": "New52",
+    "victories": [
+      "Rorschach",
+      "Metron",
+      "Owlman",
+      "Ozymandias",
+      "Silk Spectre / Laurie"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Life Equation + Source Route: Otwarte",
+      "a_curve": "88,90,92,95,98",
+      "b_curve": "83,82,80,78,75",
+      "yellow_wave": "35,42,38,45,40,48,42,50",
+      "phase_1": "Przy pełnym Life Equation Kyle staje się stabilnym punktem kontinuum, którego Manhattan nie może natychmiast rozproszyć.",
+      "phase_2": "Starcie przechodzi na poziom rewrite kontra preempcja. Kyle próbuje ustabilizować Life Equation i otworzyć Source Route, zanim Manhattan rozbije samą sekwencję tej aktywacji.",
+      "phase_3": "Jeśli Kyle domknie Life Equation i Source Route, walka przestaje być zwykłą wymianą mocy i zaczyna przechylać się na jego stronę.",
+      "analysis": "Pełne Life Equation to jedyny wariant, w którym to starcie staje się wyrównanym pojedynkiem woli.",
+      "s2_label": "Life Equation + Source Route: Zamknięte",
+      "s2_a_curve": "75,65,50,30,10",
+      "s2_b_curve": "83,87,92,97,100",
+      "s2_phase_1": "Bez pełnej aktywacji Life Equation Kyle nadal pozostaje White Lanternem o ogromnej skali mocy, ale nie wchodzi jeszcze na poziom kontroli rzeczywistości potrzebny, by realnie przejąć walkę z Manhattanem.",
+      "s2_phase_2": "Kyle próbuje walczyć konstruktami, ale Manhattan wymazuje materię, z której są zbudowane, zanim te zdążą trafić.",
+      "s2_phase_3": "Manhattan zamyka walkę, zanim Kyle zdąży ustabilizować Life Equation albo wejść w Source Route.",
+      "s2_analysis": "Przy ograniczonym Life Equation Manhattan kontroluje starcie z matematyczną pewnością."
+    },
+    "fight-card": {
+      "fight_title": "Rayner vs Manhattan"
+    },
+    "fight-simulation": {
+      "label": "Life Equation + Source Route: Otwarte",
+      "opening": "Kyle otwiera walkę Białym Światłem, próbując zbudować stabilne wejście w Life Equation i Source Route.",
+      "mid_fight": "Manhattan próbuje rozbić cały proces na poziomie atomów, czasu i przyczynowości, zanim Kyle zdoła zamknąć pełną sekwencję aktywacji.",
+      "late_fight": "Jeśli Kyle utrzyma kontrolę wystarczająco długo, walka zaczyna przechodzić z wymiany mocy w próbę rewrite'u albo Source-linked uwięzienia Manhattana.",
+      "end_condition": "Zwycięstwo Kyle'a przez pełne domknięcie Life Equation i Source Route.",
+      "phase_1_animation": "solar-flare",
+      "phase_1_title": "Kotwica Istnienia",
+      "phase_1_a_label": "Wola",
+      "phase_1_a_value": "94",
+      "phase_1_b_label": "Logika",
+      "phase_1_b_value": "92",
+      "phase_1_event": "Kyle próbuje zbudować stabilne wejście w Life Equation i Source Route, zanim Manhattan zdąży rozbić samą sekwencję aktywacji.",
+      "phase_2_animation": "void-clash",
+      "phase_2_title": "Rewrite kontra Preempcja",
+      "phase_2_event": "Manhattan próbuje rozbić cały proces na poziomie atomów, czasu i przyczynowości, zanim Kyle zdoła zamknąć pełną sekwencję aktywacji.",
+      "phase_2_branch_a": "Kyle utrzymuje proces wystarczająco długo, by walka nie skończyła się natychmiast.",
+      "phase_2_branch_b": "Manhattan wciąż szuka chwili, w której przerwie cały łańcuch aktywacji.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "celestial-purge",
+      "phase_3_title": "Source Route",
+      "phase_3_event": "Jeśli Kyle utrzyma kontrolę wystarczająco długo, walka zaczyna przechodzić z wymiany mocy w próbę rewrite'u albo Source-linked uwięzienia Manhattana.",
+      "phase_3_branch_a": "To jedyny wariant, w którym Kyle realnie zaczyna przechylać walkę na swoją stronę.",
+      "phase_3_branch_b": "Bez pełnego domknięcia tej ścieżki przewaga wraca do preempcji Manhattana.",
+      "s2_label": "Life Equation + Source Route: Zamknięte",
+      "s2_phase_1_animation": "teleport-burst",
+      "s2_phase_1_title": "Zaburzenie Czasu",
+      "s2_phase_1_a_label": "Reakcja",
+      "s2_phase_1_a_value": "88",
+      "s2_phase_1_b_label": "Preempcja",
+      "s2_phase_1_b_value": "95",
+      "s2_phase_1_event": "Manhattan pojawia się jednocześnie w kilku momentach czasu, dezorientując Kyle'a.",
+      "s2_phase_2_animation": "shadow-surge",
+      "s2_phase_2_title": "Rozbijanie Sekwencji",
+      "s2_phase_2_event": "Manhattan rozbija proces aktywacji Kyle'a, zanim Life Equation i Source Route zdążą przejść w pełny stan działania.",
+      "s2_phase_2_branch_a": "Kyle nie może ustabilizować najwyższego poziomu własnej mocy.",
+      "s2_phase_2_branch_b": "Każda kolejna próba wejścia zostaje przerwana, zanim zamieni się w realny rewrite.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "celestial-purge",
+      "s2_phase_3_title": "Wymazanie Przyczynowe",
+      "s2_phase_3_event": "Manhattan zamyka walkę, zanim Kyle zdoła ustabilizować Life Equation i wejść w Source Route.",
+      "s2_phase_3_branch_a": "Kyle zostaje rozbity, zanim jego najwyższy stan zdąży wpłynąć na przebieg starcia.",
+      "s2_phase_3_branch_b": "Preempcja Manhattana odcina całą drogę do rewrite'u i uwięzienia.",
+      "s2_end_condition": "Zwycięstwo Manhattana przez usunięcie przeciwnika z historii.",
+      "s2_phase_2_token": "fullredflood"
+    },
+    "final-summary": {
+      "line_1": "Kyle Rayner ma wyższy sufit mocy, bo Life Equation i Source Route dają mu drogę do wpływu na fundamenty rzeczywistości.",
+      "line_2": "Manhattan nie musi czekać na rozwój walki — może zamknąć Kyle'owi drogę do Life Equation i Source Route przez preempcję, bezpośrednią ingerencję albo natychmiastową dezintegrację.",
+      "line_3": "To walka między większym sufitem Kyle'a a wcześniejszym, bardziej niezawodnym pierwszym ruchem Manhattana.",
+      "winner": "Kyle ma większy potencjał końcowy. Manhattan nadal częściej wygrywa, bo częściej ucina drogę do tego potencjału, zanim ten stanie się realnym zagrożeniem."
+    },
+    "tactical-board": {
+      "lane": "Kyle musi wymusić okno akcji, zanim Manhattan wymaże samą przyczynę jego istnienia.",
+      "subtitle": "Wola kontra Przyczynowość"
+    },
+    "verdict-matrix": {
+      "header": "MATRYCA WERDYKTU 2x1",
+      "subtitle": "Wynik warunkowy: wejście w Life Equation + Source Route vs preempcja Manhattana",
+      "layout": "2x1",
+      "row_1": "LIFE EQUATION + SOURCE ROUTE: OTWARTE",
+      "row_2": "LIFE EQUATION + SOURCE ROUTE: ZAMKNIĘTE",
+      "case_1": "Kyle Rayner 4/10. Jeśli Kyle szybko aktywuje pełne Life Equation i utrzyma nad nim stabilną kontrolę, może wejść na poziom, na którym jego przewaga zaczyna realnie przewyższać preempcję Manhattana.",
+      "case_2": "Dr. Manhattan 6/10. Jeśli Kyle nie zdoła na czas uzyskać pełnej i stabilnej aktywacji, Manhattan częściej przejmuje inicjatywę i zamyka walkę przez preempcję."
+    },
+    "x-factor": {
+      "a_bonus": "19",
+      "a_bonus_label": "LIFE EQUATION",
+      "a_value": "45",
+      "b_bonus": "15",
+      "b_value": "55",
+      "factor": "LIFE EQUATION + SOURCE ROUTE VS PREEMPCJA MANHATTANA",
+      "mechanika_label": "ZMIENNA KYLE'A",
+      "mechanika": "Kyle ma Life Equation, ale jego najgroźniejsza droga do zwycięstwa prowadzi przez Source Route: nadpisanie albo uwięzienie przeciwnika przez logikę związaną z The Source.",
+      "implikacja_label": "ZMIENNA MANHATTANA",
+      "implikacja": "Preempcja Manhattana działa stale: widzi linie czasu naraz i może wejść w akcję, zanim Kyle zdąży ustabilizować Life Equation lub otworzyć Source Route.",
+      "psychologia_label": "SKUTEK DLA WALKI",
+      "psychologia": "Jeśli Kyle nie zdąży wejść w Life Equation i Source Route na czas, jego wyższy sufit nie zdąży przełożyć się na przebieg starcia.",
+      "regen": "PREEMPCJA CZASOWA"
+    }
+  }
+}

@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "locale": "en",
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "final-summary",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templateData": {
+    "tactical-board": {
+      "subtitle": "Grand Regent vs Demon King Piccolo"
+    },
+    "character-dossier-a": {
+      "world": "Invincible (Image Comics)",
+      "quote": "Bring me the skulls of those traitors!",
+      "style": "Master of all Viltrumite combat styles.",
+      "advantage": "Stamina and pain tolerance.",
+      "mentality": "Cold and calculating."
+    },
+    "character-dossier-b": {
+      "world": "Dragon Ball",
+      "quote": "That is the problem with the human race. No respect... for the superior species.",
+      "style": "He fights with power, range, and Ki techniques.",
+      "advantage": "Namekian regeneration.",
+      "mentality": "Cruel, arrogant, strategic."
+    },
+    "character-profile": {
+      "a": {
+        "powers": [
+          "Smart Atoms."
+        ],
+        "tools": [
+          "Fights only with his body."
+        ],
+        "weaknesses": [
+          "No ranged attacks.",
+          "Scourge Virus and Klaxus can kill him."
+        ]
+      },
+      "b": {
+        "powers": [
+          "Planetary+ power and precise Ki."
+        ],
+        "tools": [
+          "Ki blasts.",
+          "Giant form and extendable limbs."
+        ],
+        "weaknesses": [
+          "Peak power shortens lifespan.",
+          "Regeneration has limits."
+        ]
+      }
+    },
+    "crucial-feats": {
+      "a": [
+        "Shrugs off Dinosaurus attacks.",
+        "Keeps fighting with exposed skull.",
+        "Stops Kregg with ease.",
+        "Even Conquest fears him.",
+        "Dodges the Infinity Ray."
+      ],
+      "b": [
+        "Tanks Goku's Kamehameha.",
+        "Faster than 22nd Budokai Goku.",
+        "Creates shockwaves with one hand.",
+        "Destroys a whole city.",
+        "Breaks the seal vessel with a glance."
+      ]
+    },
+    "victory-archive": {
+      "a": [
+        "Battle Beast",
+        "Omni-Man",
+        "Oliver Grayson",
+        "Thadeus",
+        "Rognarr"
+      ],
+      "b": [
+        "Goku",
+        "Chiaotzu",
+        "Shenron",
+        "Tien",
+        "King's Guard"
+      ]
+    },
+    "fight-analytics": {
+      "a": {
+        "battleIq": 74,
+        "durability": 78,
+        "experience": 92,
+        "hax": 22,
+        "skills": 58,
+        "speed": 64,
+        "stamina": 88,
+        "strength": 68,
+        "style": 86
+      },
+      "b": {
+        "battleIq": 82,
+        "durability": 75,
+        "experience": 76,
+        "hax": 84,
+        "skills": 82,
+        "speed": 78,
+        "stamina": 72,
+        "strength": 84,
+        "style": 10
+      }
+    },
+    "final-summary": {
+      "line_1": "Piccolo has the edge in power, speed, and range.",
+      "line_2": "Thragg is dangerous up close, but lacks answers to Ki.",
+      "line_3": "The longer it goes, the bigger Piccolo's lead.",
+      "winner": "Piccolo 10/10."
+    },
+    "direct-verdict": {
+      "winner": "Piccolo",
+      "loser": "Thragg",
+      "outcome": "Piccolo 10/10",
+      "certainty": "Clear favorite",
+      "line_1": "Piccolo has the stronger full combat profile.",
+      "line_2": "Thragg has no consistent answer to Ki.",
+      "line_3": "Piccolo closes the fight on his terms."
+    },
+    "fight-card": {
+      "fight_title": "Thragg vs Demon King Piccolo"
+    }
+  },
+  "templates": {},
+  "fighterA": {
+    "name": "Thragg",
+    "version": "Invincible",
+    "stats": {
+      "battleIq": 74,
+      "durability": 78,
+      "experience": 92,
+      "hax": 22,
+      "skills": 58,
+      "speed": 64,
+      "stamina": 88,
+      "strength": 68,
+      "style": 86
+    }
+  },
+  "fighterB": {
+    "name": "Piccolo",
+    "version": "Dragon Ball",
+    "stats": {
+      "battleIq": 82,
+      "durability": 75,
+      "experience": 76,
+      "hax": 84,
+      "skills": 82,
+      "speed": 78,
+      "stamina": 72,
+      "strength": 84,
+      "style": 10
+    }
+  }
+}

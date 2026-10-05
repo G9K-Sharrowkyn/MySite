@@ -250,6 +250,7 @@ const Header = () => {
               <Link to="/tournaments" className="nav-link pre-ccg">{t('tournaments')}</Link>
               <Link to="/tron-arena" className="nav-link pre-ccg">TRON</Link>
               <Link to="/swoop-racing" className="nav-link pre-ccg">{t('speedRacing')}</Link>
+              <Link to="/vs-studio" className="nav-link pre-ccg">VS STUDIO</Link>
               {isModerator ? (
                 <Link to="/ccg" className="nav-link pre-ccg">CCG</Link>
               ) : (
@@ -736,6 +737,7 @@ const Header = () => {
             <Link to="/tournaments" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('tournaments')}</Link>
             <Link to="/tron-arena" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>TRON</Link>
             <Link to="/swoop-racing" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>{t('speedRacing')}</Link>
+            <Link to="/vs-studio" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>VS STUDIO</Link>
             {isModerator ? (
               <Link to="/ccg" className="mobile-nav-link" onClick={() => setShowMobileMenu(false)}>CCG</Link>
             ) : (

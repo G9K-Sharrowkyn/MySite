@@ -1,0 +1,210 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Demonstruje słynny one-inch punch podczas Long Beach International Karate Championships.",
+      "Wykonuje pompki na dwóch palcach i prezentuje wyjątkową kontrolę ciała, koordynację oraz eksplozywność.",
+      "Wygrywa międzyszkolny turniej bokserski w Hongkongu w 1958 roku, pokonując w finale Gary'ego Elmsa.",
+      "Tworzy Jeet Kune Do jako praktyczną syntezę metod walki, nastawioną na przechwycenie, prostotę i adaptację zamiast sztywnego stylu.",
+      "Według relacji świadków i biografii nokautuje Yoichiego Nakachiego w około 11 sekund."
+    ],
+    "dossier": {
+      "advantage": "Największą przewagą Bruce'a w open rules jest wszechstronność. Może atakować nogi, kolano, pachwinę i oczy, zmieniać rytm, używać stop-kicków i próbować przechwycić wejście przeciwnika zanim ten ustawi klasyczny bokserski dystans.",
+      "mentality": "Analityczny perfekcjonista nastawiony na adaptację. Bruce szybko zbiera informacje, zmienia tempo i szuka najkrótszego rozwiązania zamiast wikłać się w długą wymianę na zasadach przeciwnika.",
+      "quote": "Bądź jak woda, mój przyjacielu.",
+      "style": "Praktyczna synteza Jeet Kune Do. Bruce łączy boks, Wing Chun, pracę nóg, stop-kicki, niskie kopnięcia i ataki na wrażliwe cele w system nastawiony na przechwycenie ruchu i szybkie zakończenie wymiany."
+    },
+    "name": "Bruce Lee",
+    "profile": {
+      "powers": [
+        "Elitarna ludzka szybkość pojedynczego ruchu, refleks, koordynacja, eksplozywność i precyzja."
+      ],
+      "tools": [
+        "Timing przechwycenia w JKD, niskie kopnięcia, stop-kicki, łamanie rytmu i adaptacja między stylami.",
+        "Ataki na kolano, pachwinę i oczy jako realna przewaga w open rules, której klasyczny boks nie obejmuje.",
+        "Krótkozasięgowy wybuch siły, wejścia pod kątem i szybkie przejścia między uderzeniami pięścią a kopnięciami."
+      ],
+      "weaknesses": [
+        "Około 64 kg masy przy ogromnej różnicy gabarytów względem prime Alego.",
+        "Brak zawodowej kariery przeciw elitarnym bokserom i ciężkim zawodnikom sprawdzonym pod wielorundową presją.",
+        "Jeżeli nie uszkodzi nogi lub wrażliwego celu bardzo wcześnie, każda kolejna sekunda zwiększa wartość przewagi zasięgu, masy i timingu Alego."
+      ]
+    },
+    "stats": {
+      "battleIq": 86,
+      "durability": 72,
+      "experience": 63,
+      "hax": 94,
+      "skills": 88,
+      "speed": 93,
+      "stamina": 85,
+      "strength": 72,
+      "style": 96
+    },
+    "version": "Prime",
+    "victories": [
+      "Gary Elms — udokumentowane zwycięstwo w turnieju bokserskim",
+      "Yoichi Nakachi — zwycięstwo według relacji świadków i biografii",
+      "Wong Jack Man — wynik i przebieg starcia pozostają sporne",
+      "Udokumentowane sparingi i demonstracje z uczniami",
+      "Konfrontacje uliczne opisywane przez biografów — ograniczona dokumentacja"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Zdobywa pierwszy zawodowy tytuł mistrza świata wagi ciężkiej w wieku 22 lat.",
+      "Kończy karierę z bilansem 56–5 i 37 zwycięstwami przed czasem.",
+      "Zostaje pierwszym trzykrotnym mistrzem świata wagi ciężkiej.",
+      "Zdobywa złoto olimpijskie w Rzymie w 1960 roku.",
+      "Pokonuje elitarnych ciężkich swojej epoki, w tym George'a Foremana, Joe Fraziera, Sonny'ego Listona, Clevelanda Williamsa i Erniego Terrella."
+    ],
+    "dossier": {
+      "advantage": "Ali łączy przewagę około 30 kilogramów masy, około 19 centymetrów wzrostu, ogromny zasięg ramion oraz sprawdzoną przeciw światowej elicie szybkość, timing, odporność i kontrolę dystansu. Bruce musi wykonać niemal idealną akcję; Ali potrzebuje znacznie mniej, aby przejąć walkę.",
+      "mentality": "Charyzmatyczny kontroler tempa, który prowokuje, obserwuje i narzuca przeciwnikowi własny rytm. Jego przewaga psychologiczna jest poparta ogromnym doświadczeniem realnych walk z zawodnikami zdolnymi go znokautować.",
+      "quote": "Lataj jak motyl, żądl jak pszczoła.",
+      "style": "Mistrzowska kontrola dystansu i rytmu. Jab, praca nóg, balans głowy, kontrujące kombinacje i klincz pozwalają mu resetować walkę na własnych warunkach oraz karać każde nieudane wejście."
+    },
+    "name": "Muhammad Ali",
+    "profile": {
+      "powers": [
+        "Elitarna szybkość wagi ciężkiej, timing, odporność, stamina, precyzja i ring IQ sprawdzone przeciw najlepszym zawodnikom świata."
+      ],
+      "tools": [
+        "Kontrola jabem, praca nóg, obrona ruchem, klincz, zarządzanie tempem i bardzo szybkie kombinacje.",
+        "Ogromne doświadczenie przeciw realnemu oporowi, presji i wielorundowej walce z zawodnikami dysponującymi nokautującą siłą.",
+        "Przewaga masy i zasięgu, która w zwarciu oraz przy wymianach zwiększa koszt każdego błędu Bruce'a."
+      ],
+      "weaknesses": [
+        "Klasyczny trening bokserski nie przygotowuje bezpośrednio do obrony przed low-kickami, stop-kickami na kolano, atakami w pachwinę czy oczy.",
+        "W open rules pierwsze sekundy są najbardziej niebezpieczne, zanim Ali rozpozna nietypowy rytm i arsenał przeciwnika."
+      ]
+    },
+    "stats": {
+      "battleIq": 97,
+      "durability": 96,
+      "experience": 100,
+      "hax": 58,
+      "skills": 97,
+      "speed": 95,
+      "stamina": 97,
+      "strength": 96,
+      "style": 98
+    },
+    "version": "Prime",
+    "victories": [
+      "George Foreman",
+      "Joe Frazier",
+      "Sonny Liston",
+      "Cleveland Williams",
+      "Ernie Terrell"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "tactical-board": {
+      "lane": "Bruce musi uszkodzić nogę lub wrażliwy cel zanim Ali ustali timing. Ali musi tylko przetrwać pierwsze nietypowe wejścia i narzucić własny dystans.",
+      "subtitle": "Wszechstronność kontra Sprawdzona Elita"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Faworyt według statystyk",
+      "favorite_side": "b"
+    },
+    "final-summary": {
+      "line_1": "Bruce Lee jest bardziej wszechstronny w open rules i posiada realne narzędzia spoza boksu, które mogą zaskoczyć Alego: low-kicki, stop-kicki, ataki na kolano oraz wrażliwe cele.",
+      "line_2": "Muhammad Ali ma jednak gigantyczną przewagę masy, zasięgu, odporności, kontroli dystansu i — przede wszystkim — udokumentowanego doświadczenia przeciw światowej elicie pod pełną presją.",
+      "line_3": "W boksie Bruce praktycznie nie posiada drogi do zwycięstwa. W open rules zachowuje małe, ale realne okno przez natychmiastowe uszkodzenie nogi lub wrażliwego celu, zanim Ali przejmie timing.",
+      "winner": "Muhammad Ali jest zdecydowanym faworytem: 10/10 w boksie i około 9/10 w pełnych open rules bez broni."
+    },
+    "battle-dynamics": {
+      "label": "Open Rules · Bez Broni",
+      "a_curve": "82,78,68,55,42",
+      "b_curve": "90,92,95,97,99",
+      "yellow_wave": "25,35,28,42,30,48,32,55",
+      "phase_1": "Pierwsze sekundy są jedynym momentem, w którym Bruce posiada szczególnie niebezpieczne okno. Może użyć stop-kicku, low-kicku albo ataku na wrażliwy cel zanim Ali zdąży dostosować klasyczny bokserski rytm.",
+      "phase_2": "Jeżeli Ali przetrwa otwarcie bez poważnego uszkodzenia nogi, zaczyna czytać dystans i timing. Każde kolejne wejście Bruce'a prowadzi przeciw szybszej funkcjonalnie, dłuższej i znacznie cięższej odpowiedzi.",
+      "phase_3": "Gdy Ali zaczyna trafiać kombinacjami albo zamyka Bruce'a w klinczu, różnica masy i doświadczenia szybko odbiera Bruce'owi możliwość precyzyjnego prowadzenia własnej gry.",
+      "analysis": "Open rules nie wyrównują walki, ale odbierają jej absolutny charakter. Bruce ma małą, realną drogę do zwycięstwa przez natychmiastowe uszkodzenie nogi, oka lub innego wrażliwego celu. Ali nadal wygrywa zdecydowaną większość starć.",
+      "s2_label": "Czysty Boks",
+      "s2_a_curve": "75,55,30,12,0",
+      "s2_b_curve": "92,95,97,99,100",
+      "s2_phase_1": "Bruce traci kopnięcia, ataki na stawy i wszystkie narzędzia, które mogłyby ominąć przewagę ramion Alego.",
+      "s2_phase_2": "Ali kontroluje walkę jabem, nogami i balansem głowy, zmuszając Bruce'a do przechodzenia przez dystans zawodowego mistrza wagi ciężkiej.",
+      "s2_phase_3": "Pierwsza czysta kombinacja odbiera Bruce'owi możliwość dalszego prowadzenia walki na równych warunkach i prowadzi do szybkiego zatrzymania.",
+      "s2_analysis": "W boksie różnica doświadczenia, zasięgu, masy i funkcjonalnego timingu jest zbyt wielka. Bruce nie posiada wiarygodnego warunku zwycięstwa."
+    },
+    "fight-simulation": {
+      "label": "Open Rules · Bez Broni",
+      "opening": "Bruce nie próbuje boksować z Alim. Ustawia się poza klasycznym dystansem pięści i natychmiast atakuje przednią nogę, próbując uszkodzić kolano lub zaburzyć pracę nóg.",
+      "mid_fight": "Jeżeli pierwsze kopnięcia nie przynoszą dużego efektu, Ali zaczyna odczytywać rytm wejść. Bruce musi ponawiać ataki bez przyjęcia jabu, prawej ręki albo klinczu cięższego o ponad trzydzieści kilogramów przeciwnika.",
+      "late_fight": "Z każdą kolejną sekundą szansa Bruce'a maleje. Gdy Ali trafia pełną kombinacją lub narzuca klincz, Bruce traci stabilność i precyzję potrzebną do dalszych ataków na nogi.",
+      "end_condition": "Ali wygrywa przez kumulację czystych trafień, kombinację lub fizyczną kontrolę dystansu. Bruce wygrywa głównie wtedy, gdy bardzo wcześnie uszkodzi nogę albo wyjątkowo podatny cel.",
+      "phase_1_animation": "hit-and-run",
+      "phase_1_actor": "a",
+      "phase_1_title": "Jedyna Droga",
+      "phase_1_a_label": "Wszechstronność",
+      "phase_1_a_value": "94",
+      "phase_1_b_label": "Dystans",
+      "phase_1_b_value": "99",
+      "phase_1_event": "Bruce wykorzystuje kopnięcia zamiast próbować przechodzić przez jab. Każde udane trafienie w nogę kupuje mu kolejną szansę na utrzymanie Alego poza jego najlepszym rytmem.",
+      "phase_2_animation": "feint-counter",
+      "phase_2_title": "Ali Łapie Timing",
+      "phase_2_event": "Po kilku wymianach Ali zaczyna odczytywać moment, w którym Bruce przenosi ciężar do kopnięcia lub wejścia.",
+      "phase_2_branch_a": "Bruce ponownie trafia nogę i na chwilę ogranicza mobilność Alego.",
+      "phase_2_branch_b": "Ali przechwytuje wejście jabem lub kombinacją i odbiera Bruce'owi inicjatywę.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "seismicslam",
+      "phase_3_title": "Przewaga Ciężkiej Wagi",
+      "phase_3_event": "Po pierwszej naprawdę czystej kombinacji Bruce może pozostać przytomny, ale traci jakość ruchu i precyzję potrzebną do prowadzenia własnej strategii.",
+      "phase_3_branch_a": "Bruce próbuje ostatniego ataku na kolano lub wrażliwy cel.",
+      "phase_3_branch_b": "Ali domyka walkę kolejną kombinacją albo kontrolą w klinczu.",
+      "s2_label": "Czysty Boks",
+      "s2_phase_1_animation": "kite-zone",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Ściana Jabu",
+      "s2_phase_1_a_label": "Wejście",
+      "s2_phase_1_a_value": "78",
+      "s2_phase_1_b_label": "Kontrola",
+      "s2_phase_1_b_value": "99",
+      "s2_phase_1_event": "Bruce musi wejść w zasięg ramion Alego bez możliwości kopnięcia nogi lub zaatakowania stawu.",
+      "s2_phase_2_animation": "clash-lock",
+      "s2_phase_2_title": "Różnica Klasy",
+      "s2_phase_2_event": "Ali resetuje dystans jabem i pracą nóg, a każde desperackie skrócenie dystansu Bruce'a staje się okazją do kontrującej kombinacji.",
+      "s2_phase_2_branch_a": "Bruce trafia pojedynczym szybkim ciosem, ale nie zatrzymuje cięższego przeciwnika.",
+      "s2_phase_2_branch_b": "Ali narzuca tempo i systematycznie odbiera Bruce'owi przestrzeń do bezpiecznego wejścia.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "brutal-execution",
+      "s2_phase_3_title": "Zatrzymanie",
+      "s2_phase_3_event": "Seria czystych trafień ciężkiej wagi kończy pojedynek zanim Bruce zdoła zbudować własny rytm.",
+      "s2_phase_3_branch_a": "Bruce pozostaje na nogach chwilę dłużej, ale nie odwraca przebiegu walki.",
+      "s2_phase_3_branch_b": "Ali kończy walkę przez nokaut lub zatrzymanie.",
+      "s2_end_condition": "Muhammad Ali wygrywa 10/10 w czystym boksie."
+    },
+    "direct-verdict": {
+      "winner": "Muhammad Ali",
+      "loser": "Bruce Lee",
+      "outcome": "Ali 9/10 w open rules",
+      "certainty": "Zdecydowany faworyt",
+      "line_1": "Bruce ma realną drogę do zwycięstwa tylko dlatego, że open rules pozwalają mu atakować nogę, kolano, oczy i inne cele spoza klasycznego boksu.",
+      "line_2": "Jeżeli nie uzyska dużego efektu bardzo wcześnie, przewaga masy, zasięgu, timingu, klinczu i doświadczenia Alego zaczyna rosnąć z każdą kolejną wymianą.",
+      "line_3": "W boksie wynik wynosi praktycznie 10/10 dla Alego. W pełnych open rules bez broni Bruce zachowuje niewielkie okno upsetu, dlatego uczciwszy wynik to około 9/10 dla Alego."
+    },
+    "fight-card": {
+      "fight_title": "Bruce Lee vs Muhammad Ali"
+    }
+  }
+}

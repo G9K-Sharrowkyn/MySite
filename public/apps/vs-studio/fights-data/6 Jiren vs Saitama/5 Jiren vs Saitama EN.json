@@ -1,0 +1,211 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Tags UI Goku a few times.",
+      "Unaffected by Android 17's Self-Destruction.",
+      "No sells a Kamehameha from SSB Goku.",
+      "Detects and Counters attacks coming from a different dimension.",
+      "Is more powerful than his universe God of Destruction."
+    ],
+    "dossier": {
+      "advantage": "Absolute dominance through raw power. Jiren can break through techniques that would normally require a special counter through sheer force, control, and focus.",
+      "mentality": "A stoic absolutist. He fights without unnecessary words or emotions, taking the shortest path to total dominance over the opponent.",
+      "quote": "It matters not how many weaklings band together. You are nothing before absolute strength.",
+      "style": "An austere style built on raw power and ki. Jiren moves as little as possible, lets the opponent commit, and answers with single, devastating counters."
+    },
+    "name": "Jiren",
+    "profile": {
+      "powers": [
+        "Extreme ki output, barrier techniques and elite speed/reactions."
+      ],
+      "tools": [
+        "Efficient minimal-motion striking.",
+        "Reading the opponent's attack rhythm, allowing him to counter before a technique fully develops."
+      ],
+      "weaknesses": [
+        "Too much faith in absolute dominance can delay his response to an opponent whose growth does not follow a linear path."
+      ]
+    },
+    "stats": {
+      "battleIq": 88,
+      "durability": 96,
+      "experience": 91,
+      "hax": 62,
+      "skills": 94,
+      "speed": 96,
+      "stamina": 91,
+      "strength": 96,
+      "style": 93
+    },
+    "version": "DBS",
+    "victories": [
+      "Hit",
+      "Maji Kayo",
+      "Golden Frieza",
+      "Kale",
+      "Vegeta (Super Saiyan Blue)"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Serious Punch Squared carves a void through space.",
+      "His punch reverses causality.",
+      "Grabs and kicks hyperspace gates.",
+      "Comes out unharmed after being directly hit by Garou's Gamma Ray Burst.",
+      "A Serious Sneeze blows away the gas surrounding Jupiter."
+    ],
+    "dossier": {
+      "advantage": "Immeasurable strength and resilience. Saitama does not operate within a normal growth limit, and any of his strikes can become a finishing blow.",
+      "mentality": "Bored and carefree, but not indifferent. Saitama does not take a fight seriously for a long time because almost nothing truly challenges him, yet beneath that apathy he still longs for an opponent who can force him into genuine effort.",
+      "quote": "100 push-ups, 100 sit-ups, 100 squats, and a 10km run EVERY SINGLE DAY!!!",
+      "style": "A simple, direct style built around his fists. Saitama does not rely on elaborate technique — his movements are economical, improvised, and backed by overwhelming physical superiority."
+    },
+    "name": "Saitama",
+    "profile": {
+      "powers": [
+        "Extreme physical power, durability, stamina, and growth under prolonged conflict."
+      ],
+      "tools": [
+        "Direct close-range offense and rapid adaptation through the fight.",
+        "Anomalous interaction with physics: he can kick portals and move in ways that ignore the world's normal limits."
+      ],
+      "weaknesses": [
+        "Limited formal technique and heavy reliance on direct contact.",
+        "Boredom and lack of guard early in the fight may expose him to a quick technical knockout."
+      ]
+    },
+    "stats": {
+      "battleIq": 70,
+      "durability": 92,
+      "experience": 74,
+      "hax": 80,
+      "skills": 70,
+      "speed": 90,
+      "stamina": 98,
+      "strength": 91,
+      "style": 66
+    },
+    "version": "OPM",
+    "victories": [
+      "Boros",
+      "Elder Centipede",
+      "Orochi",
+      "Evil Ocean Water",
+      "Garou (Cosmic Fear Mode)"
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Jiren: Immediate Assault",
+      "a_curve": "90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90",
+      "b_curve": "81,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
+      "preserve_curve_points": "true",
+      "yellow_wave": "10,12,11,14,12,15,13,18",
+      "phase_1": "Jiren strikes immediately. Saitama evaporates.",
+      "phase_2": "-",
+      "phase_3": "-",
+      "analysis": "If Jiren goes all out from the first second, Saitama dies before his growth begins to matter at all.",
+      "s2_label": "Jiren: Delay",
+      "s2_a_curve": "90,88,85,80,75",
+      "s2_b_curve": "81,85,90,96,100",
+      "s2_phase_1": "Jiren does not end the fight immediately and allows Saitama into the first exchange.",
+      "s2_phase_2": "Saitama feels a real challenge. His power begins to grow with each passing second of the fight.",
+      "s2_phase_3": "Critical point. Saitama surpasses Jiren's ceiling and starts winning through the sheer scale of each new blow.",
+      "s2_analysis": "If Jiren does not close the fight immediately, he gives Saitama his only path to victory: growth during the clash itself."
+    },
+    "fight-card": {
+      "fight_title": "Jiren vs Saitama"
+    },
+    "fight-simulation": {
+      "label": "Immediate Assault",
+      "opening": "Jiren strikes with a god's fury, immediately closing the distance to Saitama.",
+      "mid_fight": "Saitama tries to block the blow, but the impact force permeates through his molecules.",
+      "late_fight": "Jiren ends the clash with a Ki salvo that tears the continuum around his opponent.",
+      "end_condition": "Jiren's victory through immediate annihilation.",
+      "phase_1_animation": "rush-ko",
+      "phase_1_title": "Absolute Verdict",
+      "phase_1_a_label": "Power",
+      "phase_1_a_value": "100",
+      "phase_1_b_label": "Surprise",
+      "phase_1_b_value": "40",
+      "phase_1_event": "Jiren releases all his Ki in a single, short strike.",
+      "phase_2_animation": "clash-lock",
+      "phase_2_title": "-",
+      "phase_2_event": "-",
+      "phase_2_branch_a": "-",
+      "phase_2_branch_b": "-",
+      "phase_3_actor": "a",
+      "phase_3_animation": "celestial-purge",
+      "phase_3_title": "-",
+      "phase_3_event": "-",
+      "s2_label": "Delay",
+      "s2_phase_1_animation": "kite-zone",
+      "s2_phase_1_title": "Field Study",
+      "s2_phase_1_a_label": "Calm",
+      "s2_phase_1_a_value": "90",
+      "s2_phase_1_b_label": "Start",
+      "s2_phase_1_b_value": "40",
+      "s2_phase_1_event": "Jiren observes, giving Saitama time to land the first punch.",
+      "s2_phase_2_animation": "infinite-attrition",
+      "s2_phase_2_title": "Escalation",
+      "s2_phase_2_event": "An exchange of blows where Saitama grows in strength by the second.",
+      "s2_phase_2_branch_a": "Saitama smiles, feeling a true challenge.",
+      "s2_phase_2_branch_b": "Jiren begins to lose his initiative advantage.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "nova-cleansing",
+      "s2_phase_3_title": "Serious Punch",
+      "s2_phase_3_event": "Saitama strikes with power exceeding Jiren's logic.",
+      "s2_phase_3_branch_a": "Jiren falls, defeated by his own delay.",
+      "s2_phase_3_branch_b": "Saitama becomes the new peak of power.",
+      "s2_end_condition": "Saitama's victory through non-linear evolution."
+    },
+    "final-summary": {
+      "line_1": "The starting power gap is enormous and clearly favors Jiren.",
+      "line_2": "If Jiren attacks with full power immediately, Saitama does not get time to grow.",
+      "line_3": "But if Jiren gives him even a brief window, Saitama's non-linear growth can completely reverse the fight.",
+      "winner": "Jiren wins with an immediate assault. Saitama wins if he gets time."
+    },
+    "tactical-board": {
+      "lane": "Jiren must end the fight before Saitama starts taking it seriously.",
+      "subtitle": "Discipline versus Limitlessness"
+    },
+    "verdict-matrix": {
+      "header": "ADAPTATION MATRIX",
+      "subtitle": "Verdict based on Jiren's initial output",
+      "row_1": "JIREN: IMMEDIATE ASSAULT",
+      "row_2": "JIREN: PASSIVE OBSERVATION",
+      "case_1": "Jiren 10/10. The scale difference at the start is too vast. If Jiren strikes with full power from the first second, Saitama is erased before his potential can even react to the new threat level. Saitama has never faced a power capable of shaking infinity.",
+      "case_2": "Saitama 7/10. If Jiren allows the fight to proceed and slowly tests his opponent (as in the ToP), he gives Saitama time for non-linear growth. In this scenario, Saitama inevitably surpasses Jiren's power ceiling and takes control of the clash."
+    },
+    "x-factor": {
+      "a_bonus": "0",
+      "a_bonus_label": "NONE",
+      "a_value": "0",
+      "b_bonus": "20",
+      "b_value": "100",
+      "factor": "SAITAMA'S NON-LINEAR GROWTH",
+      "implikacja": "If Saitama gets time, Jiren's advantage at the start stops being enough.",
+      "mechanika": "Saitama grows during the fight faster than it should be possible. The longer the clash lasts, the less Jiren's initial advantage matters.",
+      "psychologia": "Jiren has to treat the fight as fatal from the first second. Any delay gives Saitama exactly what he needs to surpass his level.",
+      "regen": "ANOMALOUS GROWTH"
+    }
+  }
+}

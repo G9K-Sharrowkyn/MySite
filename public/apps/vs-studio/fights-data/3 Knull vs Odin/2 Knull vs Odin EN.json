@@ -1,0 +1,231 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Forges All-Black from primordial living darkness and uses it to kill a Celestial.",
+      "Infects and subjugates multiple Celestials, using them as part of his own army.",
+      "Existed within the primordial darkness before the birth of the current cosmos and survived the arrival of the light of creation.",
+      "Kills countless gods with his Necrosword and wages war against divine beings across eons.",
+      "Covers Earth in symbiote darkness and seizes control over an enormous portion of the hive."
+    ],
+    "dossier": {
+      "advantage": "All-Black allows Knull to genuinely wound and kill even cosmically durable gods. It is not automatic durability negation, but any clean hit can dramatically change the course of the fight and represents his most important path to victory over Odin.",
+      "mentality": "Knull fights without mercy, exploiting hive pressure, darkness, and tactical openings. He can win through more than raw power — against All-Father Thor, he reversed the fight with a Celestial diversion and only then found a lethal opening with All-Black.",
+      "quote": "Ah... I see my reputation precedes me... so I won't waste your time... I am going to kill your world.",
+      "style": "Aggressive necro-swordsmanship supported by control over the living Abyss and the symbiote hive. Knull tries to overload the battlefield with attacks from multiple directions, create a moment of chaos, and use All-Black for one decisive strike."
+    },
+    "name": "Knull",
+    "profile": {
+      "powers": [
+        "All-Black, control over the living Abyss, command of the symbiote hive, infection of powerful beings, and extremely high regeneration."
+      ],
+      "tools": [
+        "Symbiote takeover, creation of weapons and constructs from living darkness, and pressure from multiple directions.",
+        "All-Black as a weapon capable of mortally wounding gods far more durable than ordinary opponents."
+      ],
+      "weaknesses": [
+        "The Enigma Force and powerful cosmic light.",
+        "His connection to the hive and symbiote structures can be disrupted by sufficiently powerful divine or cosmic energy."
+      ]
+    },
+    "stats": {
+      "battleIq": 85,
+      "durability": 93,
+      "experience": 97,
+      "hax": 97,
+      "skills": 89,
+      "speed": 85,
+      "stamina": 98,
+      "strength": 96,
+      "style": 90
+    },
+    "version": "King in Black · Earth-616",
+    "victories": [
+      "Celestial",
+      "Sentry and the Void",
+      "Kree and Skrull armadas",
+      "Possessed Celestials",
+      "All-Father Thor — tactical victory through diversion and All-Black"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Combines his own essence and the life-forces of the Asgardians with the Destroyer Armor, previously empowered by fractions of divine power granted by Earth's Sky-Fathers.",
+      "His battle with Seth reaches galactic scale and affects multiple planes of reality simultaneously.",
+      "Stops time and launches a mental-energy attack through an interdimensional space described as infinite, affecting Loki's mind and his connection to the Destroyer.",
+      "Stops the Fires of Creation consuming Yggdrasil — a threat to the entire structure of the Nine Realms.",
+      "After defeating Surtur, absorbs his strength, power, and very essence, imprisoning the apocalyptic being within himself and demonstrating the ability to neutralize an opponent beyond mere physical destruction."
+    ],
+    "dossier": {
+      "advantage": "Celestial-War Odin combines the full Odinforce, Destroyer Armor, the Odinsword, the life-forces of the Asgardians, and fractions of divine power granted to the armor by other Earthly Sky-Fathers. His advantage does not rest solely on greater destructive output, but on an enormous number of independent victory conditions: control over time, matter, energy, souls, and space, as well as teleportation, imprisonment, essence absorption, and direct physical overpowering.",
+      "mentality": "Odin can be proud and willing to accept frontal combat, which gives Knull one real path to victory through All-Black. But once he stops treating the encounter as a warrior's duel and starts treating it as the execution of a cosmic anomaly, his arsenal allows him to attack Knull on several levels at once.",
+      "quote": "Odin is the Sun, the stars and the Moon, and more besides. Odin is the path, the wrath and the wonder! Odin is he who speaks — and galaxies listen!",
+      "style": "Layered Odinforce combat. Odin combines barriers, energy projection, manipulation of time and matter, teleportation, control over souls and dimensions, and essence absorption. The Odinsword is a tool of destruction and finishing power, not his only method of combat."
+    },
+    "name": "Odin",
+    "profile": {
+      "powers": [
+        "Full Odinforce, Destroyer Armor, the life-forces of the Asgardians, fractions of power from Earth's Sky-Fathers, the Odinsword, and large-scale magic."
+      ],
+      "tools": [
+        "Control over time, matter, energy, and life-force; barriers, teleportation, banishment, interdimensional imprisonment, and soul interaction.",
+        "Absorption and imprisonment of an opponent's essence — demonstrated against Surtur — as a victory condition independent of simple physical destruction.",
+        "The Odinsword as one of Asgard's most powerful weapons, tied to Ragnarök and capable of channeling Odin's apocalyptic power."
+      ],
+      "weaknesses": [
+        "Extreme expenditure of the Odinforce can lead to exhaustion.",
+        "Pride and a willingness to accept frontal exchanges can create an opportunity for Knull to exploit All-Black.",
+        "All-Black remains lethal enough that a clean strike could threaten even this version of Odin."
+      ]
+    },
+    "stats": {
+      "battleIq": 97,
+      "durability": 99,
+      "experience": 100,
+      "hax": 100,
+      "skills": 96,
+      "speed": 88,
+      "stamina": 99,
+      "strength": 99,
+      "style": 98
+    },
+    "version": "Celestial-War Odin · Earth-616",
+    "victories": [
+      "Infinity — Odin's dark aspect",
+      "Seth",
+      "Surtur",
+      "Thanos",
+      "Silver Surfer"
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Celestial-War Odin · Neutral Battlefield",
+      "a_curve": "91,82,68,52,35",
+      "b_curve": "96,97,98,99,100",
+      "yellow_wave": "31,35,33,37,34,38,36,40",
+      "phase_1": "Knull opens with the living Abyss and All-Black, trying to force chaos before Odin establishes full control. Destroyer Armor, barriers, and the Odinforce allow the All-Father to survive the opening without surrendering the battlefield.",
+      "phase_2": "Odin stops treating Knull as something to simply overpower and begins separating the problem into body, hive, consciousness, and essence. Time manipulation, teleportation, and matter control remove one clean-strike route after another.",
+      "phase_3": "After destroying or severely damaging Knull's material form, Odin does not need to wait for regeneration. He can move directly into absorption, sealing, or imprisonment of the essence and finish the fight beyond the physical layer.",
+      "analysis": "Odin's greatest advantage is not that he deals more damage. It is that he possesses demonstrated tools capable of ending the battle even when destruction of the body alone is insufficient.",
+      "s2_label": "Knull · Full Hive and Possessed Celestials",
+      "s2_a_curve": "93,91,90,88,86",
+      "s2_b_curve": "96,94,92,90,88",
+      "s2_phase_1": "Knull is no longer fighting alone. The hive and possessed Celestials force Odin to divide his attention and spend Odinforce on multiple threats simultaneously.",
+      "s2_phase_2": "The more fronts Odin must control, the greater the chance that Knull can recreate the tactical pattern used against Thor: diversion, a moment of distraction, and an All-Black opening.",
+      "s2_phase_3": "Odin still holds the advantage in scale and tools, but a cosmic war gives Knull far more chances to create the one strike he would struggle to produce in a clean duel.",
+      "s2_analysis": "The full King in Black army does not make Knull individually more powerful than Odin, but it radically increases his chance of forcing one decisive mistake. That makes this version of the matchup much closer."
+    },
+    "fight-card": {
+      "fight_title": "Knull vs Celestial-War Odin"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Statistical favorite",
+      "favorite_side": "b"
+    },
+    "fight-simulation": {
+      "label": "Celestial-War Odin · Neutral Battlefield",
+      "opening": "Knull floods the battlefield with symbiote darkness and immediately looks for an All-Black opening. Odin answers with barriers, the power of the Destroyer, and a massive Odinforce discharge, refusing to let the battle collapse into close quarters.",
+      "mid_fight": "As Knull's body begins taking severe damage, Odin expands his offense beyond the physical layer: he disrupts time, repositions his opponent, interferes with his energy, and prepares a victory condition independent of regeneration.",
+      "late_fight": "After breaking the material form, Odin does not wait for Knull to rebuild. He attempts to separate consciousness from its vessel, absorb or seal the essence, and end the fight on a level the Abyss does not automatically reset.",
+      "end_condition": "Odin wins by destroying Knull's physical form and immediately neutralizing his essence before regeneration can restore him to full combat effectiveness.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_actor": "b",
+      "phase_1_title": "Breaking the Body",
+      "phase_1_a_label": "All-Black",
+      "phase_1_a_value": "100",
+      "phase_1_b_label": "Odinforce",
+      "phase_1_b_value": "100",
+      "phase_1_event": "Knull tries to end the fight through one perfect opening, but the Destroyer and Odin's barriers let him survive the first wave and retaliate with destruction on a scale beyond what Knull endured from All-Father Thor.",
+      "phase_2_animation": "void-clash",
+      "phase_2_actor": "b",
+      "phase_2_title": "Beyond Matter",
+      "phase_2_event": "Odin stops or disrupts time, changes Knull's position, and begins affecting not only the body but also his energy, consciousness, and connection to the Abyss.",
+      "phase_2_branch_a": "Knull forces chaos and finds a brief All-Black opening.",
+      "phase_2_branch_b": "Odin shuts down one attack route after another and prepares to neutralize Knull's essence.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "celestial-purge",
+      "phase_3_title": "Execution of a Cosmic Anomaly",
+      "phase_3_event": "After shattering the material form, Odin moves into absorption, sealing, or imprisonment of Knull's essence, giving regeneration no time to return him to full combat.",
+      "phase_3_branch_a": "Knull lands All-Black before the process is completed — his one truly clean path to victory.",
+      "phase_3_branch_b": "Odin neutralizes the essence and ends the battle definitively.",
+      "s2_label": "Knull · Full Hive and Possessed Celestials",
+      "s2_phase_1_animation": "shadow-surge",
+      "s2_phase_1_actor": "a",
+      "s2_phase_1_title": "King in Black War",
+      "s2_phase_1_a_label": "Army",
+      "s2_phase_1_a_value": "100",
+      "s2_phase_1_b_label": "Control",
+      "s2_phase_1_b_value": "96",
+      "s2_phase_1_event": "The hive and possessed Celestials stretch the battlefield, forcing Odin to answer multiple threats at once.",
+      "s2_phase_2_animation": "blade-entrapment",
+      "s2_phase_2_actor": "a",
+      "s2_phase_2_token": "fullredflood",
+      "s2_phase_2_title": "Diversion",
+      "s2_phase_2_event": "Knull tries to repeat the pattern from his fight with All-Father Thor: distract the opponent and create a perfect corridor for All-Black.",
+      "s2_phase_2_branch_a": "Odin splits the Odinforce across several fronts and still keeps the primary opponent under control.",
+      "s2_phase_2_branch_b": "One gap in the defense lets Knull enter sword range.",
+      "s2_phase_3_animation": "rush-ko",
+      "s2_phase_3_actor": "a",
+      "s2_phase_3_token": "fullredflood",
+      "s2_phase_3_title": "All-Black Finds Its Target",
+      "s2_phase_3_event": "If the army creates enough distraction, Knull can land the strike he would struggle to manufacture in a clean one-on-one fight.",
+      "s2_phase_3_branch_a": "Odin maintains multi-front control and transitions into neutralizing Knull.",
+      "s2_phase_3_branch_b": "Knull exploits the diversion and lands a lethal All-Black strike.",
+      "s2_end_condition": "The full army does not give Knull greater direct scale than Odin, but it radically increases the chance of creating one decisive opening."
+    },
+    "final-summary": {
+      "line_1": "Celestial-War Odin holds an enormous advantage in scale, versatility, and the number of independent victory conditions over Knull.",
+      "line_2": "All-Black remains a lethally real X-Factor: if Knull creates one perfect opening, he can end the fight despite Odin's prior dominance.",
+      "line_3": "Knull's greatest problem, however, is that regeneration may not be enough. Odin can not only break his body, but also interfere with essence, soul, consciousness, and dimensional connections — and his absorption of Surtur demonstrates a concrete method of neutralizing a being beyond the purely physical level of combat.",
+      "winner": "Celestial-War Odin is the decisive favorite. Knull wins mainly when he exploits Odin's pride and lands All-Black before the All-Father shifts to full neutralization."
+    },
+    "tactical-board": {
+      "lane": "Knull must land a decisive All-Black strike before Odin destroys his body and severs, absorbs, or seals away his essence.",
+      "subtitle": "King of the Abyss vs Celestial-War All-Father"
+    },
+    "verdict-matrix": {
+      "header": "VERDICT MATRIX",
+      "subtitle": "How the outcome changes with battle conditions",
+      "row_1": "CELESTIAL-WAR ODIN VS KNULL · NEUTRAL BATTLEFIELD",
+      "row_2": "KNULL + FULL HIVE + POSSESSED CELESTIALS",
+      "row_3": "PURE PHYSICAL COMBAT AND SWORDSMANSHIP",
+      "case_1": "Odin 9/10. In a clean duel he holds the advantage in scale, defense, control over time and space, and the number of independent victory conditions. Most importantly, he can neutralize Knull even after destroying his body through absorption, sealing, or interference with the essence. Knull wins mainly through one perfect All-Black opening.",
+      "case_1_winner": "b",
+      "case_2": "Odin 6.5/10. The full hive and possessed Celestials turn the duel into a cosmic war, divide the All-Father's attention, and force greater Odinforce expenditure. Knull still does not surpass Odin in direct scale, but he gains far more opportunities to create a tactical All-Black opening.",
+      "case_2_winner": "b",
+      "case_3": "Odin 6/10. Artificially restricting the fight to physical combat and swordsmanship removes the All-Father's greatest advantages: time, matter, soul, essence, teleportation, and sealing. Odin still leads through the Destroyer's power, experience, and the Odinsword, but All-Black becomes a much more immediate threat.",
+      "case_3_winner": "b",
+      "layout": "3x1"
+    },
+    "x-factor": {
+      "a_bonus": "20",
+      "a_bonus_label": "ALL-BLACK",
+      "a_value": "50",
+      "b_bonus": "45",
+      "b_value": "50",
+      "factor": "THE BODY IS NOT THE FINAL LAYER",
+      "implikacja": "Knull's regeneration is extraordinarily dangerous, but it is not an automatic answer to an opponent who can interfere with essence, soul, consciousness, and the very medium through which regeneration occurs.",
+      "mechanika": "Odin does not need to erase every fragment of Knull's body or reproduce the Enigma Force's method. He can first destroy the material form and then sever, absorb, seal, or imprison Knull's essence. His absorption of Surtur demonstrates precisely the category of power required for such a finish.",
+      "psychologia": "Knull wants to exploit Odin's pride and force one lethal mistake. Odin wins most reliably when he stops treating the battle as a warrior's duel and begins treating it as the neutralization of a cosmic anomaly.",
+      "regen": "ABSORPTION · SEALING · ESSENCE"
+    }
+  }
+}

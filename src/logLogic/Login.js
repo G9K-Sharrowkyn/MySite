@@ -133,6 +133,9 @@ const Login = () => {
       if (response.data?.requires2FA) {
         setTwoFactorRequired(true);
         setChallengeToken(response.data.challengeToken || '');
+        if (process.env.NODE_ENV === 'development' && response.data.testTwoFactorCode) {
+          setTwoFactorCode(String(response.data.testTwoFactorCode));
+        }
         showNotification(response.data?.msg || 'Enter your security code.', 'success');
         return;
       }

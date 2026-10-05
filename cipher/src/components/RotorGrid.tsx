@@ -1,0 +1,5 @@
+import type { RotorPublicState } from '../engine/types';
+import { RotorCard } from './RotorCard';
+export function RotorGrid({ rotors }: { rotors?: RotorPublicState[] }) {
+  return <section className="rotor-section" aria-labelledby="rotor-heading"><div className="section-heading"><h2 id="rotor-heading"><span>02</span> ROTOR ARRAY</h2><div className="rotor-legend"><span><i className="legend-dot data" /> DATA 16</span><span><i className="legend-dot state" /> STATE 08</span><span><i className="legend-dot noise" /> NOISE 04</span><span><i className="legend-dot auxiliary" /> AUX 04</span></div></div><div className="rotor-scroll" tabIndex={0} aria-label="32 rotory, przewijanie poziome na małych ekranach"><div className="rotor-grid">{Array.from({ length: 32 }, (_, index) => <RotorCard key={index} index={index} rotor={rotors?.[index]} />)}</div></div><div className="array-caption"><span>32 DYNAMIC ROTORS / 256 CONTACTS EACH</span><span>FINAL STATE <span className="caption-arrow">↗</span> CIPHERTEXT FEEDBACK</span></div></section>;
+}

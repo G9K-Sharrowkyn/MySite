@@ -1,0 +1,3 @@
+export function Header({ ready }: { ready: boolean }) {
+  return <header className="header"><div className="brand"><svg className="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" /><circle cx="24" cy="24" r="12" /><circle cx="24" cy="24" r="4" /><path d="M24 0v12m0 24v12M0 24h12m24 0h12M9 9l7 7m16 16l7 7M9 39l7-7m16-16l7-7" /></svg><div><h1>ULTRA <span>ENIGMA</span></h1><p>ROTOR CIPHER MACHINE <span>//</span> VERSION 1</p></div></div><div className="system-status"><span className={ready ? 'led on' : 'led'} />{ready ? 'MACHINE INITIALIZED' : 'AWAITING INITIALIZATION'}<small>LOCAL ENGINE / NO NETWORK</small></div></header>;
+}

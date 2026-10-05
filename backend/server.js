@@ -32,6 +32,7 @@ import {
 
 import authRoutes from './routes/auth.js';
 import profileRoutes from './routes/profile.js';
+import vsStudioFightsRoutes from './routes/vsStudioFights.js';
 import fightRoutes from './routes/fights.js';
 import commentRoutes from './routes/comments.js';
 import postRoutes from './routes/posts.js';
@@ -1378,6 +1379,7 @@ app.use((req, res, next) => {
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/profile', profileRoutes);
+app.use('/api/fights', vsStudioFightsRoutes);
 app.use('/api/fights', fightRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/posts', postRoutes);

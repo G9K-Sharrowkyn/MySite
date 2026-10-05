@@ -1,0 +1,773 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8">
+    <title>The cyberpunk station for netrunners</title>
+    <link rel="stylesheet" href="./style.css?v=3">
+    <style>
+      html, body, * { cursor: none !important; }
+      /* ── Hide music player (dead backend, not needed) ── */
+      main.svelte-pj992h, main.svelte-1vwdivv { display: none !important; }
+      /* ── Breach animation scale-down ── */
+      .breachBox { transform: scale(0.5) !important; transform-origin: top left !important; }
+      .breachBox3 { display: none !important; }
+      .breachProgress { transform: translateY(0) scale(0.5) !important; transform-origin: left center !important; }
+      .breachProtocolBg + div { transform: translateY(-16px) !important; position: relative !important; z-index: 3 !important; }
+      html.station-localizing .openingBox,
+      html.station-localizing .secondaryCode,
+      html.station-localizing .tertiaryCode,
+      html.station-localizing .breachButton,
+      html.station-localizing .breachProtocolBg pre,
+      html.station-localizing .breachBox1 a,
+      html.station-localizing .breachIcon pre,
+      html.station-localizing .breachProgress + span {
+        color: transparent !important;
+        text-shadow: none !important;
+      }
+    </style>
+    <script>
+    /* ── Mock dead nightfm-backend (Replit gone) + SoundCloud (no token) ── */
+    (function () {
+      function isBlocked(url) {
+        var s = typeof url === 'string' ? url
+              : (url && typeof url.url === 'string') ? url.url
+              : (url && typeof url.toString === 'function') ? url.toString() : '';
+        var sl = s.toLowerCase();
+        return sl.includes('nightfm-backend') || sl.includes('soundcloud.com');
+      }
+      var blob = URL.createObjectURL(new Blob(['{}'], { type: 'application/json' }));
+      var _open = XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open = function (method, url, async, user, pass) {
+        if (isBlocked(url)) url = blob;
+        return async === undefined ? _open.call(this, method, url)
+                                   : _open.call(this, method, url, async, user, pass);
+      };
+      var _fetch = window.fetch;
+      window.fetch = function (url, opts) {
+        if (isBlocked(url))
+          return Promise.resolve(new Response('{}', { status: 200 }));
+        return _fetch.call(this, url, opts);
+      };
+      window.addEventListener('unhandledrejection', function (e) { e.preventDefault(); });
+    })();
+    </script>
+    <script>
+    (function () {
+      try {
+        var params = new URLSearchParams(window.location.search);
+        var raw = (params.get('lang') || '').trim().toLowerCase();
+        var stored = (localStorage.getItem('vvv-app-language-v1') || '').trim().toLowerCase();
+        var stationLang = raw === 'pl' || raw === 'en' ? raw : (stored === 'pl' || stored === 'en' ? stored : 'en');
+        document.documentElement.lang = stationLang;
+        if (stationLang === 'pl') {
+          document.documentElement.classList.add('station-localizing');
+        }
+      } catch (error) {}
+    })();
+    </script>
+  </head>
+    
+  <body>
+  <head>
+  <meta charset="utf8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>NIGHT FM</title>
+  <meta property="og:title" content="NIGHT FM" />
+  <meta property="og:description" content="The cyberpunk radio station for netrunners" />
+  <meta property="og:image" content="https://i.imgur.com/kJIGRF5.png" />
+
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600&family=Rajdhani:wght@500&display=swap" rel="stylesheet" />
+  <script src="https://kit.fontawesome.com/51464d5f10.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+</body>
+    <script src='./bundle.js?v=2'></script>
+<script src='./runner.js?v=2'></script>
+    <script>
+    window.addEventListener('keydown', function (event) {
+      if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+      if (!window.parent || window.parent === window) return;
+      if (/^[1-4]$/.test(event.key)) {
+        event.preventDefault();
+        window.parent.postMessage(
+          { type: 'vvv-dev-jump-stage-request', stage: Number(event.key) },
+          window.location.origin
+        );
+        return;
+      }
+      if (!/^[5-9]$/.test(event.key)) return;
+      event.preventDefault();
+      window.parent.postMessage(
+        { type: 'vvv-dev-open-fight-shortcut-request', key: event.key },
+        window.location.origin
+      );
+    });
+    </script>
+    <script>
+    (function () {
+      var stationLang = (function () {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var raw = (params.get('lang') || '').trim().toLowerCase();
+          if (raw === 'pl' || raw === 'en') return raw;
+        } catch (error) {}
+        try {
+          var stored = (localStorage.getItem('vvv-app-language-v1') || '').trim().toLowerCase();
+          if (stored === 'pl' || stored === 'en') return stored;
+        } catch (error) {}
+        return 'en';
+      })();
+
+      document.documentElement.lang = stationLang;
+      var stationTranslatePairs = stationLang === 'pl' ? [
+        ["AETHER//GRID v13.4.0 :: WAKE SEQUENCE", "AETHER//GRID v13.4.0 :: SEKWENCJA WYBUDZENIA"],
+        ["all systems drift-ready", "wszystkie systemy: drift-ready"],
+        ["KERNEL RELAY READY", "KERNEL RELAY ONLINE"],
+        ["PROXY OVERRIDE", "OVERRIDE WARSTWY PROXY"],
+        ["RUN PACKETMESH.EXE - RELAY MODE", "ODPAL PACKETMESH.EXE // TRYB PRZEKAŹNIKA"],
+        ["RUN KERNELFORK.EXE - PROXY MODE", "ODPAL KERNELFORK.EXE // TRYB PROXY"],
+        ["RUN NULLROUTE.EXE - KERNEL MODE", "ODPAL NULLROUTE.EXE // TRYB KERNELA"],
+        ["RUN CACHESTORM.EXE - HYPER MODE", "ODPAL CACHESTORM.EXE // TRYB HIPER"],
+        ["CHANNEL  ::", "KANAŁ    ::"],
+        ["VAULT    ::", "SEJF     ::"],
+        ["ARCHIVE  ::", "ARCHIWUM ::"],
+        ["ROUTE    ::", "TRASA    ::"],
+        ["CLEAR    ::", "CZYSZCZENIE ::"],
+        ["RELAY BUS", "SZYNA RELAY"],
+        ["SHADOW MIRROR", "LUSTRO CIENIA"],
+        ["CACHE TUNNEL", "TUNEL CACHE"],
+        ["ROOT VECTOR", "WEKTOR GŁÓWNY"],
+        ["INDEX GHOST", "DUCH INDEKSU"],
+        ["PRIMARY SHARD", "ODŁAMEK GŁÓWNY"],
+        ["EDGE GATE", "BRAMA BRZEGOWA"],
+        ["HYPERVISOR ACTIVE", "HIPERNADZORCA ONLINE"],
+        ["THREAD SAFE", "WĄTKI BEZPIECZNE"],
+        ["NULL GATE STABLE", "BRAMA NULL STABILNA"],
+        ["0 TRACE LOSS", "0 UTRAT ŚLADU"],
+        ["PACKET FABRIC", "SIATKA PAKIETÓW"],
+        ["EXEC READY", "EXEC ONLINE"],
+        ["CHECKSUM GREEN", "SUMA KONTROLNA OK"],
+        ["WINDOW OPEN", "OKNO OTWARTE"],
+        ["VISUAL STATE : STABLE [NO PACKET LOSS]", "STAN WIZUALNY : STABILNY [BEZ UTRATY PAKIETÓW]"],
+        ["KERNEL LOADOUT :: NULLROUTE PROFILE", "LOADOUT KERNELA :: PROFIL NULLROUTE"],
+        ["[  0.000000] shimmer lattice lifting into phase", "[  0.000000] migotliwa siatka wchodzi w fazę"],
+        ["[  0.000001] orbital relay cluster handshaking", "[  0.000001] orbitalny klaster relay zestawia handshake"],
+        ["[  0.000002] prism kernel unfolding cobalt threads", "[  0.000002] pryzmatyczny kernel rozwija kobaltowe wątki"],
+        ["[  0.000003] mirror garden blossoms responding", "[  0.000003] ogród luster odpowiada rozkwitem"],
+        ["[  0.000004] ghost braid weaving transit glyphs", "[  0.000004] widmowy splot tka glify tranzytu"],
+        ["[  0.000005] velvet tunnel routing silver wake", "[  0.000005] aksamitny tunel prowadzi srebrny ślad"],
+        ["[  0.000006] aurora mesh holding resonance", "[  0.000006] siatka zorzy utrzymuje rezonans"],
+        ["[  0.000007] halo pins aligned with dusk mirror", "[  0.000007] kołki halo zestrojone z lustrem zmierzchu"],
+        ["[  0.000008] opaline deck rendering false stars", "[  0.000008] opaliczny pokład renderuje fałszywe gwiazdy"],
+        ["[  0.000009] chorus engine humming below threshold", "[  0.000009] silnik chóru mruczy poniżej progu"],
+        ["[  0.000010] flare dampers holding steady", "[  0.000010] tłumiki flary trzymają stabilność"],
+        ["[  0.000011] starforge stamp signing session sigil", "[  0.000011] pieczęć kuźni gwiazd podpisuje sygnet sesji"],
+        ["[  0.000012] moonwire bus carrying soft static", "[  0.000012] szyna moonwire niesie miękki szum"],
+        ["[  0.000013] phase well depth stable", "[  0.000013] głębokość studni fazowej stabilna"],
+        ["[  0.000014] quartz envoy accepting route ribbon", "[  0.000014] kwarcowy wysłannik przyjmuje wstęgę trasy"],
+        ["[  0.000015] archive ghost :: ARTEMIS_ARGO woven", "[  0.000015] duch archiwum :: ARTEMIS_ARGO utkane"],
+        ["[  0.000016] signal marrow glowing clean", "[  0.000016] rdzeń sygnału świeci czysto"],
+        ["[  0.000017] eclipse loom pattern chamber open", "[  0.000017] komora wzorca krosna zaćmienia otwarta"],
+        ["[  0.000018] helios shard refraction responsive", "[  0.000018] refrakcja odłamka Heliosa odpowiada"],
+        ["[  0.000019] silent nodes answering in chorus", "[  0.000019] ciche węzły odpowiadają chórem"],
+        ["[  0.000020] halo sigil :: VERSUSVERSEVAULT awake", "[  0.000020] sygnet halo :: VERSUSVERSEVAULT przebudzone"],
+        ["[  0.000021] glass harbor docking lights refracted", "[  0.000021] światła dokowania szklanego portu załamane"],
+        ["[  0.000022] comet spool winding carrier line", "[  0.000022] szpula komety nawija linię nośną"],
+        ["[  0.000023] mantle lock :: PROJECT_ARES engaged", "[  0.000023] blokada płaszcza :: PROJECT_ARES aktywna"],
+        ["ALIGNING ASTRAL RELAY", "STROJENIE PRZEKAŹNIKA ASTRALNEGO"],
+        ["VEIL CIRCUIT STABLE", "OBWÓD VEIL STABILNY"],
+        ["PRISM TIDE LOCKED", "PRISM TIDE ZABLOKOWANY"],
+        ["GHOST GLASS SYNCED", "GHOST GLASS ZSYNCHRONIZOWANE"],
+        ["CORRIDOR BLOOM READY", "CORRIDOR BLOOM GOTOWY"],
+        ["SRC      ::", "ŹRÓDŁO  ::"],
+        ["DEST     ::", "CEL      ::"],
+        ["TRACE    ::", "ŚLAD     ::"],
+        ["GLYPH    ::", "GLIF     ::"],
+        ["NODE     ::", "WĘZEŁ    ::"],
+        ["[AWAKE]", "[AKTYWNY]"],
+        ["[LISTENING]", "[NASŁUCH]"],
+        ["[LOW]", "[NISKI]"],
+        ["[TRUE]", "[PRAWDA]"],
+        ["[WARM]", "[ROZGRZANY]"],
+        ["[SCATTERED]", "[ROZPROSZONY]"],
+        ["[HELD]", "[UTRZYMANY]"],
+        ["[OPEN]", "[OTWARTY]"],
+        ["[CLEAN]", "[CZYSTY]"],
+        ["[READY]", "[GOTOWY]"],
+        ["[QUIET]", "[CISZA]"],
+        ["[LOCKED]", "[ZABLOKOWANY]"],
+        ["[LIT]", "[OŚWIETLONY]"]
+      ] : [];
+
+      function localizeStationText(value) {
+        if (stationLang !== 'pl') return value;
+        if (typeof value !== 'string' || !value) return value;
+        var localized = value;
+        for (var idx = 0; idx < stationTranslatePairs.length; idx += 1) {
+          var pair = stationTranslatePairs[idx];
+          localized = localized.split(pair[0]).join(pair[1]);
+        }
+        return localized;
+      }
+
+      var panelLabelMap = stationLang === 'pl' ? {
+        "SRC": "ŹRÓDŁO",
+        "DEST": "CEL",
+        "TRACE": "ŚLAD",
+        "GLYPH": "GLIF",
+        "NODE": "WĘZEŁ",
+        "CHANNEL": "KANAŁ",
+        "VAULT": "SEJF",
+        "ARCHIVE": "ARCHIWUM",
+        "ROUTE": "TRASA",
+        "CLEAR": "CZYSZCZENIE"
+      } : {};
+
+      var panelValueMap = stationLang === 'pl' ? {
+        "HYPERVISOR ACTIVE": "HIPERNADZORCA ONLINE",
+        "NULL GATE STABLE": "BRAMA NULL STABILNA",
+        "PACKET FABRIC": "SIATKA PAKIETÓW",
+        "CHECKSUM GREEN": "SUMA KONTROLNA OK",
+        "PHASE ALIGNED": "FAZA ZESTROJONA",
+        "SIGNAL GLIDING": "SYGNAŁ PŁYNIE",
+        "SHARD LOCKED": "ODŁAMEK ZABLOKOWANY",
+        "VECTOR SINGING": "WEKTOR ŚPIEWA",
+        "CORRIDOR OPEN": "KORYTARZ OTWARTY"
+      } : {};
+
+      var panelTagMap = stationLang === 'pl' ? {
+        "RELAY BUS": "SZYNA RELAY",
+        "SHADOW MIRROR": "LUSTRO CIENIA",
+        "CACHE TUNNEL": "TUNEL CACHE",
+        "ROOT VECTOR": "WEKTOR GŁÓWNY",
+        "INDEX GHOST": "DUCH INDEKSU",
+        "PRIMARY SHARD": "ODŁAMEK GŁÓWNY",
+        "EDGE GATE": "BRAMA BRZEGOWA",
+        "THREAD SAFE": "WĄTKI BEZPIECZNE",
+        "0 TRACE LOSS": "0 UTRAT ŚLADU",
+        "EXEC READY": "EXEC ONLINE",
+        "WINDOW OPEN": "OKNO OTWARTE",
+        "AETHER DOCK": "AETHER DOCK",
+        "PUBLIC GATE": "PUBLIC GATE",
+        "PRISM TIDE": "PRISM TIDE",
+        "TIER VEIL": "POZIOM VEIL",
+        "AWAKE": "AKTYWNY",
+        "SOFT STATIC": "MIĘKKI SZUM",
+        "SIGNED": "PODPISANY",
+        "STABLE": "STABILNA",
+        "NOON MIRROR": "NOON MIRROR",
+        "RUNTIME SLOT": "SLOT RUNTIME",
+        "DUSK CURRENT": "PRĄD ZMIERZCHU",
+        "TIER ECHO": "POZIOM ECHO",
+        "LISTENING": "NASŁUCH",
+        "LOW": "NISKI",
+        "SEALED": "ZAPIECZĘTOWANY",
+        "TRUE": "PRAWDA",
+        "GHOST WHARF": "GHOST WHARF",
+        "REPO INDEX": "INDEKS REPO",
+        "NOVA LANE": "ALEJA NOVA",
+        "TIER ARC": "POZIOM ARC",
+        "WARM": "ROZGRZANY",
+        "SCATTERED": "ROZPROSZONY",
+        "HELD": "UTRZYMANY",
+        "CLEAR": "CZYSTO",
+        "GLASS ORBIT": "GLASS ORBIT",
+        "USER SESSION": "SESJA UŻYTKOWNIKA",
+        "EMBER LINK": "EMBER LINK",
+        "TIER NINE": "POZIOM NINE",
+        "OPEN": "OTWARTY",
+        "CLEAN": "CZYSTY",
+        "PULSING": "PULSUJE",
+        "READY": "GOTOWY",
+        "LILT BASIN": "LILT BASIN",
+        "DAWN VEIL": "DAWN VEIL",
+        "ION LANE": "ALEJA ION",
+        "TIER LYRIC": "POZIOM LYRIC",
+        "SPUN": "ROZPIĘTY",
+        "QUIET": "CISZA",
+        "LOCKED": "ZABLOKOWANY",
+        "LIT": "OŚWIETLONY"
+      } : {};
+
+      function padRight(value, width) {
+        value = String(value || "");
+        while (value.length < width) value += " ";
+        return value;
+      }
+
+      function localizePanelToken(value, dictionary) {
+        if (stationLang !== 'pl') return value;
+        return dictionary[value] || localizeStationText(value);
+      }
+
+      function formatAlignedPanelRow(label, value, tag) {
+        var localizedLabel = localizePanelToken(label, panelLabelMap);
+        var localizedValue = localizePanelToken(value, panelValueMap);
+        var localizedTag = localizePanelToken(tag, panelTagMap);
+        return (
+          padRight(localizedLabel, 11) +
+          " :: " +
+          padRight(localizedValue, 20) +
+          " [" +
+          localizedTag +
+          "]"
+        );
+      }
+
+      function buildAlignedPanelBlock(lines) {
+        return lines.map(function (line) {
+          var match = line.match(/^(.*?)\s*::\s*(.*?)\s*\[(.*?)\]$/);
+          if (!match) return localizeStationText(line);
+          return formatAlignedPanelRow(match[1].trim(), match[2].trim(), match[3].trim());
+        }).join("\n");
+      }
+
+      var bootLines = [
+        "AETHER//GRID v13.4.0 :: WAKE SEQUENCE",
+        "[  0.000000] shimmer lattice lifting into phase",
+        "[  0.000001] orbital relay cluster handshaking",
+        "[  0.000002] prism kernel unfolding cobalt threads",
+        "[  0.000003] mirror garden blossoms responding",
+        "[  0.000004] ghost braid weaving transit glyphs",
+        "[  0.000005] velvet tunnel routing silver wake",
+        "[  0.000006] aurora mesh holding resonance",
+        "[  0.000007] halo pins aligned with dusk mirror",
+        "[  0.000008] opaline deck rendering false stars",
+        "[  0.000009] chorus engine humming below threshold",
+        "[  0.000010] flare dampers holding steady",
+        "[  0.000011] starforge stamp signing session sigil",
+        "[  0.000012] moonwire bus carrying soft static",
+        "[  0.000013] phase well depth stable",
+        "[  0.000014] quartz envoy accepting route ribbon",
+        "[  0.000015] archive ghost :: ARTEMIS_ARGO woven",
+        "[  0.000016] signal marrow glowing clean",
+        "[  0.000017] eclipse loom pattern chamber open",
+        "[  0.000018] helios shard refraction responsive",
+        "[  0.000019] silent nodes answering in chorus",
+        "[  0.000020] halo sigil :: VERSUSVERSEVAULT awake",
+        "[  0.000021] glass harbor docking lights refracted",
+        "[  0.000022] comet spool winding carrier line",
+        "[  0.000023] mantle lock :: PROJECT_ARES engaged",
+        "[  0.000024] all systems drift-ready"
+      ];
+
+      var secondaryBlocks = [
+        [
+          "SRC      :: ORBITAL-ECHO-13    [AETHER DOCK]",
+          "DEST     :: VERSUSVERSEVAULT   [PUBLIC GATE]",
+          "PORT     :: 77//LUMA            [PRISM TIDE]",
+          "OPERATOR :: ORBITAL_WRAITH      [TIER VEIL]",
+          "NODE     :: NEON-SHADOW-3       [AWAKE]",
+          "TRACE    :: NONE                [SOFT STATIC]",
+          "GLYPH    :: CINDER-ARC          [SIGNED]",
+          "STATUS   :: PHASE ALIGNED       [STABLE]"
+        ],
+        [
+          "SRC      :: VEIL-CARRIER-02     [NOON MIRROR]",
+          "DEST     :: PROJECT_ARES        [RUNTIME SLOT]",
+          "PORT     :: 11//BLOOM           [DUSK CURRENT]",
+          "OPERATOR :: ASTRA_VANTAGE       [TIER ECHO]",
+          "NODE     :: SUNLESS-THREAD      [LISTENING]",
+          "TRACE    :: HOLLOW              [LOW]",
+          "GLYPH    :: QUARTZ-LATCH        [SEALED]",
+          "STATUS   :: SIGNAL GLIDING      [TRUE]"
+        ],
+        [
+          "SRC      :: CROWN-STATIC-41     [GHOST WHARF]",
+          "DEST     :: ARTEMIS_ARGO        [REPO INDEX]",
+          "PORT     :: 05//DRIFT           [NOVA LANE]",
+          "OPERATOR :: LUCID_SIGNALER      [TIER ARC]",
+          "NODE     :: IRON-HALO-5         [WARM]",
+          "TRACE    :: AURORA              [SCATTERED]",
+          "GLYPH    :: SABLE-KITE          [HELD]",
+          "STATUS   :: SHARD LOCKED        [CLEAR]"
+        ],
+        [
+          "SRC      :: MIRAGE-CIRCUIT-6    [GLASS ORBIT]",
+          "DEST     :: G9K_RUBIKON         [USER SESSION]",
+          "PORT     :: 19//WAVE            [EMBER LINK]",
+          "OPERATOR :: PHASE_CARTOGRAPH    [TIER NINE]",
+          "NODE     :: SOLAR-EMBER-1       [OPEN]",
+          "TRACE    :: SILENT              [CLEAN]",
+          "GLYPH    :: RADIANT-THREAD      [PULSING]",
+          "STATUS   :: VECTOR SINGING      [READY]"
+        ],
+        [
+          "SRC      :: NOCTIS-ARRAY-14     [LILT BASIN]",
+          "DEST     :: HALO-ARCHIVE-5      [DAWN VEIL]",
+          "PORT     :: 23//ECHO            [ION LANE]",
+          "OPERATOR :: STARFRAME_KEEPER    [TIER LYRIC]",
+          "NODE     :: COBALT-LATTICE      [SPUN]",
+          "TRACE    :: MIRROR HUSH         [QUIET]",
+          "GLYPH    :: AETHER-VEIN         [LOCKED]",
+          "STATUS   :: CORRIDOR OPEN       [LIT]"
+        ]
+      ];
+
+      var bannerTexts = [
+        "ALIGNING ASTRAL RELAY",
+        "VEIL CIRCUIT STABLE",
+        "PRISM TIDE LOCKED",
+        "GHOST GLASS SYNCED",
+        "CORRIDOR BLOOM READY"
+      ];
+
+      var finalBannerText = "KERNEL RELAY READY";
+
+      var finalReadyBlock = [
+        "CHANNEL  :: PROXY-LINK-07      [RELAY BUS]",
+        "VAULT    :: G9K_RUBIKON        [SHADOW MIRROR]",
+        "PORT     :: 44//MUX            [CACHE TUNNEL]",
+        "OPERATOR :: ORBITAL_WRAITH     [ROOT VECTOR]",
+        "ARCHIVE  :: ARTEMIS_ARGO       [INDEX GHOST]",
+        "MANTLE   :: PROJECT_ARES       [PRIMARY SHARD]",
+        "HALO     :: VERSUSVERSEVAULT   [EDGE GATE]",
+        "KERNEL   :: HYPERVISOR ACTIVE  [THREAD SAFE]",
+        "ROUTE    :: NULL GATE STABLE   [0 TRACE LOSS]",
+        "STATUS   :: PACKET FABRIC      [EXEC READY]",
+        "CLEAR    :: CHECKSUM GREEN     [WINDOW OPEN]"
+      ];
+
+      var buttonLabels = [
+        "RUN PACKETMESH.EXE - RELAY MODE",
+        "RUN KERNELFORK.EXE - PROXY MODE",
+        "RUN NULLROUTE.EXE - KERNEL MODE",
+        "RUN CACHESTORM.EXE - HYPER MODE"
+      ];
+
+      var postPrefixes = [
+        "KERNEL",
+        "NULL",
+        "PACKET",
+        "PROXY",
+        "CACHE",
+        "VECTOR",
+        "RELAY",
+        "ROUTER",
+        "MUX",
+        "PORT",
+        "STACK",
+        "TRACE"
+      ];
+
+      var postTagSequence = [
+        "PACKET_ROUTE-01",
+        "KERNEL_THREAD-02",
+        "RELAY_MATRIX-03",
+        "CACHE_SWITCH-04",
+        "PROXY_BUS-05",
+        "VECTOR_PORT-06",
+        "NULL_NODE-07",
+        "MUX_FABRIC-08",
+        "STACK_ROUTE-09",
+        "TRACE_THREAD-0A",
+        "PORT_CACHE-0B",
+        "ROUTER_MATRIX-0C",
+        "PACKET_MUX-0D",
+        "KERNEL_PORT-0E",
+        "RELAY_NODE-0F",
+        "CACHE_ROUTE-10",
+        "PROXY_THREAD-11",
+        "VECTOR_SWITCH-12",
+        "NULL_MATRIX-13",
+        "MUX_PORT-14",
+        "STACK_NODE-15",
+        "TRACE_FABRIC-16",
+        "PORT_ROUTE-17",
+        "ROUTER_CACHE-18"
+      ];
+
+      var postSuffixes = [
+        "NODE",
+        "BUS",
+        "GRID",
+        "THREAD",
+        "FABRIC",
+        "MUX",
+        "PORT",
+        "ROUTE",
+        "CACHE",
+        "MATRIX",
+        "SWITCH",
+        "CORE"
+      ];
+
+      var postModules = [
+        "kernel_mux",
+        "relay_router",
+        "proxy_matrix",
+        "cache_backplane",
+        "vector_bus",
+        "packet_fabric",
+        "daemon_spool",
+        "stack_hypervisor",
+        "port_mapper",
+        "thread_pool",
+        "sys_trace",
+        "route_cache"
+      ];
+
+      var postVerbs = [
+        "syncing",
+        "routing",
+        "hashing",
+        "mapping",
+        "buffering",
+        "indexing",
+        "mirroring",
+        "multiplexing",
+        "queuing",
+        "compiling",
+        "mounting",
+        "tuning",
+        "patching"
+      ];
+
+      var postObjects = [
+        "packet table",
+        "relay matrix",
+        "cache line",
+        "thread pool",
+        "routing stack",
+        "bus fabric",
+        "port map",
+        "proxy mesh",
+        "checksum buffer",
+        "io backplane",
+        "session kernel",
+        "vector index"
+      ];
+
+      var postStates = [
+        "online",
+        "stable",
+        "locked",
+        "mapped",
+        "cached",
+        "primed",
+        "clean",
+        "ready",
+        "active",
+        "mounted",
+        "indexed",
+        "synced"
+      ];
+
+      var breachPanel = [
+        "KERNEL LOADOUT :: NULLROUTE PROFILE",
+        "------------------------------------------------",
+        "[0x001] PRIME       KERNEL-MUX                READY",
+        "[0x002] LOAD        RELAY-THREAD              READY",
+        "[0x003] LOAD        PACKET-STACK              READY",
+        "[0x004] VERIFY      CHECKSUM-MATRIX           READY",
+        "[0x005] TUNE        CACHE-FABRIC              READY",
+        "[0x006] SYNC        IO-BACKPLANE              READY",
+        "[0x007] ALIGN       PORT-MAPPER               READY",
+        "[0x008] SHAPE       ROUTE-TABLE               READY",
+        "[0x009] PATCH       PROXY-BUS                 READY",
+        "[0x00A] CHARGE      THREAD-POOL               READY",
+        "[0x00B] IGNITE      HYPERVISOR                READY",
+        "[0x00C] REFRACT     TRACE-SHIELD              READY",
+        "[0x00D] MARK        G9K_RUBIKON_SESSION       READY",
+        "[0x00E] MOUNT       ARTEMIS_ARGO_INDEX        READY",
+        "[0x00F] SELECT      PROJECT_ARES_RUNTIME      READY",
+        "[0x010] BROADCAST   VERSUSVERSEVAULT_LINK     READY",
+        "[0x011] STATUS      EXEC-WINDOW               READY",
+        "------------------------------------------------",
+        "VISUAL STATE : STABLE [NO PACKET LOSS]",
+        "OPERATOR     : ORBITAL_WRAITH [ROOT VECTOR]",
+        "------------------------------------------------"
+      ].join("\n");
+
+      var postSpecialLines = [
+        "archive_ghost.sig :: braiding ARTEMIS_ARGO index ghost :: synced [0xB241]",
+        "mantle_lock.sig :: seating PROJECT_ARES core mantle :: active [0xB5A2]",
+        "halo_gate.sig :: resolving VERSUSVERSEVAULT edge halo :: online [0xB8C3]",
+        "shadow_mirror.sig :: pinning G9K_RUBIKON mirror trace :: cached [0xBC14]",
+        "archive_ghost.sig :: ARTEMIS_ARGO checksum veil :: clean [0xBF65]",
+        "mantle_lock.sig :: PROJECT_ARES kernel braid :: mapped [0xC2D6]",
+        "halo_gate.sig :: VERSUSVERSEVAULT packet halo :: stable [0xC607]",
+        "shadow_mirror.sig :: G9K_RUBIKON token lattice :: indexed [0xC958]"
+      ];
+
+      var postStart = null;
+      var buttonWasReady = false;
+      var postClickLatch = false;
+      var breachProgressTitle = "PROXY OVERRIDE";
+
+      function isVisible(el) {
+        if (!el) return false;
+        var styles = window.getComputedStyle(el);
+        return styles.display !== "none" &&
+          styles.visibility !== "hidden" &&
+          parseFloat(styles.opacity || "1") > 0.05;
+      }
+
+      function setText(el, value) {
+        value = localizeStationText(value);
+        if (el && el.textContent !== value) {
+          el.textContent = value;
+        }
+      }
+
+      function revealLocalizedStationUi() {
+        document.documentElement.classList.remove("station-localizing");
+      }
+
+      function opacityOf(el) {
+        if (!el) return 0;
+        return parseFloat(window.getComputedStyle(el).opacity || "1");
+      }
+
+      function pick(list, index, stride) {
+        return list[(index * stride) % list.length];
+      }
+
+      function hexToken(seed) {
+        return (40960 + (seed * 977) % 20479).toString(16).toUpperCase();
+      }
+
+      function buildTagLabel(step) {
+        return postTagSequence[step % postTagSequence.length];
+      }
+
+      function buildIconPanel(step) {
+        var moduleA = postModules[step % postModules.length];
+        var moduleB = postModules[(step * 2 + 3) % postModules.length];
+        var moduleC = postModules[(step * 5 + 7) % postModules.length];
+        var field = pick(postObjects, step, 7).replace(/ /g, "_");
+        var renderId = moduleA + "_" + hexToken(step).toLowerCase();
+
+        return moduleA + " >> " + moduleB + " >> " + moduleC + " >> signal_guard\n" +
+          "field_map: " + field + " at 0x" + hexToken(step) + "\n" +
+          "render: '__" + renderId + "'";
+      }
+
+      function buildPostLine(step) {
+        if (step === 0) return "kernel render v13.4 :: NULLROUTE_WINDOW";
+        if (step === 1) return "vault :: G9K_RUBIKON";
+        if (step === 2) return "operator :: ORBITAL_WRAITH";
+        if (step === 3) return "----------------------------------------";
+        if (step === 4) return "";
+
+        var phase = step - 5;
+        if (phase > 0 && phase % 9 === 0) {
+          return postSpecialLines[Math.floor(phase / 9) % postSpecialLines.length];
+        }
+        var module = pick(postModules, phase, 3);
+        var object = pick(postObjects, phase, 7);
+        var verb = pick(postVerbs, phase, 5);
+        var state = pick(postStates, phase, 11);
+        var via = pick(postModules, phase + 1, 5).replace(/_/g, "-");
+
+        return module + ".sig :: " + verb + " " + object +
+          " via " + via + " :: " + state +
+          " [0x" + hexToken(phase) + "]";
+      }
+
+      function buildPostWindow(step, size) {
+        var lines = [];
+        var start = Math.max(0, step - size + 1);
+        var i;
+
+        for (i = start; i <= step; i += 1) {
+          lines.push(buildPostLine(i));
+        }
+
+        return lines.join("\n");
+      }
+
+      function renderLoop() {
+        var now = performance.now();
+        var opening = document.querySelector(".openingBox");
+        var secondary = document.querySelector(".secondaryCode");
+        var tertiary = document.querySelector(".tertiaryCode");
+        var button = document.querySelector(".breachButton");
+        var box1 = document.querySelector(".breachBox1");
+        var mainLog = document.querySelector(".breachProtocolBg pre");
+        var panel = document.querySelector(".breachBox2 pre");
+        var tag = document.querySelector(".breachBox1 a");
+        var icon = document.querySelector(".breachIcon pre");
+        var progressLabel = document.querySelector(".breachProgress") &&
+          document.querySelector(".breachProgress").previousElementSibling;
+
+        var box1Width = box1 ? box1.getBoundingClientRect().width : 0;
+        if (box1Width >= 40 && !postClickLatch) {
+          postClickLatch = true;
+          if (opening)  opening.style.visibility  = 'hidden';
+          if (secondary) secondary.style.visibility = 'hidden';
+          if (tertiary) tertiary.style.visibility  = 'hidden';
+          if (button)   button.style.visibility   = 'hidden';
+        }
+        var preClick = !postClickLatch && isVisible(secondary) && box1Width < 40;
+        var buttonReady = isVisible(button) && opacityOf(button) > 0.85;
+
+        if (preClick && !buttonReady) {
+          var bootStart = Math.floor(now / 85) % bootLines.length;
+          var bootWindow = [];
+          var bootLength = Math.min(15, bootLines.length);
+          var i;
+
+          for (i = 0; i < bootLength; i += 1) {
+            bootWindow.push(bootLines[(bootStart + i) % bootLines.length]);
+          }
+
+          var blockIndex = Math.floor(now / 520) % secondaryBlocks.length;
+          var blockElapsed = now - Math.floor(now / 520) * 520;
+          var lineCount = Math.min(secondaryBlocks[blockIndex].length, Math.floor(blockElapsed / 65));
+          var blockLines = secondaryBlocks[blockIndex].slice(0, lineCount);
+          while (blockLines.length < 11) blockLines.push('');
+
+          setText(opening, bootWindow.join("\n"));
+          setText(secondary, buildAlignedPanelBlock(blockLines));
+          setText(tertiary, bannerTexts[blockIndex]);
+          setText(progressLabel, breachProgressTitle);
+          setText(button, buttonLabels[2]);
+          revealLocalizedStationUi();
+          postStart = null;
+        }
+
+        if (preClick && buttonReady) {
+          setText(opening, "[  0.000024] all systems drift-ready");
+          setText(secondary, buildAlignedPanelBlock(finalReadyBlock));
+          setText(tertiary, finalBannerText);
+          setText(progressLabel, breachProgressTitle);
+          setText(button, buttonLabels[2]);
+          revealLocalizedStationUi();
+          postStart = null;
+        }
+
+        if (box1Width >= 40) {
+          if (postStart === null) postStart = now;
+
+          var elapsed = now - postStart;
+          var logStep = Math.floor(elapsed / 42) + 1;
+          var tagStep = Math.floor(elapsed / 320);
+          var iconStep = Math.floor(elapsed / 220);
+
+          setText(mainLog, buildPostWindow(logStep, 18));
+          setText(panel, breachPanel);
+          setText(tag, buildTagLabel(tagStep));
+          setText(icon, buildIconPanel(iconStep));
+          setText(progressLabel, breachProgressTitle);
+          setText(button, buttonLabels[2]);
+          revealLocalizedStationUi();
+        }
+
+        window.requestAnimationFrame(renderLoop);
+      }
+
+      window.addEventListener("load", function () {
+        if (stationLang !== 'pl') {
+          revealLocalizedStationUi();
+        }
+        window.requestAnimationFrame(renderLoop);
+      });
+    })();
+    </script>
+  </body>
+  
+</html>
+

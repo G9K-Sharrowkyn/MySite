@@ -1,0 +1,181 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Lifts and hurls a Y-Wing bomber with telekinesis.",
+      "Smashes two spacecraft into each other using the Force.",
+      "Impales his own body with a lightsaber in order to kill the reborn Darth Maul at the same time.",
+      "Blocks an energy attack with his bare hand and demonstrates very high damage resistance by Star Wars standards.",
+      "Survives a massive explosion that destroys a casino despite severe damage to the surrounding area and his armor."
+    ],
+    "dossier": {
+      "advantage": "Vader possesses exceptional precognition, telekinesis, battlefield control, and far greater specialization in lightsaber combat. Against an opponent on a comparable scale, his combination of the Force and defensive discipline makes him extremely difficult to break.",
+      "mentality": "Cold, patient, and merciless. Vader can wait for a single mistake from his opponent, but against Thanos his usual method of forcing errors loses relevance because of the enormous gap in physical scale.",
+      "quote": "All I am surrounded by is fear. And dead men.",
+      "style": "Technical pressure using the Force and a lightsaber. Vader combines precognition, telekinesis, choking, range control, and precise swordsmanship to deny opponents safe opportunities to respond."
+    },
+    "name": "Darth Vader",
+    "profile": {
+      "powers": [
+        "Force telekinesis, precognition, choking, crushing, environmental control, and enhancement of his own reactions."
+      ],
+      "tools": [
+        "Lightsaber, disciplined defensive swordsmanship, deflection of blaster fire and energy attacks, and battlefield control through the Force.",
+        "Precognition that allows him to anticipate incoming threats and react earlier than raw physical speed alone would suggest."
+      ],
+      "weaknesses": [
+        "His armor and cybernetic life-support systems remain critical components of his survivability.",
+        "Vader's telekinesis is not automatic durability negation — he still has to generate enough force to damage a specific target.",
+        "His greatest feats of strength and durability remain many levels below the cosmic scale of standard Earth-616 Thanos."
+      ]
+    },
+    "stats": {
+      "battleIq": 91,
+      "durability": 70,
+      "experience": 86,
+      "hax": 84,
+      "skills": 94,
+      "speed": 85,
+      "stamina": 78,
+      "strength": 70,
+      "style": 94
+    },
+    "version": "Legends",
+    "victories": [
+      "Dark Woman",
+      "Sha Koon",
+      "Hylon",
+      "Celeste Morne",
+      "Kai Hudorra"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "His direct battle with classic Drax results in the destruction of a planet, after which Thanos defeats Drax.",
+      "Survives an artificial singularity that consumes everything within a radius of roughly two light-years.",
+      "Survives a powerful attack from Galactus, though the feat does not automatically scale him to Galactus at full power.",
+      "Takes multiple vocal attacks from Black Bolt, including one at close range, and still wins the confrontation.",
+      "Can manipulate matter and perform transmutation, including turning living beings into stone."
+    ],
+    "dossier": {
+      "advantage": "Thanos surpasses Vader in almost every category relevant to surviving and dealing damage: strength, durability, stamina, energy projection, force fields, matter manipulation, telepathy, and overall combat scale. Vader can affect him with the Force, but lacks the demonstrated pressure needed to meaningfully immobilize or injure the Titan.",
+      "mentality": "Thanos is supremely confident and often allows weaker opponents to demonstrate their abilities. Bloodlusted, he ends the fight immediately; in character, he may allow Vader a few moves purely out of curiosity or arrogance.",
+      "quote": "I did not force you to fight me. You forced me to. I had to remain true to my nature. Because in the end... I am Thanos.",
+      "style": "Versatile cosmic domination. Thanos can fight hand-to-hand, use devastating energy blasts, force fields, telepathy, telekinesis, technology, and matter manipulation. He does not need to approach Vader to end the battle."
+    },
+    "name": "Thanos",
+    "profile": {
+      "powers": [
+        "Enormous strength and durability, cosmic energy projection, force fields, telepathy, telekinesis, matter manipulation, and transmutation."
+      ],
+      "tools": [
+        "Strategic intelligence, combat adaptation, extensive technological and mystical knowledge, and a broad resistance profile.",
+        "Multiple independent victory conditions: knockout, energy disintegration, transmutation, psychic attack, force-field imprisonment, or destruction of Vader's life-support systems."
+      ],
+      "weaknesses": [
+        "Arrogance and a tendency to test opponents can unnecessarily prolong the fight.",
+        "Not every demonstrated interaction with cosmic entities means full scaling to their maximum power."
+      ]
+    },
+    "stats": {
+      "battleIq": 96,
+      "durability": 98,
+      "experience": 97,
+      "hax": 94,
+      "skills": 92,
+      "speed": 92,
+      "stamina": 98,
+      "strength": 97,
+      "style": 96
+    },
+    "version": "Earth-616",
+    "victories": [
+      "Silver Surfer",
+      "Hulk",
+      "Beta Ray Bill and Ronan the Accuser",
+      "Adam Warlock",
+      "Thor with the Power Gem — victory using a prepared energy device"
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "tactical-board": {
+      "lane": "Vader may foresee Thanos's attack, but he lacks both the force and durability needed to turn that knowledge into a real win condition.",
+      "subtitle": "Sith Lord vs Cosmic Titan"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Statistical favorite",
+      "favorite_side": "b"
+    },
+    "final-summary": {
+      "line_1": "Darth Vader is a far more specialized swordsman and possesses precognition and telekinesis that are lethal tools against most opponents.",
+      "line_2": "Against Thanos, the problem is not technique but scale: neither the Force nor a lightsaber has demonstrated enough power to reliably break the Titan's body or force fields.",
+      "line_3": "Thanos can end the fight through numerous independent methods. If the battle lasts longer than a few seconds, it is mainly because he has chosen to see what Vader can do.",
+      "winner": "Thanos wins 10/10. Vader has no credible victory condition."
+    },
+    "battle-dynamics": {
+      "label": "Scale Gap",
+      "preserve_curve_points": "true",
+      "a_curve": "84,78,66,48,25,10,0,0,0,0,0,0",
+      "b_curve": "96,96,97,98,99,100,100,100,100,100,100,100",
+      "yellow_wave": "20,25,22,28,24,30,26,35",
+      "phase_1": "Vader opens with the Force, trying to stop or destabilize Thanos. Telekinesis affects the Titan, but Vader's demonstrated pressure is too weak to immobilize, choke, or injure him.",
+      "phase_2": "Vader may attempt a lightsaber opening, but Thanos possesses durability and force fields far beyond standard energy threats from the Star Wars setting.",
+      "phase_3": "The first serious counterattack from Thanos ends the fight. It may be a punch, an energy blast, transmutation, a psychic attack, or destruction of Vader's armor and life-support systems.",
+      "analysis": "Vader may force Thanos to acknowledge his technique, but he cannot force him into meaningful defense. Thanos possesses vastly greater strength, durability, energy output, and far more ways to end the fight."
+    },
+    "fight-simulation": {
+      "label": "Thanos In-Character",
+      "opening": "Vader immediately uses the Force, attempting to immobilize Thanos and create an opening for his lightsaber.",
+      "mid_fight": "Thanos feels the telekinetic pressure and observes Vader's technique, but is not meaningfully stopped. He allows the Sith a few moves more out of curiosity than any need to defend himself.",
+      "late_fight": "Once Thanos decides the test is over, he uses his first serious attack and immediately ends the duel.",
+      "end_condition": "Thanos wins with the first genuinely offensive move he makes with the intention of ending the fight.",
+      "phase_1_actor": "a",
+      "phase_1_animation": "clash-lock",
+      "phase_1_title": "Force vs Mass",
+      "phase_1_a_label": "Telekinesis",
+      "phase_1_a_value": "84",
+      "phase_1_b_label": "Durability",
+      "phase_1_b_value": "98",
+      "phase_1_event": "Vader tightens the Force around Thanos. The Titan feels the pressure, but is neither choked, crushed, nor effectively immobilized.",
+      "phase_2_animation": "feint-counter",
+      "phase_2_title": "Blade Without a Finish",
+      "phase_2_event": "Vader uses precognition and tries to find a clean lightsaber opening. Even a perfect hit has no demonstrated ability to inflict fatal damage on Thanos.",
+      "phase_2_branch_a": "Vader lands a hit on a less-protected point and achieves a superficial effect, but does not create a victory condition.",
+      "phase_2_branch_b": "A force field or Thanos's own durability stops the attack before it becomes dangerous.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "brutal-execution",
+      "phase_3_title": "End of the Test",
+      "phase_3_event": "Thanos stops observing and answers with one serious attack that Vader's body and armor cannot survive.",
+      "phase_3_branch_a": "A cosmic energy blast destroys the armor and life-support systems.",
+      "phase_3_branch_b": "A direct strike or matter manipulation ends the duel immediately."
+    },
+    "direct-verdict": {
+      "winner": "Thanos",
+      "loser": "Darth Vader",
+      "outcome": "Absolute scale advantage",
+      "certainty": "Undisputed",
+      "line_1": "Vader's Force abilities affect Thanos, but do not generate enough pressure to permanently immobilize, choke, or injure the Titan.",
+      "line_2": "A lightsaber is not absolute durability negation, and Thanos routinely survives physical and energy attacks many levels beyond Vader's best offensive feats.",
+      "line_3": "Bloodlusted Thanos ends the fight immediately. In character, he may allow Vader a few moves, but only because he does not initially regard him as a genuine threat."
+    },
+    "fight-card": {
+      "fight_title": "Darth Vader vs Thanos"
+    }
+  }
+}

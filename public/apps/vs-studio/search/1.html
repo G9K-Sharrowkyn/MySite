@@ -1,0 +1,2162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VS Search</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body, * {
+      cursor: none !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+    }
+
+    html, body {
+      height: 100%; overflow: hidden;
+      background: #000;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    .stage {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .stage.off { display: none; }
+
+    /* shared scanlines overlay */
+    #scanlines {
+      position: fixed; inset: 0; z-index: 200; pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px,
+        transparent 1px, transparent 3px
+      );
+    }
+
+    /* ═══════════════════════════════════════════
+       STAGE 1 — NETRUNNER STATION (iframe)
+    ═══════════════════════════════════════════ */
+    /* dopasuj tło do gradientu wnętrza iframe */
+    #s1 { background: linear-gradient(0deg, #000 0%, #041728 100%); }
+
+    .s1-iframe {
+      position: absolute;
+      top: 0; left: 0;
+      /* render w 1/3 rozdzielczości → scale(3) powiększa 3× */
+      width: 33.34%;
+      height: 33.34%;
+      border: none;
+      transform: scale(3);
+      transform-origin: top left;
+    }
+
+    /* transparent div that sits over the iframe, captures pointer for relay */
+    .s1-ptr {
+      position: absolute; inset: 0;
+      z-index: 5; pointer-events: auto;
+    }
+
+    .s1-overlay {
+      display: none;
+    }
+
+    .s1-btn {
+      pointer-events: auto;
+      padding: 0.55rem 2.2rem;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid rgba(255,85,78,0.8);
+      color: rgba(255,85,78,1);
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.82rem; letter-spacing: 0.22em;
+      text-transform: uppercase; cursor: pointer;
+      position: relative; overflow: hidden;
+      filter: drop-shadow(0 0 8px rgba(255,85,78,0.7));
+      transition: color 0.2s, background 0.2s;
+    }
+    .s1-btn:hover {
+      background: rgba(255,85,78,0.15);
+      filter: drop-shadow(0 0 14px rgba(255,85,78,1));
+    }
+    .s1-btn span { position: relative; z-index: 1; }
+
+    /* ═══════════════════════════════════════════
+       STAGE 2 — CYBERPUNK TERMINAL
+    ═══════════════════════════════════════════ */
+    #s2 {
+      background: #0a0000;
+      color: #db0e15;
+      text-shadow: 0 0 5px rgba(219,14,21,0.8);
+      font-size: clamp(18px, 2.7vw, 30px);
+      animation: s2-shake 1.5s linear infinite;
+    }
+    @keyframes s2-shake {
+      2%,64% { transform: translate(2px,0) skewX(0deg); }
+      4%,60% { transform: translate(-2px,0) skewX(0deg); }
+      62%    { transform: translate(0,0) skewX(4deg); }
+    }
+
+    .term-box {
+      border: 0.15em solid #db0e15;
+      box-shadow: 0 0 8px #db0e15, inset 0 0 6px rgba(219,14,21,0.08);
+      padding: 2em 2.4em; max-width: 720px; width: 88%;
+    }
+
+    .term-heading {
+      text-align: center; font-size: 1em;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      border-bottom: 1px solid rgba(219,14,21,0.35);
+      padding-bottom: 0.5em; margin-bottom: 1.2em;
+    }
+
+    .term-desc {
+      font-size: 0.6em; opacity: 0.65;
+      text-align: center; margin-bottom: 1.2em; line-height: 1.5;
+    }
+
+    .term-row {
+      display: flex; align-items: center;
+      gap: 0.8em; margin: 0.5em 0; font-size: 0.7em;
+    }
+    .term-lbl { min-width: 9.2em; flex: 0 0 9.2em; opacity: 0.7; }
+    .term-inp {
+      flex: 1; background: rgba(219,14,21,0.07);
+      border: 1px solid rgba(219,14,21,0.3);
+      color: inherit; font-family: inherit; font-size: inherit;
+      padding: 0.25em 0.55em; outline: none;
+    }
+
+    .term-status {
+      text-align: center; margin-top: 1em;
+      font-size: 0.7em; letter-spacing: 0.1em;
+      min-height: 1.4em; transition: color 0.2s;
+    }
+    .term-status.ok {
+      color: #22edfc;
+      text-shadow: 0 0 8px #22edfc;
+      animation: tblink 0.25s steps(1) 4;
+    }
+    @keyframes tblink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ═══════════════════════════════════════════
+       STAGE 3 — HYDRA
+    ═══════════════════════════════════════════ */
+    #s3 {
+      background: linear-gradient(0deg, #000 0%, #280604 100%); color: #ff6666;
+      text-shadow: 0 0 4px red; text-align: center;
+      font-size: clamp(24px, 4.4vw, 52px);
+    }
+
+    .hydra-box {
+      border: 0.18em solid #ff6666;
+      box-shadow: 0 0 4px red, inset 0 0 4px red;
+      padding: 1.6em 2em;
+      animation: s2-shake 1.5s linear infinite;
+    }
+
+    .h-spinner { font-size: 1.1em; margin-bottom: 0.4em; }
+    .h-title   { font-size: 1em; letter-spacing: 0.04em; }
+    .h-sub     { font-size: 0.6em; margin-top: 0.3em; opacity: 0.8; }
+    .h-pct     { font-size: 0.65em; margin-top: 0.3em; }
+    .h-bar     { font-size: 0.65em; margin-top: 0.5em; letter-spacing: 0.04em; }
+    .h-bar-ul  { color: #fff; text-shadow: 0 0 4px #fff; }
+    .h-done    { font-size: 1em; letter-spacing: 0.04em; }
+
+    /* ═══════════════════════════════════════════
+       STAGE 3 — CRT turn-on (szarpane przejście)
+    ═══════════════════════════════════════════ */
+    #s3.on { animation: turn-on 2s linear forwards; }
+    @keyframes turn-on {
+      0%  { transform: scale(1,.8)        translate3d(0,0,0);      opacity:1; }
+      5%  { transform: scale(1.09139,1.34235) translate3d(0,100%,0); }
+      10% { transform: scale(.63084,1.40698)  translate3d(0,-100%,0); }
+      15% { transform: scale(.75142,1.34118)  translate3d(0,100%,0); }
+      20% { transform: scale(.96173,1.36858)  translate3d(0,-100%,0); }
+      25% { transform: scale(1.1348,1.02729)  translate3d(0,100%,0); }
+      30% { transform: scale(.97038,.71092)   translate3d(0,-100%,0); }
+      35% { transform: scale(.6067,1.31101)   translate3d(0,100%,0); }
+      40% { transform: scale(.786,.9326)      translate3d(0,-100%,0); }
+      45% { transform: scale(1.38602,1.14399) translate3d(0,100%,0); }
+      50% { transform: scale(.69973,.90412)   translate3d(0,-100%,0); }
+      51% { transform: scale(1,1)             translate3d(0,0,0);
+            filter: brightness(1) saturate(1); opacity:0; }
+      100%{ transform: scale(1,1)             translate3d(0,0,0);
+            filter: contrast(1) brightness(1.2) saturate(1.3); opacity:1; }
+    }
+
+    /* stage 6 entry — druga połowa CRT turn-on */
+    #s6.crt-enter { animation: s6-crt-enter 0.95s linear forwards; }
+    @keyframes s6-crt-enter {
+      0%  { opacity:0; transform:scale(1,1) translate3d(0,0,0); filter:brightness(1) saturate(1); }
+      100%{ opacity:1; transform:scale(1,1) translate3d(0,0,0); filter:contrast(1) brightness(1.2) saturate(1.3); }
+    }
+
+    /* ═══════════════════════════════════════════
+       STAGE 4 — CSS PSEUDO-ELEMENT GLITCH
+    ═══════════════════════════════════════════ */
+    #s4 { background: #000; overflow: hidden; }
+    .s4-lines { display: flex; flex-direction: column; align-items: center; gap: 0.4em; }
+    .s4-glitch {
+      font-family: "Chakra Petch", "Courier New", monospace;
+      font-size: clamp(1.2rem, 4vw, 4rem);
+      font-weight: 900; color: #fff; position: relative;
+      text-shadow: 3px 0 rgba(255,85,78,1), -3px 0 #0cf;
+      animation: s4skew 0.2s steps(2) infinite;
+    }
+    .s4-glitch::before, .s4-glitch::after {
+      content: attr(data-text);
+      position: absolute; top:0; left:0; width:100%; height:100%;
+    }
+    .s4-glitch::before {
+      color: rgba(255,85,78,1); text-shadow: 3px 0 #0cf;
+      animation: s4g1 0.13s steps(2) infinite;
+    }
+    .s4-glitch::after {
+      color: #0cf; text-shadow: -3px 0 rgba(255,85,78,1);
+      animation: s4g2 0.13s steps(2) infinite;
+    }
+    @keyframes s4skew {
+      0%  { transform: skewX(0deg) scaleX(1); }
+      50% { transform: skewX(8deg) scaleX(1.02); }
+    }
+    @keyframes s4g1 {
+      0%  { clip-path:inset(0 0 88% 0); transform:translate(-8px,0); }
+      20% { clip-path:inset(25% 0 55% 0); transform:translate(8px,0); }
+      40% { clip-path:inset(60% 0 20% 0); transform:translate(-5px,0); }
+      60% { clip-path:inset(10% 0 75% 0); transform:translate(10px,0); }
+      80% { clip-path:inset(75% 0 8% 0);  transform:translate(-8px,0); }
+    }
+    @keyframes s4g2 {
+      0%  { clip-path:inset(65% 0 15% 0); transform:translate(6px,0); }
+      20% { clip-path:inset(5%  0 80% 0); transform:translate(-6px,0); }
+      40% { clip-path:inset(40% 0 35% 0); transform:translate(9px,0); }
+      60% { clip-path:inset(85% 0 3% 0);  transform:translate(-5px,0); }
+      80% { clip-path:inset(20% 0 65% 0); transform:translate(7px,0); }
+    }
+
+    /* ═══════════════════════════════════════════
+       STAGE 5 — VersusVerseVault
+    ═══════════════════════════════════════════ */
+    #s5 { background: #000; overflow: hidden; }
+
+    #s5::before {
+      content: ''; position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px,
+        transparent 1px, transparent 2px
+      );
+      pointer-events: none; z-index: 1;
+      animation: s5noise 0.45s steps(4) infinite;
+    }
+    @keyframes s5noise {
+      0% { transform: translateY(0px); }
+      25%{ transform: translateY(-3px); }
+      50%{ transform: translateY(2px); }
+      75%{ transform: translateY(-1px); }
+    }
+
+    .s5-scan {
+      position: fixed; top: -50vh; left: 0;
+      width: 110vw; height: 200vh;
+      background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.28) 50%);
+      background-size: 100% 4px;
+      pointer-events: none; z-index: 2;
+      animation: s5scan 8s linear infinite;
+    }
+    @keyframes s5scan { 0%{transform:translateY(0)} 100%{transform:translateY(25vh)} }
+
+    .s5-wrap { position: relative; z-index: 3; text-align: center; }
+
+    .s5-text {
+      font-size: clamp(1.8rem, 11vw, 8rem);
+      font-weight: 900; color: #fff;
+      letter-spacing: 0.04em; white-space: nowrap;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(233,69,96,0.45);
+      position: relative; display: inline-block;
+      animation: s5skew 4s infinite;
+    }
+    .s5-text::before, .s5-text::after {
+      content: attr(data-text);
+      position: absolute; top:0;left:0;
+      width:100%;height:100%;
+    }
+    .s5-text::before {
+      color: #e94560;
+      text-shadow: 2px 0 0 #4e9eff, -2px 0 0 lime;
+      z-index: -1;
+      animation: s5g1 0.8s infinite linear alternate-reverse;
+    }
+    .s5-text::after {
+      color: #4e9eff;
+      text-shadow: 2px 0 0 #e94560, -2px 0 0 #ff0;
+      z-index: -2;
+      animation: s5g2 0.8s infinite linear alternate-reverse;
+    }
+
+    @keyframes s5skew {
+      0%,10%,90%,100% { transform:skew(0deg); }
+      2% { transform:skew(2deg); }
+      4% { transform:skew(-2deg); }
+      6% { transform:skew(1deg); }
+      8% { transform:skew(-1deg); }
+    }
+    @keyframes s5g1 {
+      0%,100% { clip-path:inset(0 0 0 0); transform:translate(0);    opacity:.8; }
+      10%     { clip-path:inset(20% 0 30% 0); transform:translate(-5px,3px); opacity:1; }
+      20%     { clip-path:inset(10% 0 60% 0); transform:translate(5px,-3px); opacity:.6; }
+      30%     { clip-path:inset(40% 0 40% 0); transform:translate(-5px,5px); opacity:1; }
+      40%     { clip-path:inset(70% 0 10% 0); transform:translate(5px,-5px); opacity:.7; }
+      50%     { clip-path:inset(30% 0 50% 0); transform:translate(-3px,3px); opacity:.9; }
+      60%     { clip-path:inset(50% 0 30% 0); transform:translate(3px,-3px); opacity:.5; }
+      70%     { clip-path:inset(80% 0 10% 0); transform:translate(-4px,4px); opacity:.8; }
+      80%     { clip-path:inset(15% 0 70% 0); transform:translate(4px,-4px); opacity:1; }
+    }
+    @keyframes s5g2 {
+      0%,100% { clip-path:inset(0 0 0 0); transform:translate(0);    opacity:.8; }
+      10%     { clip-path:inset(60% 0 20% 0); transform:translate(5px,-3px); opacity:.6; }
+      20%     { clip-path:inset(30% 0 50% 0); transform:translate(-5px,3px); opacity:1; }
+      30%     { clip-path:inset(10% 0 70% 0); transform:translate(5px,-5px); opacity:.7; }
+      40%     { clip-path:inset(50% 0 30% 0); transform:translate(-3px,3px); opacity:.5; }
+      50%     { clip-path:inset(80% 0 10% 0); transform:translate(3px,-3px); opacity:.9; }
+      60%     { clip-path:inset(20% 0 60% 0); transform:translate(-4px,4px); opacity:1; }
+      70%     { clip-path:inset(40% 0 30% 0); transform:translate(4px,-4px); opacity:.8; }
+      80%     { clip-path:inset(5%  0 80% 0); transform:translate(-5px,5px); opacity:.6; }
+    }
+
+    /* ═══════════════════════════════════════════
+       STAGE 6 — SEARCH INPUT (Cyberpunk Glitch)
+    ═══════════════════════════════════════════ */
+    #s6 {
+      background: linear-gradient(0deg, #000 0%, #280604 100%);
+      --primary: rgba(255,85,78,1);
+      --secondary: #77e2f2;
+      --mono: "Chakra Petch", "Courier New", monospace;
+      --s6-wrap-y: -1px;
+      --s6-heading-y: -76px;
+      --s6-label-active-top: -5.05rem;
+      transition: opacity 0.45s ease;
+    }
+    #s6.collapsing { opacity: 0.25; pointer-events: none; }
+    #s6.submitting { pointer-events: none; }
+    #s6.submitting .s6-wrap {
+      opacity: 0;
+      transition: opacity 0.09s linear;
+    }
+
+    .s6-wrap {
+      position: relative;
+      width: min(980px, 86vw);
+      height: 31rem;
+      padding: 0;
+      font-family: var(--mono);
+      transform: translateY(var(--s6-wrap-y));
+    }
+
+    .s6-heading {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: max-content;
+      white-space: nowrap;
+      font-size: clamp(2.35rem, 2.7vw, 3rem);
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: rgba(255,85,78,0.72);
+      transform: translate(-50%, var(--s6-heading-y));
+    }
+
+    .s6-container {
+      position: absolute;
+      top: 7.35rem;
+      left: 50%;
+      width: 100%;
+      transform: translateX(-50%);
+      height: 7.9rem;
+      transition: height 0.28s cubic-bezier(.22,.9,.24,1);
+      overflow: visible;
+    }
+    .s6-container.is-stacked {
+      height: 23.4rem;
+    }
+    .s6-container.s6-break::before,
+    .s6-container.s6-break .s6-display,
+    .s6-container.s6-break .s6-border,
+    .s6-container.s6-break .s6-corners,
+    .s6-container.s6-break .s6-scanline,
+    .s6-container.s6-break .s6-data {
+      animation: s6SplitGlitch 280ms steps(5, end) both;
+    }
+    @keyframes s6SplitGlitch {
+      0%,100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); opacity: 1; }
+      16% { clip-path: inset(0 0 56% 0); transform: translate(9px, -6px); opacity: 0.88; }
+      34% { clip-path: inset(48% 0 0 0); transform: translate(-11px, 7px); opacity: 0.76; }
+      56% { clip-path: inset(16% 0 28% 0); transform: translate(6px, -4px); opacity: 0.94; }
+      78% { clip-path: inset(62% 0 8% 0); transform: translate(-4px, 3px); opacity: 0.86; }
+    }
+    .s6-container::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(13,13,13,0.85);
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .s6-input {
+      width: 100%; height: 100%;
+      background: transparent;
+      border: none; border-bottom: 2px solid #333;
+      outline: none; padding: 0 1.2rem;
+      color: transparent; -webkit-text-fill-color: transparent;
+      font-family: var(--mono);
+      font-size: clamp(3rem, 3.5vw, 3.85rem); caret-color: var(--secondary);
+      line-height: 1;
+      text-align: center;
+      text-shadow: none;
+      transition: border-color 0.3s ease;
+      position: relative; z-index: 12;
+    }
+    .s6-display {
+      position: absolute;
+      inset: 0 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      white-space: pre;
+      pointer-events: none;
+      z-index: 10;
+      font-family: var(--mono);
+      font-size: clamp(3rem, 3.5vw, 3.85rem);
+      line-height: 1;
+      text-shadow: 0 0 12px rgba(255, 85, 78, 0.06);
+      transition: inset 0.28s cubic-bezier(.22,.9,.24,1), padding 0.28s cubic-bezier(.22,.9,.24,1);
+    }
+    .s6-display .s6-name-a { color: var(--secondary); }
+    .s6-display .s6-vs {
+      color: rgba(229,229,229,0.56);
+      text-shadow: none;
+    }
+    .s6-display .s6-name-b { color: rgba(255,85,78,0.96); }
+    .s6-container.is-stacked .s6-display {
+      inset: 1rem 1.2rem 1.1rem;
+      display: grid;
+      grid-template-rows: repeat(3, minmax(0, auto));
+      align-content: center;
+      align-items: center;
+      justify-items: center;
+      row-gap: 0.14em;
+      white-space: normal;
+      font-size: clamp(3rem, 3.5vw, 3.85rem);
+      line-height: 1;
+      text-align: center;
+    }
+    .s6-container.is-stacked .s6-input {
+      caret-color: transparent;
+    }
+    .s6-container.is-stacked .s6-display .s6-line {
+      display: inline-flex;
+      align-items: baseline;
+      justify-content: center;
+      width: 100%;
+    }
+    .s6-container.is-stacked .s6-display .s6-raw-block {
+      display: block;
+      grid-row: 1 / span 3;
+      align-self: center;
+      justify-self: center;
+      width: 100%;
+      white-space: normal;
+      text-align: center;
+    }
+    .s6-container.is-stacked .s6-display .s6-vs {
+      text-transform: lowercase;
+    }
+    .s6-caret {
+      display: inline-block;
+      margin-left: 0.015em;
+      color: var(--secondary);
+      text-shadow: 0 0 12px rgba(119,226,242,0.18);
+      animation: s6CaretBlink 0.92s steps(1, end) infinite;
+    }
+    @keyframes s6CaretBlink {
+      0%, 48% { opacity: 1; }
+      49%, 100% { opacity: 0; }
+    }
+
+    .s6-label {
+      position: absolute; top: 1.95rem; left: 1.7rem;
+      color: rgba(229,229,229,0.55);
+      text-transform: uppercase; letter-spacing: 0.1em;
+      font-size: clamp(2.35rem, 2.7vw, 2.9rem); pointer-events: none;
+      transition: all 0.3s ease;
+      font-family: var(--mono); z-index: 11;
+      padding: 0.18rem 0.48rem 0.14rem;
+      background: rgba(24, 8, 8, 0.88);
+      border: 1px solid transparent;
+    }
+    .s6-input:focus ~ .s6-label,
+    .s6-input:not(:placeholder-shown) ~ .s6-label {
+      top: var(--s6-label-active-top); left: 0; font-size: clamp(2.35rem, 2.7vw, 3rem);
+      opacity: 1;
+      color: #070707;
+      background: rgba(255,85,78,0.96);
+      border-color: rgba(255,85,78,0.98);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,85,78,0.24),
+        0 0 26px rgba(255,85,78,0.34),
+        0 0 48px rgba(255,85,78,0.18);
+    }
+
+    .s6-border {
+      position:absolute;inset:0; pointer-events:none;
+      border: 1px solid rgba(255,85,78,0.25);
+      opacity:0.5; transition:all 0.3s ease;
+    }
+    .s6-glow {
+      position:absolute;inset:0; pointer-events:none;
+      background: radial-gradient(ellipse at center, rgba(255,85,78,0.15) 0%, transparent 70%);
+      opacity:0; transition:opacity 0.4s ease;
+    }
+    .s6-scanline {
+      position:absolute;
+      top:0; bottom:0;
+      left:calc((100% - 100vw) / 2);
+      width:100vw;
+      pointer-events:none;
+      background: linear-gradient(to bottom,
+        transparent 0%,
+        rgba(255,85,78,.015) 28%,
+        rgba(255,85,78,.045) 40%,
+        rgba(255,85,78,.095) 47%,
+        rgba(255,85,78,.18) 50%,
+        rgba(255,85,78,.095) 53%,
+        rgba(255,85,78,.045) 60%,
+        rgba(255,85,78,.015) 72%,
+        transparent 100%);
+      opacity:0;
+    }
+    .s6-data {
+      position:absolute;bottom:2px;left:0;
+      width:100%;height:0.28rem;
+      display:flex; opacity:0;
+      transition: opacity 0.3s ease 0.1s; pointer-events:none;
+    }
+    .s6-bar {
+      flex-grow:1; background: rgba(255,85,78,1);
+      transform:scaleY(0); transform-origin:bottom;
+    }
+    .s6-corners { position:absolute;inset:0;pointer-events:none; }
+    .s6-c {
+      position:absolute; width:1rem;height:1rem;
+      border:2px solid var(--primary); opacity:0.45;
+      transition:all 0.3s ease;
+    }
+    .s6-c.tl{top:-.3rem;left:-.3rem;border-right:none;border-bottom:none;}
+    .s6-c.tr{top:-.3rem;right:-.3rem;border-left:none;border-bottom:none;}
+    .s6-c.bl{bottom:-.3rem;left:-.3rem;border-right:none;border-top:none;}
+    .s6-c.br{bottom:-.3rem;right:-.3rem;border-left:none;border-top:none;}
+
+    .s6-input:focus { border-color:transparent; }
+    .s6-input:focus ~ .s6-border  { opacity:1; border-color:rgba(255,85,78,.5); }
+    .s6-input:focus ~ .s6-corners .s6-c { width:1.25rem;height:1.25rem;border-width:3px;opacity:1; }
+    .s6-input:focus ~ .s6-glow     { opacity:1; }
+    .s6-input:focus ~ .s6-scanline {
+      animation:scan-v 4s linear infinite;
+    }
+    .s6-input:focus ~ .s6-data     { opacity:1; }
+    .s6-input:focus ~ .s6-data .s6-bar {
+      animation: dpulse 2s infinite;
+      animation-delay: calc(var(--i) * 0.1s);
+    }
+    @keyframes scan-v {
+      0%   { opacity:0; transform:translateY(-100%); }
+      25%  { opacity:0.5; }
+      75%  { opacity:0.5; }
+      100% { opacity:0; transform:translateY(100%); }
+    }
+    @keyframes dpulse {
+      0%,100% { transform:scaleY(0.2); opacity:0.3; }
+      50%     { transform:scaleY(1);   opacity:0.8; }
+    }
+
+    /* ═══════════════════════════════════════════
+       STAGE 3 — CRT-only mode (no content)
+    ═══════════════════════════════════════════ */
+    #s3.s3-crt-only .hydra-box { visibility: hidden; }
+
+    /* ═══════════════════════════════════════════
+       STAGE 7 — FIGHT HISTORY
+    ═══════════════════════════════════════════ */
+    #s7 {
+      background: linear-gradient(160deg, #060d12 0%, #0a0f14 60%, #060d12 100%);
+      flex-direction: column;
+    }
+    .s7-frame {
+      position: relative;
+      width: 98vw;
+      height: min(1600px, 96vh);
+      border: 1px solid rgba(119, 226, 242, 0.28);
+      box-shadow: 0 0 0 1px rgba(119, 226, 242, 0.08),
+                  0 0 60px rgba(119, 226, 242, 0.04),
+                  inset 0 0 40px rgba(0,0,0,0.6);
+      background: rgba(4, 10, 18, 0.92);
+      display: flex;
+      flex-direction: column;
+    }
+    .s7-frame::before, .s7-frame::after {
+      content: '';
+      position: absolute;
+      width: 20px; height: 20px;
+      border: 2px solid rgba(119, 226, 242, 0.55);
+    }
+    .s7-frame::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+    .s7-frame::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+    .s7-header {
+      flex-shrink: 0;
+      padding: 0.65em 1.4em;
+      background: rgba(119, 226, 242, 0.05);
+      border-bottom: 1px solid rgba(119, 226, 242, 0.18);
+      display: flex;
+      align-items: center;
+      gap: 0.9em;
+    }
+    .s7-edit-btn {
+      margin-left: auto;
+      font-family: 'Courier New', monospace;
+      font-size: clamp(0.85rem, 1.4vw, 1.1rem);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(119,226,242,0.55);
+      border: 1px solid rgba(119,226,242,0.25);
+      background: transparent;
+      padding: 0.3em 1em;
+      cursor: pointer;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .s7-edit-btn:hover { color: #77e2f2; border-color: rgba(119,226,242,0.6); }
+    .s7-edit-btn.active { color: rgba(255,85,78,0.9); border-color: rgba(255,85,78,0.5); }
+    /* delete X badge on each fight card */
+    .s7-fight .s7-delete {
+      display: none;
+      position: absolute;
+      top: -10px; right: -10px;
+      width: 28px; height: 28px;
+      background: rgba(255,85,78,0.9);
+      color: #fff;
+      font-size: 1rem;
+      line-height: 28px;
+      text-align: center;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 20;
+      font-family: 'Courier New', monospace;
+    }
+    #s7.edit-mode .s7-fight { position: relative; }
+    #s7.edit-mode .s7-fight .s7-delete { display: block; }
+    #s7.edit-mode .s7-fight:hover { transform: none; }
+    .s7-header-title {
+      font-family: 'Chakra Petch', 'Courier New', monospace;
+      font-size: clamp(1.7rem, 3vw, 2.5rem);
+      font-weight: 600;
+      color: #77e2f2;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      text-shadow: 0 0 14px rgba(119, 226, 242, 0.4);
+    }
+    .s7-header-sep {
+      font-family: 'Courier New', monospace;
+      font-size: 1.4rem;
+      color: rgba(119, 226, 242, 0.25);
+      letter-spacing: 0.06em;
+    }
+    .s7-header-sub {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(1.16rem, 1.9vw, 1.44rem);
+      color: rgba(119, 226, 242, 0.38);
+      letter-spacing: 0.08em;
+    }
+    .s7-body {
+      flex: 1;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      scrollbar-width: none;
+      padding: 1.6em 1.8em 2.5em;
+    }
+    .s7-body::-webkit-scrollbar { display: none; }
+    .s7-empty {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      font-size: clamp(0.65rem, 1.1vw, 0.82rem);
+      color: rgba(255,255,255,0.18);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .s7-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3.6em 4.4em;
+    }
+    .s7-fight {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1em;
+      cursor: pointer;
+      transition: transform 0.18s ease;
+    }
+    .s7-fight:hover { transform: translateY(-6px); }
+    .s7-cards { display: flex; gap: 10px; }
+    .s7-card {
+      width: 244px; height: 340px;
+      position: relative;
+      border: 1px solid var(--s7c-soft);
+      background: rgba(0,0,0,0.45);
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .s7-card-a {
+      --s7c-color: rgba(119,226,242,0.7);
+      --s7c-soft: rgba(119,226,242,0.2);
+      --s7c-strong: rgba(119,226,242,0.9);
+    }
+    .s7-card-b {
+      --s7c-color: rgba(255,85,78,0.7);
+      --s7c-soft: rgba(255,85,78,0.2);
+      --s7c-strong: rgba(255,85,78,0.9);
+    }
+    .s7-fight:hover .s7-card-a { border-color: rgba(119,226,242,0.48); box-shadow: 0 0 14px rgba(119,226,242,0.1); }
+    .s7-fight:hover .s7-card-b { border-color: rgba(255,85,78,0.48); box-shadow: 0 0 14px rgba(255,85,78,0.1); }
+    .s7-card-id {
+      position: absolute;
+      top: 0.3em; left: 0.35em;
+      font-family: 'Courier New', monospace;
+      font-size: 1rem;
+      color: var(--s7c-strong);
+      z-index: 2;
+      line-height: 1;
+      text-shadow: 0 0 6px var(--s7c-color);
+    }
+    .s7-card-img {
+      position: absolute;
+      display: block;
+      opacity: 0.82;
+      filter: saturate(0.94) contrast(1.05) brightness(0.8);
+      user-select: none;
+      -webkit-user-select: none;
+      pointer-events: none;
+    }
+    .s7-fight-label {
+      font-family: 'Courier New', monospace;
+      font-size: clamp(1rem, 1.7vw, 1.3rem);
+      color: rgba(200,200,200,0.62);
+      letter-spacing: 0.06em;
+      text-align: center;
+      text-transform: uppercase;
+      max-width: 520px;
+      line-height: 1.4;
+      white-space: normal;
+    }
+    .s7-fight-label.s7-fight-label-multiline {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.08em;
+      line-height: 1.22;
+    }
+    .s7-fight-label-line {
+      display: block;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .s7-fight-label-a {
+      color: rgba(119, 226, 242, 0.9);
+      text-shadow: 0 0 8px rgba(119, 226, 242, 0.26);
+    }
+    .s7-fight-label-b {
+      color: rgba(255, 85, 78, 0.9);
+      text-shadow: 0 0 8px rgba(255, 85, 78, 0.24);
+    }
+    .s7-fight-label-vs {
+      color: rgba(190, 196, 203, 0.72);
+      letter-spacing: 0.14em;
+      font-size: 0.92em;
+    }
+  </style>
+</head>
+<body>
+
+<div id="scanlines"></div>
+
+<!-- ── STAGE 1: NETRUNNER STATION (oryginalna animacja w iframe) ── -->
+<div id="s1" class="stage">
+  <iframe
+    class="s1-iframe"
+    src="about:blank"
+    data-base-src="../anime/the-cyberpunk-station-for-netrunners/dist/index.html?v=26"
+    title="The cyberpunk station for netrunners"
+    sandbox="allow-scripts allow-same-origin allow-popups"
+  ></iframe>
+  <!-- pointer-capture layer: sits over iframe so window receives pointermove for relay -->
+  <div class="s1-ptr" aria-hidden="true"></div>
+  <div class="s1-overlay">
+    <button id="s1-btn" class="s1-btn"><span>// LOADING... //</span></button>
+  </div>
+</div>
+
+<!-- ── STAGE 2: CYBERPUNK TERMINAL ── -->
+<div id="s2" class="stage off">
+  <iframe src="about:blank" data-base-src="../anime/cyberpunk-terminal/dist/index.html?v=13" style="position:absolute;inset:0;width:100%;height:100%;border:none;" sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+</div>
+
+<!-- ── STAGE 3: HYDRA LOADING ── -->
+<div id="s3" class="stage off">
+  <div class="hydra-box">
+    <div id="h-main">
+      <p class="h-spinner" id="h-spin">[/]</p>
+      <p class="h-title">&lt; SYSTEM REBOOTING &gt;</p>
+      <p class="h-sub">VERSUS//VAULT v2.077 · RECOVERY SEQUENCE</p>
+      <p class="h-pct">PROCESS: <span id="h-pct">0</span>%</p>
+      <p class="h-bar" id="h-bar">&nbsp;</p>
+    </div>
+    <div id="h-done" style="display:none">
+      <p class="h-done">REBOOTING SUCCESSFUL</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── STAGE 4: GLITCH BURST ── -->
+<div id="s4" class="stage off">
+  <div class="s4-lines">
+    <div class="s4-glitch" data-text="G9K_Rubikon:Session_Authenticated">G9K_Rubikon:Session_Authenticated</div>
+    <div class="s4-glitch" data-text="Artemis_Argo:Kernel_Linked">Artemis_Argo:Kernel_Linked</div>
+    <div class="s4-glitch" data-text="Project_Ares:Boot_Sequence_Armed">Project_Ares:Boot_Sequence_Armed</div>
+  </div>
+</div>
+
+<!-- ── STAGE 5: VersusVerseVault ── -->
+<div id="s5" class="stage off">
+  <div class="s5-scan"></div>
+  <div class="s5-wrap">
+    <div class="s5-text" data-text="VersusVerseVault">VersusVerseVault</div>
+  </div>
+</div>
+
+<!-- ── STAGE 7: FIGHT HISTORY ── -->
+<div id="s7" class="stage off">
+  <div class="s7-frame">
+    <div class="s7-header">
+      <span class="s7-header-title">Fight History</span>
+      <span class="s7-header-sep">//</span>
+      <span class="s7-header-sub">VERSUSVERSEVAULT</span>
+      <button id="s7-edit-btn" class="s7-edit-btn">[ EDIT ]</button>
+    </div>
+    <div class="s7-body" id="s7-body">
+      <div class="s7-empty" id="s7-empty">[ NO FIGHT DATA LOADED ]</div>
+      <div class="s7-grid" id="s7-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── STAGE 6: CYBERPUNK SEARCH ── -->
+<div id="s6" class="stage off">
+  <div class="s6-wrap">
+    <p class="s6-heading">// versusversevault.com · PROJECT ARES //</p>
+    <div class="s6-container">
+      <input
+        id="s6-input" class="s6-input"
+        type="text" placeholder=" "
+        autocomplete="off" autocapitalize="off"
+        autocorrect="off" spellcheck="false"
+        inputmode="search"
+      />
+      <div id="s6-display" class="s6-display" aria-hidden="true"></div>
+      <label class="s6-label" for="s6-input" data-text="FIGHT_EVALUATION">FIGHT_EVALUATION</label>
+      <div class="s6-border"></div>
+      <div class="s6-scanline"></div>
+      <div class="s6-glow"></div>
+      <div class="s6-data">
+        <div class="s6-bar" style="--i:0"></div><div class="s6-bar" style="--i:1"></div>
+        <div class="s6-bar" style="--i:2"></div><div class="s6-bar" style="--i:3"></div>
+        <div class="s6-bar" style="--i:4"></div><div class="s6-bar" style="--i:5"></div>
+        <div class="s6-bar" style="--i:6"></div><div class="s6-bar" style="--i:7"></div>
+        <div class="s6-bar" style="--i:8"></div><div class="s6-bar" style="--i:9"></div>
+      </div>
+      <div class="s6-corners">
+        <div class="s6-c tl"></div><div class="s6-c tr"></div>
+        <div class="s6-c bl"></div><div class="s6-c br"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ── helpers ──────────────────────────────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+  const searchParams = new URLSearchParams(window.location.search);
+  const SEARCH_LANG = searchParams.get('lang') === 'pl' ? 'pl' : 'en';
+  document.documentElement.lang = SEARCH_LANG;
+
+  const syncStageOneLanguage = () => {
+    const stageOneFrame = document.querySelector('.s1-iframe');
+    if (!stageOneFrame) return;
+    const currentSrc = stageOneFrame.getAttribute('src') || '';
+    const sourceSrc =
+      stageOneFrame.getAttribute('data-base-src') ||
+      (currentSrc && currentSrc !== 'about:blank' ? currentSrc : '');
+    if (!sourceSrc) return;
+    let nextSrc = '';
+    try {
+      const parsed = new URL(sourceSrc, window.location.href);
+      parsed.searchParams.set('lang', SEARCH_LANG);
+      nextSrc = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch (error) {
+      const hasQuery = sourceSrc.includes('?');
+      const separator = hasQuery ? '&' : '?';
+      nextSrc = `${sourceSrc}${separator}lang=${encodeURIComponent(SEARCH_LANG)}`;
+    }
+    if (stageOneFrame.getAttribute('src') === nextSrc) return;
+    stageOneFrame.setAttribute('src', nextSrc);
+  };
+  syncStageOneLanguage();
+
+  const syncStageTwoLanguage = () => {
+    const stageTwoFrame = document.querySelector('#s2 iframe');
+    if (!stageTwoFrame) return;
+    const currentSrc = stageTwoFrame.getAttribute('src') || '';
+    const sourceSrc =
+      stageTwoFrame.getAttribute('data-base-src') ||
+      (currentSrc && currentSrc !== 'about:blank' ? currentSrc : '');
+    if (!sourceSrc) return;
+    let nextSrc = '';
+    try {
+      const parsed = new URL(sourceSrc, window.location.href);
+      parsed.searchParams.set('lang', SEARCH_LANG);
+      nextSrc = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch (error) {
+      const hasQuery = sourceSrc.includes('?');
+      const separator = hasQuery ? '&' : '?';
+      nextSrc = `${sourceSrc}${separator}lang=${encodeURIComponent(SEARCH_LANG)}`;
+    }
+    if (stageTwoFrame.getAttribute('src') === nextSrc) return;
+    stageTwoFrame.setAttribute('src', nextSrc);
+  };
+  syncStageTwoLanguage();
+
+  const COPY = SEARCH_LANG === 'pl'
+    ? {
+        documentTitle: 'Wyszukiwanie VS',
+        loadingButton: '// ŁADOWANIE... //',
+        processLabel: 'PROCES',
+        systemRebootTitle: '< RESTART SYSTEMU >',
+        systemRebootSub: 'VERSUS//VAULT v2.077 · SEKWENCJA ODZYSKIWANIA',
+        systemRebootDone: 'RESTART ZAKOŃCZONY',
+        fightModeTitle: '< START SYMULACJI WALKI >',
+        fightModeSub: 'VERSUS//VAULT v2.077 · PROTOKÓŁ ANALIZY BOJOWEJ',
+        fightModeDone: 'SCENARIUSZ WALKI ZAKOŃCZONY',
+        fightHistoryTitle: 'Historia Walk',
+        fightHistorySub: 'VERSUSVERSEVAULT',
+        fightHistoryEmpty: '[ BRAK DANYCH O WALKACH ]',
+        editLabel: '[ EDYTUJ ]',
+        doneLabel: '[ GOTOWE ]',
+        searchHeading: '// versusversevault.com · PROJEKT ARES //',
+        searchLabel: 'WALKA DO OSZACOWANIA',
+        terminalHeading: 'POŁĄCZENIE NEXUS AKTYWNE',
+        terminalLine1: 'Witaj w <b>VERSUSVERSEVAULT</b> - bojowym węźle danych.<br>',
+        terminalLine2: 'Wprowadź dane NETRUNNERA, aby kontynuować.',
+        terminalLoginLabel: 'Użytkownik',
+        terminalPasswordLabel: 'Hasło',
+        terminalAuthButton: '[ AUTORYZUJ ]',
+      }
+    : {
+        documentTitle: 'VS Search',
+        loadingButton: '// LOADING... //',
+        processLabel: 'PROCESS',
+        systemRebootTitle: '< SYSTEM REBOOTING >',
+        systemRebootSub: 'VERSUS//VAULT v2.077 · RECOVERY SEQUENCE',
+        systemRebootDone: 'REBOOTING SUCCESSFUL',
+        fightModeTitle: '< FIGHT SIMULATION STARTING >',
+        fightModeSub: 'VERSUS//VAULT v2.077 · COMBAT ANALYSIS PROTOCOL',
+        fightModeDone: 'FIGHT SCENARIO COMPLETE',
+        fightHistoryTitle: 'Fight History',
+        fightHistorySub: 'VERSUSVERSEVAULT',
+        fightHistoryEmpty: '[ NO FIGHT DATA LOADED ]',
+        editLabel: '[ EDIT ]',
+        doneLabel: '[ DONE ]',
+        searchHeading: '// versusversevault.com · PROJECT ARES //',
+        searchLabel: 'FIGHT_EVALUATION',
+        terminalHeading: 'NEXUS LINK ESTABLISHED',
+        terminalLine1: 'Welcome to <b>VERSUSVERSEVAULT</b> - Battle data nexus.<br>',
+        terminalLine2: 'Enter NETRUNNER credentials to proceed.',
+        terminalLoginLabel: 'Login',
+        terminalPasswordLabel: 'Password',
+        terminalAuthButton: '[ AUTHENTICATE ]',
+      };
+
+  const applyLocalizedCopy = () => {
+    document.title = COPY.documentTitle;
+    const loadingButtonLabel = document.querySelector('#s1-btn span');
+    if (loadingButtonLabel) loadingButtonLabel.textContent = COPY.loadingButton;
+    const hydraTitle = document.querySelector('#s3 .h-title');
+    const hydraSub = document.querySelector('#s3 .h-sub');
+    const hydraDone = document.querySelector('#s3 .h-done');
+    const hydraPctLine = document.querySelector('#s3 .h-pct');
+    if (hydraTitle) hydraTitle.textContent = COPY.systemRebootTitle;
+    if (hydraSub) hydraSub.textContent = COPY.systemRebootSub;
+    if (hydraDone) hydraDone.textContent = COPY.systemRebootDone;
+    if (hydraPctLine) hydraPctLine.innerHTML = `${COPY.processLabel}: <span id="h-pct">0</span>%`;
+    const historyTitle = document.querySelector('.s7-header-title');
+    const historySub = document.querySelector('.s7-header-sub');
+    const historyEmpty = $('s7-empty');
+    const historyEditButton = $('s7-edit-btn');
+    if (historyTitle) historyTitle.textContent = COPY.fightHistoryTitle;
+    if (historySub) historySub.textContent = COPY.fightHistorySub;
+    if (historyEmpty) historyEmpty.textContent = COPY.fightHistoryEmpty;
+    if (historyEditButton) historyEditButton.textContent = COPY.editLabel;
+    const searchHeading = document.querySelector('.s6-heading');
+    const searchLabel = document.querySelector('.s6-label');
+    if (searchHeading) searchHeading.textContent = COPY.searchHeading;
+    if (searchLabel) {
+      searchLabel.textContent = COPY.searchLabel;
+      searchLabel.setAttribute('data-text', COPY.searchLabel);
+    }
+  };
+  applyLocalizedCopy();
+  const SEARCH_FLOW_MODE = searchParams.get('flow') === 'reverse' ? 'reverse' : 'forward';
+
+  if (SEARCH_FLOW_MODE === 'reverse') {
+    $('s1')?.classList.add('off');
+  }
+
+  const showStage = n => {
+    for (let i = 1; i <= 7; i++) {
+      const el = $(`s${i}`);
+      if (el) {
+        if (i === n) el.classList.remove('off');
+        else         el.classList.add('off');
+      }
+    }
+  };
+
+  let stageRunToken = 0;
+  const nextStageRunToken = () => {
+    stageRunToken += 1;
+    return stageRunToken;
+  };
+  const isStageRunTokenActive = token => token === stageRunToken;
+
+  const clearStageArtifacts = () => {
+    const s3 = $('s3');
+    const s4 = $('s4');
+    const main = $('h-main');
+    const done = $('h-done');
+    const pct = $('h-pct');
+    const bar = $('h-bar');
+    const spin = $('h-spin');
+
+    if (s3) { s3.classList.remove('on'); s3.classList.remove('s3-crt-only'); }
+    if (s4) s4.style.transform = '';
+    const s3Title = document.querySelector('#s3 .h-title');
+    const s3Sub   = document.querySelector('#s3 .h-sub');
+    const s3Done  = document.querySelector('#s3 .h-done');
+    if (s3Title) s3Title.textContent = COPY.systemRebootTitle;
+    if (s3Sub)   s3Sub.textContent   = COPY.systemRebootSub;
+    if (s3Done)  s3Done.textContent  = COPY.systemRebootDone;
+    if (spin) spin.textContent = '[/]';
+    if (pct) pct.textContent = '0';
+    if (bar) bar.innerHTML = '&nbsp;';
+    if (main) main.style.display = '';
+    if (done) done.style.display = 'none';
+
+    document.querySelectorAll('.vvv-chroma-flash, .s4-flash').forEach(node => node.remove());
+
+    searchActive = false;
+    resetCollapse();
+  };
+
+  const jumpToDebugStage = shortcut => {
+    const token = nextStageRunToken();
+    clearStageArtifacts();
+
+    if (shortcut === 1) {
+      showStage(1);
+      return;
+    }
+
+    if (shortcut === 2) {
+      showStage(2);
+      return;
+    }
+
+    if (shortcut === 3) {
+      runSearchStage(token);
+      return;
+    }
+
+    if (shortcut === 4) {
+      runFightHistoryStage(token);
+    }
+  };
+
+  const runChromaticFlash = (stageEl, onDone, options = {}, token = stageRunToken) => {
+    const {
+      frames = 14,
+      interval = 40,
+      jitterX = 35,
+      skew = 6
+    } = options;
+    if (!stageEl) {
+      if (isStageRunTokenActive(token) && typeof onDone === 'function') onDone();
+      return;
+    }
+
+    const COLORS = ['rgba(255,85,78,1)', '#77e2f2', '#ff0', '#fff', '#0cf', '#f80'];
+    let frame = 0;
+    const clearFlash = () => {
+      [...stageEl.querySelectorAll('.vvv-chroma-flash')].forEach(b => b.remove());
+      stageEl.style.transform = '';
+    };
+
+    clearFlash();
+
+    const iv = setInterval(() => {
+      if (!isStageRunTokenActive(token)) {
+        clearInterval(iv);
+        clearFlash();
+        return;
+      }
+
+      clearFlash();
+      const n = 5 + Math.floor(Math.random() * 7);
+      for (let i = 0; i < n; i++) {
+        const b = document.createElement('div');
+        b.className = 'vvv-chroma-flash';
+        b.style.cssText = `position:absolute;left:0;right:0;top:${Math.random()*100}%;`
+          + `height:${1+Math.random()*14}%;z-index:10;pointer-events:none;`
+          + `background:${COLORS[Math.floor(Math.random()*COLORS.length)]};`
+          + `mix-blend-mode:screen;opacity:${0.45+Math.random()*0.55};`;
+        stageEl.appendChild(b);
+      }
+      stageEl.style.transform = `translateX(${(Math.random()-.5)*jitterX}px) skewX(${(Math.random()-.5)*skew}deg)`;
+      if (++frame >= frames) {
+        clearInterval(iv);
+        clearFlash();
+        if (isStageRunTokenActive(token) && typeof onDone === 'function') onDone();
+      }
+    }, interval);
+  };
+
+  // ── Portrait adjust (1:1 z AdjustableTemplateImage + helpers.ts) ─────────────
+  const ADJUST_STORAGE_KEY = 'vvv-portrait-adjust-v1';
+  const SCALE_MIN = 1.0, SCALE_MAX = 2.4;
+
+  const adjustStore = (() => {
+    try { return JSON.parse(localStorage.getItem(ADJUST_STORAGE_KEY) || '{}'); } catch { return {}; }
+  })();
+  const saveAdjustStore = () => {
+    try { localStorage.setItem(ADJUST_STORAGE_KEY, JSON.stringify(adjustStore)); } catch {}
+  };
+
+  const clampPos   = v => Math.max(0, Math.min(100, isFinite(v) ? v : 50));
+  const clampScale = v => Math.max(SCALE_MIN, Math.min(SCALE_MAX, isFinite(v) ? v : 1));
+
+  const getAdjust = key => {
+    const s = adjustStore[key];
+    return { x: clampPos(s && isFinite(s.x) ? s.x : 50),
+             y: clampPos(s && isFinite(s.y) ? s.y : 50),
+             scale: clampScale(s && isFinite(s.scale) ? s.scale : 1) };
+  };
+
+  // getTemplateImageGeometry — identycznie jak w helpers.ts
+  const getGeometry = (cw, ch, nw, nh, scale) => {
+    if (!cw || !ch || !nw || !nh) return null;
+    const cs = Math.max(cw / nw, ch / nh);
+    const w = nw * cs * clampScale(scale);
+    const h = nh * cs * clampScale(scale);
+    return { width: w, height: h, overflowX: Math.max(0, w - cw), overflowY: Math.max(0, h - ch) };
+  };
+
+  // buildAdjustableTemplateImageStyle — identycznie jak w helpers.ts
+  const buildImgStyle = (adjust, geo) => {
+    const x = clampPos(adjust.x), y = clampPos(adjust.y);
+    if (geo) {
+      return { left:'0', top:'0', width:`${geo.width}px`, height:`${geo.height}px`,
+               maxWidth:'none', maxHeight:'none',
+               transform:`translate3d(${(-geo.overflowX*x)/100}px,${(-geo.overflowY*y)/100}px,0)` };
+    }
+    return { inset:'0', width:'100%', height:'100%', objectFit:'cover',
+             objectPosition:`${x}% ${y}%`, transform:`scale(${clampScale(adjust.scale)})`,
+             transformOrigin:'center center' };
+  };
+
+  const applyImgStyle = (img, cardEl, adjust) => {
+    const geo = getGeometry(cardEl.clientWidth, cardEl.clientHeight,
+                            img.naturalWidth, img.naturalHeight, adjust.scale);
+    const s = buildImgStyle(adjust, geo);
+    Object.assign(img.style, s);
+  };
+
+  const makeInteractiveCard = (fightEl, cardEl, adjustKey) => {
+    const img = cardEl && cardEl.querySelector('.s7-card-img');
+    if (!img) return;
+
+    let adjust = getAdjust(adjustKey);
+    const apply = () => applyImgStyle(img, cardEl, adjust);
+
+    if (img.complete && img.naturalWidth) apply();
+    else img.addEventListener('load', apply, { once: true });
+
+    let drag = null;
+    let suppressClick = false;
+
+    // Capture-phase na fightEl — blokuje click gdy byl drag
+    fightEl.addEventListener('click', e => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      e.stopImmediatePropagation();
+    }, true);
+
+    cardEl.addEventListener('pointerdown', e => {
+      if (e.button !== 0 && e.button !== 2) return;
+      e.stopPropagation();
+      drag = { pointerId: e.pointerId, mode: e.button === 2 ? 'zoom' : 'pan',
+               startX: e.clientX, startY: e.clientY,
+               origX: e.clientX, origY: e.clientY,   // do liczenia sumarycznej odległości
+               base: { ...adjust }, moved: false };
+      cardEl.setPointerCapture(e.pointerId);
+      cardEl.style.cursor = 'grabbing';
+    });
+
+    cardEl.addEventListener('pointermove', e => {
+      if (!drag || drag.pointerId !== e.pointerId) return;
+      e.stopPropagation();
+
+      // moved = sumaryczna odległość od początku dragia (nie per-klatka)
+      const totalDx = e.clientX - drag.origX, totalDy = e.clientY - drag.origY;
+      if (Math.abs(totalDx) + Math.abs(totalDy) > 4) drag.moved = true;
+
+      const dx = e.clientX - drag.startX, dy = e.clientY - drag.startY;
+      const rect = cardEl.getBoundingClientRect();
+      const scaleX = rect.width  > 0 ? rect.width  / cardEl.clientWidth  : 1;
+      const scaleY = rect.height > 0 ? rect.height / cardEl.clientHeight : 1;
+      const ldx = dx / Math.max(scaleX, 0.0001), ldy = dy / Math.max(scaleY, 0.0001);
+
+      if (drag.mode === 'pan') {
+        const geo = getGeometry(cardEl.clientWidth, cardEl.clientHeight,
+                                img.naturalWidth, img.naturalHeight, drag.base.scale);
+        const nx = geo && geo.overflowX > 0 ? drag.base.x - (ldx / geo.overflowX) * 100 : drag.base.x;
+        const ny = geo && geo.overflowY > 0 ? drag.base.y - (ldy / geo.overflowY) * 100 : drag.base.y;
+        adjust = { x: clampPos(nx), y: clampPos(ny), scale: drag.base.scale };
+        drag.base = { ...adjust }; drag.startX = e.clientX; drag.startY = e.clientY;
+      } else {
+        const zd = (-ldy / Math.max(1, cardEl.clientHeight)) * 1.6;
+        adjust = { x: drag.base.x, y: drag.base.y, scale: clampScale(drag.base.scale + zd) };
+        drag.base = { ...adjust }; drag.startX = e.clientX; drag.startY = e.clientY;
+      }
+      apply();
+    });
+
+    const endDrag = e => {
+      if (!drag || drag.pointerId !== e.pointerId) return;
+      e.stopPropagation();
+      if (cardEl.hasPointerCapture(e.pointerId)) cardEl.releasePointerCapture(e.pointerId);
+      cardEl.style.cursor = 'grab';
+      const wasMoved = drag.moved;
+      drag = null;
+      if (wasMoved) {
+        adjustStore[adjustKey] = adjust;
+        saveAdjustStore();
+        suppressClick = true;
+      }
+    };
+    cardEl.addEventListener('pointerup',     endDrag);
+    cardEl.addEventListener('pointercancel', endDrag);
+    cardEl.addEventListener('contextmenu',   e => e.preventDefault());
+
+    cardEl.style.cursor = 'grab';
+    cardEl.style.touchAction = 'none';
+  };
+
+  // ── Fight History ─────────────────────────────────────────────────────────────
+  const HISTORY_STORAGE_KEY = 'vvv-fight-history-v1';
+
+  const loadHistory = () => {
+    try {
+      const raw = localStorage.getItem(HISTORY_STORAGE_KEY);
+      if (!raw) return [];
+      return JSON.parse(raw);
+    } catch { return []; }
+  };
+
+  const saveHistory = () => {
+    try { localStorage.setItem(HISTORY_STORAGE_KEY, JSON.stringify(fightHistory)); } catch {}
+  };
+
+  const fightHistory = loadHistory();
+  let fightIdCounter = fightHistory.length
+    ? Math.max(...fightHistory.map(f => parseInt(f.cardId, 10) || 0)) + 1
+    : 1;
+
+  const setStage3FightMode = () => {
+    const titleEl = document.querySelector('#s3 .h-title');
+    const subEl   = document.querySelector('#s3 .h-sub');
+    const doneEl  = document.querySelector('#s3 .h-done');
+    if (titleEl) titleEl.textContent = COPY.fightModeTitle;
+    if (subEl)   subEl.textContent   = COPY.fightModeSub;
+    if (doneEl)  doneEl.textContent  = COPY.fightModeDone;
+  };
+
+  const buildFightHistoryLabelMarkup = (fighterAName, fighterBName) => {
+    const left = String(fighterAName || '').trim();
+    const right = String(fighterBName || '').trim();
+    const leftEscaped = escapeHtml(left);
+    const rightEscaped = escapeHtml(right);
+    const singleLine = `${left} vs ${right}`.replace(/\s+/g, ' ').trim();
+    const shouldUseMultiline =
+      singleLine.length >= 42 ||
+      left.length >= 22 ||
+      right.length >= 22;
+
+    if (!shouldUseMultiline) {
+      return (
+        `<div class="s7-fight-label">` +
+          `<span class="s7-fight-label-a">${leftEscaped}</span>` +
+          ` <span class="s7-fight-label-vs">VS</span> ` +
+          `<span class="s7-fight-label-b">${rightEscaped}</span>` +
+        `</div>`
+      );
+    }
+
+    return (
+      `<div class="s7-fight-label s7-fight-label-multiline">` +
+        `<span class="s7-fight-label-line s7-fight-label-a">${leftEscaped}</span>` +
+        `<span class="s7-fight-label-line s7-fight-label-vs">VS</span>` +
+        `<span class="s7-fight-label-line s7-fight-label-b">${rightEscaped}</span>` +
+      `</div>`
+    );
+  };
+
+  const renderFightHistory = () => {
+    const grid  = $('s7-grid');
+    const empty = $('s7-empty');
+    if (!grid) return;
+    if (fightHistory.length === 0) {
+      if (empty) empty.style.display = '';
+      grid.innerHTML = '';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+    grid.innerHTML = '';
+    fightHistory.forEach(fight => {
+      const el = document.createElement('div');
+      el.className = 's7-fight';
+      el.dataset.fightId    = fight.fightId;
+      el.dataset.matchupKey = fight.matchupKey;
+      const imgA = fight.portraitADataUrl
+        ? `<img class="s7-card-img" src="${escapeHtml(fight.portraitADataUrl)}" alt="" loading="lazy">`
+        : '';
+      const imgB = fight.portraitBDataUrl
+        ? `<img class="s7-card-img" src="${escapeHtml(fight.portraitBDataUrl)}" alt="" loading="lazy">`
+        : '';
+      el.innerHTML =
+        `<div class="s7-cards" style="position:relative;">` +
+          `<div class="s7-card s7-card-a"><span class="s7-card-id">ID-${fight.cardId}-A</span>${imgA}</div>` +
+          `<div class="s7-card s7-card-b"><span class="s7-card-id">ID-${fight.cardId}-B</span>${imgB}</div>` +
+          `<span class="s7-delete">✕</span>` +
+        `</div>` +
+        buildFightHistoryLabelMarkup(fight.fighterAName, fight.fighterBName);
+      el.querySelector('.s7-delete').addEventListener('click', e => {
+        e.stopPropagation();
+        const idx = fightHistory.findIndex(f => f.matchupKey === fight.matchupKey);
+        if (idx !== -1) fightHistory.splice(idx, 1);
+        saveHistory();
+        renderFightHistory();
+      });
+      el.addEventListener('click', () => {
+        if ($('s7').classList.contains('edit-mode')) return;
+        openFightFromHistory(fight);
+      });
+      grid.appendChild(el);
+      makeInteractiveCard(el, el.querySelector('.s7-card-a'), fight.matchupKey + ':a');
+      makeInteractiveCard(el, el.querySelector('.s7-card-b'), fight.matchupKey + ':b');
+    });
+  };
+
+  const s7EditBtn = $('s7-edit-btn');
+  if (s7EditBtn) {
+    s7EditBtn.addEventListener('click', () => {
+      const s7 = $('s7');
+      const editing = s7.classList.toggle('edit-mode');
+      s7EditBtn.textContent = editing ? COPY.doneLabel : COPY.editLabel;
+      s7EditBtn.classList.toggle('active', editing);
+    });
+  }
+
+  const addFightToHistory = data => {
+    const existingIndex = fightHistory.findIndex(f => f.matchupKey === data.matchupKey);
+    const existingCardId = existingIndex !== -1 ? String(fightHistory[existingIndex]?.cardId || '') : '';
+    const nextEntry = {
+      fightId:         String(data.fightId || ''),
+      matchupKey:      String(data.matchupKey || ''),
+      fighterAName:    String(data.fighterAName || ''),
+      fighterBName:    String(data.fighterBName || ''),
+      portraitADataUrl: String(data.portraitADataUrl || ''),
+      portraitBDataUrl: String(data.portraitBDataUrl || ''),
+      cardId: existingCardId || String(fightIdCounter++).padStart(3, '0'),
+    };
+    if (existingIndex !== -1) {
+      fightHistory[existingIndex] = nextEntry;
+    } else {
+      fightHistory.push(nextEntry);
+    }
+    saveHistory();
+    renderFightHistory();
+  };
+
+  const openFightFromHistory = fight => {
+    const token = nextStageRunToken();
+    runChromaticFlash($('s7'), () => {
+      if (!isStageRunTokenActive(token)) return;
+      post({ type: 'vvv-fight-history-open', fightId: fight.fightId, matchupKey: fight.matchupKey });
+    }, { frames: 14, interval: 40, jitterX: 35, skew: 6 }, token);
+  };
+
+  const runFightHistoryStage = (token = stageRunToken) => {
+    if (!isStageRunTokenActive(token)) return;
+    showStage(7);
+  };
+
+  // ── postMessage protocol ─────────────────────────────────────────────────────
+  const searchEl  = $('s6');
+  const inputEl   = $('s6-input');
+  const displayEl = $('s6-display');
+  const displayWrapEl = searchEl?.querySelector('.s6-container');
+  const SEARCH_STAGE_DEV_STORAGE_KEY = 'vvv-search-stage-dev-layout';
+  let collapseStarted = false, collapseNotified = false;
+  let collapseTimers = [];
+  let searchSubmitResetTimer = 0;
+  let searchDisplayBreakTimer = 0;
+  let rAF_a = 0, rAF_b = 0, rAF_c = 0;
+  let relayX = window.innerWidth * 0.5, relayY = window.innerHeight * 0.5;
+  let disposeRelay = () => {};
+  let searchActive = false;
+  let searchSubmitPending = false;
+  let searchDisplayMode = 'single';
+
+  const applySearchStageDevLayout = layout => {
+    if (!searchEl || !layout) return;
+    if (typeof layout.wrapY === 'number') {
+      searchEl.style.setProperty('--s6-wrap-y', `${layout.wrapY}px`);
+    }
+    if (typeof layout.headingY === 'number') {
+      searchEl.style.setProperty('--s6-heading-y', `${layout.headingY}px`);
+    }
+    if (typeof layout.labelTopRem === 'number') {
+      searchEl.style.setProperty('--s6-label-active-top', `${layout.labelTopRem}rem`);
+    }
+  };
+
+  const readSearchStageDevLayout = () => {
+    try {
+      const raw = localStorage.getItem(SEARCH_STAGE_DEV_STORAGE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed !== 'object') return null;
+      return {
+        wrapY: Number(parsed.wrapY),
+        headingY: Number(parsed.headingY),
+        labelTopRem: Number(parsed.labelTopRem)
+      };
+    } catch (err) {
+      return null;
+    }
+  };
+
+  const writeSearchStageDevLayout = layout => {
+    try {
+      localStorage.setItem(SEARCH_STAGE_DEV_STORAGE_KEY, JSON.stringify(layout));
+    } catch (err) {}
+  };
+
+  const getCurrentSearchStageDevLayout = () => {
+    const wrapY = parseFloat(getComputedStyle(searchEl).getPropertyValue('--s6-wrap-y')) || 0;
+    const headingY = parseFloat(getComputedStyle(searchEl).getPropertyValue('--s6-heading-y')) || 0;
+    const labelTopRem = parseFloat(getComputedStyle(searchEl).getPropertyValue('--s6-label-active-top')) || -5.05;
+    return { wrapY, headingY, labelTopRem };
+  };
+
+  const post = msg => {
+    if (window.parent && window.parent !== window)
+      window.parent.postMessage(msg, window.location.origin);
+  };
+
+  const requestFightShortcut = shortcutKey => {
+    if (!shortcutKey) return;
+    post({ type: 'vvv-dev-open-fight-shortcut-request', key: String(shortcutKey) });
+  };
+
+  const normalizeFightShortcutKey = event => {
+    const code = event && typeof event.code === 'string' ? event.code : '';
+    switch (code) {
+      case 'Digit5': return '5';
+      case 'Digit6': return '6';
+      case 'Digit7': return '7';
+      case 'Digit8': return '8';
+      case 'Digit9': return '9';
+      case 'Digit0': return '0';
+      case 'Minus':  return '-';
+      case 'Equal':  return '=';
+      default: break;
+    }
+
+    const key = event && typeof event.key === 'string' ? event.key : '';
+    if (/^[5-9]$/.test(key)) return key;
+    if (key === '0') return '0';
+    if (key === '-' || key === '_') return '-';
+    if (key === '=' || key === '+') return '=';
+    return '';
+  };
+
+  const escapeHtml = value =>
+    String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+
+  const clearSearchDisplayBreakTimer = () => {
+    if (!searchDisplayBreakTimer) return;
+    clearTimeout(searchDisplayBreakTimer);
+    searchDisplayBreakTimer = 0;
+  };
+
+  const setSearchDisplayMode = (mode, withGlitch = true) => {
+    if (!displayWrapEl) return;
+    const nextMode = mode === 'stacked' ? 'stacked' : 'single';
+    if (searchDisplayMode === nextMode) {
+      displayWrapEl.classList.toggle('is-stacked', nextMode === 'stacked');
+      return;
+    }
+    searchDisplayMode = nextMode;
+    displayWrapEl.classList.toggle('is-stacked', nextMode === 'stacked');
+    clearSearchDisplayBreakTimer();
+    if (!withGlitch) {
+      displayWrapEl.classList.remove('s6-break');
+      return;
+    }
+    displayWrapEl.classList.remove('s6-break');
+    void displayWrapEl.offsetWidth;
+    displayWrapEl.classList.add('s6-break');
+    searchDisplayBreakTimer = setTimeout(() => {
+      searchDisplayBreakTimer = 0;
+      displayWrapEl.classList.remove('s6-break');
+    }, 280);
+  };
+
+  const renderSearchDisplaySingle = (fighterA, separator, fighterB) => {
+    displayEl.innerHTML =
+      `<span class="s6-name-a">${escapeHtml(fighterA)}</span>` +
+      `<span class="s6-vs">${escapeHtml(separator)}</span>` +
+      `<span class="s6-name-b">${escapeHtml(fighterB)}</span>`;
+  };
+
+  const renderSearchDisplayRawStacked = (raw, showCaret = false) => {
+    const caret = showCaret ? '<span class="s6-caret">|</span>' : '';
+    displayEl.innerHTML = `<span class="s6-name-a s6-raw-block">${escapeHtml(raw)}${caret}</span>`;
+  };
+
+  const renderSearchDisplayStacked = (fighterA, separator, fighterB, caretZone = 'b', showCaret = false) => {
+    const mid = separator.trim() || 'vs';
+    const caret = showCaret ? '<span class="s6-caret">|</span>' : '';
+    const fighterAMarkup = `${escapeHtml(fighterA.trimEnd())}${caretZone === 'a' ? caret : ''}`;
+    const separatorMarkup = `${escapeHtml(mid)}${caretZone === 'vs' ? caret : ''}`;
+    const fighterBMarkup = `${escapeHtml(fighterB.trimStart())}${caretZone === 'b' ? caret : ''}`;
+    displayEl.innerHTML =
+      `<span class="s6-name-a s6-line">${fighterAMarkup}</span>` +
+      `<span class="s6-vs s6-line">${separatorMarkup}</span>` +
+      `<span class="s6-name-b s6-line">${fighterBMarkup}</span>`;
+  };
+
+  const updateSearchDisplay = value => {
+    if (!displayEl) return;
+    const raw = String(value || '');
+    if (!raw) {
+      setSearchDisplayMode('single', false);
+      displayEl.innerHTML = '';
+      return;
+    }
+
+    const match = raw.match(/^(.*?)(\s+)(v(?:s(?:\.?)?)?|versus|kontra)(\s*)(.*)$/i);
+    if (!match) {
+      const wasStacked = searchDisplayMode === 'stacked';
+      setSearchDisplayMode('single', false);
+      displayEl.innerHTML = `<span class="s6-name-a">${escapeHtml(raw)}</span>`;
+
+      const shouldStack = displayEl.scrollWidth > displayEl.clientWidth + 1;
+      if (shouldStack) {
+        setSearchDisplayMode('stacked', !wasStacked);
+        const activeElement = document.activeElement;
+        const showCaret = activeElement === inputEl && !searchSubmitPending;
+        renderSearchDisplayRawStacked(raw, showCaret);
+        return;
+      }
+
+      setSearchDisplayMode('single', false);
+      return;
+    }
+
+    const [, fighterA = '', gap = '', separatorToken = '', separatorTail = '', fighterB = ''] = match;
+    const separator = `${gap}${separatorToken}${separatorTail}`;
+    const wasStacked = searchDisplayMode === 'stacked';
+    setSearchDisplayMode('single', false);
+    renderSearchDisplaySingle(fighterA, separator, fighterB);
+
+    const shouldStack = displayEl.scrollWidth > displayEl.clientWidth + 1;
+
+    if (shouldStack) {
+      setSearchDisplayMode('stacked', !wasStacked);
+      const activeElement = document.activeElement;
+      const showCaret = activeElement === inputEl && !searchSubmitPending;
+      const caretZone = fighterB.length > 0 ? 'b' : (separatorToken.length > 0 ? 'vs' : 'a');
+      renderSearchDisplayStacked(fighterA, separatorToken || separator, fighterB, caretZone, showCaret);
+      return;
+    }
+
+    setSearchDisplayMode('single', false);
+  };
+
+  const postRelay = (kind, x, y, down) =>
+    post({ type:'vvv-pointer-relay', source:'search', event:kind, x, y, down, timestamp:performance.now() });
+
+  const bindPointerRelay = () => {
+    if (window.matchMedia?.('(pointer: coarse)').matches) return () => {};
+    document.documentElement.classList.add('vvv-parent-cursor');
+    const mv = e => { relayX=e.clientX; relayY=e.clientY; postRelay('move',relayX,relayY); };
+    const dn = e => { relayX=e.clientX; relayY=e.clientY; postRelay('down',relayX,relayY,true); };
+    const up = e => { relayX=e.clientX; relayY=e.clientY; postRelay('up',relayX,relayY,false); };
+    const lv = () => postRelay('leave',relayX,relayY,false);
+    window.addEventListener('pointermove',mv,{passive:true});
+    window.addEventListener('pointerdown',dn,{passive:true});
+    window.addEventListener('pointerup',up,{passive:true});
+    window.addEventListener('pointercancel',up,{passive:true});
+    window.addEventListener('pointerleave',lv,{passive:true});
+    window.addEventListener('blur',lv,{passive:true});
+    return () => {
+      window.removeEventListener('pointermove',mv);
+      window.removeEventListener('pointerdown',dn);
+      window.removeEventListener('pointerup',up);
+      window.removeEventListener('pointercancel',up);
+      window.removeEventListener('pointerleave',lv);
+      window.removeEventListener('blur',lv);
+      document.documentElement.classList.remove('vvv-parent-cursor');
+    };
+  };
+
+  const buildHandoff = () => {
+    const wrap = $('s6-input');
+    if (!wrap) return null;
+    const r  = wrap.getBoundingClientRect();
+    const fr = window.frameElement instanceof Element ? window.frameElement.getBoundingClientRect() : null;
+    const ox = fr ? fr.left : 0, oy = fr ? fr.top : 0;
+    return { x: ox+r.left+r.width/2, y: oy+r.top+r.height/2, width:r.width, height:r.height };
+  };
+
+  const clearCollapseTimers = () => {
+    collapseTimers.forEach(id => clearTimeout(id));
+    collapseTimers = [];
+  };
+  const clearSearchSubmitResetTimer = () => {
+    if (searchSubmitResetTimer) {
+      clearTimeout(searchSubmitResetTimer);
+      searchSubmitResetTimer = 0;
+    }
+  };
+  const clearRAFs = () => {
+    [rAF_a,rAF_b,rAF_c].forEach(id => id && cancelAnimationFrame(id));
+    rAF_a = rAF_b = rAF_c = 0;
+  };
+
+  const startCollapse = () => {
+    if (!searchActive || collapseStarted) return;
+    collapseStarted = true; collapseNotified = false;
+    clearCollapseTimers();
+    clearSearchSubmitResetTimer();
+    if (searchSubmitPending) searchEl.classList.add('submitting');
+    searchEl.classList.add('collapsing');
+    collapseTimers.push(setTimeout(() => {
+      if (collapseNotified) return;
+      collapseNotified = true;
+      post({ type:'vvv-search-collapsed', handoff:buildHandoff() });
+    }, searchSubmitPending ? 60 : 480));
+  };
+
+  const resetCollapse = () => {
+    collapseStarted = false; collapseNotified = false;
+    searchSubmitPending = false;
+    clearCollapseTimers(); clearSearchSubmitResetTimer(); clearRAFs();
+    searchEl.classList.remove('submitting');
+    searchEl.classList.remove('collapsing');
+  };
+
+  const primeCollapsed = () => {
+    if (!searchActive) {
+      const token = nextStageRunToken();
+      runSearchStage(token);
+    }
+    collapseStarted = true;
+    clearCollapseTimers(); clearSearchSubmitResetTimer(); clearRAFs();
+    searchEl.classList.remove('submitting');
+    searchEl.classList.add('collapsing');
+    post({ type:'vvv-search-primed', handoff:buildHandoff() });
+  };
+
+  const expandFromPrime = () => {
+    collapseStarted = false; collapseNotified = false;
+    clearCollapseTimers(); clearSearchSubmitResetTimer(); clearRAFs();
+    searchSubmitPending = false;
+    searchEl.classList.remove('submitting');
+    rAF_a = requestAnimationFrame(() => {
+      rAF_a = 0;
+      void searchEl.offsetWidth;
+      rAF_b = requestAnimationFrame(() => {
+        rAF_b = 0;
+        searchEl.classList.remove('collapsing');
+        rAF_c = requestAnimationFrame(() => { rAF_c = 0; });
+      });
+    });
+  };
+
+  window.addEventListener('message', e => {
+    if (e.origin !== window.location.origin && e.origin !== 'null') return;
+    const p = e.data;
+    if (!p || typeof p !== 'object') return;
+    // ── Solution B: forward pointer relay from child iframes (terminal) to App.tsx ──
+    if (p.type === 'vvv-pointer-relay' && e.source !== window.parent) { post(p); return; }
+    if (p.type === 'vvv-terminal-submit') {
+      const token = nextStageRunToken();
+      const s3el = $('s3');
+      if (s3el) s3el.classList.add('s3-crt-only');
+      showStage(3);
+      requestAnimationFrame(() => { const el = $('s3'); if (el) el.classList.add('on'); });
+      setTimeout(() => {
+        if (!isStageRunTokenActive(token)) return;
+        const el = $('s3');
+        if (el) { el.classList.remove('s3-crt-only'); el.classList.remove('on'); }
+        runSearchStage(token);
+      }, 1050);
+      return;
+    }
+    if (p.type === 'vvv-dev-jump-stage-request' && Number.isInteger(p.stage)) {
+      jumpToDebugStage(p.stage);
+      return;
+    }
+    if (p.type === 'vvv-dev-open-fight-shortcut-request' && typeof p.key === 'string') {
+      requestFightShortcut(p.key);
+      return;
+    }
+    if (p.type === 'vvv-dev-jump-stage' && Number.isInteger(p.stage)) {
+      jumpToDebugStage(p.stage);
+      return;
+    }
+    if (p.type === 'vvv-search-collapse') {
+      const currentStage = document.querySelector('.stage:not(.off)');
+      if (currentStage && currentStage.id === 's7') {
+        post({ type: 'vvv-search-collapsed', handoff: buildHandoff() });
+        return;
+      }
+      startCollapse();
+      return;
+    }
+    if (p.type === 'vvv-search-prime-collapsed') { primeCollapsed();   return; }
+    if (p.type === 'vvv-search-expand')          { expandFromPrime();  return; }
+    if (p.type === 'vvv-search-reset')           { resetCollapse(); if (searchActive) notifyReady(); return; }
+
+    if (p.type === 'vvv-fight-located') {
+      addFightToHistory({
+        fightId:         p.fightId,
+        matchupKey:      p.matchupKey,
+        fighterAName:    p.fighterAName,
+        fighterBName:    p.fighterBName,
+        portraitADataUrl: p.portraitADataUrl,
+        portraitBDataUrl: p.portraitBDataUrl,
+      });
+      const token = nextStageRunToken();
+      setStage3FightMode();
+      showStage(3);
+      requestAnimationFrame(() => { const el = $('s3'); if (el) el.classList.add('on'); });
+      runHydra(token, runFightHistoryStage);
+      return;
+    }
+
+    if (p.type === 'vvv-fight-not-found') {
+      searchSubmitPending = false;
+      searchActive = true;
+      const s6 = $('s6');
+      if (s6) { s6.classList.remove('submitting'); s6.classList.remove('collapsing'); }
+      return;
+    }
+  });
+
+  const collapseInputSelection = () => {
+    if (!inputEl) return;
+    try {
+      const end = inputEl.value.length;
+      inputEl.setSelectionRange(end, end);
+    } catch (err) {}
+
+    const selection = window.getSelection?.();
+    if (selection && selection.rangeCount) selection.removeAllRanges();
+  };
+
+  const submitSearch = query => {
+    if (!query || searchSubmitPending || !searchActive) return;
+    searchSubmitPending = true;
+    clearSearchSubmitResetTimer();
+    searchEl.classList.add('submitting');
+    searchSubmitResetTimer = setTimeout(() => {
+      searchSubmitResetTimer = 0;
+      if (collapseStarted) return;
+      searchSubmitPending = false;
+      searchEl.classList.remove('submitting');
+    }, 1800);
+    inputEl?.blur();
+    runChromaticFlash(searchEl, () => {
+      post({ type:'vvv-search-submit', query });
+    }, { frames: 12, interval: 40, jitterX: 26, skew: 4 }, stageRunToken);
+  };
+
+  inputEl?.addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    e.preventDefault();
+    const q = String(inputEl.value || '').trim();
+    if (q) submitSearch(q);
+  });
+  inputEl?.addEventListener('input', () => {
+    updateSearchDisplay(inputEl.value || '');
+  });
+  inputEl?.addEventListener('focus', () => {
+    updateSearchDisplay(inputEl.value || '');
+  });
+  inputEl?.addEventListener('blur', () => {
+    updateSearchDisplay(inputEl.value || '');
+  });
+
+  inputEl?.addEventListener('select', () => {
+    requestAnimationFrame(collapseInputSelection);
+  });
+  inputEl?.addEventListener('dragstart', e => e.preventDefault());
+
+  const notifyReady = () => post({ type:'vvv-search-ready' });
+
+  const activateSearch = () => {
+    searchActive = true;
+    resetCollapse();
+    notifyReady();
+    if (inputEl) {
+      inputEl.name = `vvv-search-${Math.random().toString(36).slice(2)}`;
+      inputEl.autocomplete = 'off';
+      inputEl.value = '';
+      updateSearchDisplay('');
+    }
+  };
+
+  // ── STAGE 1 → button ─────────────────────────────────────────────────────────
+  $('s1-btn').addEventListener('click', () => {
+    showStage(2);
+  });
+
+  // ── STAGE 1 → let breach animation play fully, then transition ───────────────
+  // When .breachButton becomes visible: drop .s1-ptr so hover/clicks reach iframe.
+  // On breach click: poll .breachCover opacity → when it peaks → showStage(2).
+  const s1IFrame = document.querySelector('.s1-iframe');
+  const s1Ptr    = document.querySelector('.s1-ptr');
+
+  s1IFrame.addEventListener('load', () => {
+    try {
+      const iDoc = s1IFrame.contentWindow.document;
+      const iWin = s1IFrame.contentWindow;
+
+      const enableBreachClick = () => {
+        const btn = iDoc.querySelector('.breachButton');
+        if (!btn) return;
+        const cs = iWin.getComputedStyle(btn);
+        if (cs.display === 'none' || parseFloat(cs.opacity) <= 0.1) return;
+
+        observer.disconnect();
+        s1Ptr.style.pointerEvents = 'none'; // let hover + clicks reach iframe
+
+        // Re-establish cursor relay through Svelte iframe's document.
+        // The iframe is CSS-scaled (scale(3) from 33.34%), so e.clientX/Y are
+        // in iframe's own coordinate space (1/3 of the parent viewport).
+        // Multiply by the rendered/intrinsic ratio to convert back to parent coords.
+        const iframeScale = () => {
+          const r = s1IFrame.getBoundingClientRect();
+          return { r, kx: r.width / s1IFrame.offsetWidth, ky: r.height / s1IFrame.offsetHeight };
+        };
+        iDoc.addEventListener('pointermove', e => {
+          const { r, kx, ky } = iframeScale();
+          postRelay('move', r.left + e.clientX * kx, r.top + e.clientY * ky);
+        }, { passive: true });
+        iDoc.addEventListener('pointerdown', e => {
+          const { r, kx, ky } = iframeScale();
+          postRelay('down', r.left + e.clientX * kx, r.top + e.clientY * ky, true);
+        }, { passive: true });
+        iDoc.addEventListener('pointerup', e => {
+          const { r, kx, ky } = iframeScale();
+          postRelay('up', r.left + e.clientX * kx, r.top + e.clientY * ky, false);
+        }, { passive: true });
+
+        btn.addEventListener('click', () => {
+          const cover = iDoc.querySelector('.breachCover');
+          let done = false;
+          const doTransition = () => { if (done) return; done = true; showStage(2); };
+
+          if (cover) {
+            const poll = setInterval(() => {
+              if (parseFloat(iWin.getComputedStyle(cover).opacity) > 0.85) {
+                clearInterval(poll);
+                doTransition();
+              }
+            }, 100);
+            setTimeout(() => { clearInterval(poll); doTransition(); }, 8000);
+          } else {
+            setTimeout(doTransition, 5000);
+          }
+        }, { once: true });
+      };
+
+      const observer = new MutationObserver(enableBreachClick);
+      observer.observe(iDoc.documentElement, {
+        subtree: true, attributes: true, childList: true,
+        attributeFilter: ['style', 'class']
+      });
+      enableBreachClick();
+    } catch (err) { /* cross-origin guard */ }
+  });
+
+
+  // ── STAGE 3: loading bar ──────────────────────────────────────────────────────
+  const runHydra = async (token = nextStageRunToken(), onDone = null) => {
+    const spin = $('h-spin'), pct = $('h-pct'), bar = $('h-bar');
+    const main = $('h-main'), done = $('h-done');
+    main.style.display = ''; done.style.display = 'none';
+    pct.textContent = '0'; bar.textContent = '';
+
+    const MAX = 24, LOADED = '#', EMPTY = '.';
+    const vals = Array(MAX).fill(EMPTY);
+    const frames = ['/','-','\\','|'];
+    let fi = 0;
+    const spinTimer = setInterval(() => {
+      if (!isStageRunTokenActive(token)) {
+        clearInterval(spinTimer);
+        return;
+      }
+      spin.textContent = `[${frames[fi++ % 4]}]`;
+    }, 110 + Math.random() * 80);
+
+    await new Promise(resolve => {
+      const tick = setInterval(() => {
+        if (!isStageRunTokenActive(token)) {
+          clearInterval(tick);
+          resolve();
+          return;
+        }
+        const emptyIdx = vals.lastIndexOf(EMPTY);
+        if (emptyIdx === -1) { clearInterval(tick); resolve(); return; }
+        vals[emptyIdx] = LOADED;
+        const loaded = vals.filter(c => c === LOADED).length;
+        pct.textContent = Math.floor(loaded / MAX * 100);
+        const ls = vals.slice(0, loaded).join('');
+        const us = vals.slice(loaded).join('');
+        bar.innerHTML = `(${ls}<span class="h-bar-ul">${us}</span>)`;
+      }, 75 + Math.random() * 200);
+    });
+
+    clearInterval(spinTimer);
+    if (!isStageRunTokenActive(token)) return;
+    pct.textContent = '100';
+    bar.innerHTML = `(${'#'.repeat(MAX)})`;
+    await delay(400);
+    if (!isStageRunTokenActive(token)) return;
+
+    main.style.display = 'none';
+    done.style.display = '';
+    await delay(3000);
+    if (!isStageRunTokenActive(token)) return;
+    runChromaticFlash($('s3'), () => {
+      if (!isStageRunTokenActive(token)) return;
+      if (typeof onDone === 'function') onDone(token);
+      else runGlitchBurst(token);
+    }, { frames: 12, interval: 45, jitterX: 28, skew: 4 }, token);
+  };
+
+  // ── STAGE 4: CSS pseudo-element glitch → JS glitch flash → search ───────────
+  const runGlitchBurst = (token = nextStageRunToken()) => {
+    if (!isStageRunTokenActive(token)) return;
+    showStage(4);
+    setTimeout(() => {
+      if (!isStageRunTokenActive(token)) return;
+      runChromaticFlash($('s4'), () => {
+        if (!isStageRunTokenActive(token)) return;
+        runSearchStage(token);
+      }, {}, token);
+    }, 2500);
+  };
+
+  // ── STAGE 6 ───────────────────────────────────────────────────────────────────
+  const runSearchStage = (token = stageRunToken) => {
+    if (!isStageRunTokenActive(token)) return;
+    const s6 = $('s6');
+    if (s6) s6.classList.add('crt-enter');
+    showStage(6);
+    activateSearch();
+    if (s6) s6.addEventListener('animationend', () => s6.classList.remove('crt-enter'), { once: true });
+  };
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && window.parent && window.parent !== window) {
+      e.preventDefault();
+      window.parent.postMessage({ type: 'vvv-studio-exit-darkseid-request' }, window.location.origin);
+      return;
+    }
+    if (e.altKey && e.shiftKey && /^[1-3]$/.test(e.key)) {
+      e.preventDefault();
+      const layout = getCurrentSearchStageDevLayout();
+
+      if (e.key === '1') layout.headingY -= 8;
+      if (e.key === '2') layout.labelTopRem -= 0.2;
+      if (e.key === '3') layout.wrapY -= 8;
+
+      applySearchStageDevLayout(layout);
+      writeSearchStageDevLayout(layout);
+      return;
+    }
+
+    if (e.altKey && e.shiftKey && /^[qwe]$/i.test(e.key)) {
+      e.preventDefault();
+      const layout = getCurrentSearchStageDevLayout();
+
+      if (e.key.toLowerCase() === 'q') layout.headingY += 8;
+      if (e.key.toLowerCase() === 'w') layout.labelTopRem += 0.2;
+      if (e.key.toLowerCase() === 'e') layout.wrapY += 8;
+
+      applySearchStageDevLayout(layout);
+      writeSearchStageDevLayout(layout);
+      return;
+    }
+
+    if (e.altKey && e.shiftKey && e.key === '0') {
+      e.preventDefault();
+      const defaults = { wrapY: -1, headingY: -76, labelTopRem: -5.05 };
+      applySearchStageDevLayout(defaults);
+      writeSearchStageDevLayout(defaults);
+      return;
+    }
+
+    if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+
+    // Stage 7 scroll via arrow keys
+    const s7el   = $('s7');
+    const s7body = $('s7-body');
+    if (s7el && !s7el.classList.contains('off') && s7body) {
+      if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        s7body.scrollBy({ top: e.key === 'ArrowDown' ? 140 : -140, behavior: 'smooth' });
+        return;
+      }
+    }
+
+    if (/^[1-4]$/.test(e.key)) {
+      e.preventDefault();
+      jumpToDebugStage(Number(e.key));
+      return;
+    }
+    const shortcutKey = normalizeFightShortcutKey(e);
+    if (!shortcutKey) return;
+    e.preventDefault();
+    requestFightShortcut(shortcutKey);
+  });
+
+  // ── Solution A: attach pointer listeners to s2 iframe document ───────────────
+  const s2IFrame = document.querySelector('#s2 iframe');
+  const localizeStageTwoFrame = () => {
+    if (!s2IFrame) return false;
+    try {
+      const iDoc = s2IFrame.contentWindow && s2IFrame.contentWindow.document;
+      if (!iDoc) return false;
+      const termDesc = iDoc.querySelector('.term-desc');
+      const termHeading = iDoc.querySelector('.term-heading');
+      const loginInput = iDoc.getElementById('t-login');
+      const passwordInput = iDoc.getElementById('t-pass');
+      const loginLabel = loginInput ? loginInput.closest('.term-row')?.querySelector('.term-lbl') : null;
+      const passwordLabel = passwordInput ? passwordInput.closest('.term-row')?.querySelector('.term-lbl') : null;
+      const authButton = iDoc.querySelector('.term-submit');
+      if (!termDesc || !termHeading || !loginLabel || !passwordLabel || !authButton) return false;
+      termHeading.textContent = COPY.terminalHeading;
+      termDesc.innerHTML = COPY.terminalLine1 + COPY.terminalLine2;
+      loginLabel.textContent = COPY.terminalLoginLabel;
+      passwordLabel.textContent = COPY.terminalPasswordLabel;
+      authButton.textContent = COPY.terminalAuthButton;
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+  if (s2IFrame) {
+    s2IFrame.addEventListener('load', () => {
+      try {
+        localizeStageTwoFrame();
+        const iDoc = s2IFrame.contentWindow.document;
+        iDoc.addEventListener('pointermove',   e => postRelay('move', e.clientX, e.clientY),        { passive: true });
+        iDoc.addEventListener('pointerdown',   e => postRelay('down', e.clientX, e.clientY, true),  { passive: true });
+        iDoc.addEventListener('pointerup',     e => postRelay('up',   e.clientX, e.clientY, false), { passive: true });
+        iDoc.addEventListener('pointercancel', e => postRelay('up',   e.clientX, e.clientY, false), { passive: true });
+        iDoc.addEventListener('keydown', e => {
+          if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+          const shortcutKey = normalizeFightShortcutKey(e);
+          if (!shortcutKey) return;
+          e.preventDefault();
+          requestFightShortcut(shortcutKey);
+        });
+      } catch(err) {}
+    });
+    localizeStageTwoFrame();
+  }
+
+  // ── BOOT ──────────────────────────────────────────────────────────────────────
+  const boot = () => {
+    applySearchStageDevLayout(readSearchStageDevLayout() || { wrapY: -1, headingY: -76, labelTopRem: -5.05 });
+    // Relay pointer events od razu — iframe zajmuje cały ekran podczas intro
+    disposeRelay = bindPointerRelay();
+
+    if (SEARCH_FLOW_MODE === 'reverse') {
+      const token = nextStageRunToken();
+      clearStageArtifacts();
+      runSearchStage(token);
+      return;
+    }
+
+    renderFightHistory();
+    showStage(1);
+  };
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+  window.addEventListener('beforeunload', () => { disposeRelay(); });
+})();
+</script>
+</body>
+</html>

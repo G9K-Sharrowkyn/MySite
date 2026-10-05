@@ -1,0 +1,8 @@
+Stylized Muzzle Flash 03 - Off-Centre 5x5
+Creator: Ammar Khan / CGHEVEN
+Source: https://cgheven.com/assets/stylized-muzzle-flash-03-off-center-5x5
+Original download: https://cdn.cgheven.com/file/cghaven-2025/VFX/Muzzle_Flashes/Stylized_Muzzle_Flashes/03/off_centre/Flipbook/stylized_muzzle_03_off_centre_4K_5x5.png
+License: CC0 Public Domain
+
+The original 4096x4096 RGBA PNG was resized to a 1024x1024 lossless WebP
+for real-time use in the browser game.

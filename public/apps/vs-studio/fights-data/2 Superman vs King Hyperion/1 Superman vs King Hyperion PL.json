@@ -1,0 +1,272 @@
+{
+  "schemaVersion": 1,
+  "locale": "pl",
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templateData": {
+    "tactical-board": {
+      "subtitle": "Bohater kontra Tyran"
+    },
+    "character-dossier-a": {
+      "world": "New52",
+      "quote": "To wygląda na robotę dla Supermana.",
+      "style": "Bezpośrednia walka na sile i szybkości. Narzuca tempo, kontroluje dystans i płynnie łączy zwarcie z lotem oraz Heat Vision.",
+      "advantage": "Potworna przewaga w sile, szybkości, wytrzymałości i mobilności nad większością przeciwników.",
+      "mentality": "Heroiczny i opanowany. Zwykle się hamuje i eskaluje dopiero wtedy, gdy sytuacja naprawdę tego wymaga."
+    },
+    "character-dossier-b": {
+      "world": "Earth-4023",
+      "quote": "Właśnie tak, skarbie... Hyperion.",
+      "style": "Brutalna presja w zwarciu wsparta lotem i Atomic Vision. Chętnie wymienia cios za cios i walczy bez hamulców.",
+      "advantage": "Ekstremalna regeneracja i przeżywalność. Obrażenia śmiertelne dla innych nie muszą kończyć jego walki.",
+      "mentality": "Megaloman i psychopata. Gdy ktoś staje mu na drodze, bardzo szybko przechodzi do zabijania."
+    },
+    "character-profile": {
+      "a": {
+        "powers": [
+          "Kryptoniańska siła, szybkość, lot, wytrzymałość, zmysły i percepcja."
+        ],
+        "tools": [
+          "Heat Vision, Freeze Breath i lot dają dużą kontrolę dystansu.",
+          "Solar Flare to potężny finisher, ale po użyciu Clark traci moce na około dobę."
+        ],
+        "weaknesses": [
+          "Kryptonit, czerwone słońce i podatność na magię.",
+          "Zwykle nie zaczyna od pełnej mocy i nie dobija pokonanego przeciwnika."
+        ]
+      },
+      "b": {
+        "powers": [
+          "Ogromna siła, lot, wytrzymałość i regeneracja po katastrofalnych obrażeniach."
+        ],
+        "tools": [
+          "Atomic Vision jest śmiercionośnym atakiem dystansowym.",
+          "Pozostałe komórki mogą pochłaniać energię i odbudować ciało nawet po stanie uznanym za śmierć."
+        ],
+        "weaknesses": [
+          "Argonit.",
+          "Arogancja często każe mu przyjmować ryzyko, którego mógłby uniknąć."
+        ]
+      }
+    },
+    "crucial-feats": {
+      "a": [
+        "Wyciska ciężar równy masie Ziemi przez pięć dni.",
+        "Przyswaja całą opublikowaną wiedzę medyczną w kilka minut.",
+        "Potrafi trafić Flasha w warunkach walki.",
+        "Przeżywa czarną dziurę i wydostaje się z niej o własnych siłach.",
+        "Celowo wchłania pośmiertną chmurę Doomsday Virus i przeżywa infekcję."
+      ],
+      "b": [
+        "Przetrwał nuklearną zagładę swojej Ziemi.",
+        "Wraca po skręceniu karku o 180 stopni i zabija Namorę.",
+        "Odbudowuje ciało po rozerwaniu przez eksplozję Gambita i stanie uznanym za śmierć.",
+        "Przeżywa teleportowanie około pół tony piasku do wnętrza ciała.",
+        "Dominuje dwóch innych Hyperionów naraz, zanim zostaje zatrzymany podstępem."
+      ]
+    },
+    "victory-archive": {
+      "a": [
+        "Doomsday",
+        "Wraith",
+        "Parasite",
+        "Mongul",
+        "Apollo"
+      ],
+      "b": [
+        "Galactus, Thor i Hercules",
+        "Magneto",
+        "Namora",
+        "Avengers",
+        "Hulk"
+      ]
+    },
+    "fight-analytics": {
+      "a": {
+        "battleIq": 91,
+        "durability": 95,
+        "experience": 89,
+        "hax": 25,
+        "skills": 90,
+        "speed": 98,
+        "stamina": 95,
+        "strength": 96,
+        "style": 93
+      },
+      "b": {
+        "battleIq": 82,
+        "durability": 92,
+        "experience": 92,
+        "hax": 91,
+        "skills": 80,
+        "speed": 83,
+        "stamina": 95,
+        "strength": 91,
+        "style": 84
+      }
+    },
+    "parameter-comparison": {
+      "a": {
+        "battleIq": 91,
+        "durability": 95,
+        "experience": 89,
+        "hax": 25,
+        "skills": 90,
+        "speed": 98,
+        "stamina": 95,
+        "strength": 96,
+        "style": 93
+      },
+      "b": {
+        "battleIq": 82,
+        "durability": 92,
+        "experience": 92,
+        "hax": 91,
+        "skills": 80,
+        "speed": 83,
+        "stamina": 95,
+        "strength": 91,
+        "style": 84
+      }
+    },
+    "x-factor": {
+      "a_bonus": "0",
+      "a_bonus_label": "BRAK REGEN.",
+      "a_value": "86",
+      "b_bonus": "20",
+      "b_bonus_label": "REGENERACJA",
+      "b_value": "88",
+      "factor": "Regeneracja King Hyperiona zmienia zwykły nokaut w problem permanentnego zabicia.",
+      "implikacja": "Przy KO ma ograniczone znaczenie. W deathmatchu może odwrócić cały wynik walki.",
+      "mechanika": "Hyperion może wracać po przegranych wymianach, podczas gdy obrażenia Clarka kumulują się.",
+      "psychologia": "Hyperion może ryzykować więcej; Superman zwykle zatrzymuje się, gdy uzna przeciwnika za pokonanego.",
+      "regen": "REGENERACJA"
+    },
+    "final-summary": {
+      "line_1": "Superman wygrywa sześć z dziewięciu kategorii; Hyperion dwie, a kondycja kończy się remisem.",
+      "line_2": "Średnia 85,8 do 87,8 dla Hyperiona wynika głównie z ogromnej przewagi regeneracji w Haxie.",
+      "line_3": "Przy KO przewaga Clarka jest decydująca; w deathmatchu regeneracja zmienia warunek zwycięstwa.",
+      "winner": "Standardowy pojedynek: Superman. Walka na śmierć: King Hyperion."
+    },
+    "battle-dynamics": {
+      "label": "Standardowy pojedynek · KO / ring-out",
+      "a_curve": "94,95,96,95,93",
+      "b_curve": "87,86,83,79,75",
+      "yellow_wave": "31,34,32,36,33,37,35,39",
+      "phase_1": "Clark przejmuje tempo dzięki szybkości i mobilności.",
+      "phase_2": "Hyperion szuka zwarcia, ale regeneracja ma małą wartość, jeśli pierwszy skuteczny KO kończy walkę.",
+      "phase_3": "Superman domyka pojedynek nokautem; Solar Flare pozostaje opcją awaryjną.",
+      "analysis": "Standardowe zasady mocno premiują Supermana. Jego prostszy warunek zwycięstwa nie wymaga permanentnego przełamania regeneracji.",
+      "s2_label": "Walka na śmierć",
+      "s2_a_curve": "94,91,84,75,61",
+      "s2_b_curve": "87,89,91,92,94",
+      "s2_phase_1": "Superman wygrywa większość pierwszych wymian, ale Hyperion od początku walczy z intencją zabicia.",
+      "s2_phase_2": "Kolejne powroty Hyperiona zamieniają przewagę Clarka w walkę na wyniszczenie.",
+      "s2_phase_3": "Solar Flare staje się naturalnym finiszerem awaryjnym, ale jego skuteczność przeciw odrodzeniu Hyperiona nie jest pewna.",
+      "s2_analysis": "Deathmatch lekko premiuje King Hyperiona. Clark ma Solar Flare, lecz musi użyć go odpowiednio wcześnie i trwale zakończyć regenerację."
+    },
+    "fight-simulation": {
+      "label": "Standardowy pojedynek · KO / ring-out",
+      "opening": "Superman przejmuje inicjatywę szybkością i kontrolą dystansu.",
+      "mid_fight": "Hyperion próbuje wymusić brutalne zwarcie i znaleźć czyste trafienie Atomic Vision.",
+      "late_fight": "Clark buduje przewagę kolejnymi czystymi kombinacjami.",
+      "end_condition": "Najbardziej powtarzalny finał to nokaut Hyperiona; Solar Flare najczęściej nie jest potrzebny.",
+      "phase_1_animation": "rush-ko",
+      "phase_1_actor": "a",
+      "phase_1_title": "Kontrola Tempa",
+      "phase_1_a_label": "Szybkość",
+      "phase_1_a_value": "98",
+      "phase_1_b_label": "Presja",
+      "phase_1_b_value": "90",
+      "phase_1_event": "Clark trafia pierwszy i natychmiast resetuje dystans.",
+      "phase_2_animation": "clash-lock",
+      "phase_2_title": "Próba Zwarcia",
+      "phase_2_event": "Hyperion próbuje zatrzymać mobilność Supermana i wejść w pełną wymianę.",
+      "phase_2_branch_a": "Superman odrywa się i dalej punktuje z przewagi szybkości.",
+      "phase_2_branch_b": "Hyperion zamyka dystans i dostaje szansę na ciężkie trafienie.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "feint-counter",
+      "phase_3_title": "Nokaut",
+      "phase_3_event": "Clark wykorzystuje czystą sekwencję kończącą zamiast ryzykować koszt Solar Flare.",
+      "phase_3_branch_a": "Superman kończy walkę nokautem.",
+      "phase_3_branch_b": "Hyperion przetrzymuje serię i próbuje odwrócić pojedynek jednym ciężkim momentem.",
+      "s2_label": "Walka na śmierć",
+      "s2_phase_1_animation": "rush-ko",
+      "s2_phase_1_actor": "a",
+      "s2_phase_1_title": "Przewaga Clarka",
+      "s2_phase_1_event": "Superman jest szybszy i częściej trafia, ale zaczyna od obezwładnienia, nie egzekucji.",
+      "s2_phase_2_animation": "regen-attrition",
+      "s2_phase_2_actor": "b",
+      "s2_phase_2_mode": "animation",
+      "s2_phase_2_title": "Asymetria Obrażeń",
+      "s2_phase_2_event": "Hyperion wraca po kolejnych obrażeniach, podczas gdy rany Supermana pozostają.",
+      "s2_phase_2_branch_a": "Clark szybko rozpoznaje problem i eskaluje, zanim straci przewagę fizyczną.",
+      "s2_phase_2_branch_b": "Hyperion wykorzystuje kolejny powrót, by kumulować trwałe obrażenia na Supermanie.",
+      "s2_phase_3_animation": "solar-flare",
+      "s2_phase_3_actor": "a",
+      "s2_phase_3_title": "Permanentny Finisz",
+      "s2_phase_3_event": "Solar Flare staje się naturalną kartą kończącą, ale nie ma pewności, że zniszczy każdą zdolną do regeneracji komórkę Hyperiona.",
+      "s2_phase_3_branch_a": "Flare niszczy Hyperiona definitywnie — Superman wygrywa.",
+      "s2_phase_3_branch_b": "Hyperion przeżywa lub później wraca — pozbawiony mocy Clark znajduje się w katastrofalnej sytuacji.",
+      "s2_end_condition": "King Hyperion ma łatwiejszy warunek zwycięstwa, ale Solar Flare pozostawia Supermanowi realną drogę do permanentnego finiszu."
+    },
+    "verdict-matrix": {
+      "col_1": "STANDARDOWY POJEDYNEK",
+      "col_2": "WALKA NA ŚMIERĆ",
+      "row_1": "WERDYKT",
+      "row_2": "SOLAR FLARE",
+      "case_1": "Superman 8/10. Szybkość, kontrola i prosty warunek KO wyraźnie premiują Clarka.",
+      "case_2": "King Hyperion 6/10. Regeneracja i natychmiastowa intencja zabicia odwracają ekonomię walki.",
+      "case_3": "Opcja awaryjna. Najczęściej zbędny, bo zwykły nokaut wystarcza do zwycięstwa.",
+      "case_4": "Potencjalny permanentny finisher. Jeśli zawiedzie, koszt utraty mocy może przesądzić walkę."
+    },
+    "fight-card": {
+      "fight_title": "Superman vs King Hyperion"
+    }
+  },
+  "templates": {},
+  "fighterA": {
+    "name": "Superman",
+    "version": "New52",
+    "stats": {
+      "battleIq": 91,
+      "durability": 95,
+      "experience": 89,
+      "hax": 25,
+      "skills": 90,
+      "speed": 98,
+      "stamina": 95,
+      "strength": 96,
+      "style": 93
+    }
+  },
+  "fighterB": {
+    "name": "King Hyperion",
+    "version": "Earth-4023",
+    "stats": {
+      "battleIq": 82,
+      "durability": 92,
+      "experience": 92,
+      "hax": 91,
+      "skills": 80,
+      "speed": 83,
+      "stamina": 95,
+      "strength": 91,
+      "style": 84
+    }
+  }
+}

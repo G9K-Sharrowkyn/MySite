@@ -1,0 +1,185 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Bound the Butcher inside his power battery.",
+      "Kept fighting after his heart was removed.",
+      "Martian Manhunter cannot attack him telepathically.",
+      "Burned through the fabric of space with rage plasma.",
+      "Wounds Spectre."
+    ],
+    "dossier": {
+      "advantage": "A red ring instead of a heart and inhuman strength. The ring keeps him alive even after fatal wounds, and his physical power lets him crush energy barriers with his bare hands.",
+      "mentality": "A furious zealot driven by revenge. He knows no mercy or hesitation - he advances with a rage that grows stronger the more hatred and anger the opponent shows.",
+      "quote": "I am Atrocitus, lord and master of the Red Lantern Corps. I am wrath, I am hate, I am righteous vengeance!",
+      "style": "Brutal, primal aggression. Atrocitus fights through pure pressure, close-range mauling, and constant forward force that buries the opponent under his fury."
+    },
+    "name": "Atrocitus",
+    "profile": {
+      "powers": [
+        "Red Lantern plasma emission, constructs, blood magic and rituals, flight, and Butcher-linked rage dynamics."
+      ],
+      "tools": [
+        "Emotional-spectrum manipulation and heavy ranged pressure.",
+        "Corrosive plasma and blood contact that make it dangerous for the opponent to enter cleanly into close range."
+      ],
+      "weaknesses": [
+        "If the fight gets stuck for too long in a pure close-range slugfest, Atrocitus loses the advantage of his broader toolkit."
+      ]
+    },
+    "stats": {
+      "battleIq": 84,
+      "durability": 88,
+      "experience": 91,
+      "hax": 92,
+      "skills": 80,
+      "speed": 86,
+      "stamina": 84,
+      "strength": 87,
+      "style": 78
+    },
+    "version": "New52",
+    "victories": [
+      "Abysmus",
+      "Skallox",
+      "Black Lanterns",
+      "Guardian of the Universe",
+      "Bleez"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Can return through the Green Door from the Below-Place after death.",
+      "Lifted a mountain range weighing 150 billion tons.",
+      "Regenerated from extreme damage.",
+      "A clash between Worldbreaker Red She-Hulk and World Breaker Hulk fractured a planet.",
+      "Nearly sank the entire east coast with a single step."
+    ],
+    "dossier": {
+      "advantage": "Non-linear strength growth and regeneration. The more hurt and angry he becomes, the harder he is to stop, and the longer the fight lasts, the more it shifts in his favor.",
+      "mentality": "A stubborn, savage destroyer. Hulk does not fight subtly and does not back off under pressure - he keeps pushing until the opponent breaks.",
+      "quote": "Hulk smash!",
+      "style": "Unstoppable close-quarters destruction. He relies on pure physical force and nonstop forward pressure, crushing everything under his strikes."
+    },
+    "name": "Hulk",
+    "profile": {
+      "powers": [
+        "Rage-driven strength growth, regeneration, shockwaves, and extreme stamina."
+      ],
+      "tools": [
+        "Relentless close-range pressure.",
+        "Shockwaves."
+      ],
+      "weaknesses": [
+        "When an opponent effectively cuts him off from close-range fighting, his path to victory becomes noticeably narrower."
+      ]
+    },
+    "stats": {
+      "battleIq": 81,
+      "durability": 95,
+      "experience": 78,
+      "hax": 66,
+      "skills": 81,
+      "speed": 80,
+      "stamina": 98,
+      "strength": 95,
+      "style": 81
+    },
+    "version": "Earth-616",
+    "victories": [
+      "Sentry",
+      "Dormammu",
+      "HulkBuster Iron Man",
+      "Bi-Beast and Wendigo",
+      "Arm'Cheddon"
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Rage Control",
+      "a_curve": "86,89,92,95,98",
+      "b_curve": "84,78,62,38,12",
+      "yellow_wave": "40,48,44,59,47,63,49,68",
+      "phase_1": "Atrocitus opens with flight, plasma, and ranged pressure, trying to seize control of the rage axis before Hulk turns it into pure strength escalation.",
+      "phase_2": "It is very hard for Hulk to force repeat contact, because Atrocitus does not have to meet him in an open brawl and can keep breaking up every attempt to enter close range.",
+      "phase_3": "Hulk remains lethal if he catches Atrocitus and never lets him out of his hands, but most of the time Atrocitus keeps the fight where his advantage is greatest.",
+      "analysis": "This is not an easy fight, but it is a very bad matchup for Hulk. Atrocitus has too many tools and too much X-Factor for Hulk to make proper use of his strength."
+    },
+    "fight-card": {
+      "fight_title": "Atrocitus vs Hulk"
+    },
+    "fight-simulation": {
+      "label": "Atrocitus Leads",
+      "opening": "Atrocitus does not meet Hulk in an open exchange. From the start, he uses flight, plasma, and constructs to keep range and control the pace of the clash.",
+      "mid_fight": "Hulk tries to close the distance, but every attempt is broken up by another layer of pressure that keeps the fight from becoming a pure brawl.",
+      "late_fight": "Atrocitus gains better and better control over the rage axis and denies Hulk stable contact, which keeps Hulk's physical advantage from turning into battlefield dominance.",
+      "end_condition": "Atrocitus wins by controlling pace, distance, and the opponent's rage before Hulk can turn the fight into repeat close-range contact.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_title": "First Pressure",
+      "phase_1_a_label": "Range",
+      "phase_1_a_value": "92",
+      "phase_1_b_label": "Entry",
+      "phase_1_b_value": "84",
+      "phase_1_event": "Atrocitus opens from range and immediately tests whether Hulk can be kept outside his natural reach.",
+      "phase_2_animation": "kite-zone",
+      "phase_2_title": "Keeping Range",
+      "phase_2_event": "Hulk tries to force contact, but Atrocitus keeps interrupting those entries with plasma, constructs, and repositioning.",
+      "phase_2_branch_a": "The longer Hulk cannot get his hands on him, the less his physical edge matters.",
+      "phase_2_branch_b": "Atrocitus keeps the fight in a model that favors his own tools more.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "sustained-suppression",
+      "phase_3_title": "Rage Control",
+      "phase_3_event": "Atrocitus gains more and more control over the pace of Hulk's fury and does not let him fight the way Hulk wants to fight.",
+      "phase_3_branch_a": "Hulk remains dangerous only if he breaks the range very early.",
+      "phase_3_branch_b": "In most runs, Atrocitus closes the fight on his own terms."
+    },
+    "final-summary": {
+      "line_1": "Both warriors grow with rage, but Atrocitus has far greater control over that axis.",
+      "line_2": "Through flight, plasma, constructs, and ranged pressure, he does not have to give Hulk the kind of fight Hulk needs most.",
+      "line_3": "Hulk remains lethal in a long close-range exchange, but Atrocitus has enough tools and intelligence to deny that scenario most of the time.",
+      "winner": "Atrocitus leads clearly because he more often dictates the terms of the fight."
+    },
+    "tactical-board": {
+      "lane": "Atrocitus must keep the fight under ring control before Hulk turns it into a gamma loop.",
+      "subtitle": "Butcher versus Worldbreaker"
+    },
+    "x-factor": {
+      "a_bonus": "25",
+      "a_bonus_label": "RAGE SUPPRESSION",
+      "a_value": "50",
+      "b_bonus": "10",
+      "b_value": "50",
+      "factor": "RAGE CONTROL VS LOOP",
+      "implikacja": "If Atrocitus gains control over Hulk's rage state early enough, he buys the time and space needed to close the fight. If he fails, the longer clash increasingly starts to belong to Hulk.",
+      "mechanika": "Atrocitus grows not only from his own rage, but also from the rage of his opponent. As the Butcher's host, he can try to amplify, suppress, and redirect Hulk's fury before it turns into a self-feeding loop.",
+      "psychologia": "Hulk does not realize that every second of fighting makes him conceptually weaker against the Lantern.",
+      "regen": "GAMMA ANNIHILATION"
+    },
+    "direct-verdict": {
+      "winner": "Atrocitus",
+      "loser": "Hulk",
+      "outcome": "Atrocitus 9/10",
+      "certainty": "Clear favorite",
+      "line_1": "Atrocitus has the larger X-Factor, the broader toolkit, and far better control over the rage axis than Hulk.",
+      "line_2": "Through flight, plasma, constructs, and ranged pressure, he does not have to give Hulk the kind of fight Hulk needs most.",
+      "line_3": "Hulk retains only a narrow path to victory: catching Atrocitus very early and never allowing him to regain distance."
+    }
+  }
+}

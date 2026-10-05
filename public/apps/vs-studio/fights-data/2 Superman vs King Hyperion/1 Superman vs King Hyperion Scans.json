@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Superman1.jpg",
+    "b": "Hyperion1.png"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Superman1.jpg",
+      "left_image_2": "Feat_Superman2.jpg",
+      "left_image_3": "Feat_Superman3.jpg",
+      "left_image_4": "Feat_Superman4.jpg",
+      "left_image_5": "Feat_Superman5.jpg",
+      "right_image_1": "Feat_Hyperion1.jpg",
+      "right_image_2": "Feat_Hyperion2.jpg",
+      "right_image_3": "Feat_Hyperion3.jpg",
+      "right_image_4": "Feat_Hyperion4.jpg",
+      "right_image_5": "Feat_Hyperion5.png"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Superman1.jpg",
+      "left_image_2": "CV_Superman2.jpg",
+      "left_image_3": "CV_Superman3.jpg",
+      "left_image_4": "CV_Superman4.jpg",
+      "left_image_5": "CV_Superman5.jpg",
+      "right_image_1": "CV_Hyperion1.jpg",
+      "right_image_2": "CV_Hyperion2.jpg",
+      "right_image_3": "CV_Hyperion3.jpg",
+      "right_image_4": "CV_Hyperion4.jpg",
+      "right_image_5": "CV_Hyperion5.jpg"
+    },
+    "fight-card": {
+      "right_image": "Hyperion4.jpg",
+      "left_image": "Superman4.jpg"
+    },
+    "final-summary": {
+      "right_image": "Hyperion2.png",
+      "left_image": "Superman2.jpeg"
+    },
+    "verdict-matrix": {
+      "right_image": "Hyperion3.png",
+      "left_image": "Superman3.webp"
+    }
+  }
+}

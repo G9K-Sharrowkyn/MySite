@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Jiren1.jpg",
+    "b": "Saitama1.jpg"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Jiren1.jpg",
+      "left_image_2": "Feat_Jiren2.jpg",
+      "left_image_3": "Feat_Jiren3.jpg",
+      "left_image_4": "Feat_Jiren4.jpg",
+      "left_image_5": "Feat_Jiren5.jpg",
+      "right_image_1": "Feat_Saitama1.jpg",
+      "right_image_2": "Feat_Saitama2.jpg",
+      "right_image_3": "Feat_Saitama3.jpg",
+      "right_image_4": "Feat_Saitama4.webp",
+      "right_image_5": "Feat_Saitama5.jpg"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Jiren1.jpg",
+      "left_image_2": "CV_Jiren2.jpg",
+      "left_image_3": "CV_Jiren3.jpg",
+      "left_image_4": "CV_Jiren4.jpg",
+      "left_image_5": "CV_Jiren5.jpg",
+      "right_image_1": "CV_Saitama1.jpg",
+      "right_image_2": "CV_Saitama2.jpg",
+      "right_image_3": "CV_Saitama3.jpg",
+      "right_image_4": "CV_Saitama4.jpg",
+      "right_image_5": "CV_Saitama5.jpg"
+    },
+    "fight-card": {
+      "right_image": "Saitama4.png",
+      "left_image": "Jiren4.jpg"
+    },
+    "final-summary": {
+      "right_image": "Saitama2.jpg",
+      "left_image": "Jiren2.webp"
+    },
+    "verdict-matrix": {
+      "right_image": "Saitama3.jpeg",
+      "left_image": "Jiren3.webp"
+    }
+  }
+}

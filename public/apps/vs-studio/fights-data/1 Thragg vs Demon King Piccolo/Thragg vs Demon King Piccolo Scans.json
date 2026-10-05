@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Thragg1.webp",
+    "b": "Piccolo1.jpg"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Thragg1.jpeg",
+      "left_image_2": "Feat_Thragg2.jpeg",
+      "left_image_3": "Feat_Thragg3.jpeg",
+      "left_image_4": "Feat_Thragg4.jpeg",
+      "left_image_5": "Feat_Thragg5.webp",
+      "right_image_1": "Feat_Piccolo1.jpeg",
+      "right_image_2": "Feat_Piccolo2.jpeg",
+      "right_image_3": "Feat_Piccolo3.webp",
+      "right_image_4": "Feat_Piccolo4.jpeg",
+      "right_image_5": "Feat_Piccolo5.jpeg"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Thragg1.jpeg",
+      "left_image_2": "CV_Thragg2.jpeg",
+      "left_image_3": "CV_Thragg3.jpeg",
+      "left_image_4": "CV_Thragg4.jpeg",
+      "left_image_5": "CV_Thragg5.jpeg",
+      "right_image_1": "CV_Piccolo1.jpeg",
+      "right_image_2": "CV_Piccolo2.jpeg",
+      "right_image_3": "CV_Piccolo3.jpeg",
+      "right_image_4": "CV_Piccolo4.jpeg",
+      "right_image_5": "CV_Piccolo5.jpeg"
+    },
+    "fight-card": {
+      "right_image": "Piccolo4.webp",
+      "left_image": "Thragg4.jpg"
+    },
+    "final-summary": {
+      "right_image": "Piccolo2.jpeg",
+      "left_image": "Thragg2.jpg"
+    },
+    "direct-verdict": {
+      "right_image": "Piccolo3.jpg",
+      "left_image": "Thragg3.webp"
+    }
+  }
+}

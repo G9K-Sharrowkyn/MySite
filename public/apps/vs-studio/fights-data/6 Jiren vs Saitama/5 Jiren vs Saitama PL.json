@@ -1,0 +1,211 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Kilkukrotnie trafia UI Goku.",
+      "Niewzruszony po ataku samozniszczenia Androida 17.",
+      "Niewzruszony po ataku Kamehameha od SSB Goku.",
+      "Wykrywa i kontruje ataki z innych wymiarów.",
+      "Potężniejszy niż Bóg Zniszczenia z jego wszechświata."
+    ],
+    "dossier": {
+      "advantage": "Absolutna dominacja czystą mocą. Jiren potrafi przełamywać techniki, które normalnie wymagają specjalnej kontry, samą siłą, kontrolą i skupieniem.",
+      "mentality": "Stoicki absolutysta. Walczy bez zbędnych słów i emocji, idąc najkrótszą drogą do całkowitej dominacji nad przeciwnikiem.",
+      "quote": "Nie ma znaczenia, jak wielu słabeuszy zbierze się razem. Jesteście niczym przed absolutną siłą.",
+      "style": "Ascetyczny styl oparty na czystej sile i ki. Jiren porusza się minimalnie, pozwala przeciwnikowi wejść w atak i odpowiada pojedynczymi, niszczącymi kontrami."
+    },
+    "name": "Jiren",
+    "profile": {
+      "powers": [
+        "Ekstremalna emisja ki, techniki barierowe oraz elitarna szybkość i refleks."
+      ],
+      "tools": [
+        "Bardzo wydajny styl uderzeń przy minimalnym ruchu.",
+        "Czytanie rytmu ataku przeciwnika, pozwalające mu kontrować zanim technika w pełni się rozwinie."
+      ],
+      "weaknesses": [
+        "Zbyt duża wiara w absolutną dominację może opóźnić reakcję na przeciwnika, którego wzrost nie przebiega liniowo."
+      ]
+    },
+    "stats": {
+      "battleIq": 88,
+      "durability": 96,
+      "experience": 91,
+      "hax": 62,
+      "skills": 94,
+      "speed": 96,
+      "stamina": 91,
+      "strength": 96,
+      "style": 93
+    },
+    "version": "DBS",
+    "victories": [
+      "Hit",
+      "Maji Kayo",
+      "Golden Frieza",
+      "Kale",
+      "Vegeta (Super Saiyan Blue)"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Serious Punch Squared tworzy próżnię w kosmosie.",
+      "Jego cios cofa przyczynowość.",
+      "Łapie i kopie portale hiperprzestrzenne.",
+      "Wychodzi bez szwanku po bezpośrednim trafieniu Gamma Ray Burst Garou.",
+      "Poważnie kichnięcie wydmuchuje gaz z Jowisza."
+    ],
+    "dossier": {
+      "advantage": "Niezmierzona siła i odporność. Saitama nie działa w granicach normalnego limitu wzrostu, a każde jego uderzenie może stać się ciosem kończącym.",
+      "mentality": "Znudzony i beztroski, ale nie obojętny. Saitama długo nie traktuje walki serio, bo niemal nic nie stanowi dla niego wyzwania, lecz pod tą obojętnością wciąż szuka przeciwnika, który zmusi go do prawdziwego wysiłku.",
+      "quote": "100 pompek, 100 brzuszków, 100 przysiadów i 10 kilometrów biegu KAŻDEGO DNIA!!!",
+      "style": "Prosty, bezpośredni styl oparty na pięściach. Saitama nie polega na złożonej technice — jego ruchy są oszczędne, improwizowane i wspierane przez przytłaczającą przewagę fizyczną."
+    },
+    "name": "Saitama",
+    "profile": {
+      "powers": [
+        "Ekstremalna siła fizyczna, wytrzymałość, kondycja i wzrost mocy w długim starciu."
+      ],
+      "tools": [
+        "Bezpośredni atak z bliska i szybka adaptacja w ciągu walki.",
+        "Anomalne zachowanie wobec praw fizyki: potrafi kopać portale i poruszać się w sposób, który ignoruje normalne ograniczenia świata."
+      ],
+      "weaknesses": [
+        "Mało formalnej techniki i silne oparcie na bezpośrednim kontakcie.",
+        "Znudzenie i brak gardy we wczesnej fazie walki mogą narazić go na szybki nokaut."
+      ]
+    },
+    "stats": {
+      "battleIq": 70,
+      "durability": 92,
+      "experience": 74,
+      "hax": 80,
+      "skills": 70,
+      "speed": 90,
+      "stamina": 98,
+      "strength": 91,
+      "style": 66
+    },
+    "version": "OPM",
+    "victories": [
+      "Boros",
+      "Elder Centipede",
+      "Orochi",
+      "Evil Ocean Water",
+      "Garou (Cosmic Fear Mode)"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Jiren: Atak Natychmiastowy",
+      "a_curve": "90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90,90",
+      "b_curve": "81,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
+      "preserve_curve_points": "true",
+      "yellow_wave": "10,12,11,14,12,15,13,18",
+      "phase_1": "Jiren uderza natychmiast. Saitama wyparowuje.",
+      "phase_2": "-",
+      "phase_3": "-",
+      "analysis": "Jeśli Jiren idzie na całość od pierwszej sekundy, Saitama ginie zanim jego wzrost w ogóle zacznie mieć znaczenie.",
+      "s2_label": "Jiren: Zwłoka",
+      "s2_a_curve": "90,88,85,80,75",
+      "s2_b_curve": "81,85,90,96,100",
+      "s2_phase_1": "Jiren nie kończy walki od razu i daje Saitamie wejść w pierwszą wymianę.",
+      "s2_phase_2": "Saitama czuje prawdziwe wyzwanie. Jego moc zaczyna rosnąć z każdą kolejną sekundą walki.",
+      "s2_phase_3": "Punkt krytyczny. Saitama przeskakuje pułap Jirena i zaczyna wygrywać samą skalą kolejnych ciosów.",
+      "s2_analysis": "Jeśli Jiren nie zamknie walki od razu, daje Saitamie jedyną drogę do zwycięstwa: wzrost w trakcie samego starcia."
+    },
+    "fight-card": {
+      "fight_title": "Jiren vs Saitama"
+    },
+    "fight-simulation": {
+      "label": "Atak Natychmiastowy",
+      "opening": "Jiren uderza z furią boga, natychmiast skracając dystans do Saitamy.",
+      "mid_fight": "Saitama próbuje zablokować cios, ale siła uderzenia przenika przez jego molekuły.",
+      "late_fight": "Jiren kończy starcie salwą ki, która rozrywa kontinuum wokół przeciwnika.",
+      "end_condition": "Zwycięstwo Jirena przez natychmiastową anihilację.",
+      "phase_1_animation": "rush-ko",
+      "phase_1_title": "Wyrok Absolutu",
+      "phase_1_a_label": "Moc",
+      "phase_1_a_value": "100",
+      "phase_1_b_label": "Zaskoczenie",
+      "phase_1_b_value": "40",
+      "phase_1_event": "Jiren uwalnia całe swoje ki w jednym, krótkim uderzeniu.",
+      "phase_2_animation": "clash-lock",
+      "phase_2_title": "-",
+      "phase_2_event": "-",
+      "phase_2_branch_a": "-",
+      "phase_2_branch_b": "-",
+      "phase_3_actor": "a",
+      "phase_3_animation": "celestial-purge",
+      "phase_3_title": "-",
+      "phase_3_event": "-",
+      "s2_label": "Zwłoka",
+      "s2_phase_1_animation": "kite-zone",
+      "s2_phase_1_title": "Badanie Terenu",
+      "s2_phase_1_a_label": "Spokój",
+      "s2_phase_1_a_value": "90",
+      "s2_phase_1_b_label": "Start",
+      "s2_phase_1_b_value": "40",
+      "s2_phase_1_event": "Jiren obserwuje, dając Saitamie czas na oddanie pierwszego ciosu.",
+      "s2_phase_2_animation": "infinite-attrition",
+      "s2_phase_2_title": "Eskalacja",
+      "s2_phase_2_event": "Wymiana ciosów, w której Saitama rośnie w siłę z każdą sekundą.",
+      "s2_phase_2_branch_a": "Saitama uśmiecha się, czując prawdziwe wyzwanie.",
+      "s2_phase_2_branch_b": "Jiren zaczyna tracić przewagę inicjatywy.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "nova-cleansing",
+      "s2_phase_3_title": "Poważny Cios",
+      "s2_phase_3_event": "Saitama uderza z siłą przekraczającą logikę Jirena.",
+      "s2_phase_3_branch_a": "Jiren upada, pokonany przez własną zwłokę.",
+      "s2_phase_3_branch_b": "Saitama zostaje nowym szczytem potęgi.",
+      "s2_end_condition": "Zwycięstwo Saitamy przez nieliniową ewolucję."
+    },
+    "final-summary": {
+      "line_1": "Różnica mocy na starcie jest ogromna i działa wyraźnie na korzyść Jirena.",
+      "line_2": "Jeśli Jiren uderzy od razu z pełną mocą, Saitama nie dostanie czasu na wzrost.",
+      "line_3": "Jeśli jednak Jiren da mu choć chwilę, nieliniowy rozwój Saitamy może całkowicie odwrócić walkę.",
+      "winner": "Jiren wygrywa przy natychmiastowym ataku. Saitama wygrywa, jeśli dostanie czas."
+    },
+    "tactical-board": {
+      "lane": "Jiren musi skończyć walkę zanim Saitama zacznie ją traktować poważnie.",
+      "subtitle": "Dyscyplina kontra Bezgraniczność"
+    },
+    "verdict-matrix": {
+      "header": "MATRYCA ADAPTACJI",
+      "subtitle": "Werdykt zależny od pierwszego uderzenia Jirena",
+      "row_1": "JIREN: NATYCHMIASTOWY ATAK",
+      "row_2": "JIREN: PASYWNA OBSERWACJA",
+      "case_1": "Jiren 10/10. Różnica skali na starcie jest zbyt wielka. Jeśli Jiren uderzy z pełną mocą od pierwszej sekundy, Saitama zostanie wymazany, zanim jego potencjał zdąży zareagować na nowe zagrożenie. Saitama nigdy nie stał przed potęgą zdolną trząść nieskończonością.",
+      "case_2": "Saitama 7/10. Jeśli Jiren pozwoli na walkę i będzie powoli badał przeciwnika (tak jak w Turnieju Mocy), da Saitamie czas na nieliniowy wzrost. W tym scenariuszu Saitama nieuchronnie przeskoczy sufit mocy Jirena i przejmie kontrolę nad starciem."
+    },
+    "x-factor": {
+      "a_bonus": "0",
+      "a_bonus_label": "BRAK",
+      "a_value": "0",
+      "b_bonus": "20",
+      "b_value": "100",
+      "factor": "NIELINIOWY WZROST SAITAMY",
+      "implikacja": "Jeśli Saitama dostanie czas, sama przewaga Jirena na starcie przestaje wystarczać.",
+      "mechanika": "Saitama rośnie w trakcie walki szybciej, niż powinno to być możliwe. Im dłużej trwa starcie, tym mniej znaczy początkowa przewaga Jirena.",
+      "psychologia": "Jiren musi potraktować walkę śmiertelnie poważnie od pierwszej sekundy. Każda zwłoka daje Saitamie dokładnie to, czego potrzebuje do przeskoczenia jego poziomu.",
+      "regen": "ANOMALNY WZROST"
+    }
+  }
+}

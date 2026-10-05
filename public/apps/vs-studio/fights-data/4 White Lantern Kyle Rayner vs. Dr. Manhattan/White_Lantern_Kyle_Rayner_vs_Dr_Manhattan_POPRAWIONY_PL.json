@@ -1,0 +1,232 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Przechodzi poza Source Wall i wraca dzięki Life Equation — feat metafizycznego przetrwania, adaptacji i ingerencji w warunki rzeczywistości, a nie zwykłej odporności fizycznej.",
+      "Używa Life Equation, aby jednocześnie usunąć potężnych Source Titanów z New Genesis, kończąc zagrożenie bez konieczności ich fizycznego pokonania.",
+      "Wymusza zmianę w kodzie rzeczywistości powiązanym z Life Equation i The Source, dzięki której możliwy staje się jego powrót zza Source Wall.",
+      "Life Equation reaguje nawet na jego podświadomość, wywołując potężne anomalie rzeczywistości i spontaniczne tworzenie życia.",
+      "Jako White Lantern otwiera drogę do Emerald Space i pomaga przywrócić Hala Jordana do świata żywych."
+    ],
+    "dossier": {
+      "advantage": "Największą przewagą Kyle'a nie jest sama siła Białego Światła, lecz dostęp do Life Equation — mocy powiązanej z kodem życia i rzeczywistości oraz z The Source. Przy stabilnej kontroli może wymuszać zmiany na warstwie bardziej fundamentalnej niż standardowa manipulacja materią, energią czy historią.",
+      "mentality": "Kyle jest niezwykle kreatywnym i adaptacyjnym wojownikiem. Jego problemem nie jest brak wyobraźni ani doświadczenia, lecz kontrola nad Life Equation: kanonicznie moc potrafi reagować na jego podświadomość, destabilizować go i wymykać się świadomemu kierowaniu.",
+      "quote": "W najjaśniejszy dzień nastanie światło, by oczyścić duszę i naprawić zło. Gdy zapadnie mrok, spójrz w niebiosa — nadchodzi nowy świt, niech stanie się światło!",
+      "style": "Kreatywna walka konstruktami i całym White Light, połączona z leczeniem, teleportacją, manipulacją życiem i — przy Life Equation — możliwością ingerencji w same warunki rzeczywistości. Kyle improwizuje zamiast polegać na jednej powtarzalnej technice."
+    },
+    "name": "White Lantern Kyle Rayner",
+    "profile": {
+      "powers": [
+        "White Light, pełne spektrum emocjonalne, konstrukty, leczenie, manipulacja siłą życia, teleportacja oraz Life Equation."
+      ],
+      "tools": [
+        "Life Equation jako potencjalny reality rewrite na poziomie powiązanym z The Source.",
+        "White Lantern Ring jako niezwykle wszechstronne narzędzie ofensywne, defensywne, regeneracyjne i rekonstrukcyjne.",
+        "Kreatywność Kyle'a pozwalająca przekładać szeroki zestaw mocy na improwizowane rozwiązania bojowe."
+      ],
+      "weaknesses": [
+        "Kanoniczne Life Equation jest dla Kyle'a niestabilne, nadmiernie potężne i trudne do precyzyjnego kontrolowania.",
+        "Najwyższe efekty Life Equation nie są przez niego wykonywane z taką samą powtarzalnością i świadomą kontrolą, z jaką Manhattan używa własnych mocy.",
+        "Pierścień i koncentracja pozostają istotne dla wielu standardowych zastosowań White Light."
+      ]
+    },
+    "stats": {
+      "battleIq": 91,
+      "durability": 93,
+      "experience": 91,
+      "hax": 98,
+      "skills": 91,
+      "speed": 94,
+      "stamina": 93,
+      "strength": 91,
+      "style": 99
+    },
+    "version": "New52 · White Lantern + Life Equation",
+    "victories": [
+      "Oblivion",
+      "Source Titans — usunięci z pola walki przez Life Equation",
+      "Godkillers",
+      "Relic — zwycięstwo w ramach szerszego konfliktu",
+      "Third Army — zwycięstwo w ramach szerszego konfliktu"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Doświadcza własnej przeszłości, teraźniejszości i przyszłości jako jednego nielinearnego kontinuum, dopóki jego percepcja nie zostanie zasłonięta.",
+      "Odbudowuje swoje ciało po całkowitej dezintegracji i może ponawiać rekonstrukcję po zniszczeniu materialnej formy.",
+      "Analizuje energię pierścienia Guya Gardnera i magię bohaterów podczas walki na Marsie, po czym neutralizuje ogromną koalicję superbohaterów.",
+      "Odparowuje Metrona i Owlmana niemal natychmiastową ingerencją w ich strukturę.",
+      "Manipuluje historią Metaverse, współtworząc warunki prowadzące do New 52, a następnie świadomie przywraca dużą część wcześniejszej historii w Doomsday Clock."
+    ],
+    "dossier": {
+      "advantage": "Manhattan posiada znacznie wyższą świadomą kontrolę nad własnym poziomem reality warpu. Potrafi natychmiast analizować obce systemy energetyczne, rekonstruować się po dezintegracji oraz ingerować w materię, czas, historię i Metaverse bez przygotowywania klasycznej sekwencji ataku.",
+      "mentality": "Zdystansowany, fatalistyczny obserwator. Jego percepcja czasu daje potężną przewagę informacyjną, ale nie jest doskonałą symulacją wszystkich możliwych przyszłości. Jon często bada przeciwnika z naukowej ciekawości zamiast natychmiast wybierać najbardziej bojowo optymalne rozwiązanie.",
+      "quote": "Tak. Teraz widzę. Wszystko się kończy.",
+      "style": "Nie walczy tradycyjnie. Analizuje strukturę przeciwnika i ingeruje bezpośrednio w materię, energię, czas lub historię. W przeciwieństwie do Kyle'a ma niewielkie klasyczne umiejętności bojowe, lecz ogromna kontrola mocy zwykle pozwala mu ominąć potrzebę zwykłej walki."
+    },
+    "name": "Dr. Manhattan",
+    "profile": {
+      "powers": [
+        "Manipulacja materią i energią, dezintegracja, samoodbudowa, ingerencja czasoprzestrzenna, nielinearna percepcja własnego czasu oraz zmiany historii Metaverse."
+      ],
+      "tools": [
+        "Natychmiastowa analiza obcych systemów energetycznych i ingerencja w ich fizyczny nośnik.",
+        "Zmiana punktów historii i przyczynowości zamiast konieczności przełamywania aktualnej obrony przeciwnika.",
+        "Rekonstrukcja po całkowitym zniszczeniu ciała."
+      ],
+      "weaknesses": [
+        "Tachiony i podobne zakłócenia mogą zasłonić jego percepcję przyszłości.",
+        "Fatalizm, emocjonalny dystans i naukowa ciekawość mogą sprawić, że nie wybiera natychmiast najbardziej rozstrzygającego ruchu.",
+        "Nie pokazał bezpośredniej kontroli nad The Source ani Life Equation na poziomie porównywalnym z najwyższymi featami Kyle'a."
+      ]
+    },
+    "stats": {
+      "battleIq": 82,
+      "durability": 99,
+      "experience": 84,
+      "hax": 100,
+      "skills": 40,
+      "speed": 70,
+      "stamina": 100,
+      "strength": 95,
+      "style": 70
+    },
+    "version": "Doomsday Clock · Metaverse",
+    "victories": [
+      "Koalicja bohaterów DC na Marsie",
+      "Captain Atom — po rekonstrukcji Manhattana",
+      "Metron i Owlman",
+      "Guy Gardner — analiza i rozłożenie pierścienia",
+      "Justice Society / historia New 52 — ingerencja w Metaverse"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Stabilne Life Equation · Aktywne od początku",
+      "a_curve": "94,95,96,97,98",
+      "b_curve": "96,95,94,92,90",
+      "yellow_wave": "35,42,38,45,40,48,42,50",
+      "phase_1": "Kyle nie musi niczego ładować ani otwierać. Jeśli Life Equation jest od początku stabilne i świadomie kontrolowane, może natychmiast narzucać warunki reality warpu zamiast ograniczać się do konstrukcji White Lanterna.",
+      "phase_2": "Manhattan nadal posiada przewagę precyzji i doświadczenia w świadomej ingerencji w czas oraz Metaverse, ale nie ma potwierdzonej odpowiedzi na zmianę dokonywaną na warstwie bezpośrednio powiązanej z Life Equation i The Source.",
+      "phase_3": "Jeżeli Kyle narzuci równaniu konkretny rezultat, walka przestaje być pojedynkiem dezintegracji i rekonstrukcji. Manhattan musi przeciwstawić się zmianie warunku rzeczywistości, a nie tylko ciału czy pierścieniowi Kyle'a.",
+      "analysis": "Przy stabilnym Life Equation przewaga przechodzi lekko na stronę Kyle'a. Manhattan ma większą kontrolę nad własnym arsenatem, lecz Kyle otrzymuje warunek zwycięstwa działający potencjalnie ponad najwyższą bezpośrednio pokazaną warstwą ingerencji Jona.",
+      "s2_label": "Kanoniczne Life Equation · Niestabilne",
+      "s2_a_curve": "91,87,81,74,68",
+      "s2_b_curve": "94,95,96,97,98",
+      "s2_phase_1": "Kyle posiada pełny potencjał Life Equation, ale nie pełną kontrolę. Jego podświadomość i niestabilność mocy stają się równie ważne jak sam poziom energii.",
+      "s2_phase_2": "Manhattan analizuje White Light, pierścień i strukturę reality warpu, próbując zakłócić koncentrację Kyle'a lub wymusić niekorzystną reakcję równania.",
+      "s2_phase_3": "Im dłużej Kyle nie potrafi narzucić jednego konkretnego rezultatu, tym bardziej przewaga świadomej kontroli przechodzi na stronę Manhattana.",
+      "s2_analysis": "Kanoniczne Life Equation nadal daje Kyle'owi realne zwycięstwa, ale nie jest niezawodnym finisherem. Manhattan częściej wykorzystuje różnicę w kontroli i kończy walkę, zanim potencjał Kyle'a przybierze właściwy kierunek."
+    },
+    "fight-card": {
+      "fight_title": "White Lantern Kyle Rayner vs Dr. Manhattan"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Faworyt według statystyk",
+      "favorite_side": "b"
+    },
+    "fight-simulation": {
+      "label": "Stabilne Life Equation · Aktywne od początku",
+      "opening": "Kyle zaczyna już z pełną, świadomą kontrolą Life Equation. Zamiast budować konstrukty pod ostrzałem, natychmiast próbuje narzucić rzeczywistości warunek, który ograniczy lub przepisze sposób funkcjonowania Manhattana.",
+      "mid_fight": "Manhattan odpowiada manipulacją materią, historią i przyczynowością, próbując zmienić wcześniejsze warunki uzyskania mocy przez Kyle'a albo rozdzielić go z pierścieniem i równaniem.",
+      "late_fight": "Pojedynek staje się starciem dwóch warstw ingerencji: Metaverse i historii przeciw kodowi życia i rzeczywistości powiązanemu z The Source.",
+      "end_condition": "Kyle wygrywa, jeśli potrafi narzucić Life Equation konkretny rezultat, zanim Manhattan zmieni przyczynowy kontekst jego mocy. Manhattan wygrywa, jeśli pierwszy skutecznie odetnie Kyle'a od możliwości świadomego rewrite'u.",
+      "phase_1_animation": "solar-flare",
+      "phase_1_actor": "a",
+      "phase_1_title": "Kod Rzeczywistości",
+      "phase_1_a_label": "Life Equation",
+      "phase_1_a_value": "100",
+      "phase_1_b_label": "Kontrola",
+      "phase_1_b_value": "100",
+      "phase_1_event": "Kyle nie aktywuje transformacji — Life Equation już działa. Pierwszym ruchem jest próba wymuszenia konkretnej korekty warunków rzeczywistości.",
+      "phase_2_animation": "void-clash",
+      "phase_2_title": "Source kontra Metaverse",
+      "phase_2_event": "Manhattan ingeruje w przyczynowość i historię, podczas gdy Kyle próbuje narzucić zmianę na bardziej fundamentalnej warstwie kodu rzeczywistości.",
+      "phase_2_branch_a": "Kyle utrzymuje stabilną kontrolę i jego rewrite zaczyna obejmować sam warunek funkcjonowania przeciwnika.",
+      "phase_2_branch_b": "Manhattan zmienia kontekst historii lub nośnik mocy Kyle'a, zanim efekt Life Equation zostanie domknięty.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "celestial-purge",
+      "phase_3_title": "Nadpisanie Warunku",
+      "phase_3_event": "Jeśli Kyle wymusi jeden konkretny rezultat na poziomie Life Equation, Manhattan musi odpowiedzieć na ingerencję, której nie pokazał wcześniej bezpośrednio względem The Source.",
+      "phase_3_branch_a": "Life Equation stabilizuje nowy warunek rzeczywistości i Kyle domyka zwycięstwo.",
+      "phase_3_branch_b": "Manhattan rozrywa przyczynowy kontekst Kyle'a zanim rewrite stanie się trwały.",
+      "s2_label": "Kanoniczne Life Equation · Niestabilne",
+      "s2_phase_1_animation": "teleport-burst",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Nielinearna Inicjatywa",
+      "s2_phase_1_a_label": "Kreatywność",
+      "s2_phase_1_a_value": "99",
+      "s2_phase_1_b_label": "Kontrola",
+      "s2_phase_1_b_value": "100",
+      "s2_phase_1_event": "Kyle posiada większy potencjał niż jego aktualna precyzja. Manhattan od początku analizuje sposób działania White Light i Life Equation.",
+      "s2_phase_2_animation": "shadow-surge",
+      "s2_phase_2_title": "Kontrola kontra Potencjał",
+      "s2_phase_2_event": "Kyle próbuje narzucić równaniu korzystny rezultat, ale każda niestabilność daje Manhattanowi możliwość ingerencji w pierścień, ciało, historię lub sam kontekst starcia.",
+      "s2_phase_2_branch_a": "Kyle trafia na moment pełnej kontroli i rzeczywistość zaczyna odpowiadać zgodnie z jego wolą.",
+      "s2_phase_2_branch_b": "Manhattan wykorzystuje brak precyzji i przejmuje inicjatywę zanim reality warp Kyle'a zostanie ukierunkowany.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "celestial-purge",
+      "s2_phase_3_title": "Przewaga Kontroli",
+      "s2_phase_3_event": "Jeżeli Kyle nie narzuci Life Equation jednego konkretnego efektu, Manhattan stopniowo zamyka jego dostęp do użytecznej formy rewrite'u.",
+      "s2_phase_3_branch_a": "Kyle przełamuje niestabilność i dokonuje Source-level korekty wystarczającej do odwrócenia walki.",
+      "s2_phase_3_branch_b": "Manhattan pierwszy zmienia warunki starcia i uniemożliwia Kyle'owi wykorzystanie pełnego potencjału.",
+      "s2_end_condition": "Niestabilny Kyle wygrywa wtedy, gdy w krytycznej chwili uzyska wystarczającą kontrolę nad Life Equation. Manhattan wygrywa częściej, ponieważ taka precyzja nie jest dla Kyle'a stanem domyślnym."
+    },
+    "final-summary": {
+      "line_1": "Manhattan ma wyższą świadomą kontrolę nad czasem, materią, historią i Metaverse oraz znacznie lepiej udokumentowaną powtarzalność swoich najwyższych efektów.",
+      "line_2": "Kyle posiada jednak Life Equation — moc powiązaną z kodem życia i rzeczywistości oraz The Source — i pokazał, że w krytycznych momentach potrafi wymusić zmianę na tej warstwie, nawet jeśli nie kontroluje jej dowolnie.",
+      "line_3": "Dlatego wynik zależy przede wszystkim od stanu Life Equation: stabilna i świadoma wersja daje Kyle'owi przewagę warstwy ingerencji; kanoniczna niestabilność oddaje przewagę kontroli Manhattanowi.",
+      "winner": "Przy stabilnym Life Equation lekkim faworytem jest Kyle Rayner. Przy kanonicznym, niestabilnym dostępie faworytem pozostaje Dr. Manhattan."
+    },
+    "tactical-board": {
+      "lane": "Kyle musi narzucić Life Equation konkretny rezultat, zanim Manhattan zmieni przyczynowy kontekst jego mocy.",
+      "subtitle": "Kod Rzeczywistości kontra Metaverse"
+    },
+    "verdict-matrix": {
+      "header": "MATRYCA WERDYKTU",
+      "subtitle": "Kontrola Life Equation jest kluczową zmienną",
+      "layout": "3x1",
+      "row_1": "STABILNE LIFE EQUATION · AKTYWNE OD POCZĄTKU",
+      "row_2": "KANONICZNE LIFE EQUATION · NIESTABILNE",
+      "row_3": "WHITE LANTERN · BEZ LIFE EQUATION",
+      "case_1": "Kyle Rayner 6/10. Przy pełnej, stabilnej i świadomej kontroli nie musi niczego aktywować ani ładować. Może od pierwszej chwili próbować wymusić zmianę na warstwie Life Equation powiązanej z The Source — poziomie, wobec którego Manhattan nie pokazał bezpośrednio pewnej kontry.",
+      "case_1_winner": "a",
+      "case_2": "Dr. Manhattan 7/10. Kanoniczny Kyle posiada gigantyczny potencjał, ale jego Life Equation jest niestabilne i nie w pełni świadomie kontrolowane. Manhattan częściej wykorzystuje przewagę precyzji, analizy i temporalnej inicjatywy, zanim Kyle zdoła narzucić równaniu właściwy rezultat.",
+      "case_2_winner": "b",
+      "case_3": "Dr. Manhattan 9/10. Bez Life Equation White Light nadal daje Kyle'owi ogromną wszechstronność, leczenie i rekonstrukcję, ale brakuje mu warstwy ingerencji potrzebnej do regularnego przeciwstawiania się świadomemu reality warpowi Manhattana.",
+      "case_3_winner": "b"
+    },
+    "x-factor": {
+      "a_bonus": "30",
+      "a_bonus_label": "LIFE EQUATION",
+      "a_value": "50",
+      "b_bonus": "25",
+      "b_value": "50",
+      "factor": "THE SOURCE-LINKED REWRITE VS METAVERSE CONTROL",
+      "mechanika_label": "WARSTWA KYLE'A",
+      "mechanika": "Kyle nie posiada kanonicznej techniki 'Source Route'. Jego realny X-Factor polega na tym, że Life Equation pozwoliło mu wymusić zmiany w kodzie rzeczywistości powiązanym z The Source. Przy stabilnej kontroli jest to potencjalnie warstwa nadrzędna wobec standardowej manipulacji historią i materią.",
+      "implikacja_label": "WARSTWA MANHATTANA",
+      "implikacja": "Manhattan ma przewagę powtarzalności i świadomej kontroli. Potrafi analizować obce systemy mocy, ingerować w ich nośniki oraz zmieniać historię Metaverse, ale nie pokazał jednoznacznej dominacji nad The Source lub Life Equation.",
+      "psychologia_label": "SKUTEK DLA WALKI",
+      "psychologia": "Stabilne Life Equation zmienia Kyle'a z underdoga w lekkiego faworyta. Niestabilne Life Equation pozostawia mu wyższy potencjał abstrakcyjny, ale Manhattan częściej pierwszy przekłada swoją moc na konkretny, kontrolowany rezultat.",
+      "regen": "KONTROLA > POTENCJAŁ · SOURCE > METAVERSE?"
+    }
+  }
+}

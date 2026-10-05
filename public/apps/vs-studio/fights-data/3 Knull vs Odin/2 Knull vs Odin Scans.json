@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Knull1.jpg",
+    "b": "Odin1.jpg"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Knull1.jpg",
+      "left_image_2": "Feat_Knull2.jpg",
+      "left_image_3": "Feat_Knull3.jpg",
+      "left_image_4": "Feat_Knull4.jpg",
+      "left_image_5": "Feat_Knull5.jpg",
+      "right_image_1": "Feat_Odin1.jpg",
+      "right_image_2": "Feat_Odin2.jpg",
+      "right_image_3": "Feat_Odin3.jpg",
+      "right_image_4": "Feat_Odin4.jpg",
+      "right_image_5": "Feat_Odin5.jpg"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Knull1.jpg",
+      "left_image_2": "CV_Knull2.jpg",
+      "left_image_3": "CV_Knull3.jpg",
+      "left_image_4": "CV_Knull4.jpg",
+      "left_image_5": "CV_Knull5.jpg",
+      "right_image_1": "CV_Odin1.jpg",
+      "right_image_2": "CV_Odin2.jpg",
+      "right_image_3": "CV_Odin3.jpg",
+      "right_image_4": "CV_Odin4.jpg",
+      "right_image_5": "CV_Odin5.jpg"
+    },
+    "fight-card": {
+      "right_image": "Odin4.jpg",
+      "left_image": "Knull4.webp"
+    },
+    "final-summary": {
+      "right_image": "Odin2.jpg",
+      "left_image": "Knull2.jpg"
+    },
+    "verdict-matrix": {
+      "right_image": "Odin3.jpg",
+      "left_image": "Knull3.webp"
+    }
+  }
+}

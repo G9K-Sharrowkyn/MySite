@@ -1,0 +1,223 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Jako host Butchera łączy się z ucieleśnieniem czerwonego światła gniewu i uzyskuje ogromne wzmocnienie mocy oraz kontroli nad czerwonym spektrum.",
+      "Z pomocą Spectre odpiera próbę opętania przez Butchera i więzi istotę gniewu w swojej baterii mocy.",
+      "Walczy dalej po wyrwaniu serca, ponieważ czerwony pierścień przejmuje funkcję biologicznego serca i utrzymuje go przy życiu.",
+      "Telepatyczny kontakt z jego umysłem obezwładnia Martian Manhuntera ogromem nagromadzonego cierpienia i gniewu.",
+      "Skoncentrowana czerwona plazma potrafi przepalać strukturę przestrzeni i rozrywać bariery wymiarowe, dając potencjalny sposób obejścia konwencjonalnej odporności."
+    ],
+    "dossier": {
+      "advantage": "Butcher-Host Atrocitus łączy lot, bariery, konstrukty, plazmę, presję dystansową i kontrolę czerwonego spektrum z potężnym źródłem energii idealnie współgrającym z gniewem Hulka. Najważniejszą przewagą jest to, że nie musi wygrywać przez czystą siłę fizyczną.",
+      "mentality": "Wściekły fanatyk i brutalny dominator. Atrocitus nie jest naturalnym kiterem i często chce udowodnić przewagę w bezpośredniej konfrontacji, ale jako host Butchera dysponuje wystarczającym zakresem narzędzi, by prowadzić walkę znacznie szerzej niż zwykłą bójkę.",
+      "quote": "Jestem Atrocitus, pan i mistrz Korpusu Czerwonych Latarni. Jestem gniewem, jestem nienawiścią, jestem sprawiedliwą zemstą!",
+      "style": "Brutalna agresja wsparta pełną potęgą czerwonego spektrum. Atrocitus może walczyć wręcz, ale najgroźniejszy jest wtedy, gdy łączy lot, konstrukty, bariery i ciągłą plazmę z presją emocjonalną Butchera."
+    },
+    "name": "Atrocitus",
+    "profile": {
+      "powers": [
+        "Czerwone światło gniewu, plazma, konstrukty, bariery, lot, magia krwi oraz wzmocnienie wynikające z połączenia z Butcherem."
+      ],
+      "tools": [
+        "Manipulacja czerwonym spektrum i zdolność czerpania korzyści z rosnącego poziomu gniewu na polu walki.",
+        "Żrąca plazma i ciągła presja dystansowa zdolne przeciążać regenerację przeciwnika.",
+        "Skoncentrowana plazma zdolna przepalać strukturę przestrzeni i bariery wymiarowe — potencjalny finisher, który nie musi polegać wyłącznie na klasycznym przebiciu odporności."
+      ],
+      "weaknesses": [
+        "Jego naturalna agresja może skłonić go do wejścia w zwarcie, gdzie Hulk jest najbardziej niebezpieczny.",
+        "Pierścień pełni krytyczną funkcję podtrzymującą jego życie i pozostaje istotnym punktem systemu przeżywalności.",
+        "Nie ma jednoznacznie potwierdzonego featu dowolnego wyłączania gniewu istot spoza czerwonego spektrum."
+      ]
+    },
+    "stats": {
+      "battleIq": 88,
+      "durability": 95,
+      "experience": 93,
+      "hax": 98,
+      "skills": 85,
+      "speed": 93,
+      "stamina": 96,
+      "strength": 94,
+      "style": 96
+    },
+    "version": "New52 · Butcher Host",
+    "victories": [
+      "Abysmus",
+      "Skallox",
+      "Black Lanterns",
+      "Guardian of the Universe",
+      "Bleez"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Podnosi pasmo górskie ważące około 150 miliardów ton.",
+      "Regeneruje się po skrajnych obrażeniach i może wracać do pełnej zdolności bojowej po zniszczeniu ogromnej części ciała.",
+      "Starcie Worldbreaker Hulka z Red She-Hulk doprowadza do pękania planety pod ich wymianą.",
+      "Jednym krokiem niemal zatapia całe wschodnie wybrzeże podczas eskalacji Worldbreakera.",
+      "Jego siła i odporność rosną wraz z gniewem, tworząc potencjalnie nieliniową fizyczną eskalację w długiej walce."
+    ],
+    "dossier": {
+      "advantage": "Hulk ma ogromną przewagę w czystej sile, regeneracji, staminy i długiej eskalacji fizycznej. Jeśli zdoła doprowadzić do trwałego zwarcia, może bardzo szybko przełamać osłony i ciało Atrocitusa.",
+      "mentality": "Uparty i dziki niszczyciel. Hulk nie potrzebuje złożonego planu: jego najlepsza droga to skrócenie dystansu, przeżycie ostrzału i zamienienie walki w ciągłą fizyczną presję.",
+      "quote": "Hulk miażdżyć!",
+      "style": "Niepowstrzymana destrukcja w zwarciu. Hulk polega na sile, skokach, falach uderzeniowych, thunderclapach i regeneracji, próbując doprowadzić do sytuacji, w której przeciwnik nie może już odzyskać dystansu."
+    },
+    "name": "Hulk",
+    "profile": {
+      "powers": [
+        "Wzrost siły zależny od gniewu, ekstremalna regeneracja, fale uderzeniowe, ogromna odporność i praktycznie niewyczerpana stamina."
+      ],
+      "tools": [
+        "Nieustanna presja w zwarciu i ogromna przewaga fizyczna.",
+        "Skoki na ogromne odległości, thunderclapy i uderzenia obszarowe utrudniające bezpieczne utrzymywanie dystansu."
+      ],
+      "weaknesses": [
+        "Nie posiada lotu ani takiej samej kontroli dystansowej jak Atrocitus.",
+        "Jego regeneracja może zostać przeciążona, jeśli uszkodzenia są zadawane szybciej, niż ciało jest w stanie się odtwarzać.",
+        "W tej wersji NIE korzysta z Green Door — całkowite zniszczenie ciała, nokaut lub trwałe obezwładnienie kończą walkę."
+      ]
+    },
+    "stats": {
+      "battleIq": 84,
+      "durability": 97,
+      "experience": 84,
+      "hax": 82,
+      "skills": 84,
+      "speed": 84,
+      "stamina": 100,
+      "strength": 99,
+      "style": 88
+    },
+    "version": "Earth-616 · Worldbreaker Scaling · No Green Door",
+    "victories": [
+      "Sentry",
+      "Dormammu",
+      "Hulkbuster Iron Man",
+      "Bi-Beast i Wendigo",
+      "Arm'Cheddon"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "tactical-board": {
+      "lane": "Atrocitus musi wykorzystać gniew Hulka jako paliwo i utrzymać dystans wystarczająco długo, by przestrzenna plazma przeciążyła regenerację. Hulk musi wymusić trwałe zwarcie, zanim pętla gniewu zostanie przejęta przez Butchera.",
+      "subtitle": "Ucieleśnienie Gniewu kontra Worldbreaker"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Faworyt według statystyk",
+      "favorite_side": "a"
+    },
+    "x-factor": {
+      "a_bonus": "35",
+      "a_bonus_label": "BUTCHER HOST",
+      "a_value": "50",
+      "b_bonus": "20",
+      "b_value": "50",
+      "factor": "SPRZĘŻENIE GNIEWU + PRZESTRZENNE WYPALENIE",
+      "mechanika": "Gniew Hulka jednocześnie zwiększa jego siłę gamma i wzmacnia środowisko czerwonego spektrum, z którego korzysta Butcher-Host Atrocitus. Nie jest to automatyczne wyłączenie mocy Hulka, lecz wspólna eskalacja, w której Atrocitus ma więcej sposobów wykorzystania rosnącej furii.",
+      "implikacja": "Hulk staje się coraz silniejszy, ale każdy wzrost oznacza też więcej energii emocjonalnej dostępnej dla Butchera. Atrocitus może przekładać ją nie tylko na siłę, lecz także na bariery, lot, konstrukty i ciągłą plazmę.",
+      "psychologia": "Im dłużej trwa walka, tym groźniejszy fizycznie staje się Hulk, ale jednocześnie tym bardziej Atrocitus operuje w idealnym środowisku dla czerwonego spektrum. Kluczowe jest, kto pierwszy przekuje eskalację gniewu w realny finisher.",
+      "regen": "PRZESTRZENNE WYPALENIE"
+    },
+    "final-summary": {
+      "line_1": "Hulk posiada większy fizyczny sufit, regenerację i znacznie prostszy warunek zwycięstwa w zwarciu, ale Butcher-Host Atrocitus nie musi rywalizować z nim wyłącznie na tej osi.",
+      "line_2": "Lot, bariery, konstrukty, czerwone spektrum i plazma pozwalają Atrocitusowi utrzymywać walkę poza najgroźniejszym zasięgiem Hulka, a gniew przeciwnika zasila środowisko, w którym Butcher jest najsilniejszy.",
+      "line_3": "Najważniejszym finisherem jest skoncentrowana plazma zdolna przepalać strukturę przestrzeni. Przy ostrożnej interpretacji nie oznacza to automatycznego existence erasure, ale daje Atrocitusowi wiarygodny sposób przeciążenia regeneracji i obejścia części klasycznej odporności Hulka.",
+      "winner": "Butcher-Host Atrocitus wygrywa 9/10 przy założeniu bez Green Door. Hulk bierze swoje walki głównie wtedy, gdy bardzo wcześnie wymusza trwałe zwarcie i nie pozwala Atrocitusowi odzyskać dystansu."
+    },
+    "battle-dynamics": {
+      "label": "Butcher-Host Atrocitus · Bez Green Door",
+      "a_curve": "92,94,96,97,99",
+      "b_curve": "90,91,90,86,78",
+      "yellow_wave": "40,48,44,59,47,63,49,68",
+      "phase_1": "Atrocitus otwiera z powietrza, łącząc bariery, konstrukty i plazmę. Hulk od razu zwiększa presję skokami i falami uderzeniowymi, próbując wymusić kontakt.",
+      "phase_2": "Rosnący gniew Hulka nie jest już jednostronną przewagą. Hulk zwiększa siłę fizyczną, ale jednocześnie Butcher otrzymuje coraz korzystniejsze środowisko emocjonalne do wzmacniania całego czerwonego arsenału.",
+      "phase_3": "Jeśli Atrocitus utrzyma dystans wystarczająco długo, zaczyna stosować skoncentrowaną plazmę na poziomie zdolnym naruszać strukturę przestrzeni i przeciążać regenerację Hulka szybciej, niż ten może wymusić zwarcie.",
+      "analysis": "To nadal bardzo groźna walka dla Atrocitusa, bo jedno trwałe złapanie przez Worldbreakera może odwrócić wynik. Jednak Butcher, lot, kontrola pola i przestrzenny komponent plazmy dają mu znacznie więcej dróg do zwycięstwa.",
+      "s2_label": "Hulk Wymusza Zwarcie",
+      "s2_a_curve": "92,88,80,68,55",
+      "s2_b_curve": "90,94,97,99,100",
+      "s2_phase_1": "Hulk wykorzystuje skok, thunderclap lub rozbicie podłoża, by przerwać stabilną pozycję Atrocitusa w powietrzu.",
+      "s2_phase_2": "Po wejściu w zwarcie różnica czystej siły zaczyna dominować nad przewagą narzędzi i kontroli pola Atrocitusa.",
+      "s2_phase_3": "Jeżeli Hulk utrzyma kontakt i nie pozwoli Atrocitusowi odzyskać przestrzeni, może przełamać osłony, uszkodzić ciało i pierścień oraz zakończyć walkę brutalną fizyczną presją.",
+      "s2_analysis": "To podstawowa droga Hulka do zwycięstwa. Musi zrealizować ją wcześnie, zanim Atrocitus rozwinie pełną pętlę Butchera i przestrzennej plazmy."
+    },
+    "fight-simulation": {
+      "label": "Butcher-Host Atrocitus · Główny Scenariusz",
+      "opening": "Atrocitus natychmiast unosi się poza zwykły zasięg Hulka i zalewa pole walki konstrukcjami, barierami oraz czerwoną plazmą.",
+      "mid_fight": "Hulk regeneruje kolejne uszkodzenia i rośnie w siłę, ale jego furia jednocześnie wzmacnia warunki czerwonego spektrum. Atrocitus odpowiada coraz cięższą presją zamiast pozwolić walce przejść w czyste zwarcie.",
+      "late_fight": "Gdy zwykła plazma nie wystarcza, Atrocitus koncentruje emisję na poziomie zdolnym przepalać strukturę przestrzeni, próbując niszczyć ciało Hulka szybciej, niż regeneracja może je odbudowywać.",
+      "end_condition": "Atrocitus wygrywa przez przeciążenie regeneracji, całkowite zniszczenie ciała, nokaut lub trwałe obezwładnienie. Green Door nie jest aktywne.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_actor": "a",
+      "phase_1_title": "Czerwone Niebo",
+      "phase_1_a_label": "Kontrola",
+      "phase_1_a_value": "98",
+      "phase_1_b_label": "Presja",
+      "phase_1_b_value": "94",
+      "phase_1_event": "Atrocitus nie daje Hulkowi darmowego zwarcia. Zmusza go do przechodzenia przez kolejne warstwy ognia, konstrukcji i barier.",
+      "phase_2_animation": "infinite-attrition",
+      "phase_2_title": "Pętla Gniewu",
+      "phase_2_event": "Hulk rośnie wraz z furią, ale Butcher również korzysta z coraz większej ilości czerwonej energii emocjonalnej na polu walki.",
+      "phase_2_branch_a": "Hulk przełamuje kolejną warstwę osłon i zbliża się do trwałego kontaktu.",
+      "phase_2_branch_b": "Atrocitus zwiększa dystans i przekłada gniew przeciwnika na jeszcze większą presję energetyczną.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "void-absorption",
+      "phase_3_title": "Przestrzenne Wypalenie",
+      "phase_3_event": "Atrocitus używa skoncentrowanej plazmy zdolnej rozrywać bariery przestrzenne, próbując wycinać kolejne fragmenty Hulka szybciej, niż ten może je regenerować.",
+      "phase_3_branch_a": "Hulk przeżywa pierwszą falę i w ostatniej chwili doprowadza do zwarcia.",
+      "phase_3_branch_b": "Ciągła emisja przeciąża regenerację i kończy walkę bez potrzeby korzystania z Green Door.",
+      "s2_label": "Hulk Wymusza Zwarcie",
+      "s2_phase_1_animation": "seismicslam",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Przełamanie Dystansu",
+      "s2_phase_1_a_label": "Lot",
+      "s2_phase_1_a_value": "93",
+      "s2_phase_1_b_label": "Wejście",
+      "s2_phase_1_b_value": "96",
+      "s2_phase_1_event": "Hulk rozbija pozycję Atrocitusa skokiem, falą uderzeniową lub thunderclapem i po raz pierwszy zmusza go do bezpośredniego kontaktu.",
+      "s2_phase_2_animation": "clash-lock",
+      "s2_phase_2_title": "Worldbreaker Chwyta",
+      "s2_phase_2_event": "Gdy Hulk zamyka dłonie na Atrocitusie, walka natychmiast przesuwa się na oś czystej siły, gdzie przewaga Hulka jest największa.",
+      "s2_phase_2_branch_a": "Atrocitus uwalnia plazmę z bliska i próbuje wyrwać się z uchwytu.",
+      "s2_phase_2_branch_b": "Hulk nie pozwala mu odzyskać przestrzeni i zaczyna przełamywać osłony.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "brutal-execution",
+      "s2_phase_3_title": "Fizyczna Dominacja",
+      "s2_phase_3_event": "Jeżeli kontakt pozostaje ciągły, Hulk może zniszczyć ciało Atrocitusa lub uszkodzić pierścień szybciej, niż Butcher odzyska kontrolę pola.",
+      "s2_phase_3_branch_a": "Atrocitus zrywa kontakt i wraca do przewagi dystansowej.",
+      "s2_phase_3_branch_b": "Hulk utrzymuje chwyt i kończy walkę siłą.",
+      "s2_end_condition": "Hulk wygrywa głównie przez bardzo wczesne wymuszenie trwałego zwarcia."
+    },
+    "direct-verdict": {
+      "winner": "Atrocitus",
+      "loser": "Hulk",
+      "outcome": "Butcher-Host Atrocitus 9/10",
+      "certainty": "Wyraźny faworyt",
+      "line_1": "Gniew Hulka nie zostaje automatycznie wyłączony, ale przestaje być wyłącznie jego przewagą: jako host Butchera Atrocitus również czerpie ogromną korzyść z rosnącej furii na polu walki.",
+      "line_2": "Lot, bariery, konstrukty i plazma dają Atrocitusowi możliwość prowadzenia walki poza zwarciem, a skoncentrowana emisja zdolna naruszać strukturę przestrzeni stanowi wiarygodny finisher przeciw regenerującemu się Hulkowi.",
+      "line_3": "Hulk nadal może wygrać, jeśli bardzo wcześnie złapie Atrocitusa i nie wypuści go z kontaktu. Bez Green Door nie ma jednak drugiej szansy po całkowitym zniszczeniu lub trwałym obezwładnieniu."
+    },
+    "fight-card": {
+      "fight_title": "Butcher-Host Atrocitus vs Hulk"
+    }
+  }
+}

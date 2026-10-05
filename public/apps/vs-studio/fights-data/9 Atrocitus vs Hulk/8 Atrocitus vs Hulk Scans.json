@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Atrocitus1.jpg",
+    "b": "Hulk1.jpg"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Atrocitus1.jpg",
+      "left_image_2": "Feat_Atrocitus2.jpg",
+      "left_image_3": "Feat_Atrocitus3.jpg",
+      "left_image_4": "Feat_Atrocitus4.jpg",
+      "left_image_5": "Feat_Atrocitus5.jpg",
+      "right_image_1": "Feat_Hulk1.jpeg",
+      "right_image_2": "Feat_Hulk2.webp",
+      "right_image_3": "Feat_Hulk3.jpg",
+      "right_image_4": "Feat_Hulk4.jpg",
+      "right_image_5": "Feat_Hulk5.jpg"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Atrocitus1.jpeg",
+      "left_image_2": "CV_Atrocitus2.jpeg",
+      "left_image_3": "CV_Atrocitus3.jpeg",
+      "left_image_4": "CV_Atrocitus4.jpeg",
+      "left_image_5": "CV_Atrocitus5.jpg",
+      "right_image_1": "CV_Hulk1.jpg",
+      "right_image_2": "CV_Hulk2.jpg",
+      "right_image_3": "CV_Hulk3.webp",
+      "right_image_4": "CV_Hulk4.jpg",
+      "right_image_5": "CV_Hulk5.jpg"
+    },
+    "fight-card": {
+      "right_image": "Hulk4.webp",
+      "left_image": "Atrocitus4.jpg"
+    },
+    "final-summary": {
+      "right_image": "Hulk2.jpg",
+      "left_image": "Atrocitus2.jpg"
+    },
+    "direct-verdict": {
+      "right_image": "Hulk3.jpg",
+      "left_image": "Atrocitus3.webp"
+    }
+  }
+}

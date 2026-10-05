@@ -1,0 +1,223 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "As the host of the Butcher, merges with the embodiment of the red light of rage and gains an enormous increase in power and control over the Red Spectrum.",
+      "With the Spectre's help, resists the Butcher's attempt to possess him and imprisons the rage entity inside his power battery.",
+      "Continues fighting after his heart is ripped out because the red ring assumes the function of his biological heart and keeps him alive.",
+      "Telepathic contact with his mind overwhelms Martian Manhunter with the sheer amount of accumulated pain and rage.",
+      "Concentrated red plasma can burn through the structure of space and rupture dimensional barriers, giving him a potential way to bypass conventional durability."
+    ],
+    "dossier": {
+      "advantage": "Butcher-Host Atrocitus combines flight, barriers, constructs, plasma, ranged pressure, and control over the Red Spectrum with a massive energy source perfectly aligned with Hulk's rage. His greatest advantage is that he does not need to beat Hulk through raw physical strength alone.",
+      "mentality": "A furious zealot and brutal dominator. Atrocitus is not a natural kiter and often wants to prove his superiority in direct combat, but as the Butcher's host he has enough tools to fight far more broadly than through a simple brawl.",
+      "quote": "I am Atrocitus, lord and master of the Red Lantern Corps. I am rage, I am hatred, I am righteous vengeance!",
+      "style": "Brutal aggression backed by the full power of the Red Spectrum. Atrocitus can fight hand-to-hand, but he is most dangerous when combining flight, constructs, barriers, and sustained plasma with the Butcher's emotional pressure."
+    },
+    "name": "Atrocitus",
+    "profile": {
+      "powers": [
+        "Red light of rage, plasma, constructs, barriers, flight, blood magic, and the amplification gained from merging with the Butcher."
+      ],
+      "tools": [
+        "Manipulation of the Red Spectrum and the ability to benefit from rising levels of rage across the battlefield.",
+        "Corrosive plasma and sustained ranged pressure capable of overwhelming an opponent's regeneration.",
+        "Concentrated plasma capable of burning through the structure of space and dimensional barriers — a potential finisher that does not rely solely on conventionally penetrating durability."
+      ],
+      "weaknesses": [
+        "His natural aggression can tempt him into close combat, where Hulk is at his most dangerous.",
+        "The ring performs a critical life-support function and remains an important part of his survivability system.",
+        "He has no unambiguous feat of freely shutting down the rage of beings outside the Red Spectrum."
+      ]
+    },
+    "stats": {
+      "battleIq": 88,
+      "durability": 95,
+      "experience": 93,
+      "hax": 98,
+      "skills": 85,
+      "speed": 93,
+      "stamina": 96,
+      "strength": 94,
+      "style": 96
+    },
+    "version": "New52 · Butcher Host",
+    "victories": [
+      "Abysmus",
+      "Skallox",
+      "Black Lanterns",
+      "Guardian of the Universe",
+      "Bleez"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Lifts a mountain range weighing roughly 150 billion tons.",
+      "Regenerates from extreme injuries and can return to full combat capability after massive portions of his body are destroyed.",
+      "The clash between Worldbreaker Hulk and Red She-Hulk causes the planet itself to crack under their exchange.",
+      "Nearly sinks the entire Eastern Seaboard with a single step during his Worldbreaker escalation.",
+      "His strength and durability increase with rage, creating potentially nonlinear physical escalation in a prolonged fight."
+    ],
+    "dossier": {
+      "advantage": "Hulk holds an enormous advantage in raw strength, regeneration, stamina, and prolonged physical escalation. If he forces sustained close combat, he can break through Atrocitus's defenses and body very quickly.",
+      "mentality": "A stubborn, savage destroyer. Hulk does not need a complex plan: his best path is to close the distance, survive the bombardment, and turn the fight into continuous physical pressure.",
+      "quote": "Hulk smash!",
+      "style": "Relentless close-range destruction. Hulk relies on strength, leaps, shockwaves, thunderclaps, and regeneration, trying to reach a state where his opponent can no longer regain distance."
+    },
+    "name": "Hulk",
+    "profile": {
+      "powers": [
+        "Rage-based strength growth, extreme regeneration, shockwaves, enormous durability, and effectively inexhaustible stamina."
+      ],
+      "tools": [
+        "Relentless close-range pressure and overwhelming physical strength.",
+        "Long-range leaps, thunderclaps, and area attacks that make safe kiting difficult."
+      ],
+      "weaknesses": [
+        "He lacks flight and the same level of ranged control as Atrocitus.",
+        "His regeneration can be overwhelmed if damage is inflicted faster than his body can rebuild itself.",
+        "This version does NOT use the Green Door — total bodily destruction, knockout, or permanent incapacitation ends the fight."
+      ]
+    },
+    "stats": {
+      "battleIq": 84,
+      "durability": 97,
+      "experience": 84,
+      "hax": 82,
+      "skills": 84,
+      "speed": 84,
+      "stamina": 100,
+      "strength": 99,
+      "style": 88
+    },
+    "version": "Earth-616 · Worldbreaker Scaling · No Green Door",
+    "victories": [
+      "Sentry",
+      "Dormammu",
+      "Hulkbuster Iron Man",
+      "Bi-Beast and Wendigo",
+      "Arm'Cheddon"
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "tactical-board": {
+      "lane": "Atrocitus must use Hulk's rage as fuel and maintain distance long enough for spatial plasma to overwhelm regeneration. Hulk must force sustained close combat before the Butcher takes control of the rage feedback loop.",
+      "subtitle": "Embodiment of Rage vs Worldbreaker"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Statistical favorite",
+      "favorite_side": "a"
+    },
+    "x-factor": {
+      "a_bonus": "35",
+      "a_bonus_label": "BUTCHER HOST",
+      "a_value": "50",
+      "b_bonus": "20",
+      "b_value": "50",
+      "factor": "RAGE FEEDBACK + SPATIAL BURN",
+      "mechanika": "Hulk's rage simultaneously increases his gamma strength and strengthens the Red Spectrum environment used by Butcher-Host Atrocitus. This is not an automatic shutdown of Hulk's power, but a shared escalation in which Atrocitus has more ways to exploit the rising fury.",
+      "implikacja": "Hulk becomes physically stronger, but every increase also means more emotional energy available to the Butcher. Atrocitus can translate that not only into strength, but also into barriers, flight, constructs, and sustained plasma.",
+      "psychologia": "The longer the fight lasts, the more physically dangerous Hulk becomes, but the more Atrocitus operates inside an ideal environment for the Red Spectrum. The key question is who converts the rage escalation into a real finisher first.",
+      "regen": "SPATIAL BURN"
+    },
+    "final-summary": {
+      "line_1": "Hulk possesses the higher physical ceiling, better regeneration, and a much simpler close-range win condition, but Butcher-Host Atrocitus does not need to compete with him solely on that axis.",
+      "line_2": "Flight, barriers, constructs, the Red Spectrum, and plasma allow Atrocitus to keep the fight outside Hulk's most dangerous range, while Hulk's rage fuels the environment in which the Butcher is strongest.",
+      "line_3": "The most important finisher is concentrated plasma capable of burning through the structure of space. Under a cautious interpretation, this is not automatic existence erasure, but it gives Atrocitus a credible way to overwhelm regeneration and bypass part of Hulk's conventional durability.",
+      "winner": "Butcher-Host Atrocitus wins 9/10 with the Green Door excluded. Hulk takes his wins mainly when he forces sustained close combat very early and prevents Atrocitus from regaining distance."
+    },
+    "battle-dynamics": {
+      "label": "Butcher-Host Atrocitus · No Green Door",
+      "a_curve": "92,94,96,97,99",
+      "b_curve": "90,91,90,86,78",
+      "yellow_wave": "40,48,44,59,47,63,49,68",
+      "phase_1": "Atrocitus opens from the air, combining barriers, constructs, and plasma. Hulk immediately raises the pressure with leaps and shockwaves, trying to force contact.",
+      "phase_2": "Hulk's rising rage is no longer a one-sided advantage. Hulk increases his physical strength, but the Butcher simultaneously gains a more favorable emotional environment for amplifying the entire red arsenal.",
+      "phase_3": "If Atrocitus maintains distance long enough, he begins using concentrated plasma at a level capable of disrupting the structure of space and overwhelming Hulk's regeneration faster than Hulk can force close combat.",
+      "analysis": "This remains a dangerous fight for Atrocitus because one sustained grab by the Worldbreaker can reverse the outcome. However, the Butcher, flight, battlefield control, and the spatial component of the plasma give him far more paths to victory.",
+      "s2_label": "Hulk Forces Close Combat",
+      "s2_a_curve": "92,88,80,68,55",
+      "s2_b_curve": "90,94,97,99,100",
+      "s2_phase_1": "Hulk uses a leap, thunderclap, or shattered terrain to disrupt Atrocitus's stable aerial position.",
+      "s2_phase_2": "Once close combat begins, the raw strength gap starts to outweigh Atrocitus's advantages in tools and battlefield control.",
+      "s2_phase_3": "If Hulk maintains contact and denies Atrocitus room to disengage, he can break through the defenses, damage the body and ring, and end the fight through brutal physical pressure.",
+      "s2_analysis": "This is Hulk's primary path to victory. He must achieve it early, before Atrocitus fully develops the Butcher rage loop and spatial-plasma pressure."
+    },
+    "fight-simulation": {
+      "label": "Butcher-Host Atrocitus · Main Scenario",
+      "opening": "Atrocitus immediately rises outside Hulk's normal reach and floods the battlefield with constructs, barriers, and red plasma.",
+      "mid_fight": "Hulk regenerates successive injuries and grows stronger, but his fury simultaneously strengthens the Red Spectrum environment. Atrocitus answers with increasingly heavy pressure rather than allowing the fight to become a pure brawl.",
+      "late_fight": "When ordinary plasma is no longer enough, Atrocitus concentrates the emission to the level capable of burning through the structure of space, trying to destroy Hulk's body faster than regeneration can rebuild it.",
+      "end_condition": "Atrocitus wins by overwhelming regeneration, total bodily destruction, knockout, or permanent incapacitation. The Green Door is not active.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_actor": "a",
+      "phase_1_title": "Red Sky",
+      "phase_1_a_label": "Control",
+      "phase_1_a_value": "98",
+      "phase_1_b_label": "Pressure",
+      "phase_1_b_value": "94",
+      "phase_1_event": "Atrocitus does not give Hulk free close combat. He forces him through successive layers of fire, constructs, and barriers.",
+      "phase_2_animation": "infinite-attrition",
+      "phase_2_title": "Rage Loop",
+      "phase_2_event": "Hulk grows with his fury, but the Butcher also benefits from the increasing amount of red emotional energy on the battlefield.",
+      "phase_2_branch_a": "Hulk breaks through another layer of defense and moves closer to sustained contact.",
+      "phase_2_branch_b": "Atrocitus increases the distance and translates Hulk's rage into even greater energy pressure.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "void-absorption",
+      "phase_3_title": "Spatial Burn",
+      "phase_3_event": "Atrocitus uses concentrated plasma capable of rupturing spatial barriers, trying to cut away successive portions of Hulk faster than he can regenerate.",
+      "phase_3_branch_a": "Hulk survives the first wave and forces close combat at the last moment.",
+      "phase_3_branch_b": "The sustained emission overwhelms regeneration and ends the fight without any Green Door return.",
+      "s2_label": "Hulk Forces Close Combat",
+      "s2_phase_1_animation": "seismicslam",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Breaking the Distance",
+      "s2_phase_1_a_label": "Flight",
+      "s2_phase_1_a_value": "93",
+      "s2_phase_1_b_label": "Entry",
+      "s2_phase_1_b_value": "96",
+      "s2_phase_1_event": "Hulk disrupts Atrocitus's position with a leap, shockwave, or thunderclap and forces direct contact for the first time.",
+      "s2_phase_2_animation": "clash-lock",
+      "s2_phase_2_title": "Worldbreaker Grabs Hold",
+      "s2_phase_2_event": "Once Hulk gets his hands on Atrocitus, the fight instantly shifts toward raw strength, where Hulk's advantage is greatest.",
+      "s2_phase_2_branch_a": "Atrocitus releases point-blank plasma and tries to break free.",
+      "s2_phase_2_branch_b": "Hulk denies him space and begins breaking through the defenses.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "brutal-execution",
+      "s2_phase_3_title": "Physical Domination",
+      "s2_phase_3_event": "If contact remains continuous, Hulk can destroy Atrocitus's body or damage the ring faster than the Butcher can restore battlefield control.",
+      "s2_phase_3_branch_a": "Atrocitus breaks contact and returns to ranged superiority.",
+      "s2_phase_3_branch_b": "Hulk maintains the grip and ends the fight through raw force.",
+      "s2_end_condition": "Hulk wins mainly by forcing sustained close combat very early."
+    },
+    "direct-verdict": {
+      "winner": "Atrocitus",
+      "loser": "Hulk",
+      "outcome": "Butcher-Host Atrocitus 9/10",
+      "certainty": "Clear favorite",
+      "line_1": "Hulk's rage is not automatically shut down, but it stops being an advantage that belongs only to him: as the Butcher's host, Atrocitus also gains enormous benefit from rising fury across the battlefield.",
+      "line_2": "Flight, barriers, constructs, and plasma let Atrocitus fight outside close range, while concentrated emission capable of disrupting the structure of space provides a credible finisher against a regenerating Hulk.",
+      "line_3": "Hulk can still win if he catches Atrocitus very early and prevents him from disengaging. Without the Green Door, however, he gets no second chance after total destruction or permanent incapacitation."
+    },
+    "fight-card": {
+      "fight_title": "Butcher-Host Atrocitus vs Hulk"
+    }
+  }
+}

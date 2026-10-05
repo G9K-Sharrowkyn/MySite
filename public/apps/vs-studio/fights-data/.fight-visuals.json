@@ -1,0 +1,957 @@
+{
+  "version": 1,
+  "updatedAt": "2026-03-12T18:00:28.441Z",
+  "folders": {
+    "1 Superman vs King Hyperion": {
+      "portraitAAdjust": {
+        "x": 65.44416692522383,
+        "y": 33.4688176156242,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 39.81003502019006,
+        "y": 0,
+        "scale": 1
+      },
+      "slideImageAdjustments": {
+        "character-dossier-b:portrait": {
+          "x": 100,
+          "y": 11.467171787929278,
+          "scale": 1
+        },
+        "crucial-feats:left:left-1": {
+          "x": 73.80217420999566,
+          "y": 12.693348574450791,
+          "scale": 1
+        },
+        "crucial-feats:right:right-1": {
+          "x": 0,
+          "y": 32.46050181790548,
+          "scale": 1
+        },
+        "crucial-feats:right:right-2": {
+          "x": 49.54661161490533,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:right-3": {
+          "x": 50,
+          "y": 91.23966545001426,
+          "scale": 1
+        },
+        "crucial-feats:right:right-4": {
+          "x": 50,
+          "y": 86.11111111111128,
+          "scale": 1
+        },
+        "crucial-feats:right:right-5": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "character-dossier-a:portrait": {
+          "x": 0,
+          "y": 21.751608560955525,
+          "scale": 1
+        },
+        "crucial-feats:left:left-2": {
+          "x": 50,
+          "y": 3.5966610224679885,
+          "scale": 1
+        },
+        "crucial-feats:left:left-3": {
+          "x": 50,
+          "y": 3.096460036890118,
+          "scale": 1
+        },
+        "crucial-feats:left:left-4": {
+          "x": 50,
+          "y": 39.786854977432576,
+          "scale": 1
+        },
+        "crucial-feats:left:left-5": {
+          "x": 50,
+          "y": 50.46954747939151,
+          "scale": 1
+        },
+        "victory-archive:left:left-1": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:right:right-1": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:left:left-2": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:right:right-2": {
+          "x": 50,
+          "y": 80.2583138441248,
+          "scale": 1
+        },
+        "victory-archive:left:left-3": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "victory-archive:right:right-3": {
+          "x": 50,
+          "y": 51.65180046250413,
+          "scale": 1
+        },
+        "victory-archive:left:left-4": {
+          "x": 59.5175587409192,
+          "y": 0,
+          "scale": 1
+        },
+        "victory-archive:right:right-4": {
+          "x": 50,
+          "y": 6.888076388088087,
+          "scale": 1
+        },
+        "victory-archive:left:left-5": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "victory-archive:right:right-5": {
+          "x": 50,
+          "y": 39.18405042107993,
+          "scale": 1
+        },
+        "fight-card:portrait-a": {
+          "x": 65.44416692522383,
+          "y": 17.99232118093437,
+          "scale": 1
+        },
+        "fight-card:portrait-b": {
+          "x": 39.81003502019006,
+          "y": 20.904559333977094,
+          "scale": 1
+        },
+        "final-summary:portrait-a": {
+          "x": 65.44416692522383,
+          "y": 31.050116117978924,
+          "scale": 1
+        },
+        "final-summary:portrait-b": {
+          "x": 39.81003502019006,
+          "y": 47.1414364819922,
+          "scale": 1
+        },
+        "crucial-feats:left:file:01_6_1_superman_bench_press_earth_equivalent.jpg": {
+          "x": 50,
+          "y": 11.614178631940243,
+          "scale": 1
+        },
+        "crucial-feats:left:file:superman_read.jpeg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:file:06_6_2_hyperion_survives_world_destruction.png": {
+          "x": 50,
+          "y": 25.449816879546887,
+          "scale": 1
+        },
+        "crucial-feats:right:file:07_6_2_hyperion_recovers_after_neck_snap.png": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:left:file:superman_flash.jpeg": {
+          "x": 50,
+          "y": 62.89081354499008,
+          "scale": 1
+        },
+        "crucial-feats:right:file:09_6_2_hyperion_regenerates_after_catastrophic_damage.png": {
+          "x": 50,
+          "y": 85.8112972733227,
+          "scale": 1
+        },
+        "crucial-feats:left:file:02_6_1_superman_survives_black_hole_level_punishment.jpg": {
+          "x": 50,
+          "y": 38.08735777752753,
+          "scale": 1
+        },
+        "crucial-feats:right:file:10_6_2_hyperion_disintegrates_weapon_x_vision.jpg": {
+          "x": 50,
+          "y": 88.15510841275352,
+          "scale": 1
+        },
+        "crucial-feats:left:file:05_6_1_superman_high_end_endurance_control.jpg": {
+          "x": 50,
+          "y": 42.976687221937674,
+          "scale": 1
+        },
+        "crucial-feats:right:file:08_6_2_hyperion_overwhelms_two_alternate_hyperions.png": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "victory-archive:left:file:11_7_1_superman_doomsday_finish.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:12_7_1_superman_beats_wraith.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:13_7_1_superman_blitzes_parasite.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:14_7_1_superman_blitzes_mongul.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:right:file:16_7_2_hyperion_kills_magneto.png": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:right:file:17_7_2_hyperion_kills_wolverine.png": {
+          "x": 50,
+          "y": 83.23812804603406,
+          "scale": 1
+        },
+        "victory-archive:right:file:18_7_2_hyperion_kills_weapon_x_vision.jpg": {
+          "x": 50,
+          "y": 88.08067284980959,
+          "scale": 1
+        },
+        "victory-archive:right:file:19_7_2_hyperion_beats_thor.png": {
+          "x": 50,
+          "y": 8.058848788870316,
+          "scale": 1
+        },
+        "victory-archive:right:file:20_7_2_hyperion_kills_hulk_and_others.png": {
+          "x": 50,
+          "y": 41.11180901486,
+          "scale": 1
+        },
+        "victory-archive:left:file:15_7_1_superman_beats_apollo.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        }
+      }
+    },
+    "2 Knull vs Odin": {
+      "portraitAAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "slideImageAdjustments": {
+        "crucial-feats:left:left-1": {
+          "x": 50,
+          "y": 53.005597575051205,
+          "scale": 1
+        },
+        "crucial-feats:left:left-2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:left-3": {
+          "x": 50,
+          "y": 70.85489755432963,
+          "scale": 1
+        },
+        "crucial-feats:left:left-4": {
+          "x": 50,
+          "y": 96.03035923307053,
+          "scale": 1
+        },
+        "character-dossier-a:portrait": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "crucial-feats:left:left-5": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:left:left-1": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:left-2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:left-3": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:left-4": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "character-dossier-b:portrait": {
+          "x": 50,
+          "y": 5.471258905520998,
+          "scale": 1
+        },
+        "crucial-feats:right:right-1": {
+          "x": 50,
+          "y": 81.88131540020815,
+          "scale": 1
+        },
+        "crucial-feats:right:right-3": {
+          "x": 50,
+          "y": 79.65270142353435,
+          "scale": 1
+        },
+        "crucial-feats:right:right-4": {
+          "x": 50,
+          "y": 82.85054620905576,
+          "scale": 1
+        },
+        "crucial-feats:right:right-5": {
+          "x": 50,
+          "y": 64.97171152721896,
+          "scale": 1
+        },
+        "crucial-feats:right:right-2": {
+          "x": 50,
+          "y": 79.50735391585646,
+          "scale": 1
+        },
+        "crucial-feats:right:file:odin_life2.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:file:01_6_1_knull_decapitates_celestial_allblack.jpg": {
+          "x": 50,
+          "y": 52.405798412341404,
+          "scale": 1
+        },
+        "crucial-feats:left:file:knull_knulled.jpg": {
+          "x": 86.91170100662387,
+          "y": 0,
+          "scale": 1.4272709794292153
+        },
+        "crucial-feats:left:file:knull_bigbang.webp": {
+          "x": 42.96206810853809,
+          "y": 72.8466056666918,
+          "scale": 1.0392391715802343
+        },
+        "crucial-feats:left:file:knull_gods.jpg": {
+          "x": 82.89797487027377,
+          "y": 95.68535922351712,
+          "scale": 1.2543278752434062
+        },
+        "crucial-feats:left:file:02_6_1_knull_covers_earth_in_abyss.jpg": {
+          "x": 54.19167933656993,
+          "y": 96.7485272767487,
+          "scale": 1.098824535924869
+        },
+        "crucial-feats:right:file:odin_armcut.jpg": {
+          "x": 50,
+          "y": 78.33305357161902,
+          "scale": 1
+        },
+        "crucial-feats:right:file:odin_dome.jpg": {
+          "x": 41.989229401345945,
+          "y": 82.95501443659839,
+          "scale": 1.1584099002695027
+        },
+        "crucial-feats:right:file:odin_powerofgods.jpg": {
+          "x": 81.31056038651052,
+          "y": 83.19094519168034,
+          "scale": 1.1598632472718995
+        },
+        "crucial-feats:right:file:odin_surtur.jpg": {
+          "x": 50,
+          "y": 66.39855351554841,
+          "scale": 1
+        }
+      }
+    },
+    "3 White Lantern Kyle Rayner vs. Dr. Manhattan": {
+      "portraitAAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "slideImageAdjustments": {
+        "fight-card:portrait-b": {
+          "x": 50,
+          "y": 50.18101003432384,
+          "scale": 1
+        },
+        "character-dossier-a:portrait": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "character-dossier-b:portrait": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:left:file:kyle_source.jpeg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:06_6_2_manhattan_non_linear_perception.jpg": {
+          "x": 50,
+          "y": 92.89255175258377,
+          "scale": 1
+        },
+        "crucial-feats:left:file:kyle_resurrection1.jpeg": {
+          "x": 50,
+          "y": 64.13544898250349,
+          "scale": 1
+        },
+        "crucial-feats:right:file:07_6_2_manhattan_self_consistency_across_time.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:manhattan_resurrection.jpeg": {
+          "x": 50,
+          "y": 65.6388701256286,
+          "scale": 1
+        },
+        "crucial-feats:left:file:kyle_destabilize.jpeg": {
+          "x": 50,
+          "y": 35.50895600821367,
+          "scale": 1
+        },
+        "crucial-feats:left:file:kyle_life.jpeg": {
+          "x": 50,
+          "y": 50.94092832197009,
+          "scale": 1
+        },
+        "crucial-feats:right:file:09_6_2_manhattan_metron_owlman_mobius.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:manhattan_end.jpg": {
+          "x": 50,
+          "y": 77.89259996113847,
+          "scale": 1
+        },
+        "crucial-feats:left:file:kyle_oblivion.jpeg": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "victory-archive:left:slot:1": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:slot:2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:slot:3": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:slot:4": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:slot:5": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:right:slot:1": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "victory-archive:right:slot:2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:relic.webp": {
+          "x": 50,
+          "y": 49.8235403942213,
+          "scale": 1
+        },
+        "victory-archive:left:file:third army.webp": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:kyle_oblivion.jpeg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:kyle_titans.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:kyle_vessel.jpeg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:right:file:manhattan_disintegrate.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:right:file:manhattan_owlmetr.jpeg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        }
+      }
+    },
+    "4 Darth Vader vs Thanos": {
+      "portraitAAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "slideImageAdjustments": {}
+    },
+    "5 Jiren vs Saitama": {
+      "portraitAAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "slideImageAdjustments": {
+        "crucial-feats:left:file:tags ui goku a few times.jpeg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:serious punch squared... generates an explosion that.png": {
+          "x": 50,
+          "y": 15.23294593589744,
+          "scale": 1
+        },
+        "crucial-feats:left:file:unaffected by android 17's self-destruction.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:saitama time travels to reverse causality.png": {
+          "x": 0,
+          "y": 0,
+          "scale": 1.1089976988339845
+        },
+        "crucial-feats:left:file:no sells a kamehameha from ssb goku.jpeg": {
+          "x": 100,
+          "y": 77.62834738714297,
+          "scale": 1.0726652212585428
+        },
+        "crucial-feats:right:file:can freely grab and move hyperspace.png": {
+          "x": 50,
+          "y": 16.744969435852422,
+          "scale": 1
+        },
+        "crucial-feats:left:file:detects and counters attacks coming from a different dimension.jpg": {
+          "x": 70.86552045984317,
+          "y": 0,
+          "scale": 1.3665965661618753
+        },
+        "crucial-feats:right:file:saitama can achieve flight.jpg": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "crucial-feats:left:file:belmod.png": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:a serious sneeze blows away the gas surrounding jupiter's.jpg": {
+          "x": 50,
+          "y": 30.69062361258914,
+          "scale": 1
+        },
+        "character-dossier-a:portrait": {
+          "x": 50,
+          "y": 74.7260540611039,
+          "scale": 1
+        },
+        "character-dossier-b:portrait": {
+          "x": 50,
+          "y": 8.149128154735763,
+          "scale": 1
+        },
+        "victory-archive:left:file:11_7_1_jiren_hit.jpg": {
+          "x": 93.20944751404608,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:12_7_1_jiren_maji_kayo.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:13_7_1_jiren_golden_frieza.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:14_7_1_jiren_kale.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:15_7_1_jiren_vegeta.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        }
+      }
+    },
+    "6 Bruce Lee vs Muhammad Ali": {
+      "portraitAAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "slideImageAdjustments": {
+        "crucial-feats:left:left-1": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:right-2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:right-3": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:right-4": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:left:left-2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:left-3": {
+          "x": 50,
+          "y": 38.17712076032464,
+          "scale": 1
+        },
+        "crucial-feats:right:right-5": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:right-1": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:left-4": {
+          "x": 44.72340502493837,
+          "y": 62.019230769230774,
+          "scale": 1.1838907686658433
+        },
+        "crucial-feats:left:left-5": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        }
+      }
+    },
+    "7 Trigon vs Galactus": {
+      "portraitAAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "slideImageAdjustments": {
+        "crucial-feats:left:left-1": {
+          "x": 50,
+          "y": 96.79744981692043,
+          "scale": 1
+        },
+        "crucial-feats:right:right-1": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:right-2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:right-3": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:file:01_6_1_trigon_heart_of_darkness.jpg": {
+          "x": 50,
+          "y": 25.79232450086991,
+          "scale": 1
+        },
+        "crucial-feats:right:file:06_6_2_galactus_three_solar_systems.jpg": {
+          "x": 50,
+          "y": 33.09339641782631,
+          "scale": 1
+        },
+        "crucial-feats:left:file:02_6_1_trigon_countless_worlds.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:07_6_2_galactus_agamotto_realm.jpg": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "crucial-feats:right:slot:2": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "character-dossier-a:portrait": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "character-dossier-b:portrait": {
+          "x": 50,
+          "y": 21.562313213978427,
+          "scale": 1
+        },
+        "crucial-feats:right:file:08_6_2_galactus_silver_surfer_barrier.jpg": {
+          "x": 50,
+          "y": 85.5297050776278,
+          "scale": 1
+        },
+        "crucial-feats:right:file:09_6_2_galactus_poppup_devouring.jpg": {
+          "x": 50,
+          "y": 83.53213297666927,
+          "scale": 1
+        },
+        "crucial-feats:right:file:10_6_2_galactus_sphinx_time_loop.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:file:04_6_1_trigon_dark_titans.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:01_6_1_trigon_heart_of_darkness.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:04_6_1_trigon_dark_titans.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:left:file:dissipates psimon's atoms across.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:file:absorbs the heart of darkness....jpeg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:left:file:universe after universe has fallen before his.jpeg": {
+          "x": 50,
+          "y": 0,
+          "scale": 1
+        },
+        "crucial-feats:left:file:03_6_1_trigon_resurrection.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:left:file:destroys planet with a death-stare.jpg": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:file:the ultimate nullifier.jpg": {
+          "x": 50,
+          "y": 50.09113728868602,
+          "scale": 1
+        },
+        "crucial-feats:left:file:turns dc earth and everyone in it into stone.jpg": {
+          "x": 50,
+          "y": 49.73675375926554,
+          "scale": 1
+        },
+        "crucial-feats:right:file:galactus must exist or eternity.jpg": {
+          "x": 50,
+          "y": 51.61340964532977,
+          "scale": 1
+        },
+        "crucial-feats:left:file:monitor ranks him on the same threat level.jpg": {
+          "x": 50,
+          "y": 0.09010483703752153,
+          "scale": 1
+        },
+        "crucial-feats:right:file:galactus' blast... encompasses the star system he is in....jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:file:the whole multiverse risked being destroyed when galactus.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "crucial-feats:right:empty": {
+          "x": 50,
+          "y": 50,
+          "scale": 1
+        },
+        "crucial-feats:right:file:sphinx.jpeg": {
+          "x": 50,
+          "y": 90.1433383976437,
+          "scale": 1
+        },
+        "victory-archive:left:file:trophy room includes superman's suit.jpg": {
+          "x": 0,
+          "y": 50,
+          "scale": 1
+        },
+        "victory-archive:right:file:galactus battles mephisto.jpg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:right:file:silver.jpeg": {
+          "x": 50,
+          "y": 23.160913712632134,
+          "scale": 1
+        },
+        "victory-archive:right:file:one shots a celestial.webp": {
+          "x": 70.88159530792775,
+          "y": 51.020213908837995,
+          "scale": 1.1201277312513538
+        },
+        "victory-archive:left:file:slaughters the divine.jpeg": {
+          "x": 50,
+          "y": 92.90910199022126,
+          "scale": 1
+        },
+        "victory-archive:left:file:ares.png": {
+          "x": 0,
+          "y": 0,
+          "scale": 1
+        },
+        "victory-archive:right:file:red_hulk.jpeg": {
+          "x": 50,
+          "y": 17.229925844251,
+          "scale": 1
+        },
+        "victory-archive:left:file:stomps the jla + teen.jpeg": {
+          "x": 50,
+          "y": 100,
+          "scale": 1
+        },
+        "victory-archive:right:file:turns terrax into a worm and then energy.jpg": {
+          "x": 50,
+          "y": 66.26797360750992,
+          "scale": 1
+        },
+        "victory-archive:right:file:tyrant.jpeg": {
+          "x": 50,
+          "y": 42.494508586707205,
+          "scale": 1
+        }
+      }
+    },
+    "8 Atrocitus vs Hulk": {
+      "portraitAAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "portraitBAdjust": {
+        "x": 50,
+        "y": 50,
+        "scale": 1
+      },
+      "slideImageAdjustments": {
+        "character-dossier-a:portrait": {
+          "x": 7.377463620576489,
+          "y": 0,
+          "scale": 1.1572258711709031
+        },
+        "character-dossier-b:portrait": {
+          "x": 50,
+          "y": 58.60902240325929,
+          "scale": 1
+        }
+      }
+    }
+  }
+}

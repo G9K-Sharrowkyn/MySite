@@ -1,0 +1,181 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Podnosi i ciska bombowcem Y-Wing telekinezą.",
+      "Rozbija o siebie dwa statki kosmiczne przy użyciu Mocy.",
+      "Przebija własne ciało mieczem świetlnym, aby jednocześnie zabić odrodzonego Dartha Maula.",
+      "Blokuje dłonią atak energetyczny i wykazuje bardzo wysoką odporność na obrażenia w realiach Star Wars.",
+      "Przeżywa gigantyczną eksplozję niszczącą kasyno, mimo ciężkich uszkodzeń otoczenia i pancerza."
+    ],
+    "dossier": {
+      "advantage": "Vader posiada wybitną prekognicję, telekinezę, kontrolę pola oraz znacznie lepszą specjalizację w szermierce mieczem świetlnym. Przeciw przeciwnikowi o porównywalnej skali jego połączenie Mocy i defensywnej dyscypliny czyni go niezwykle trudnym do przełamania.",
+      "mentality": "Zimny, cierpliwy i bezlitosny. Vader potrafi czekać na pojedynczy błąd przeciwnika, lecz przeciw Thanosowi jego zwykła metoda wymuszania błędów traci znaczenie przez gigantyczną różnicę w skali fizycznej.",
+      "quote": "Otacza mnie tylko strach. I martwi ludzie.",
+      "style": "Techniczna presja z użyciem Mocy i miecza świetlnego. Vader łączy prekognicję, telekinezę, duszenie, kontrolę dystansu i precyzyjną szermierkę, aby odbierać przeciwnikowi możliwość bezpiecznej odpowiedzi."
+    },
+    "name": "Darth Vader",
+    "profile": {
+      "powers": [
+        "Telekineza Mocy, prekognicja, duszenie, miażdżenie, kontrola otoczenia i wzmacnianie własnych reakcji."
+      ],
+      "tools": [
+        "Miecz świetlny, defensywna dyscyplina szermiercza, odbijanie blasterów i energii oraz kontrola pola walki przez Moc.",
+        "Prekognicja pozwalająca przewidywać nadchodzące zagrożenia i reagować wcześniej niż wynikałoby z samej szybkości fizycznej."
+      ],
+      "weaknesses": [
+        "Pancerz i cybernetyczne podtrzymanie życia pozostają krytycznymi elementami jego przeżywalności.",
+        "Telekineza Vadera nie jest automatycznym durability negation — nadal musi wygenerować wystarczającą siłę, aby uszkodzić konkretny cel.",
+        "Jego największe featy siły i odporności pozostają wielokrotnie poniżej kosmicznej skali standardowego Thanosa Earth-616."
+      ]
+    },
+    "stats": {
+      "battleIq": 91,
+      "durability": 70,
+      "experience": 86,
+      "hax": 84,
+      "skills": 94,
+      "speed": 85,
+      "stamina": 78,
+      "strength": 70,
+      "style": 94
+    },
+    "version": "Legends",
+    "victories": [
+      "Dark Woman",
+      "Sha Koon",
+      "Hylon",
+      "Celeste Morne",
+      "Kai Hudorra"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Jego bezpośrednie starcie z klasycznym Draxem doprowadza do zniszczenia planety, po czym Thanos pokonuje Draxa.",
+      "Przeżywa sztuczną osobliwość pochłaniającą wszystko w promieniu około dwóch lat świetlnych.",
+      "Przeżywa potężny atak Galactusa, choć feat nie oznacza automatycznego skalowania do pełnej mocy Galactusa.",
+      "Przyjmuje wiele ataków głosowych Black Bolta, w tym jeden z bliskiej odległości, i nadal wygrywa konfrontację.",
+      "Potrafi manipulować materią i dokonywać transmutacji, w tym zamieniać żywe istoty w kamień."
+    ],
+    "dossier": {
+      "advantage": "Thanos przewyższa Vadera niemal w każdej kategorii mającej znaczenie dla przeżycia i zadawania obrażeń: siła, odporność, stamina, projekcja energii, pola siłowe, manipulacja materią, telepatia i skala bojowa. Vader może oddziaływać na niego Mocą, ale nie dysponuje naciskiem wystarczającym do realnego unieruchomienia lub uszkodzenia Tytana.",
+      "mentality": "Thanos jest skrajnie pewny siebie i często pozwala słabszym przeciwnikom zaprezentować swoje możliwości. Bloodlusted kończy walkę natychmiast; in-character może pozwolić Vaderowi na kilka ruchów wyłącznie z ciekawości lub pychy.",
+      "quote": "Nie zmusiłem cię do walki ze mną. Sam mnie do tego zmusiłeś. Musiałem pozostać wierny swojej naturze. Bo w końcu... jestem Thanosem.",
+      "style": "Wszechstronna dominacja kosmiczna. Thanos może walczyć wręcz, używać niszczycielskich wyładowań, pól siłowych, telepatii, telekinezy, technologii i manipulacji materią. Nie musi zbliżać się do Vadera, aby zakończyć pojedynek."
+    },
+    "name": "Thanos",
+    "profile": {
+      "powers": [
+        "Ogromna siła i odporność, kosmiczna projekcja energii, pola siłowe, telepatia, telekineza, manipulacja materią i transmutacja."
+      ],
+      "tools": [
+        "Strategiczny intelekt, adaptacja bojowa, rozległa wiedza technologiczna i mistyczna oraz szeroki profil odporności.",
+        "Wiele niezależnych warunków zwycięstwa: nokaut, dezintegracja energetyczna, transmutacja, atak psychiczny, uwięzienie polem siłowym lub zniszczenie systemów podtrzymywania życia Vadera."
+      ],
+      "weaknesses": [
+        "Pycha i skłonność do testowania przeciwnika mogą niepotrzebnie wydłużać walkę.",
+        "Nie każda pokazana interakcja z kosmicznymi bytami oznacza pełne skalowanie do ich maksymalnej mocy."
+      ]
+    },
+    "stats": {
+      "battleIq": 96,
+      "durability": 98,
+      "experience": 97,
+      "hax": 94,
+      "skills": 92,
+      "speed": 92,
+      "stamina": 98,
+      "strength": 97,
+      "style": 96
+    },
+    "version": "Earth-616",
+    "victories": [
+      "Silver Surfer",
+      "Hulk",
+      "Beta Ray Bill i Ronan Oskarżyciel",
+      "Adam Warlock",
+      "Thor z Power Gem — zwycięstwo przy użyciu przygotowanego urządzenia energetycznego"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "tactical-board": {
+      "lane": "Vader może przewidzieć atak Thanosa, ale nie posiada ani siły, ani odporności potrzebnej, by zamienić tę wiedzę w realny warunek zwycięstwa.",
+      "subtitle": "Lord Sith kontra Kosmiczny Tytan"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Faworyt według statystyk",
+      "favorite_side": "b"
+    },
+    "final-summary": {
+      "line_1": "Darth Vader jest znacznie lepszym wyspecjalizowanym szermierzem i posiada prekognicję oraz telekinezę, które przeciw większości przeciwników stanowią śmiertelne narzędzia kontroli.",
+      "line_2": "Przeciw Thanosowi problemem nie jest brak techniki, lecz skala: ani Moc, ani miecz świetlny nie mają wiarygodnie pokazanej siły wystarczającej do trwałego przełamania ciała lub pól Tytana.",
+      "line_3": "Thanos może zakończyć walkę wieloma niezależnymi metodami. Jeśli pojedynek trwa dłużej niż kilka sekund, dzieje się tak głównie dlatego, że sam postanowił zobaczyć, co Vader potrafi.",
+      "winner": "Thanos wygrywa 10/10. Vader nie posiada wiarygodnego warunku zwycięstwa."
+    },
+    "battle-dynamics": {
+      "label": "Przepaść Skali",
+      "preserve_curve_points": "true",
+      "a_curve": "84,78,66,48,25,10,0,0,0,0,0,0",
+      "b_curve": "96,96,97,98,99,100,100,100,100,100,100,100",
+      "yellow_wave": "20,25,22,28,24,30,26,35",
+      "phase_1": "Vader otwiera Mocą, próbując zatrzymać lub zdestabilizować Thanosa. Telekineza oddziałuje na Tytana, ale pokazany nacisk Vadera jest zbyt mały, aby go unieruchomić, udusić albo uszkodzić.",
+      "phase_2": "Vader może spróbować wejścia mieczem świetlnym, lecz Thanos dysponuje odpornością i polami siłowymi na poziomie daleko przekraczającym standardowe energetyczne zagrożenia z realiów Star Wars.",
+      "phase_3": "Pierwszy poważny kontratak Thanosa kończy starcie. Może to być cios, wyładowanie energii, transmutacja, atak psychiczny albo zniszczenie pancerza i systemów podtrzymywania życia.",
+      "analysis": "Vader może zmusić Thanosa do zauważenia jego techniki, ale nie może zmusić go do realnej obrony. Thanos posiada wielokrotnie więcej siły, odporności, energii i sposobów zakończenia walki."
+    },
+    "fight-simulation": {
+      "label": "Thanos In-Character",
+      "opening": "Vader natychmiast wykorzystuje Moc, próbując unieruchomić Thanosa i stworzyć wejście dla miecza świetlnego.",
+      "mid_fight": "Thanos czuje telekinetyczny nacisk i obserwuje technikę Vadera, ale nie zostaje realnie zatrzymany. Pozwala Sithowi wykonać kilka ruchów, bardziej z ciekawości niż potrzeby obrony.",
+      "late_fight": "Gdy Thanos uznaje test za zakończony, używa pierwszego poważnego ataku i natychmiast rozstrzyga pojedynek.",
+      "end_condition": "Zwycięstwo Thanosa przez pierwszy realnie ofensywny ruch wykonany z zamiarem zakończenia walki.",
+      "phase_1_actor": "a",
+      "phase_1_animation": "clash-lock",
+      "phase_1_title": "Moc kontra Masa",
+      "phase_1_a_label": "Telekineza",
+      "phase_1_a_value": "84",
+      "phase_1_b_label": "Odporność",
+      "phase_1_b_value": "98",
+      "phase_1_event": "Vader zaciska Moc wokół Thanosa. Tytan odczuwa nacisk, ale nie zostaje uduszony, zmiażdżony ani skutecznie unieruchomiony.",
+      "phase_2_animation": "feint-counter",
+      "phase_2_title": "Ostrze bez Finiszu",
+      "phase_2_event": "Vader wykorzystuje prekognicję i próbuje znaleźć czyste wejście mieczem świetlnym. Nawet perfekcyjne trafienie nie ma potwierdzonej zdolności do zadania Thanosowi śmiertelnych obrażeń.",
+      "phase_2_branch_a": "Vader trafia w mniej chroniony punkt i uzyskuje powierzchowny efekt, ale nie tworzy warunku zwycięstwa.",
+      "phase_2_branch_b": "Pole siłowe lub sama odporność Thanosa zatrzymuje atak, zanim stanie się niebezpieczny.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "brutal-execution",
+      "phase_3_title": "Koniec Testu",
+      "phase_3_event": "Thanos przestaje obserwować i odpowiada jednym poważnym atakiem, którego ciało i pancerz Vadera nie są w stanie przetrwać.",
+      "phase_3_branch_a": "Wyładowanie kosmiczne niszczy pancerz i systemy podtrzymywania życia.",
+      "phase_3_branch_b": "Bezpośredni cios lub manipulacja materią kończy pojedynek natychmiast."
+    },
+    "direct-verdict": {
+      "winner": "Thanos",
+      "loser": "Darth Vader",
+      "outcome": "Absolutna przewaga skali",
+      "certainty": "Bezdyskusyjny",
+      "line_1": "Moc Vadera oddziałuje na Thanosa, ale nie generuje nacisku wystarczającego do trwałego unieruchomienia, uduszenia ani uszkodzenia Tytana.",
+      "line_2": "Miecz świetlny nie jest absolutnym durability negation, a Thanos regularnie przeżywa ataki energetyczne i fizyczne na poziomie wielokrotnie wyższym niż najlepsze ofensywne featy Vadera.",
+      "line_3": "Bloodlusted Thanos kończy walkę natychmiast. In-character może pozwolić Vaderowi na kilka ruchów, ale wyłącznie dlatego, że sam nie traktuje go od początku jako realnego zagrożenia."
+    },
+    "fight-card": {
+      "fight_title": "Darth Vader vs Thanos"
+    }
+  }
+}

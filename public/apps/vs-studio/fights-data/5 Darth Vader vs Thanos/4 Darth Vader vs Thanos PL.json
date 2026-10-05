@@ -1,0 +1,172 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Podnosi i ciska bombowcem Y-Wing.",
+      "Rozbija o siebie dwa statki kosmiczne telekinezą.",
+      "Przebija samego siebie, by zabić odrodzonego Darth'a Maul'a.",
+      "Blokuje dłonią atak energetyczny.",
+      "Przeżywa gigantyczną eksplozję, która niszczy kasyno."
+    ],
+    "dossier": {
+      "advantage": "Elitarna precyzja i żelazna obrona. Mistrzostwo Mocy pozwala mu kontrolować otoczenie i ciało wroga, uniemożliwiając skuteczne kontrataki.",
+      "mentality": "Zimny, cierpliwy i bezlitosny. Czeka na najmniejszy błąd przeciwnika, by zakończyć walkę jednym, mściwym uderzeniem.",
+      "quote": "Otacza mnie tylko strach. I martwi ludzie.",
+      "style": "Walka techniczną presją z użyciem Mocy. Łączy perfekcyjną szermierkę mieczem świetlnym z brutalną telekinezą, by dusić i miażdżyć przeciwników w zwarciu."
+    },
+    "name": "Darth Vader",
+    "profile": {
+      "powers": [
+        "Telekineza Mocy, prekognicja oraz techniki duszenia i miażdżenia."
+      ],
+      "tools": [
+        "Defensywna dyscyplina szermiercza, śmiercionośna biegłość miecza świetlnego, odbijanie blasterów i energii oraz kontrola pola walki przez Moc."
+      ],
+      "weaknesses": [
+        "Zależność od pancerza i cybernetycznego podtrzymania życia, które przeciwnik może wyłączyć lub uszkodzić."
+      ]
+    },
+    "stats": {
+      "battleIq": 88,
+      "durability": 68,
+      "experience": 80,
+      "hax": 82,
+      "skills": 92,
+      "speed": 79,
+      "stamina": 76,
+      "strength": 68,
+      "style": 91
+    },
+    "version": "Legends",
+    "victories": [
+      "Dark Woman",
+      "Sha Koon",
+      "Hylon",
+      "Celeste Morne",
+      "Kai Hudorra"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Niszczy planetę podczas walki z Draxem.",
+      "Przeżywa czarną dziurę o średnicy dwóch lat świetlnych.",
+      "Przeżywa śmiertelny atak Galactusa.",
+      "Tankuje wiele krzyków Black Bolta, w tym jeden z point blank.",
+      "Dokonuje transmutacji materii, zamieniając żywe istoty w kamień."
+    ],
+    "dossier": {
+      "advantage": "Skrajna wytrzymałość i taktyczny geniusz. Thanos posiada ciało zdolne przetrwać ataki bytów boskich oraz umysł, który błyskawicznie wykorzystuje każdy błąd przeciwnika.",
+      "mentality": "Fanatyk własnego porządku o żelaznej dyscyplinie. Thanos walczy z absolutną pewnością swojej wyższości, traktując dominację nad słabszymi jako coś naturalnego i nieuniknionego.",
+      "quote": "Nie zmusiłem cię do walki ze mną. Sam mnie do tego zmusiłeś. Musiałem pozostać wierny swojej naturze. Bo w końcu... jestem Thanosem.",
+      "style": "Brutalna, precyzyjna walka siłowa. Thanos łączy mistrzostwo walki wręcz z niszczycielskimi wyładowaniami energii kosmicznej, by systematycznie miażdżyć każdą obronę."
+    },
+    "name": "Thanos",
+    "profile": {
+      "powers": [
+        "Ogromna siła i wytrzymałość, kosmiczna projekcja energii, pola siłowe i manipulacja materią."
+      ],
+      "tools": [
+        "Strategiczny intelekt, adaptacja bojowa i szeroki profil odporności."
+      ],
+      "weaknesses": [
+        "Pycha i skłonność do testowania przeciwnika mogą otwierać wczesne okna błędu."
+      ]
+    },
+    "stats": {
+      "battleIq": 92,
+      "durability": 97,
+      "experience": 94,
+      "hax": 92,
+      "skills": 88,
+      "speed": 78,
+      "stamina": 96,
+      "strength": 96,
+      "style": 84
+    },
+    "version": "Earth-616",
+    "victories": [
+      "Silver Surfer",
+      "Hulk",
+      "Beta Ray Bill i Ronan Oskarżyciel",
+      "Adam Warlock",
+      "Thor z Power Gem"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Natychmiastowa Egzekucja",
+      "preserve_curve_points": "true",
+      "a_curve": "80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
+      "b_curve": "91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91,91",
+      "yellow_wave": "20,25,22,28,24,30,26,35",
+      "phase_1": "Vader próbuje otwarcia Mocą i mieczem świetlnym. Thanos ignoruje atak, przejmuje inicjatywę i kończy walkę natychmiast.",
+      "phase_2": "-",
+      "phase_3": "-",
+      "analysis": "Vader nie ma realnej drogi do zabicia Thanosa. Ta walka kończy się od razu."
+    },
+    "fight-card": {
+      "fight_title": "Vader vs Thanos"
+    },
+    "fight-simulation": {
+      "label": "Werdykt Ostateczny",
+      "opening": "Vader otwiera walkę pełnym naporem Mocy, próbując natychmiast złamać Thanosa.",
+      "mid_fight": "Nic nie działa. Thanos ignoruje Moc i miecz świetlny bez realnych obrażeń.",
+      "late_fight": "Po jednej nieudanej próbie Vadera Thanos kończy walkę natychmiast.",
+      "end_condition": "Zwycięstwo Thanosa przez natychmiastową egzekucję.",
+      "phase_1_actor": "b",
+      "phase_1_animation": "one-shot",
+      "phase_1_title": "Jedno Uderzenie",
+      "phase_1_a_label": "Moc",
+      "phase_1_a_value": "92",
+      "phase_1_b_label": "Opór",
+      "phase_1_b_value": "99",
+      "phase_1_event": "Thanos wchodzi raz, przełamuje obronę Vadera i kończy walkę, zanim ta naprawdę się zacznie.",
+      "phase_2_animation": "clash-lock",
+      "phase_2_title": "-",
+      "phase_2_event": "-",
+      "phase_2_branch_a": "-",
+      "phase_2_branch_b": "-",
+      "phase_3_actor": "b",
+      "phase_3_animation": "brutal-execution",
+      "phase_3_title": "-",
+      "phase_3_event": "-",
+      "phase_3_branch_a": "-",
+      "phase_3_branch_b": "-"
+    },
+    "final-summary": {
+      "line_1": "Darth Vader posiada technikę i kontrolę, które mogłyby zabić niemal każdą istotę, ale Thanos jest poza jego skalą.",
+      "line_2": "Ataki Vadera nie dają mu wiarygodnej drogi do trwałego przełamania wytrzymałości Thanosa.",
+      "line_3": "Gdy pierwsze otwarcie nie działa, walka natychmiast przechodzi w jednostronną egzekucję.",
+      "winner": "Thanos wygrywa 10/10."
+    },
+    "tactical-board": {
+      "lane": "Vader musi rozwiązać walkę szybko. Thanos potrzebuje tylko jednego nieudanego otwarcia.",
+      "subtitle": "Lord Sith kontra Tytan"
+    },
+    "direct-verdict": {
+      "winner": "Thanos",
+      "loser": "Darth Vader",
+      "outcome": "Absolutna przewaga skali",
+      "certainty": "Bezdyskusyjny",
+      "line_1": "Darth Vader posiada technikę i kontrolę, które mogłyby zabić niemal każdą istotę, ale Thanos operuje na innym poziomie fizyki.",
+      "line_2": "Niszczycielskie otwarcie Vadera to tylko test dla wytrzymałości Tytana, którą ten przechodzi bez większych trudności.",
+      "line_3": "To starcie o to, czy precyzja miecza świetlnego zdoła znaleźć szczelinę w pancerzu, który przetrwał wybuchy galaktyk."
+    }
+  }
+}

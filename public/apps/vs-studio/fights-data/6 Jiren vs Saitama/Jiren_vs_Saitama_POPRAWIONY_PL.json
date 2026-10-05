@@ -1,0 +1,228 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Reaguje na Ultra Instinct Goku i wielokrotnie przełamuje jego automatyczną obronę, trafiając go w bezpośredniej walce.",
+      "Przetrwał eksplozję samozniszczenia Androida 17 bez poważnych obrażeń.",
+      "Bez widocznego efektu przyjmuje Kamehameha od Super Saiyan Blue Goku.",
+      "Przełamuje techniki czasowe Hita samą koncentracją, mocą i kontrolą ki.",
+      "Jest przedstawiany jako wojownik przewyższający lub co najmniej stojący ponad poziomem Boga Zniszczenia swojego wszechświata, Belmoda."
+    ],
+    "dossier": {
+      "advantage": "Jiren zaczyna walkę ze znacznie wyższego poziomu mocy, szybkości, techniki i kontroli energii. Jego największą przewagą nie jest jeden specjalny hax, lecz zdolność do przełamywania skomplikowanych technik czystą mocą, koncentracją i perfekcyjnym wykorzystaniem ki.",
+      "mentality": "Stoicki i oszczędny w ruchach. Jiren nie zawsze zaczyna od pełnej mocy i często bada słabszych przeciwników, ale gdy rozpoznaje realne zagrożenie, potrafi eskalować natychmiast i uwalniać kolejne rezerwy.",
+      "quote": "Nie ma znaczenia, jak wielu słabeuszy zbierze się razem. Jesteście niczym przed absolutną siłą.",
+      "style": "Ascetyczna, wysoce techniczna walka oparta na precyzyjnych kontrach, minimalnym ruchu i absolutnej kontroli ki. Jiren często pozwala przeciwnikowi rozpocząć atak, po czym neutralizuje go jednym ruchem i odpowiada znacznie większą siłą."
+    },
+    "name": "Jiren",
+    "profile": {
+      "powers": [
+        "Ekstremalna emisja ki, bariery, ogromna siła fizyczna, elitarna szybkość, refleks i bardzo wysoka odporność."
+      ],
+      "tools": [
+        "Niezwykle wydajny styl walki pozwalający zadawać maksymalne obrażenia przy minimalnym ruchu.",
+        "Czytanie rytmu przeciwnika, perfekcyjna kontrola ki i możliwość natychmiastowego zwiększania mocy, gdy obecny poziom przestaje wystarczać.",
+        "Zdolność do przełamywania niektórych technik czasu i kontroli samą potęgą oraz koncentracją."
+      ],
+      "weaknesses": [
+        "Początkowa pewność siebie może sprawić, że nie użyje od razu pełnej mocy przeciw nieznanemu przeciwnikowi.",
+        "Jeżeli świadomie pozwoli Saitamie osiągnąć zbliżony poziom, jego największa przewaga startowa zacznie znikać."
+      ]
+    },
+    "stats": {
+      "battleIq": 91,
+      "durability": 97,
+      "experience": 93,
+      "hax": 68,
+      "skills": 96,
+      "speed": 97,
+      "stamina": 96,
+      "strength": 98,
+      "style": 95
+    },
+    "version": "DBS · Tournament of Power",
+    "victories": [
+      "Hit",
+      "Maji Kayo",
+      "Golden Frieza",
+      "Kale",
+      "Vegeta (Super Saiyan Blue)"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Zderzenie Serious Punch z identycznym ciosem Cosmic Garou, po przekierowaniu energii, pozostawia ogromną pustkę w polu gwiazd.",
+      "Jednorazowo kopiuje od Garou technikę odwracania przepływu cząstek, co pozwala mu cofnąć się w czasie i wykonać Zero Punch.",
+      "Fizycznie chwyta, przemieszcza i kopie portale hiperprzestrzenne Garou.",
+      "Bez obrażeń przyjmuje technikę Gamma Ray Burst Cosmic Garou.",
+      "Poważnym kichnięciem zdmuchuje ogromną część gazowej warstwy Jowisza."
+    ],
+    "dossier": {
+      "advantage": "Saitama posiada absurdalną siłę fizyczną, praktycznie niewyczerpaną kondycję i potwierdzony nieliniowy wzrost w trakcie wyjątkowo intensywnej walki. Jeśli zdoła przeżyć początkową przewagę Jirena i zbliżyć się do jego poziomu, dalsza eskalacja zaczyna działać coraz wyraźniej na jego korzyść.",
+      "mentality": "Zazwyczaj znudzony i beztroski. Saitama rzadko zaczyna od maksymalnej powagi, ale potrafi błyskawicznie adaptować się do nieznanych zjawisk. Jego największy pokaz wzrostu nastąpił jednak pod wpływem skrajnych emocji, więc nie można traktować identycznego tempa rozwoju jako automatycznego w każdej walce.",
+      "quote": "100 pompek, 100 brzuszków, 100 przysiadów i 10 kilometrów biegu KAŻDEGO DNIA!!!",
+      "style": "Prosty i bezpośredni styl oparty na ogromnej przewadze fizycznej, ale wsparty niezwykłym instynktem i błyskawiczną adaptacją. Saitama nie jest formalnym mistrzem sztuk walki, lecz potrafi improwizować i kopiować skrajnie nietypowe rozwiązania."
+    },
+    "name": "Saitama",
+    "profile": {
+      "powers": [
+        "Ekstremalna siła fizyczna, ogromna odporność, praktycznie niewyczerpana stamina i potwierdzony wzrost mocy podczas walki."
+      ],
+      "tools": [
+        "Bezpośredni atak z bliska, błyskawiczna adaptacja i nieliniowa eskalacja mocy, jeśli walka trwa wystarczająco długo.",
+        "Anomalne interakcje z przestrzenią i fizyką, takie jak fizyczne chwytanie oraz przemieszczanie portali.",
+        "Jednorazowo skopiowana technika podróży w czasie Garou i Zero Punch — feat adaptacyjny, ale nie standardowa, świadomie zachowana technika."
+      ],
+      "weaknesses": [
+        "Brak potwierdzenia, że ekstremalne tempo wzrostu z walki z Garou uruchamia się automatycznie w każdej walce.",
+        "Znacznie mniejsza formalna technika bojowa i kontrola energii niż u Jirena.",
+        "Jeżeli różnica początkowa jest wystarczająco duża, może zostać pokonany zanim jego wzrost zdąży ją zniwelować."
+      ]
+    },
+    "stats": {
+      "battleIq": 74,
+      "durability": 95,
+      "experience": 72,
+      "hax": 70,
+      "skills": 76,
+      "speed": 93,
+      "stamina": 100,
+      "strength": 94,
+      "style": 70
+    },
+    "version": "OPM · Cosmic Garou Fight",
+    "victories": [
+      "Boros",
+      "Elder Centipede",
+      "Orochi",
+      "Evil Ocean Water",
+      "Garou (Cosmic Fear Mode)"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "tactical-board": {
+      "lane": "Saitama musi przeżyć kolejne eskalacje Jirena i zbliżyć się do jego poziomu, zanim własny wzrost stanie się decydujący.",
+      "subtitle": "Przewaga Startowa kontra Nieliniowy Wzrost"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Faworyt według statystyk",
+      "favorite_side": "a"
+    },
+    "x-factor": {
+      "a_bonus": "25",
+      "a_bonus_label": "PRZEWAGA STARTOWA",
+      "a_value": "50",
+      "b_bonus": "30",
+      "b_value": "50",
+      "factor": "REZERWY JIRENA VS WZROST SAITAMY",
+      "mechanika": "Saitama może rosnąć podczas walki, ale nie goni nieruchomego celu. Jiren również posiada kolejne poziomy eskalacji i zwiększa moc, gdy uznaje przeciwnika za realne zagrożenie.",
+      "implikacja": "Kilka sekund zwłoki nie oznacza automatycznej porażki Jirena. Saitama staje się faworytem dopiero wtedy, gdy zdoła przeżyć kolejne eskalacje i osiągnąć poziom wystarczająco bliski Jirenowi.",
+      "psychologia": "Jiren może zacząć spokojnie, ale nie jest biernym obserwatorem własnej porażki. Gdy zauważy nieliniowy wzrost przeciwnika, naturalną reakcją będzie zwiększenie mocy i próba zamknięcia walki.",
+      "regen": "WZROST ≠ NATYCHMIASTOWA NIESKOŃCZONOŚĆ"
+    },
+    "final-summary": {
+      "line_1": "Jiren zaczyna ze znacznie wyższego poziomu mocy, szybkości, techniki i kontroli energii niż Saitama w najlepiej pokazanym punkcie walki z Cosmic Garou.",
+      "line_2": "Saitama posiada realną drogę do zwycięstwa przez wzrost, ale jego ekstremalne tempo z walki z Garou nie jest potwierdzonym automatycznym mechanizmem uruchamianym identycznie przeciw każdemu silniejszemu przeciwnikowi.",
+      "line_3": "Jeśli Saitama zdoła osiągnąć zbliżony poziom, dalsza eskalacja zaczyna przechylać pojedynek na jego stronę. Problem polega na tym, że Jiren również eskaluje i ma ogromną przewagę czasu oraz skali potrzebną do zakończenia walki wcześniej.",
+      "winner": "Jiren jest wyraźnym faworytem w normalnej walce. Saitama przejmuje przewagę dopiero wtedy, gdy pozwoli mu się dojść do zbliżonego poziomu."
+    },
+    "battle-dynamics": {
+      "label": "Walka In-Character",
+      "a_curve": "94,95,96,97,98",
+      "b_curve": "82,84,86,89,92",
+      "yellow_wave": "20,24,22,27,24,29,26,32",
+      "phase_1": "Jiren zaczyna oszczędnie, badając przeciwnika, ale już jego niższy poziom bojowy stanowi dla Saitamy znacznie większe zagrożenie niż wcześniejsi przeciwnicy.",
+      "phase_2": "Saitama zaczyna odpowiadać coraz mocniej. Jiren zauważa wzrost i nie pozostaje na jednym poziomie — zwiększa własną moc, przez co różnica ponownie rośnie.",
+      "phase_3": "Jeśli Jiren rozpozna, że Saitama naprawdę skraca dystans, przechodzi do pełnej eskalacji. Saitama musi przetrwać ten etap, zanim jego wzrost zacznie realnie odwracać proporcje.",
+      "analysis": "W normalnym zachowaniu Jiren daje przeciwnikowi pewne pole do działania, ale nie aż do momentu pełnego wyrównania. Dlatego jego przewaga startowa i rezerwy nadal rozstrzygają większość walk.",
+      "s2_label": "Jiren Pozwala na Wyrównanie",
+      "s2_a_curve": "94,92,90,88,86",
+      "s2_b_curve": "82,87,92,97,100",
+      "s2_phase_1": "Jiren świadomie ogranicza moc i pozwala Saitamie pozostać w walce mimo kolejnych wzrostów.",
+      "s2_phase_2": "Saitama osiąga poziom, przy którym kolejne skoki zaczynają redukować przewagę Jirena szybciej, niż ten odbudowuje ją samą eskalacją.",
+      "s2_phase_3": "Po osiągnięciu zbliżonego pułapu największa przewaga Saitamy — stamina i nieliniowy wzrost — zaczyna działać bezpośrednio przeciw Jirenowi.",
+      "s2_analysis": "To scenariusz, w którym Saitama naprawdę staje się faworytem. Nie dlatego, że każda zwłoka gwarantuje zwycięstwo, lecz dlatego, że Jiren dobrowolnie oddaje swoją najważniejszą przewagę startową."
+    },
+    "fight-simulation": {
+      "label": "Walka In-Character",
+      "opening": "Jiren zaczyna spokojnie i używa tylko części swojej mocy. Saitama po raz pierwszy trafia na przeciwnika, którego zwykłe otwarcie nie kończy walki.",
+      "mid_fight": "Kolejne ciosy Saitamy stają się silniejsze, ale Jiren zauważa zmianę i odpowiada własną eskalacją, zwiększając szybkość, siłę i gęstość ki.",
+      "late_fight": "Kluczowy moment następuje wtedy, gdy Jiren uzna wzrost Saitamy za realne zagrożenie. Jeśli przejdzie do pełnej mocy zanim różnica zostanie zniwelowana, kończy walkę.",
+      "end_condition": "Jiren wygrywa przez eskalację szybszą niż tempo, w którym Saitama jest w stanie zniwelować początkową różnicę.",
+      "phase_1_animation": "clash-lock",
+      "phase_1_actor": "a",
+      "phase_1_title": "Pierwsza Próba",
+      "phase_1_a_label": "Kontrola",
+      "phase_1_a_value": "97",
+      "phase_1_b_label": "Start",
+      "phase_1_b_value": "82",
+      "phase_1_event": "Saitama uderza poważniej niż zwykle, ale Jiren zatrzymuje lub neutralizuje pierwszy napór i natychmiast rozpoznaje skalę przeciwnika.",
+      "phase_2_animation": "infinite-attrition",
+      "phase_2_title": "Wyścig Eskalacji",
+      "phase_2_event": "Saitama rośnie w siłę, lecz Jiren również zwiększa własną moc. Walka nie jest pogonią za nieruchomym sufitem.",
+      "phase_2_branch_a": "Saitama przyspiesza wzrost i zaczyna zmniejszać różnicę.",
+      "phase_2_branch_b": "Jiren uwalnia kolejną warstwę mocy i ponownie odsuwa swój poziom.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "nova-cleansing",
+      "phase_3_title": "Pełna Eskalacja",
+      "phase_3_event": "Jiren uznaje przeciwnika za realne zagrożenie i używa pełnej mocy, zanim Saitama zdąży osiągnąć równy poziom.",
+      "phase_3_branch_a": "Saitama przetrzymuje eskalację i pozostaje wystarczająco blisko, by dalszy wzrost mógł odwrócić walkę.",
+      "phase_3_branch_b": "Różnica pozostaje zbyt duża i Jiren kończy pojedynek.",
+      "s2_label": "Jiren Pozwala na Wyrównanie",
+      "s2_phase_1_animation": "kite-zone",
+      "s2_phase_1_actor": "a",
+      "s2_phase_1_title": "Kontrolowana Zwłoka",
+      "s2_phase_1_a_label": "Rezerwy",
+      "s2_phase_1_a_value": "95",
+      "s2_phase_1_b_label": "Wzrost",
+      "s2_phase_1_b_value": "85",
+      "s2_phase_1_event": "Jiren świadomie utrzymuje walkę na poziomie, który pozwala Saitamie kontynuować wymiany i rozwijać się.",
+      "s2_phase_2_animation": "infinite-attrition",
+      "s2_phase_2_title": "Punkt Wyrównania",
+      "s2_phase_2_event": "Saitama zbliża się do poziomu Jirena, a każda kolejna wymiana zwiększa jego siłę szybciej niż wcześniej.",
+      "s2_phase_2_branch_a": "Jiren w porę przerywa eksperyment i próbuje zakończyć walkę.",
+      "s2_phase_2_branch_b": "Saitama osiąga pułap, na którym początkowa przewaga Jirena praktycznie znika.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "nova-cleansing",
+      "s2_phase_3_title": "Przewaga Wzrostu",
+      "s2_phase_3_event": "Przy porównywalnym poziomie startowym stamina i dalszy rozwój Saitamy zaczynają tworzyć przewagę, której Jiren nie może już łatwo odbudować.",
+      "s2_phase_3_branch_a": "Jiren kończy walkę natychmiast po rozpoznaniu zagrożenia i nadal może odzyskać przewagę.",
+      "s2_phase_3_branch_b": "Saitama przeskakuje go w kolejnych wymianach i przejmuje kontrolę.",
+      "s2_end_condition": "Saitama wygrywa, jeśli Jiren dobrowolnie pozwoli mu osiągnąć poziom zbliżony do własnego."
+    },
+    "verdict-matrix": {
+      "header": "MATRYCA WERDYKTU",
+      "subtitle": "Kluczowa zmienna: kiedy Jiren decyduje się eskalować",
+      "layout": "3x1",
+      "row_1": "JIREN OD POCZĄTKU UŻYWA PEŁNEJ MOCY",
+      "row_2": "OBAJ WALCZĄ ZGODNIE Z CHARAKTEREM",
+      "row_3": "JIREN ŚWIADOMIE POZWALA SAITAMIE WYRÓWNAĆ",
+      "case_1": "Jiren 9.5/10. Początkowa różnica w skali, szybkości, technice i kontroli ki jest zbyt duża. Saitama ma niewielką szansę tylko wtedy, jeśli okaże się wystarczająco odporny, by przetrwać pierwszą pełną eskalację i uruchomić wzrost zanim walka zostanie zakończona.",
+      "case_1_winner": "a",
+      "case_2": "Jiren 8/10. In-character nie zaczyna od absolutnego maksimum, ale gdy zauważy, że kolejne ataki Saitamy rosną w siłę, sam eskaluje. Saitama ma realną drogę do zwycięstwa, lecz musi przeżyć kilka kolejnych progów mocy zanim zbliży się do poziomu Jirena.",
+      "case_2_winner": "a",
+      "case_3": "Saitama 7/10. Jeżeli Jiren świadomie pozwoli mu dojść do porównywalnego poziomu, traci swoją najważniejszą przewagę. Przy zbliżonej sile początkowej większa stamina i dalszy nieliniowy wzrost zaczynają przechylać walkę na stronę Saitamy.",
+      "case_3_winner": "b"
+    },
+    "fight-card": {
+      "fight_title": "Jiren vs Saitama"
+    }
+  }
+}

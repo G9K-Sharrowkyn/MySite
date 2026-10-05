@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useContext } from 'react';
+import React, { lazy, Suspense, useContext, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router';
 import { LanguageProvider } from './i18n/LanguageContext';
 import { AuthProvider, AuthContext } from './auth/AuthContext';
@@ -36,12 +36,21 @@ const CcgApp = lazy(() => import('./ccg/App'));
 const SwoopRacingPage = lazy(() => import('./swoopRacing/SwoopRacingPage'));
 const TronArenaFramePage = lazy(() => import('./tronLogic/TronArenaFramePage'));
 const TronArenaPage = lazy(() => import('./tronLogic/TronArenaPage'));
+const VsStudioPage = lazy(() => import('./vsStudio/VsStudioPage'));
+
+const AppLoadingSurface = ({ studio = false, content = false }) => (
+  <div
+    className={`app-loading-surface${studio ? ' app-loading-surface--studio' : ''}${content ? ' app-loading-surface--content' : ''}`}
+    aria-busy="true"
+    aria-label="Loading application"
+  />
+);
 
 const RoleRoute = ({ children, roles }) => {
   const { user, loading } = useContext(AuthContext);
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return <AppLoadingSurface content />;
   }
 
   if (!user || !roles.includes(user.role)) {
@@ -58,11 +67,19 @@ function AppContent() {
   const isSwoopRoute = location.pathname === '/swoop-racing';
   const isTronRoute = location.pathname === '/tron-arena';
   const isEmbeddedTronRoute = location.pathname === '/tron-game';
-  const isImmersiveGameRoute = isSwoopRoute || isTronRoute || isEmbeddedTronRoute;
+  const isVsStudioRoute = location.pathname.replace(/\/+$/, '') === '/vs-studio';
+  const [isVsStudioImmersive, setIsVsStudioImmersive] = useState(false);
+  const isImmersiveGameRoute = isSwoopRoute || isTronRoute || isEmbeddedTronRoute || isVsStudioRoute;
   const updateAvailable = false;
 
+  useEffect(() => {
+    if (!isVsStudioRoute) {
+      setIsVsStudioImmersive(false);
+    }
+  }, [isVsStudioRoute]);
+
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return <AppLoadingSurface studio={isVsStudioRoute} />;
   }
 
   return (
@@ -72,10 +89,10 @@ function AppContent() {
           🔄 New version available! Updating in 3 seconds...
         </div>
       )}
-      {!isEmbeddedTronRoute && (
+      {!isEmbeddedTronRoute && !isVsStudioImmersive && (
         <Header isLoggedIn={isLoggedIn} setIsLoggedIn={() => {}} />
       )}
-      <Suspense fallback={<div className="loading">Loading...</div>}>
+      <Suspense fallback={<AppLoadingSurface studio={isVsStudioRoute} content />}>
       <Routes>
         <Route path="/" element={isLoggedIn ? <Navigate to="/feed" replace /> : <Home />} />
         <Route path="/register" element={<Register setIsLoggedIn={() => {}} />} />
@@ -141,6 +158,10 @@ function AppContent() {
           path="/tron-game"
           element={isLoggedIn ? <TronArenaPage /> : <Navigate to="/login" replace />}
         />
+        <Route
+          path="/vs-studio"
+          element={isLoggedIn ? <VsStudioPage onImmersiveChange={setIsVsStudioImmersive} /> : <Navigate to="/login" replace />}
+        />
       </Routes>
       </Suspense>
       {/* Global Chat System - only show when logged in */}
@@ -149,7 +170,7 @@ function AppContent() {
       </Suspense>
       {/* Feedback Button - always visible */}
       {!isImmersiveGameRoute && <FeedbackButton />}
-      {!isEmbeddedTronRoute && <CookieConsent />}
+      {!isEmbeddedTronRoute && !isVsStudioImmersive && <CookieConsent />}
       {!isImmersiveGameRoute && <BuildVersion />}
     </div>
   );

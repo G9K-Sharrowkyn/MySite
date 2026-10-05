@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Vader1.jpg",
+    "b": "Thanos1.jpg"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Vader1.jpg",
+      "left_image_2": "Feat_Vader2.jpg",
+      "left_image_3": "Feat_Vader3.jpg",
+      "left_image_4": "Feat_Vader4.jpg",
+      "left_image_5": "Feat_Vader5.jpg",
+      "right_image_1": "Feat_Thanos1.jpg",
+      "right_image_2": "Feat_Thanos2.jpg",
+      "right_image_3": "Feat_Thanos3.jpg",
+      "right_image_4": "Feat_Thanos4.jpg",
+      "right_image_5": "Feat_Thanos5.jpg"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Vader1.jpg",
+      "left_image_2": "CV_Vader2.jpg",
+      "left_image_3": "CV_Vader3.jpg",
+      "left_image_4": "CV_Vader4.jpg",
+      "left_image_5": "CV_Vader5.jpg",
+      "right_image_1": "CV_Thanos1.jpg",
+      "right_image_2": "CV_Thanos2.jpg",
+      "right_image_3": "CV_Thanos3.jpg",
+      "right_image_4": "CV_Thanos4.jpg",
+      "right_image_5": "CV_Thanos5.jpg"
+    },
+    "fight-card": {
+      "right_image": "Thanos4.webp",
+      "left_image": "Vader4.jpg"
+    },
+    "direct-verdict": {
+      "right_image": "Thanos3.webp",
+      "left_image": "Vader3.webp"
+    },
+    "final-summary": {
+      "right_image": "Thanos2.jpg",
+      "left_image": "Vader2.jpg"
+    }
+  }
+}

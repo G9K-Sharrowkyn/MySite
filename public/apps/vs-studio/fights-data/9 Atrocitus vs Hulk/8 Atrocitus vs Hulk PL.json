@@ -1,0 +1,185 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Uwięził Butchera w swojej baterii mocy",
+      "Walczył dalej po wyrwaniu serca",
+      "Martian Manhunter nie może zaatakować go telepatycznie.",
+      "Przepalił plazmą furii samą strukturę przestrzeni",
+      "Rani Spectre"
+    ],
+    "dossier": {
+      "advantage": "Czerwony pierścień zamiast serca i nieludzka siła. Pierścień utrzymuje go przy życiu nawet po śmiertelnych ranach, a jego fizyczna moc pozwala mu gołymi rękami kruszyć bariery energii.",
+      "mentality": "Wściekły fanatyk napędzany zemstą. Nie zna litości ani wahania – napiera z furią, która staje się tym potężniejsza, im więcej nienawiści i gniewu okazuje mu wróg.",
+      "quote": "Jestem Atrocitus, pan i mistrz Korpusu Czerwonych Latarni. Jestem gniewem, jestem nienawiścią, jestem sprawiedliwą zemstą!",
+      "style": "Brutalna, pierwotna agresja. Atrocitus walczy przez czysty napór, rozszarpywanie w zwarciu i nieustanne pchanie przeciwnika pod własną furię."
+    },
+    "name": "Atrocitus",
+    "profile": {
+      "powers": [
+        "Czerwona, plazmowa emisja Pierścienia. Konstrukty, magia krwi i rytuały. Lot oraz dynamika gniewu powiązana z Butcherem."
+      ],
+      "tools": [
+        "Manipulacja spektrum emocjonalnym i silna presja dystansowa.",
+        "Żrąca plazma i kontakt przez krew, które utrudniają przeciwnikowi bezpieczne wejście w zwarcie."
+      ],
+      "weaknesses": [
+        "Jeśli walka na dłużej ugrzęźnie w czystym zwarciu i wymianie siły, Atrocitus traci przewagę szerszego zestawu narzędzi."
+      ]
+    },
+    "stats": {
+      "battleIq": 84,
+      "durability": 88,
+      "experience": 91,
+      "hax": 92,
+      "skills": 80,
+      "speed": 86,
+      "stamina": 84,
+      "strength": 87,
+      "style": 78
+    },
+    "version": "New52",
+    "victories": [
+      "Abysmus",
+      "Skallox",
+      "Black Lanterns",
+      "Guardian of the Universe",
+      "Bleez"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Po śmierci może wrócić przez Green Door z Below-Place",
+      "Podniósł pasmo górskie ważące 150 miliardów ton",
+      "Zregenerował się po skrajnych obrażeniach",
+      "Starcie Worldbreaker Red She-Hulk i World Breaker Hulka doprowadziło do pęknięcia planety",
+      "Jednym krokiem niemal zatopił całe wschodnie wybrzeże"
+    ],
+    "dossier": {
+      "advantage": "Nieliniowy wzrost siły i regeneracja. Im bardziej jest ranny i wściekły, tym trudniej go zatrzymać, a długie starcie coraz mocniej przesuwa na jego stronę.",
+      "mentality": "Uparty i dziki niszczyciel. Hulk nie walczy subtelnie i nie cofa się pod presją – napiera tak długo, aż przeciwnik pęknie.",
+      "quote": "Hulk miażdżyć!",
+      "style": "Niepowstrzymana destrukcja w zwarciu. Opiera się na czystej, fizycznej sile i ciągłym parciu naprzód, miażdżąc wszystko pod swoimi ciosami."
+    },
+    "name": "Hulk",
+    "profile": {
+      "powers": [
+        "Wzrost siły oparty na gniewie. Regeneracja, fale uderzeniowe i ekstremalna kondycja."
+      ],
+      "tools": [
+        "Nieustanna presja w zwarciu.",
+        "Fale uderzeniowe."
+      ],
+      "weaknesses": [
+        "Gdy przeciwnik skutecznie odcina go od walki w zwarciu, jego droga do zwycięstwa robi się wyraźnie węższa."
+      ]
+    },
+    "stats": {
+      "battleIq": 81,
+      "durability": 95,
+      "experience": 78,
+      "hax": 66,
+      "skills": 81,
+      "speed": 80,
+      "stamina": 98,
+      "strength": 95,
+      "style": 81
+    },
+    "version": "Earth-616",
+    "victories": [
+      "Sentry",
+      "Dormammu",
+      "HulkBuster Iron Man",
+      "Bi-Beast i Wendigo",
+      "Arm'Cheddon"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Kontrola Gniewu",
+      "a_curve": "86,89,92,95,98",
+      "b_curve": "84,78,62,38,12",
+      "yellow_wave": "40,48,44,59,47,63,49,68",
+      "phase_1": "Atrocitus otwiera walkę lotem, plazmą i presją dystansową, próbując przejąć kontrolę nad osią gniewu, zanim Hulk zamieni ją w czystą eskalację siły.",
+      "phase_2": "Hulkowi bardzo trudno wymusić powtarzalny kontakt, bo Atrocitus nie musi wchodzić z nim w otwartą bijatykę i może stale rozbijać próby wejścia w zwarcie.",
+      "phase_3": "Hulk pozostaje śmiertelnie groźny, jeśli złapie Atrocitusa i nie wypuści go z rąk, ale przez większość czasu to Atrocitus utrzymuje walkę tam, gdzie jego przewaga jest największa.",
+      "analysis": "To nie jest łatwa walka, ale bardzo zły matchup dla Hulka. Atrocitus ma zbyt dużo narzędzi i zbyt wielki X-Factor, by Hulk był w stanie wykorzystać swoją siłę."
+    },
+    "fight-card": {
+      "fight_title": "Atrocitus vs Hulk"
+    },
+    "fight-simulation": {
+      "label": "Atrocitus prowadzi",
+      "opening": "Atrocitus nie wdaje się z Hulkiem w otwartą wymianę. Od początku używa lotu, plazmy i konstrukcji, by utrzymać dystans i kontrolować tempo starcia.",
+      "mid_fight": "Hulk próbuje skrócić dystans, ale każda próba wejścia jest rozbijana kolejną warstwą presji, która nie pozwala mu zamienić walki w czystą bijatykę.",
+      "late_fight": "Atrocitus coraz lepiej steruje osią gniewu i nie daje Hulkowi stabilnego kontaktu, przez co przewaga fizyczna Hulka nie przekłada się na dominację pola walki.",
+      "end_condition": "Atrocitus wygrywa przez kontrolę tempa, dystansu i gniewu przeciwnika, zanim Hulk zdoła zamienić walkę w powtarzalne zwarcie.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_title": "Pierwsza Presja",
+      "phase_1_a_label": "Dystans",
+      "phase_1_a_value": "92",
+      "phase_1_b_label": "Wejście",
+      "phase_1_b_value": "84",
+      "phase_1_event": "Atrocitus otwiera walkę z dystansu i od razu sprawdza, czy da się utrzymać Hulka poza jego naturalnym zasięgiem.",
+      "phase_2_animation": "kite-zone",
+      "phase_2_title": "Utrzymanie Dystansu",
+      "phase_2_event": "Hulk próbuje domknąć kontakt, ale Atrocitus stale przerywa jego wejścia plazmą, konstrukcjami i zmianą pozycji.",
+      "phase_2_branch_a": "Im dłużej Hulk nie może złapać rąk, tym mniej znaczy jego przewaga fizyczna.",
+      "phase_2_branch_b": "Atrocitus utrzymuje walkę w modelu, który bardziej premiuje jego własne narzędzia.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "sustained-suppression",
+      "phase_3_title": "Kontrola Gniewu",
+      "phase_3_event": "Atrocitus coraz mocniej steruje tempem furii Hulka i nie pozwala mu walczyć tak, jak Hulk by chciał.",
+      "phase_3_branch_a": "Hulk pozostaje groźny tylko przy bardzo wczesnym przełamaniu dystansu.",
+      "phase_3_branch_b": "W większości przebiegów to Atrocitus domyka walkę na własnych warunkach."
+    },
+    "final-summary": {
+      "line_1": "Obaj wojownicy rosną wraz z gniewem, ale Atrocitus ma nad tą osią znacznie większą kontrolę.",
+      "line_2": "Dzięki lotowi, plazmie, konstruktom i presji dystansowej nie musi dawać Hulkowi walki, której ten najbardziej potrzebuje.",
+      "line_3": "Hulk pozostaje śmiertelnym zagrożeniem w długim zwarciu, lecz Atrocitus ma dość narzędzi i inteligencji, by przez większość czasu nie dopuścić do takiego scenariusza.",
+      "winner": "Atrocitus prowadzi wyraźnie, bo częściej narzuca warunki walki."
+    },
+    "tactical-board": {
+      "lane": "Atrocitus musi utrzymać walkę w ryzach Mocy, zanim Hulk zamieni ją w pętlę gamma.",
+      "subtitle": "Rzeźnik kontra Worldbreaker"
+    },
+    "x-factor": {
+      "a_bonus": "25",
+      "a_bonus_label": "RAGE SUPPRESSION",
+      "a_value": "50",
+      "b_bonus": "10",
+      "b_value": "50",
+      "factor": "KONTROLA GNIEWU VS PĘTLA",
+      "implikacja": "Jeśli Atrocitus dostatecznie wcześnie przejmie kontrolę nad stanem gniewu Hulka, zyskuje czas i przestrzeń potrzebne do domknięcia walki. Jeśli nie, długie starcie coraz mocniej zaczyna należeć do Hulka.",
+      "mechanika": "Atrocitus rośnie nie tylko od własnego gniewu, ale także od gniewu przeciwnika. Jako host Butchera może próbować wzmacniać, tłumić i kierować furią Hulka, zanim ta zamieni się w samonapędzającą pętlę.",
+      "psychologia": "Hulk nie rozumie, że każda sekunda walki czyni go słabszym koncepcyjnie względem Latarni.",
+      "regen": "ANNIHILACJA GAMMA"
+    },
+    "direct-verdict": {
+      "winner": "Atrocitus",
+      "loser": "Hulk",
+      "outcome": "Atrocitus 9/10",
+      "certainty": "Wyraźny faworyt",
+      "line_1": "Atrocitus ma większy X-Factor, szerszy zestaw narzędzi i znacznie lepszą kontrolę nad osią gniewu niż Hulk.",
+      "line_2": "Dzięki lotowi, plazmie, konstruktom i presji dystansowej nie musi dawać Hulkowi walki, której ten najbardziej potrzebuje.",
+      "line_3": "Hulk zachowuje tylko wąską drogę do zwycięstwa: bardzo szybkie złapanie Atrocitusa i niedopuszczenie do odzyskania dystansu."
+    }
+  }
+}

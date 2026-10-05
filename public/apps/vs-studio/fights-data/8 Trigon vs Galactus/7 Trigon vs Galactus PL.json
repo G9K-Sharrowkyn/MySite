@@ -1,0 +1,279 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Wszechświat za wszechświatem upadał przed jego potęgą.",
+      "Zamienia Ziemię DC i wszystkich na niej w kamień.",
+      "Monitor klasyfikuje go na tym samym poziomie zagrożenia co Spectre.",
+      "Niszczy planetę samym spojrzeniem.",
+      "Pochłania Heart of Darkness."
+    ],
+    "dossier": {
+      "advantage": "Dominacja nad wymiarami i duszami. Trigon nie jest tylko fizycznym zagrożeniem — atakuje samą esencję bytu przeciwnika i narzuca swoją wolę całym światom.",
+      "mentality": "Czyste zło i sadystyczny narcyzm. Nie walczy o przetrwanie, lecz o całkowitą dominację i upodlenie wszystkiego, co żyje.",
+      "quote": "Twój świat jest mój. Wasze dusze są moimi zabawkami. Nadchodzi Trigon!",
+      "style": "Magiczna dominacja i piekielna presja. Wykorzystuje infernalną potęgę, by niszczyć umysły i ciała wrogów, zanim ci zdążą pojąć skalę zagrożenia."
+    },
+    "name": "Trigon",
+    "profile": {
+      "powers": [
+        "Manipulacja rzeczywistością, magia piekielna, absorpcja dusz i nieograniczona projekcja energii."
+      ],
+      "tools": [
+        "Zdolność tworzenia armii demonów i korumpowania bohaterów.",
+        "Kontrola nad wymiarami, pozwalająca mu narzucać pole walki i pojawiać się tam, gdzie przeciwnik nie ma wygodnej odpowiedzi."
+      ],
+      "weaknesses": [
+        "W niektórych sferach pełna manifestacja nadal wymaga odpowiedniego przejścia lub osłabienia barier między wymiarami.",
+        "Arogancja może sprawić, że zbyt długo lekceważy pozornie małe zagrożenia."
+      ]
+    },
+    "stats": {
+      "battleIq": 94,
+      "durability": 98,
+      "experience": 99,
+      "hax": 98,
+      "skills": 82,
+      "speed": 92,
+      "stamina": 99,
+      "strength": 98,
+      "style": 95
+    },
+    "version": "Post-Crisis",
+    "victories": [
+      "Sala trofeów zawiera kostium Supermana.",
+      "Miażdży JLA i Teen Titans.",
+      "Masakruje The Divine.",
+      "Rozprasza atomy Psimona po rzeczywistości.",
+      "Ares."
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Posiada Ultimate Nullifier, broń zdolną zniszczyć cały wszechświat.",
+      "Galactus musi istnieć, bo inaczej wszechświat umrze.",
+      "Atak Galactusa obejmuje trzy układy słoneczne.",
+      "Cały wszechświat był zagrożony zniszczeniem, gdy Galactus walczył.",
+      "Odsyła Sphinxa w przeszłość, by ten przeżywał swoje życie w kółko przez całą wieczność."
+    ],
+    "dossier": {
+      "advantage": "Power Cosmic i skala istnienia. Galactus nie walczy – on przeprowadza proces konsumpcji. Posiada kontrolę nad fundamentalnymi siłami wszechświata na niewyobrażalnym poziomie.",
+      "mentality": "Amoralna siła natury. Nie zabija z nienawiści, lecz z głodu. Patrzy na planety i bóstwa jak na pokarm potrzebny do utrzymania równowagi kosmosu.",
+      "quote": "Nie jestem bogiem. Nie jestem potworem. Jestem Galactusem. Jestem nieuchronnością.",
+      "style": "Kosmiczna manipulacja i wymazywanie. Używa Power Cosmic, by rozkładać materię, pochłaniać energię i narzucać swoją wolę całym światom."
+    },
+    "name": "Galactus",
+    "profile": {
+      "powers": [
+        "Power Cosmic oraz manipulacja materią i energią na skali kosmicznej."
+      ],
+      "tools": [
+        "Ultimate Nullifier (w ekstremalnych przypadkach) – broń zdolna zniszczyć całe kontinuum.",
+        "Zdolność tworzenia heroldów, którzy wykonują jego wolę."
+      ],
+      "weaknesses": [
+        "Głód – jego potęga drastycznie spada, gdy nie spożywa planet."
+      ]
+    },
+    "stats": {
+      "battleIq": 96,
+      "durability": 99,
+      "experience": 99,
+      "hax": 99,
+      "skills": 85,
+      "speed": 94,
+      "stamina": 92,
+      "strength": 99,
+      "style": 94
+    },
+    "version": "Earth-616",
+    "victories": [
+      "Mephisto.",
+      "Sphinx.",
+      "Celestial.",
+      "Terrax.",
+      "Tyrant."
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Głodny Galactus • Świat Materii",
+      "a_curve": "95,94,93,94,95",
+      "b_curve": "96,95,94,95,96",
+      "yellow_wave": "20,25,22,28,24,30,26,35",
+      "phase_1": "W świecie materii Trigon nie dostaje premii własnej domeny, ale wygłodzony Galactus też nie operuje na pełnej skali swojej kosmicznej przewagi.",
+      "phase_2": "Galactus narzuca Power Cosmic własny porządek walki, lecz osłabienie głodem daje Trigonowi więcej czasu na narzucenie presji metafizycznej.",
+      "phase_3": "W dłuższym starciu Trigon zaczyna realnie odwracać presję, ale w świecie materii Galactus wciąż minimalnie częściej wygrywa dzięki większej skali energii i odporności.",
+      "analysis": "Głód mocno osłabia Galactusa, lecz w świecie materii nadal zostawia mu minimalną przewagę. To jeden z jego najciaśniejszych wariantów zwycięstwa.",
+      "s2_label": "Najedzony Galactus • Świat Materii",
+      "s2_a_curve": "95,91,86,80,74",
+      "s2_b_curve": "96,97,98,99,100",
+      "s2_phase_1": "W świecie materii dobrze nakarmiony Galactus od początku walczy na swoim najwyższym poziomie.",
+      "s2_phase_2": "Skala energii, odporność i kontrola materii pozwalają mu coraz mocniej odbierać Trigonowi inicjatywę.",
+      "s2_phase_3": "Przy tej skali mocy Galactus coraz częściej spycha Trigona do obrony i zamyka walkę na swoich warunkach.",
+      "s2_analysis": "To najbardziej korzystna wersja walki dla Galactusa: wysoki poziom nasycenia wyraźnie przechyla starcie na jego stronę.",
+      "s3_label": "Głodny Galactus • Domena Trigona",
+      "s3_a_curve": "95,97,99,100,100",
+      "s3_b_curve": "96,89,74,52,28",
+      "s3_phase_1": "W domenie Trigona sama natura pola walki od początku sprzyja piekielnej presji bardziej niż kosmicznej stabilizacji.",
+      "s3_phase_2": "Głód odbiera Galactusowi część skali potrzebnej do narzucenia własnych warunków przeciw pełnej metafizycznej obecności Trigona.",
+      "s3_phase_3": "W takim układzie Trigon najczęściej przejmuje walkę domeną, presją duszy i skażeniem samej logiki starcia.",
+      "s3_analysis": "To jeden z najgorszych wariantów dla Galactusa: głód osłabia go dokładnie wtedy, gdy walczy na gruncie całkowicie należącym do Trigona.",
+      "s4_label": "Najedzony Galactus • Domena Trigona",
+      "s4_a_curve": "95,96,97,98,98",
+      "s4_b_curve": "96,95,94,93,92",
+      "s4_phase_1": "Nawet dobrze nakarmiony Galactus nie dostaje w domenie Trigona tego samego komfortu, który ma w materii.",
+      "s4_phase_2": "Pełna skala Power Cosmic utrzymuje go w walce i broni przed szybkim załamaniem, ale sama domena nadal wypycha starcie w stronę metafizyki.",
+      "s4_phase_3": "To najbliższy pojedynek w domenie Trigona: Galactus jest tu znacznie groźniejszy niż w stanie głodu, lecz własny wymiar Trigona nadal częściej przechyla walkę na jego stronę.",
+      "s4_analysis": "Nasycenie Galactusa bardzo zmniejsza przewagę domeny Trigona, ale nie usuwa jej całkowicie."
+    },
+    "fight-card": {
+      "fight_title": "Trigon vs Galactus"
+    },
+    "fight-simulation": {
+      "label": "Głodny Galactus • Świat Materii",
+      "opening": "Galactus wchodzi w walkę w świecie materii, ale głód od początku ogranicza jego zdolność do szybkiego narzucenia pełnej przewagi.",
+      "mid_fight": "Trigon wykorzystuje każdą chwilę zwłoki, by wejść w wymiar bardziej metafizyczny niż czysto kosmiczny.",
+      "late_fight": "Galactus nadal ma dość skali, by utrzymać się z przodu, lecz robi to znacznie mniej pewnie niż w stanie nasycenia.",
+      "end_condition": "Galactus wygrywa bardzo ciasno, częściej przez wytrzymanie i skalę niż przez pełną dominację.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_actor": "b",
+      "phase_1_title": "Kosmiczna Wymiana",
+      "phase_1_a_label": "Presja",
+      "phase_1_a_value": "95",
+      "phase_1_b_label": "Skala",
+      "phase_1_b_value": "96",
+      "phase_1_event": "Galactus zaczyna od przewagi skali, ale już na otwarciu widać, że głód odebrał mu część pewności i siły domknięcia walki.",
+      "phase_2_animation": "clash-lock",
+      "phase_2_title": "Metafizyczne Wejście",
+      "phase_2_event": "Trigon zaczyna wciskać starcie w stronę domeny duszy, korupcji i presji wymiarowej.",
+      "phase_2_branch_a": "Galactus nadal odpowiada większą surową skalą.",
+      "phase_2_branch_b": "Trigon realnie zawęża przewagę przeciwnika.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "infinite-attrition",
+      "phase_3_title": "Minimalna Przewaga",
+      "phase_3_event": "W świecie materii Galactus nadal częściej domyka walkę, ale dopiero po bardzo trudnym przeciągnięciu jej na swoją stronę.",
+      "phase_3_branch_a": "To jeden z jego najciaśniejszych wariantów zwycięstwa.",
+      "phase_3_branch_b": "Trigon przegrywa, lecz nie zostaje łatwo zdominowany.",
+      "s2_label": "Najedzony Galactus • Świat Materii",
+      "s2_phase_1_animation": "cosmic-salvo",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Skala Power Cosmic",
+      "s2_phase_1_a_label": "Presja",
+      "s2_phase_1_a_value": "95",
+      "s2_phase_1_b_label": "Nasycenie",
+      "s2_phase_1_b_value": "100",
+      "s2_phase_1_event": "Dobrze nakarmiony Galactus od początku wchodzi w walkę, wykorzystując pełną skalę Power Cosmic.",
+      "s2_phase_2_animation": "void-clash",
+      "s2_phase_2_title": "Przejęcie Inicjatywy",
+      "s2_phase_2_event": "Skala energii, odporność i kontrola materii coraz mocniej odbierają Trigonowi przestrzeń do narzucania własnej logiki walki.",
+      "s2_phase_2_branch_a": "Trigon nadal jest groźny metafizycznie.",
+      "s2_phase_2_branch_b": "Galactus coraz częściej spycha go do obrony.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "celestial-purge",
+      "s2_phase_3_title": "Kosmiczna Przewaga",
+      "s2_phase_3_event": "Galactus domyka walkę na własnych warunkach, zanim presja duszy i korupcji Trigona zdążą przejąć kontrolę nad przebiegiem starcia.",
+      "s2_phase_3_branch_a": "To najkorzystniejszy wariant dla Galactusa.",
+      "s2_phase_3_branch_b": "W materii i przy wysokim nasyceniu prowadzi bardzo wyraźnie.",
+      "s2_end_condition": "Galactus wygrywa wyraźnie w świecie materii, gdy nie walczy wygłodzony.",
+      "s3_label": "Głodny Galactus • Domena Trigona",
+      "s3_phase_1_animation": "shadow-surge",
+      "s3_phase_1_actor": "a",
+      "s3_phase_1_title": "Domena Trigona",
+      "s3_phase_1_a_label": "Domena",
+      "s3_phase_1_a_value": "100",
+      "s3_phase_1_b_label": "Głód",
+      "s3_phase_1_b_value": "90",
+      "s3_phase_1_event": "Własny wymiar Trigona od początku wypycha walkę w stronę piekielnej presji, a głód Galactusa odbiera mu część potrzebnej skali.",
+      "s3_phase_2_animation": "clash-lock",
+      "s3_phase_2_title": "Załamanie Warunków",
+      "s3_phase_2_event": "Galactus nie zdoła przejąć kontroli nad przebiegiem walki. To domena Trigona dyktuje tempo i warunki starcia.",
+      "s3_phase_2_branch_a": "Power Cosmic nie znika, ale działa coraz mniej komfortowo.",
+      "s3_phase_2_branch_b": "Trigon przejmuje tempo i naturę starcia.",
+      "s3_phase_3_actor": "a",
+      "s3_phase_3_animation": "void-absorption",
+      "s3_phase_3_title": "Pełne Przejęcie",
+      "s3_phase_3_event": "Trigon przejmuje walkę domeną, presją duszy i skażeniem samej logiki starcia.",
+      "s3_phase_3_branch_a": "To jeden z najgorszych wariantów dla Galactusa.",
+      "s3_phase_3_branch_b": "Trigon wygrywa tu bardzo wyraźnie.",
+      "s3_end_condition": "Trigon wygrywa w swojej domenie, gdy Galactus wchodzi do niej wygłodzony.",
+      "s4_label": "Najedzony Galactus • Domena Trigona",
+      "s4_phase_1_animation": "void-clash",
+      "s4_phase_1_actor": "b",
+      "s4_phase_1_title": "Pełna Skala kontra Domena",
+      "s4_phase_1_a_label": "Domena",
+      "s4_phase_1_a_value": "99",
+      "s4_phase_1_b_label": "Nasycenie",
+      "s4_phase_1_b_value": "96",
+      "s4_phase_1_event": "Najedzony Galactus wchodzi do walki znacznie groźniejszy niż w stanie głodu, ale domena Trigona od początku odbiera mu pełną swobodę narzucenia własnych warunków.",
+      "s4_phase_2_animation": "clash-lock",
+      "s4_phase_2_title": "Najbliższy Pojedynek",
+      "s4_phase_2_event": "Pełna skala Power Cosmic utrzymuje Galactusa w grze, lecz domena Trigona wciąż wypycha walkę poza czystą wymianę kosmicznej skali.",
+      "s4_phase_2_branch_a": "Galactus realnie walczy tu o zwycięstwo.",
+      "s4_phase_2_branch_b": "Trigon nadal ma przewagę własnego gruntu.",
+      "s4_phase_3_actor": "a",
+      "s4_phase_3_animation": "shadow-surge",
+      "s4_phase_3_title": "Domena Przechyla Walkę",
+      "s4_phase_3_event": "Najedzony Galactus przez długi czas może toczyć równą walkę, ale wymiar Trigona ostatecznie da swojemu panu zwycięstwo.",
+      "s4_phase_3_branch_a": "Galactus jest bardzo groźny, lecz nie dość, by przełamać przewagę gruntu.",
+      "s4_phase_3_branch_b": "Trigon wygrywa lekko, nie miażdżąco.",
+      "s4_end_condition": "Trigon wygrywa częściej nawet z najedzonym Galactusem, jeśli walka toczy się w jego własnej domenie."
+    },
+    "final-summary": {
+      "line_1": "To starcie dwóch różnych porządków potęgi: kosmicznej konsumpcji Galactusa i metafizycznej dominacji Trigona.",
+      "line_2": "Najbardziej liczy się to, jak bardzo Galactus jest nasycony i czy Trigon walczy we własnej domenie.",
+      "line_3": "Im bardziej walka przechyla się w stronę dobrze nakarmionego Galactusa albo domeny Trigona, tym mocniej zmienia się cały balans starcia.",
+      "winner": "Galactus prowadzi w materii. Trigon zyskuje ogromnie we własnej domenie."
+    },
+    "tactical-board": {
+      "lane": "Zwycięzca musi kontrolować wymiar, w którym toczy się walka.",
+      "subtitle": "Pożeracz kontra Demon"
+    },
+    "verdict-matrix": {
+      "header": "MATRYCA WERDYKTU",
+      "subtitle": "Werdykt zależny od stopnia najedzenia Galactusa i miejsca starcia",
+      "col_1": "GALACTUS GŁODNY",
+      "col_2": "GALACTUS NAJEDZONY",
+      "row_1": "ŚWIAT MATERII",
+      "row_2": "DOMENA TRIGONA",
+      "case_1": "Galactus 5.5/10. W materii nadal ma przewagę skali i Power Cosmic, ale głód wyraźnie osłabia jego zdolność do szybkiego zamknięcia walki z Trigonem.",
+      "case_2": "Galactus 9/10. Dobrze nakarmiony i walczący w materii dostaje najkorzystniejszą wersję tego matchupu: większą skalę energii i większą stabilność.",
+      "case_3": "Trigon 9/10. Głodny Galactus w domenie Trigona trafia w najgorszą możliwą konfigurację: słabszą kosmiczną presję i pole walki podporządkowane woli piekielnego władcy.",
+      "case_4": "Trigon 6/10. Najedzony Galactus jest w domenie znacznie groźniejszy niż w stanie głodu, ale własny wymiar Trigona nadal częściej przechyla starcie na jego stronę.",
+      "case_1_winner": "b",
+      "case_2_winner": "b",
+      "case_3_winner": "a",
+      "case_4_winner": "a"
+    },
+    "x-factor": {
+      "a_bonus": "10",
+      "a_bonus_label": "WŁASNA DOMENA",
+      "a_value": "50",
+      "b_bonus": "15",
+      "b_bonus_label": "STOPIEŃ NAJEDZENIA",
+      "b_value": "50",
+      "factor": "STOPIEŃ NAJEDZENIA VS WŁASNA DOMENA",
+      "mechanika": "Najedzony Galactus i Trigon walczący we własnej domenie to nie są te same wersje tych postaci, co ich słabsze warianty w neutralnej sferze.",
+      "implikacja": "Im bardziej walka przechyla się w stronę dobrze nakarmionego Galactusa albo pola należącego do Trigona, tym mocniej zwykłe statystyki przestają wystarczać do opisu wyniku.",
+      "psychologia": "Galactus chce skonsumować i ustabilizować. Trigon chce skazić i podporządkować. To, czyje warunki otoczenia i stanu przetrwają dłużej, zmienia całą naturę starcia.",
+      "regen": "WARUNKI STARCIA"
+    }
+  }
+}

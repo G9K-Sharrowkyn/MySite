@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "locale": "pl",
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "final-summary",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templateData": {
+    "tactical-board": {
+      "subtitle": "Wielki Regent vs Demon King Piccolo"
+    },
+    "character-dossier-a": {
+      "world": "Invincible (Image Comics)",
+      "quote": "Przynieście mi czaszki tych zdrajców!",
+      "style": "Zna wszystkie style walki Viltrumitów.",
+      "advantage": "Kondycja i wytrzymałość na ból.",
+      "mentality": "Chłodny i kalkulujący."
+    },
+    "character-dossier-b": {
+      "world": "Dragon Ball",
+      "quote": "To właśnie problem z rasą ludzką. Żadnego szacunku... dla gatunku wyższego.",
+      "style": "Walczy mocą, zasięgiem i technikami Ki.",
+      "advantage": "Regeneracja Nameczańska.",
+      "mentality": "Okrutny, arogancki, strategiczny."
+    },
+    "character-profile": {
+      "a": {
+        "powers": [
+          "Smart Atoms."
+        ],
+        "tools": [
+          "Brak narzędzi."
+        ],
+        "weaknesses": [
+          "Brak ataków dystansowych.",
+          "Scourge Virus i roślina Klaxus."
+        ]
+      },
+      "b": {
+        "powers": [
+          "Ki, ataki energetyczne."
+        ],
+        "tools": [
+          "Gigantyczna forma i wydłużone kończyny."
+        ],
+        "weaknesses": [
+          "Szczytowa moc skraca życie.",
+          "Regeneracja ma limit."
+        ]
+      }
+    },
+    "crucial-feats": {
+      "a": [
+        "Ignoruje ataki Dinosaurusa.",
+        "Walczy z odsłoniętą czaszką.",
+        "Łatwo zatrzymuje Kregga.",
+        "Conquest się go boi.",
+        "Unika Infinity Raya."
+      ],
+      "b": [
+        "Przyjmuje Kamehameha Goku.",
+        "Szybszy od Goku z 22. Budokai.",
+        "Tworzy fale uderzeniowe ruchem dłoni.",
+        "Niszczy całe miasto.",
+        "Niszczy naczynie spojrzeniem."
+      ]
+    },
+    "victory-archive": {
+      "a": [
+        "Battle Beast",
+        "Omni-Man",
+        "Oliver Grayson",
+        "Thadeus",
+        "Rognarr"
+      ],
+      "b": [
+        "Goku",
+        "Chiaotzu",
+        "Shenron",
+        "Tien",
+        "Strażnik Króla"
+      ]
+    },
+    "fight-analytics": {
+      "a": {
+        "battleIq": 74,
+        "durability": 78,
+        "experience": 92,
+        "hax": 22,
+        "skills": 58,
+        "speed": 64,
+        "stamina": 88,
+        "strength": 68,
+        "style": 86
+      },
+      "b": {
+        "battleIq": 82,
+        "durability": 75,
+        "experience": 76,
+        "hax": 84,
+        "skills": 82,
+        "speed": 78,
+        "stamina": 72,
+        "strength": 84,
+        "style": 10
+      }
+    },
+    "final-summary": {
+      "line_1": "Piccolo ma przewagę mocy, szybkości i zasięgu.",
+      "line_2": "Thragg jest groźny w zwarciu, ale bez odpowiedzi na Ki.",
+      "line_3": "Im dłuższa walka, tym większa przewaga Piccolo.",
+      "winner": "Piccolo 10/10."
+    },
+    "direct-verdict": {
+      "winner": "Piccolo",
+      "loser": "Thragg",
+      "outcome": "Piccolo 10/10",
+      "certainty": "Pewny faworyt",
+      "line_1": "Piccolo ma lepszy pełny profil bojowy.",
+      "line_2": "Thragg nie ma stałej odpowiedzi na Ki.",
+      "line_3": "Piccolo zamyka walkę na swoich warunkach."
+    },
+    "fight-card": {
+      "fight_title": "Thragg vs Demon King Piccolo"
+    }
+  },
+  "templates": {},
+  "fighterA": {
+    "name": "Thragg",
+    "version": "Invincible",
+    "stats": {
+      "battleIq": 74,
+      "durability": 78,
+      "experience": 92,
+      "hax": 22,
+      "skills": 58,
+      "speed": 64,
+      "stamina": 88,
+      "strength": 68,
+      "style": 86
+    }
+  },
+  "fighterB": {
+    "name": "Piccolo",
+    "version": "Dragon Ball",
+    "stats": {
+      "battleIq": 82,
+      "durability": 75,
+      "experience": 76,
+      "hax": 84,
+      "skills": 82,
+      "speed": 78,
+      "stamina": 72,
+      "strength": 84,
+      "style": 10
+    }
+  }
+}

@@ -1,0 +1,210 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Demonstrates the famous one-inch punch at the Long Beach International Karate Championships.",
+      "Performs two-finger push-ups and displays exceptional body control, coordination, and explosiveness.",
+      "Wins an interschool boxing tournament in Hong Kong in 1958, defeating Gary Elms in the final.",
+      "Creates Jeet Kune Do as a practical synthesis of fighting methods focused on interception, simplicity, and adaptation rather than rigid style.",
+      "According to witness accounts and biographies, knocks out Yoichi Nakachi in roughly 11 seconds."
+    ],
+    "dossier": {
+      "advantage": "Bruce's greatest advantage under open rules is versatility. He can attack the legs, knee, groin, and eyes, disrupt rhythm, use stop-kicks, and attempt to intercept an opponent before they establish a conventional boxing range.",
+      "mentality": "An analytical perfectionist focused on adaptation. Bruce gathers information quickly, changes tempo, and looks for the shortest solution instead of becoming trapped in a prolonged exchange under his opponent's preferred rules.",
+      "quote": "Be water, my friend.",
+      "style": "A practical Jeet Kune Do synthesis. Bruce combines boxing, Wing Chun, footwork, stop-kicks, low kicks, and attacks to vulnerable targets in a system built around intercepting movement and ending exchanges quickly."
+    },
+    "name": "Bruce Lee",
+    "profile": {
+      "powers": [
+        "Elite human single-movement speed, reflexes, coordination, explosiveness, and precision."
+      ],
+      "tools": [
+        "JKD interception timing, low kicks, stop-kicks, rhythm disruption, and cross-style adaptation.",
+        "Attacks to the knee, groin, and eyes as a genuine open-rules advantage absent from conventional boxing.",
+        "Short-range explosive power, angled entries, and rapid transitions between punches and kicks."
+      ],
+      "weaknesses": [
+        "Roughly 64 kg of body weight against a massive size disadvantage relative to prime Ali.",
+        "No professional career against elite boxers or heavyweights tested under sustained multi-round pressure.",
+        "If he fails to damage the leg or a vulnerable target very early, every passing second increases the value of Ali's reach, size, and timing advantage."
+      ]
+    },
+    "stats": {
+      "battleIq": 86,
+      "durability": 72,
+      "experience": 63,
+      "hax": 94,
+      "skills": 88,
+      "speed": 93,
+      "stamina": 85,
+      "strength": 72,
+      "style": 96
+    },
+    "version": "Prime",
+    "victories": [
+      "Gary Elms — documented boxing tournament victory",
+      "Yoichi Nakachi — victory according to witness accounts and biographies",
+      "Wong Jack Man — the result and course of the fight remain disputed",
+      "Documented sparring sessions and demonstrations with students",
+      "Street confrontations described by biographers — limited documentation"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Wins his first professional heavyweight world title at age 22.",
+      "Finishes his career with a 56–5 record and 37 wins by stoppage.",
+      "Becomes the first three-time heavyweight world champion.",
+      "Wins Olympic gold in Rome in 1960.",
+      "Defeats elite heavyweights of his era, including George Foreman, Joe Frazier, Sonny Liston, Cleveland Williams, and Ernie Terrell."
+    ],
+    "dossier": {
+      "advantage": "Ali combines an advantage of roughly 30 kilograms in body weight, about 19 centimeters in height, enormous reach, and world-class tested speed, timing, durability, and distance control. Bruce must execute an almost perfect action; Ali needs far less to take over the fight.",
+      "mentality": "A charismatic controller of tempo who provokes, observes, and pulls opponents into his preferred rhythm. His psychological edge is backed by enormous experience in real fights against opponents capable of knocking him out.",
+      "quote": "Float like a butterfly, sting like a bee.",
+      "style": "Masterful control of distance and rhythm. The jab, footwork, head movement, counter combinations, and clinch allow him to reset the fight on his own terms and punish every failed entry."
+    },
+    "name": "Muhammad Ali",
+    "profile": {
+      "powers": [
+        "Elite heavyweight speed, timing, durability, stamina, precision, and ring IQ tested against the best fighters in the world."
+      ],
+      "tools": [
+        "Jab control, footwork, movement-based defense, clinching, tempo management, and very fast combinations.",
+        "Vast experience against real resistance, pressure, and multi-round fights with opponents possessing knockout power.",
+        "A size and reach advantage that increases the cost of every Bruce Lee mistake in close exchanges."
+      ],
+      "weaknesses": [
+        "Conventional boxing training does not directly prepare him to defend against low kicks, stop-kicks to the knee, groin attacks, or eye attacks.",
+        "Under open rules, the opening seconds are the most dangerous before Ali fully reads the opponent's unusual rhythm and arsenal."
+      ]
+    },
+    "stats": {
+      "battleIq": 97,
+      "durability": 96,
+      "experience": 100,
+      "hax": 58,
+      "skills": 97,
+      "speed": 95,
+      "stamina": 97,
+      "strength": 96,
+      "style": 98
+    },
+    "version": "Prime",
+    "victories": [
+      "George Foreman",
+      "Joe Frazier",
+      "Sonny Liston",
+      "Cleveland Williams",
+      "Ernie Terrell"
+    ]
+  },
+  "locale": "en",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "direct-verdict",
+    "fight-card"
+  ],
+  "templates": {
+    "tactical-board": {
+      "lane": "Bruce must damage the leg or a vulnerable target before Ali establishes timing. Ali only needs to survive the first unusual entries and impose his own distance.",
+      "subtitle": "Versatility vs Proven Elite"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Statistical favorite",
+      "favorite_side": "b"
+    },
+    "final-summary": {
+      "line_1": "Bruce Lee is more versatile under open rules and possesses genuine tools outside boxing that can surprise Ali: low kicks, stop-kicks, attacks to the knee, and vulnerable targets.",
+      "line_2": "Muhammad Ali, however, holds an enormous advantage in size, reach, durability, distance control, and — above all — documented experience against world-class opposition under full competitive pressure.",
+      "line_3": "In boxing, Bruce has virtually no path to victory. Under open rules, he retains a small but real window through immediate damage to the leg or a vulnerable target before Ali takes control of the timing.",
+      "winner": "Muhammad Ali is the decisive favorite: 10/10 in boxing and roughly 9/10 under full open rules without weapons."
+    },
+    "battle-dynamics": {
+      "label": "Open Rules · No Weapons",
+      "a_curve": "82,78,68,55,42",
+      "b_curve": "90,92,95,97,99",
+      "yellow_wave": "25,35,28,42,30,48,32,55",
+      "phase_1": "The opening seconds are the only phase in which Bruce has a particularly dangerous window. He can use a stop-kick, low kick, or vulnerable-target attack before Ali adjusts to the unconventional rhythm.",
+      "phase_2": "If Ali survives the opening without serious leg damage, he begins reading distance and timing. Every subsequent Bruce entry runs into a functionally faster, longer, and much heavier response.",
+      "phase_3": "Once Ali begins landing combinations or traps Bruce in the clinch, the size and experience gap quickly strips Bruce of the precision needed to continue his own game plan.",
+      "analysis": "Open rules do not equalize the fight, but they remove its absolute nature. Bruce has a small, genuine path to victory through immediate damage to the leg, eye, or another vulnerable target. Ali still wins the overwhelming majority of fights.",
+      "s2_label": "Pure Boxing",
+      "s2_a_curve": "75,55,30,12,0",
+      "s2_b_curve": "92,95,97,99,100",
+      "s2_phase_1": "Bruce loses kicks, joint attacks, and every tool that could bypass Ali's reach advantage.",
+      "s2_phase_2": "Ali controls the fight with the jab, footwork, and head movement, forcing Bruce to cross the range of a professional heavyweight champion.",
+      "s2_phase_3": "The first clean combination takes away Bruce's ability to continue fighting on equal terms and leads to a quick stoppage.",
+      "s2_analysis": "In boxing, the gap in experience, reach, size, and functional timing is too large. Bruce has no credible win condition."
+    },
+    "fight-simulation": {
+      "label": "Open Rules · No Weapons",
+      "opening": "Bruce does not try to box with Ali. He stays outside conventional punching range and immediately attacks the lead leg, trying to damage the knee or disrupt Ali's footwork.",
+      "mid_fight": "If the first kicks do not produce major damage, Ali begins reading the rhythm of the entries. Bruce must keep attacking without eating a jab, right hand, or clinch from an opponent more than thirty kilograms heavier.",
+      "late_fight": "With every passing second Bruce's odds decline. Once Ali lands a full combination or imposes the clinch, Bruce loses the stability and precision needed to keep attacking the legs.",
+      "end_condition": "Ali wins through accumulation of clean strikes, a combination, or physical control of range. Bruce wins mainly if he damages the leg or an unusually vulnerable target very early.",
+      "phase_1_animation": "hit-and-run",
+      "phase_1_actor": "a",
+      "phase_1_title": "The Only Path",
+      "phase_1_a_label": "Versatility",
+      "phase_1_a_value": "94",
+      "phase_1_b_label": "Range",
+      "phase_1_b_value": "99",
+      "phase_1_event": "Bruce uses kicks instead of trying to cross the jab. Every successful leg strike buys him another chance to keep Ali outside his preferred rhythm.",
+      "phase_2_animation": "feint-counter",
+      "phase_2_title": "Ali Finds the Timing",
+      "phase_2_event": "After several exchanges, Ali begins reading the moment Bruce shifts his weight into a kick or entry.",
+      "phase_2_branch_a": "Bruce lands another leg strike and briefly limits Ali's mobility.",
+      "phase_2_branch_b": "Ali intercepts the entry with a jab or combination and takes away Bruce's initiative.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "seismicslam",
+      "phase_3_title": "Heavyweight Advantage",
+      "phase_3_event": "After the first truly clean combination, Bruce may remain conscious, but he loses the quality of movement and precision needed to maintain his strategy.",
+      "phase_3_branch_a": "Bruce attempts one final attack on the knee or another vulnerable target.",
+      "phase_3_branch_b": "Ali closes the fight with another combination or clinch control.",
+      "s2_label": "Pure Boxing",
+      "s2_phase_1_animation": "kite-zone",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Wall of Jabs",
+      "s2_phase_1_a_label": "Entry",
+      "s2_phase_1_a_value": "78",
+      "s2_phase_1_b_label": "Control",
+      "s2_phase_1_b_value": "99",
+      "s2_phase_1_event": "Bruce must enter Ali's reach without the option to kick the leg or attack a joint.",
+      "s2_phase_2_animation": "clash-lock",
+      "s2_phase_2_title": "Class Difference",
+      "s2_phase_2_event": "Ali resets the distance with his jab and footwork, while every desperate Bruce entry becomes an opportunity for a counter combination.",
+      "s2_phase_2_branch_a": "Bruce lands a single quick punch, but it does not stop the heavier opponent.",
+      "s2_phase_2_branch_b": "Ali dictates the pace and systematically removes Bruce's space for a safe entry.",
+      "s2_phase_3_actor": "b",
+      "s2_phase_3_animation": "brutal-execution",
+      "s2_phase_3_title": "Stoppage",
+      "s2_phase_3_event": "A series of clean heavyweight punches ends the fight before Bruce can establish his own rhythm.",
+      "s2_phase_3_branch_a": "Bruce stays on his feet a little longer, but does not reverse the course of the fight.",
+      "s2_phase_3_branch_b": "Ali finishes the fight by knockout or stoppage.",
+      "s2_end_condition": "Muhammad Ali wins 10/10 in pure boxing."
+    },
+    "direct-verdict": {
+      "winner": "Muhammad Ali",
+      "loser": "Bruce Lee",
+      "outcome": "Ali 9/10 under open rules",
+      "certainty": "Decisive favorite",
+      "line_1": "Bruce has a real path to victory only because open rules allow him to attack the leg, knee, eyes, and other targets outside conventional boxing.",
+      "line_2": "If he fails to produce a major effect very early, Ali's advantages in size, reach, timing, clinch control, and experience grow with every exchange.",
+      "line_3": "In boxing, the result is effectively 10/10 for Ali. Under full open rules without weapons, Bruce retains a small upset window, making roughly 9/10 for Ali the fairer result."
+    },
+    "fight-card": {
+      "fight_title": "Bruce Lee vs Muhammad Ali"
+    }
+  }
+}

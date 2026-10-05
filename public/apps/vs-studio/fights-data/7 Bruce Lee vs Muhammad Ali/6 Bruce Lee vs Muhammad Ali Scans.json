@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Bruce1.jpg",
+    "b": "Ali1.webp"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Bruce1.jpg",
+      "left_image_2": "Feat_Bruce2.jpg",
+      "left_image_3": "Feat_Bruce3.jpg",
+      "left_image_4": "Feat_Bruce4.jpg",
+      "left_image_5": "Feat_Bruce5.jpg",
+      "right_image_1": "Feat_Ali1.jpg",
+      "right_image_2": "Feat_Ali2.jpg",
+      "right_image_3": "Feat_Ali3.jpg",
+      "right_image_4": "Feat_Ali4.jpg",
+      "right_image_5": "Feat_Ali5.jpg"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Bruce1.jpg",
+      "left_image_2": "CV_Bruce2.jpg",
+      "left_image_3": "CV_Bruce3.jpg",
+      "left_image_4": "CV_Bruce4.jpg",
+      "left_image_5": "CV_Bruce5.jpg",
+      "right_image_1": "CV_Ali1.jpg",
+      "right_image_2": "CV_Ali2.jpg",
+      "right_image_3": "CV_Ali3.jpg",
+      "right_image_4": "CV_Ali4.jpg",
+      "right_image_5": "CV_Ali5.jpg"
+    },
+    "fight-card": {
+      "right_image": "Ali4.jpg",
+      "left_image": "Bruce4.jpg"
+    },
+    "final-summary": {
+      "right_image": "Ali2.jpg",
+      "left_image": "Bruce2.jpg"
+    },
+    "direct-verdict": {
+      "right_image": "Ali3.jpg",
+      "left_image": "Bruce3.jpg"
+    }
+  }
+}

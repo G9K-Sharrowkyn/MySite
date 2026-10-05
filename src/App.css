@@ -3,6 +3,23 @@
   box-sizing: border-box;
 }
 
+.app-loading-surface {
+  width: 100%;
+  min-height: 100vh;
+  background: #050608;
+}
+
+.app-loading-surface--studio {
+  background:
+    radial-gradient(ellipse at 48% -20%, rgba(38, 51, 75, 0.54), transparent 58%),
+    radial-gradient(ellipse at 100% 80%, rgba(30, 22, 68, 0.17), transparent 50%),
+    #090c12;
+}
+
+.app-loading-surface--content {
+  min-height: calc(100vh - 160px);
+}
+
 :root {
   /* Light theme variables */
   --bg-primary: #f0f2f5;

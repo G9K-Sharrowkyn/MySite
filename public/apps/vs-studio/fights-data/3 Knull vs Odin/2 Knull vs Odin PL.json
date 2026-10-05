@@ -1,0 +1,231 @@
+{
+  "fighterA": {
+    "crucialFeats": [
+      "Kuje All-Black z pierwotnej żywej ciemności i używa go do zabicia Celestiala.",
+      "Infekuje i podporządkowuje sobie wielu Celestiali, wykorzystując ich jako część własnej armii.",
+      "Istniał w pierwotnej ciemności przed narodzinami obecnego kosmosu i przetrwał nadejście światła stworzenia.",
+      "Zabija niezliczonych bogów swoim Necroswordem i przez eony prowadzi wojnę przeciw boskim istotom.",
+      "Pokrywa Ziemię symbiotyczną ciemnością i przejmuje kontrolę nad ogromną częścią roju."
+    ],
+    "dossier": {
+      "advantage": "All-Black pozwala Knullowi realnie zranić i zabić nawet kosmicznie odpornych bogów. Nie jest automatycznym zanegowaniem odporności, ale każde czyste trafienie może dramatycznie zmienić przebieg walki i stanowi jego najważniejszą drogę do zwycięstwa nad Odynem.",
+      "mentality": "Knull walczy bez litości, wykorzystuje presję roju, ciemność i okazje taktyczne. Potrafi wygrać nie tylko siłą — przeciw All-Father Thorowi odwrócił przebieg starcia dywersją Celestialami i dopiero wtedy znalazł śmiertelne wejście All-Blackiem.",
+      "quote": "Ah... widzę, że moja reputacja mnie wyprzedza... więc nie będę marnował waszego czasu... zamierzam zabić wasz świat.",
+      "style": "Agresywna nekro-szermierka wsparta kontrolą żywej Otchłani i roju symbiotów. Knull próbuje przeciążyć pole walki liczbą kierunków ataku, stworzyć moment chaosu i wykorzystać All-Black do jednego decydującego trafienia."
+    },
+    "name": "Knull",
+    "profile": {
+      "powers": [
+        "All-Black, kontrola żywej Otchłani, władza nad rojem symbiotów, infekcja potężnych istot i bardzo wysoka regeneracja."
+      ],
+      "tools": [
+        "Symbiotyczne przejęcie, tworzenie broni i konstrukcji z żywej ciemności oraz presja z wielu kierunków.",
+        "All-Black jako broń zdolna śmiertelnie ranić bogów znacznie odporniejszych niż typowi przeciwnicy."
+      ],
+      "weaknesses": [
+        "Enigma Force i potężne kosmiczne światło.",
+        "Połączenie z rojem i symbiotycznymi strukturami może zostać zakłócone przez wystarczająco potężną boską lub kosmiczną energię."
+      ]
+    },
+    "stats": {
+      "battleIq": 85,
+      "durability": 93,
+      "experience": 97,
+      "hax": 97,
+      "skills": 89,
+      "speed": 85,
+      "stamina": 98,
+      "strength": 96,
+      "style": 90
+    },
+    "version": "King in Black · Earth-616",
+    "victories": [
+      "Celestial",
+      "Sentry i Void",
+      "Armady Kree i Skrull",
+      "Opętani Celestiale",
+      "All-Father Thor — zwycięstwo taktyczne przez dywersję i All-Black"
+    ]
+  },
+  "fighterB": {
+    "crucialFeats": [
+      "Łączy swoją esencję i siły życiowe Asgardian z Destroyer Armor, wcześniej wzmocnionym cząstkami boskiej mocy przekazanymi przez ziemskich Sky-Fatherów.",
+      "Jego walka z Sethem osiąga skalę galaktyczną i oddziałuje na wiele planów rzeczywistości jednocześnie.",
+      "Zatrzymuje czas i przeprowadza mentalno-energetyczny atak przez międzywymiarową, określaną jako nieskończona przestrzeń, oddziałując na umysł Lokiego i jego połączenie z Destroyerem.",
+      "Powstrzymuje Ogień Stworzenia trawiący Yggdrasil — zagrożenie dla całej struktury Dziewięciu Światów.",
+      "Po pokonaniu Surtura pochłania jego siłę, moc i samą esencję, więżąc apokaliptyczną istotę w sobie i pokazując zdolność do neutralizacji przeciwnika poza zwykłym zniszczeniem ciała."
+    ],
+    "dossier": {
+      "advantage": "Celestial-War Odin łączy pełny Odinforce, Destroyer Armor, Odinsword, siły życiowe Asgardian oraz cząstki boskiej mocy przekazane zbroi przez innych ziemskich Sky-Fatherów. Jego przewaga nie polega wyłącznie na większym destructive output, lecz na ogromnej liczbie niezależnych warunków zwycięstwa: kontroli czasu, materii, energii, duszy i przestrzeni, teleportacji, więzieniu, absorpcji esencji oraz fizycznym przełamaniu przeciwnika.",
+      "mentality": "Odin bywa dumny i skłonny do frontalnej walki, co daje Knullowi jedną realną drogę do zwycięstwa przez All-Black. Jeżeli jednak przestaje traktować starcie jak pojedynek wojowników i zaczyna jak egzekucję kosmicznej anomalii, jego arsenał pozwala mu atakować Knulla na kilku poziomach jednocześnie.",
+      "quote": "Odyn jest Słońcem, gwiazdami i Księżycem, i czymś więcej. Odyn jest drogą, gniewem i cudem! Odyn jest tym, który mówi, a galaktyki słuchają!",
+      "style": "Wielowarstwowa walka Odinforce. Odin łączy bariery, projekcję energii, manipulację czasem i materią, teleportację, kontrolę duszy i wymiarów oraz absorpcję esencji. Odinsword jest dla niego narzędziem destrukcji i finiszu, a nie jedyną metodą walki."
+    },
+    "name": "Odin",
+    "profile": {
+      "powers": [
+        "Pełny Odinforce, Destroyer Armor, siły życiowe Asgardian, cząstki mocy ziemskich Sky-Fatherów, Odinsword oraz wielkoskalowa magia."
+      ],
+      "tools": [
+        "Kontrola czasu, materii, energii i sił życiowych; bariery, teleportacja, odsyłanie, więzienie międzywymiarowe i ingerencja w duszę.",
+        "Absorpcja i uwięzienie esencji przeciwnika — potwierdzone na przykładzie Surtura — jako warunek zwycięstwa niezależny od samej destrukcji ciała.",
+        "Odinsword jako jedna z najpotężniejszych broni Asgardu, związana z Ragnarökiem i zdolna kanalizować apokaliptyczną moc Odina."
+      ],
+      "weaknesses": [
+        "Ekstremalny wydatek Odinforce może prowadzić do wyczerpania.",
+        "Pycha i skłonność do przyjmowania frontalnych starć tworzą Knullowi okazję do wykorzystania All-Black.",
+        "All-Black pozostaje bronią wystarczająco zabójczą, aby czyste trafienie mogło zagrozić nawet tej wersji Odina."
+      ]
+    },
+    "stats": {
+      "battleIq": 97,
+      "durability": 99,
+      "experience": 100,
+      "hax": 100,
+      "skills": 96,
+      "speed": 88,
+      "stamina": 99,
+      "strength": 99,
+      "style": 98
+    },
+    "version": "Celestial-War Odin · Earth-616",
+    "victories": [
+      "Infinity — mroczny aspekt Odyna",
+      "Seth",
+      "Surtur",
+      "Thanos",
+      "Silver Surfer"
+    ]
+  },
+  "locale": "pl",
+  "schemaVersion": 1,
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templates": {
+    "battle-dynamics": {
+      "label": "Celestial-War Odin · Neutralne pole",
+      "a_curve": "91,82,68,52,35",
+      "b_curve": "96,97,98,99,100",
+      "yellow_wave": "31,35,33,37,34,38,36,40",
+      "phase_1": "Knull otwiera żywą Otchłanią i All-Blackiem, próbując wymusić chaos zanim Odin rozwinie pełną kontrolę. Destroyer Armor, bariery i Odinforce pozwalają jednak Wszechojcu przyjąć otwarcie bez oddania pola walki.",
+      "phase_2": "Odin przestaje traktować Knulla jak przeciwnika do przebicia i zaczyna rozdzielać problem na poziom ciała, roju, świadomości i esencji. Zatrzymanie czasu, teleportacja i kontrola materii odbierają Knullowi kolejne drogi do czystego trafienia.",
+      "phase_3": "Po zniszczeniu lub ciężkim uszkodzeniu materialnej formy Knulla Odin nie musi czekać na regenerację. Może przejść do absorpcji, zapieczętowania albo uwięzienia jego esencji i domknąć walkę poza poziomem fizycznym.",
+      "analysis": "Największa przewaga Odina nie polega na tym, że zadaje większe obrażenia. Polega na tym, że posiada potwierdzone narzędzia pozwalające zakończyć starcie nawet wtedy, gdy samo zniszczenie ciała nie jest wystarczające.",
+      "s2_label": "Knull · Pełny rój i opętani Celestiale",
+      "s2_a_curve": "93,91,90,88,86",
+      "s2_b_curve": "96,94,92,90,88",
+      "s2_phase_1": "Knull nie walczy już sam. Rój i opętani Celestiale zmuszają Odina do dzielenia uwagi oraz wydawania Odinforce na wiele zagrożeń jednocześnie.",
+      "s2_phase_2": "Im więcej frontów musi kontrolować Odin, tym większa szansa, że Knull odtworzy taktyczny schemat użyty przeciw Thorowi: dywersja, moment nieuwagi i wejście All-Blackiem.",
+      "s2_phase_3": "Odin nadal ma przewagę skali i narzędzi, ale kosmiczna wojna daje Knullowi znacznie więcej okazji do jednego trafienia, którego nie potrzebowałby w czystym pojedynku.",
+      "s2_analysis": "Pełna armia King in Black nie czyni Knulla silniejszym od Odina w pojedynku, ale radykalnie zwiększa jego szansę na wymuszenie jednego błędu. Dlatego ten wariant jest znacznie bliższy."
+    },
+    "fight-card": {
+      "fight_title": "Knull vs Celestial-War Odin"
+    },
+    "parameter-comparison": {
+      "favorite_label": "Faworyt według statystyk",
+      "favorite_side": "b"
+    },
+    "fight-simulation": {
+      "label": "Celestial-War Odin · Neutralne pole",
+      "opening": "Knull zalewa pole walki symbiotyczną ciemnością i natychmiast szuka wejścia All-Blackiem. Odin odpowiada barierami, mocą Destroyera i potężnym wyładowaniem Odinforce, nie pozwalając mu sprowadzić starcia do zwarcia.",
+      "mid_fight": "Gdy ciało Knulla zaczyna przyjmować ciężkie obrażenia, Odin rozszerza ofensywę poza poziom fizyczny: zakłóca czas, przemieszcza przeciwnika, ingeruje w jego energię i przygotowuje warunek zwycięstwa niezależny od regeneracji.",
+      "late_fight": "Po przełamaniu materialnej formy Odin nie czeka, aż Knull się odbuduje. Próbuje odseparować świadomość od nośnika, pochłonąć lub zapieczętować esencję i zakończyć walkę na poziomie, którego sama Otchłań nie resetuje automatycznie.",
+      "end_condition": "Odin wygrywa przez zniszczenie fizycznej formy Knulla i natychmiastową neutralizację jego esencji, zanim regeneracja przywróci mu pełną wartość.",
+      "phase_1_animation": "cosmic-salvo",
+      "phase_1_actor": "b",
+      "phase_1_title": "Przełamanie Ciała",
+      "phase_1_a_label": "All-Black",
+      "phase_1_a_value": "100",
+      "phase_1_b_label": "Odinforce",
+      "phase_1_b_value": "100",
+      "phase_1_event": "Knull próbuje zakończyć walkę jednym doskonałym wejściem, ale Destroyer i bariery Odina pozwalają przetrwać pierwszą falę i odpowiedzieć destrukcją na skalę większą niż to, co Knull przyjmował od All-Father Thora.",
+      "phase_2_animation": "void-clash",
+      "phase_2_actor": "b",
+      "phase_2_title": "Poza Materią",
+      "phase_2_event": "Odin zatrzymuje lub zaburza czas, zmienia pozycję Knulla i zaczyna oddziaływać nie tylko na ciało, lecz także na jego energię, świadomość oraz połączenie z Otchłanią.",
+      "phase_2_branch_a": "Knull wymusza chaos i znajduje krótkie okno na All-Black.",
+      "phase_2_branch_b": "Odin odcina kolejne możliwości ataku i przygotowuje neutralizację esencji.",
+      "phase_3_actor": "b",
+      "phase_3_animation": "celestial-purge",
+      "phase_3_title": "Egzekucja Kosmicznej Anomalii",
+      "phase_3_event": "Po rozbiciu materialnej formy Odin przechodzi do absorpcji, pieczętowania lub uwięzienia esencji Knulla, nie dając regeneracji czasu na przywrócenie go do pełnej walki.",
+      "phase_3_branch_a": "Knull trafia All-Blackiem zanim proces zostanie domknięty — jego jedyna naprawdę czysta droga do zwycięstwa.",
+      "phase_3_branch_b": "Odin neutralizuje esencję i kończy pojedynek definitywnie.",
+      "s2_label": "Knull · Pełny rój i opętani Celestiale",
+      "s2_phase_1_animation": "shadow-surge",
+      "s2_phase_1_actor": "a",
+      "s2_phase_1_title": "Wojna King in Black",
+      "s2_phase_1_a_label": "Armia",
+      "s2_phase_1_a_value": "100",
+      "s2_phase_1_b_label": "Kontrola",
+      "s2_phase_1_b_value": "96",
+      "s2_phase_1_event": "Rój i opętani Celestiale rozciągają pole bitwy, zmuszając Odina do odpowiadania na wiele zagrożeń równocześnie.",
+      "s2_phase_2_animation": "blade-entrapment",
+      "s2_phase_2_actor": "a",
+      "s2_phase_2_token": "fullredflood",
+      "s2_phase_2_title": "Dywersja",
+      "s2_phase_2_event": "Knull próbuje powtórzyć schemat z walki z All-Father Thorem: odwrócić uwagę przeciwnika i stworzyć idealny korytarz dla All-Black.",
+      "s2_phase_2_branch_a": "Odin rozdziela Odinforce między fronty i nadal kontroluje głównego przeciwnika.",
+      "s2_phase_2_branch_b": "Jedna luka w obronie pozwala Knullowi dostać się w zasięg miecza.",
+      "s2_phase_3_animation": "rush-ko",
+      "s2_phase_3_actor": "a",
+      "s2_phase_3_token": "fullredflood",
+      "s2_phase_3_title": "All-Black Znajduje Cel",
+      "s2_phase_3_event": "Jeżeli armia wymusi wystarczająco duże rozproszenie uwagi, Knull może zadać trafienie, którego nie byłby w stanie stworzyć w czystym 1v1.",
+      "s2_phase_3_branch_a": "Odin utrzymuje wielofrontową kontrolę i przechodzi do neutralizacji Knulla.",
+      "s2_phase_3_branch_b": "Knull wykorzystuje dywersję i zadaje śmiertelne trafienie All-Blackiem.",
+      "s2_end_condition": "Pełna armia nie daje Knullowi przewagi w skali nad Odinem, ale radykalnie zwiększa szansę na stworzenie jednego decydującego otwarcia."
+    },
+    "final-summary": {
+      "line_1": "Celestial-War Odin ma ogromną przewagę skali, wszechstronności i liczby niezależnych warunków zwycięstwa nad Knulliem.",
+      "line_2": "All-Black pozostaje śmiertelnie realnym X-Factorem: jeśli Knull stworzy jedno idealne otwarcie, może zakończyć walkę mimo wcześniejszej dominacji Odina.",
+      "line_3": "Największy problem Knulla polega jednak na tym, że regeneracja nie musi wystarczyć. Odin potrafi nie tylko rozbić jego ciało, lecz także ingerować w esencję, duszę, świadomość i połączenia wymiarowe — a absorpcja Surtura pokazuje konkretny sposób neutralizacji istoty nawet po przekroczeniu czysto fizycznego poziomu walki.",
+      "winner": "Celestial-War Odin jest zdecydowanym faworytem. Knull wygrywa głównie wtedy, gdy wykorzysta pychę Odina i trafi All-Blackiem, zanim Wszechojciec przejdzie do pełnej neutralizacji."
+    },
+    "tactical-board": {
+      "lane": "Knull musi zadać decydujące trafienie All-Blackiem, zanim Odin zniszczy jego ciało i odetnie, pochłonie albo zapieczętuje jego esencję.",
+      "subtitle": "Król Otchłani kontra Celestial-War Wszechojciec"
+    },
+    "verdict-matrix": {
+      "header": "MATRYCA WERDYKTU",
+      "subtitle": "Jak zmienia się wynik wraz z warunkami starcia",
+      "row_1": "CELESTIAL-WAR ODIN VS KNULL · NEUTRALNE POLE",
+      "row_2": "KNULL + PEŁNY RÓJ + OPĘTANI CELESTIALE",
+      "row_3": "CZYSTA WALKA FIZYCZNA I SZERMIERKA",
+      "case_1": "Odin 9/10. W czystym pojedynku ma przewagę w skali, obronie, kontroli czasu i przestrzeni oraz liczbie niezależnych warunków zwycięstwa. Co najważniejsze, może zneutralizować Knulla także po zniszczeniu jego ciała poprzez absorpcję, pieczętowanie lub ingerencję w esencję. Knull wygrywa głównie przez jedno idealne wejście All-Blackiem.",
+      "case_1_winner": "b",
+      "case_2": "Odin 6.5/10. Pełny rój i opętani Celestiale zmieniają pojedynek w kosmiczną wojnę, rozpraszają uwagę Wszechojca i wymuszają większy wydatek Odinforce. Knull nadal nie przewyższa Odina w bezpośredniej skali, ale znacznie częściej może stworzyć taktyczne otwarcie dla All-Black.",
+      "case_2_winner": "b",
+      "case_3": "Odin 6/10. Po sztucznym ograniczeniu walki do fizyczności i szermierki znika największa przewaga Wszechojca: czas, materia, dusza, esencja, teleportacja i pieczęcie. Odin nadal prowadzi dzięki potędze Destroyera, doświadczeniu i Odinswordowi, ale All-Black staje się znacznie bardziej bezpośrednim zagrożeniem.",
+      "case_3_winner": "b",
+      "layout": "3x1"
+    },
+    "x-factor": {
+      "a_bonus": "20",
+      "a_bonus_label": "ALL-BLACK",
+      "a_value": "50",
+      "b_bonus": "45",
+      "b_value": "50",
+      "factor": "CIAŁO TO NIE OSTATNIA WARSTWA",
+      "implikacja": "Regeneracja Knulla jest niezwykle groźna, ale nie stanowi automatycznej odpowiedzi na przeciwnika, który potrafi ingerować w esencję, duszę, świadomość i sam nośnik odrodzenia.",
+      "mechanika": "Odin nie musi unicestwić każdego fragmentu ciała Knulla ani powielać metody Enigma Force. Może najpierw zniszczyć jego materialną formę, a następnie odciąć, pochłonąć, zapieczętować lub uwięzić jego esencję. Feat absorpcji Surtura pokazuje, że posiada dokładnie kategorię mocy potrzebną do takiego finiszu.",
+      "psychologia": "Knull chce wykorzystać pychę Odina i wymusić jeden śmiertelny błąd. Odin wygrywa najpewniej wtedy, gdy przestaje traktować walkę jak pojedynek wojowników, a zaczyna jak neutralizację kosmicznej anomalii.",
+      "regen": "ABSORPCJA · PIECZĘĆ · ESENCJA"
+    }
+  }
+}

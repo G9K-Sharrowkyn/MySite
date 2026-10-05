@@ -1,0 +1,320 @@
+{
+  "schemaVersion": 1,
+  "locale": "en",
+  "templateOrder": [
+    "tactical-board",
+    "character-dossier-a",
+    "character-dossier-b",
+    "character-profile",
+    "crucial-feats",
+    "victory-archive",
+    "fight-analytics",
+    "parameter-comparison",
+    "x-factor",
+    "final-summary",
+    "battle-dynamics",
+    "fight-simulation",
+    "verdict-matrix",
+    "fight-card"
+  ],
+  "templateData": {
+    "tactical-board": {
+      "subtitle": "Hero versus Tyrant"
+    },
+    "character-dossier-a": {
+      "world": "New52",
+      "quote": "This looks like a job for Superman.",
+      "style": "Direct combat built on strength and speed. He dictates the pace and holds it through the entire fight.",
+      "advantage": "Monstrous statistical advantage in strength, speed, and durability over most opponents.",
+      "mentality": "Usually holds back and fights below his ceiling. When the situation demands it, he goes full power without hesitation."
+    },
+    "character-dossier-b": {
+      "world": "Earth-4023",
+      "quote": "That's right, baby... Hyperion.",
+      "style": "Brutal close-quarters aggression. Hyperion massacres enemies with his Atomic Vision and impossible striking power.",
+      "advantage": "Monstrous regeneration and survivability. Hyperion returns to the fight after injuries that would be fatal to others.",
+      "mentality": "Megalo-psychopath with a god complex. He does not hesitate or calculate — he will kill anyone without a second thought if he finds even one reason."
+    },
+    "character-profile": {
+      "a": {
+        "powers": [
+          "Kryptonian strength, speed, flight, enhanced senses, and combat perception at an elite level."
+        ],
+        "tools": [
+          "Heat Vision, Freeze Breath, and full range control combined with aerial mobility.",
+          "Solar Flare as a costly but potentially decisive finishing option."
+        ],
+        "weaknesses": [
+          "Magic, kryptonite, and red sun.",
+          "Solar Flare leaves him defenseless if he fails to end the fight immediately."
+        ]
+      },
+      "b": {
+        "powers": [
+          "Extreme strength, flight, massive durability, and near-instantaneous regeneration even after catastrophic injuries."
+        ],
+        "tools": [
+          "Atomic Vision as a lethal weapon for piercing resistance and quickly closing out advantages.",
+          "Experience killing superheroes and the instinct to exploit their hesitation and limitations."
+        ],
+        "weaknesses": [
+          "Argonite.",
+          "Extreme arrogance and contempt for opponents cause him to frequently surrender the initiative."
+        ]
+      }
+    },
+    "crucial-feats": {
+      "a": [
+        "Bench-presses a weight equal to Earth's mass for five days.",
+        "Reads every published medical text in seconds.",
+        "Manages to tag the Flash.",
+        "Flies out of a black hole without taking damage.",
+        "The only person to survive Doomsday's death aura."
+      ],
+      "b": [
+        "Survived Earth's destruction on Earth-4023.",
+        "Returns to life moments after Namora snaps his neck one hundred and eighty degrees.",
+        "Regenerates after catastrophic injuries.",
+        "Survived the explosion of every nuclear warhead in the world.",
+        "Fought two other Hyperions simultaneously and dominated the confrontation."
+      ]
+    },
+    "victory-archive": {
+      "a": [
+        "Doomsday",
+        "Wraith",
+        "Parasite",
+        "Mongul",
+        "Apollo"
+      ],
+      "b": [
+        "Magneto",
+        "Wolverine",
+        "Galactus",
+        "Thor",
+        "Hulk"
+      ]
+    },
+    "fight-analytics": {
+      "a": {
+        "battleIq": 92,
+        "durability": 95,
+        "experience": 90,
+        "hax": 80,
+        "skills": 91,
+        "speed": 96,
+        "stamina": 94,
+        "strength": 96,
+        "style": 89
+      },
+      "b": {
+        "battleIq": 84,
+        "durability": 95,
+        "experience": 92,
+        "hax": 83,
+        "skills": 83,
+        "speed": 84,
+        "stamina": 94,
+        "strength": 92,
+        "style": 83
+      }
+    },
+    "parameter-comparison": {
+      "a": {
+        "battleIq": 92,
+        "durability": 95,
+        "experience": 90,
+        "hax": 80,
+        "skills": 91,
+        "speed": 96,
+        "stamina": 94,
+        "strength": 96,
+        "style": 89
+      },
+      "b": {
+        "battleIq": 84,
+        "durability": 95,
+        "experience": 92,
+        "hax": 83,
+        "skills": 83,
+        "speed": 84,
+        "stamina": 94,
+        "strength": 92,
+        "style": 83
+      }
+    },
+    "x-factor": {
+      "a_bonus": "10",
+      "a_bonus_label": "CONTROL",
+      "a_value": "50",
+      "b_bonus": "20",
+      "b_value": "50",
+      "factor": "Why don't better stats guarantee victory?",
+      "implikacja": "The less the fight rewards a clean knockout, the more valuable the simple fact that Hyperion keeps coming back becomes.",
+      "mechanika": "Superman has the statistical edge, but Hyperion is one of those opponents where dominance alone is not enough if it does not lead to a permanent end.",
+      "psychologia": "Hyperion can afford to fight more recklessly, because surviving each sequence brings him closer to the moment when his opponent starts to crack.",
+      "regen": "NO RULES"
+    },
+    "final-summary": {
+      "line_1": "Superman sets the terms of the fight more cleanly from the opening seconds.",
+      "line_2": "He is faster, more precise, and better at keeping the fight in a safe, controlled form.",
+      "line_3": "The problem is that every unclosed sequence gives Hyperion another chance, and the longer the fight lasts, the more his regeneration starts reversing the entire economy of the matchup.",
+      "winner": "Superman holds the edge. Hyperion still has a real path to victory."
+    },
+    "battle-dynamics": {
+      "label": "Standard Rules · Solar Flare",
+      "a_curve": "91,92,94,96,98",
+      "b_curve": "86,84,80,75,70",
+      "yellow_wave": "31,34,32,36,33,37,35,39",
+      "phase_1": "Superman dictates the pace in every aspect. Speed, distance, and Solar Flare in reserve — optimal conditions for Clark.",
+      "phase_2": "Under standard rules Hyperion cannot fully exploit his regeneration. Superman builds his advantage methodically.",
+      "phase_3": "Solar Flare closes the fight before Hyperion's regeneration becomes a factor. This is Superman's most repeatable win condition.",
+      "analysis": "Standard rules with Solar Flare is Superman's cleanest victory scenario. Hyperion has no answer for it.",
+      "s2_label": "Standard Rules · No Solar Flare",
+      "s2_a_curve": "91,90,89,88,88",
+      "s2_b_curve": "86,87,88,86,84",
+      "s2_phase_1": "Early on, Superman dictates the pace through speed, distance, and far cleaner control of exchanges.",
+      "s2_phase_2": "Without Solar Flare, the mid-fight becomes a test of technical precision. Hyperion pushes, but standard rules cap his aggression.",
+      "s2_phase_3": "Without Solar Flare, Superman must be technically flawless. Any breakdown in the clinch gives Hyperion a foothold.",
+      "s2_analysis": "Without Solar Flare and without death rules, Superman still leads — but the margin is thin and keeps narrowing.",
+      "s3_label": "Fight to the Death · Solar Flare",
+      "s3_a_curve": "91,85,80,88,95",
+      "s3_b_curve": "86,88,92,80,60",
+      "s3_phase_1": "Superman opens aggressively — he knows time is his enemy under death rules. Solar Flare is his trump card.",
+      "s3_phase_2": "Under death rules Hyperion becomes increasingly dangerous. But Solar Flare stays in Superman's arsenal as an answer to everything.",
+      "s3_phase_3": "Solar Flare can definitively end the fight even under death rules. The question is whether Superman can use it before he is too weakened.",
+      "s3_analysis": "Death rules erode Superman's advantages — but Solar Flare is a weapon Hyperion has no answer for.",
+      "s4_label": "Fight to the Death · No Solar Flare",
+      "s4_a_curve": "91,80,65,50,40",
+      "s4_b_curve": "86,89,92,96,100",
+      "s4_phase_1": "Early on, Superman dictates the pace through speed, distance, and far cleaner control of exchanges.",
+      "s4_phase_2": "If Hyperion survives the first wave of dominance, he starts reclaiming value simply by still standing and returning to fight.",
+      "s4_phase_3": "The longer the fight lasts, the less Superman's technical edge matters, and the more Hyperion's brutal regeneration economy takes over.",
+      "s4_analysis": "Superman wins the controlled fight. Hyperion wins the one that goes too long and stops punishing his mistakes."
+    },
+    "fight-simulation": {
+      "label": "Standard Rules · Solar Flare",
+      "opening": "Superman opens with speed, distance, and far cleaner control of the battlefield.",
+      "mid_fight": "If Hyperion survives the first wave, the fight starts pulling away from clean control and becomes an increasingly uncomfortable war of resources.",
+      "late_fight": "The endgame comes down to one question: can Superman finish the fight definitively before Hyperion resets the value of each new wave of damage through regeneration.",
+      "end_condition": "This fight is not decided by the raw power ceiling — it comes down to whether Superman's advantage gets truly closed before the match turns into attrition.",
+      "phase_1_animation": "rush-ko",
+      "phase_1_actor": "b",
+      "phase_1_title": "Brutal Opening",
+      "phase_1_a_label": "Speed",
+      "phase_1_a_value": "98",
+      "phase_1_b_label": "Aggression",
+      "phase_1_b_value": "94",
+      "phase_1_event": "Hyperion immediately launches a brutal assault, ignoring all rules and constraints. Superman must rely on his speed to counter the momentum.",
+      "phase_2_animation": "clash-lock",
+      "phase_2_title": "Pressure",
+      "phase_2_event": "The turning point arrives when Hyperion deals the first lasting damage to someone who lacks comparable regeneration.",
+      "phase_2_branch_a": "Superman reclaims distance and wins the technical fight.",
+      "phase_2_branch_b": "Hyperion forces the clinch and grinds Superman down.",
+      "phase_3_actor": "a",
+      "phase_3_animation": "solar-flare",
+      "phase_3_title": "Solar Flare",
+      "phase_3_event": "Superman either closes the fight with Solar Flare or gets worn down by Hyperion.",
+      "phase_3_branch_a": "Solar Flare closes the fight definitively.",
+      "phase_3_branch_b": "Hyperion keeps coming back. Every minute works in his favor.",
+      "s2_label": "Standard Rules · No Solar Flare",
+      "s2_phase_1_animation": "rush-ko",
+      "s2_phase_1_actor": "b",
+      "s2_phase_1_title": "Brutal Opening",
+      "s2_phase_1_event": "Hyperion immediately launches a brutal assault, ignoring all rules and constraints. Superman must rely on his speed to counter the momentum.",
+      "s2_phase_2_animation": "clash-lock",
+      "s2_phase_2_title": "Technical Fight",
+      "s2_phase_2_event": "Without Solar Flare the fight becomes a more even exchange.",
+      "s2_phase_2_branch_a": "Superman maintains distance and wins the technical fight.",
+      "s2_phase_2_branch_b": "Hyperion forces the clinch and starts landing meaningful exchanges.",
+      "s2_phase_3_actor": "a",
+      "s2_phase_3_animation": "feint-counter",
+      "s2_phase_3_title": "Precision",
+      "s2_phase_3_event": "Without Solar Flare Superman must win technically for the entire fight without a single mistake.",
+      "s2_phase_3_branch_a": "Superman maintains full control and wins on precision.",
+      "s2_phase_3_branch_b": "One breakdown in the clinch and Hyperion starts taking over the fight.",
+      "s2_end_condition": "Without Solar Flare Superman's win depends entirely on his technical edge — no clean finisher available.",
+      "s3_label": "Fight to the Death · Solar Flare",
+      "s3_phase_1_animation": "rush-ko",
+      "s3_phase_1_actor": "b",
+      "s3_phase_1_title": "Brutal Opening",
+      "s3_phase_1_event": "Hyperion immediately launches a brutal assault, ignoring all rules and constraints. Superman must rely on his speed to survive the momentum.",
+      "s3_phase_2_animation": "corner-trap",
+      "s3_phase_2_actor": "b",
+      "s3_phase_2_mode": "animation",
+      "s3_phase_2_title": "Domination",
+      "s3_phase_2_event": "Hyperion's regeneration means every exchange works in his favor.",
+      "s3_phase_2_branch_a": "Superman fights technically and waits for the moment to use Solar Flare.",
+      "s3_phase_2_branch_b": "Hyperion keeps the pressure on and gives Superman no room to breathe.",
+      "s3_phase_3_animation": "solar-flare",
+      "s3_phase_3_actor": "a",
+      "s3_phase_3_title": "Solar Flare",
+      "s3_phase_3_event": "Wounded and cornered, Superman unleashes Solar Flare and kills Hyperion.",
+      "s3_phase_3_branch_a": "Solar Flare destroys Hyperion. Superman wins on the edge of death.",
+      "s3_phase_3_branch_b": "Superman is too exhausted — Solar Flare fails.",
+      "s3_end_condition": "Solar Flare is Superman's last card under death rules. All or nothing.",
+      "s4_label": "Fight to the Death · No Solar Flare",
+      "s4_phase_1_animation": "rush-ko",
+      "s4_phase_1_actor": "b",
+      "s4_phase_1_title": "Brutal Opening",
+      "s4_phase_1_event": "Hyperion immediately launches a brutal assault, ignoring all rules and constraints. Superman must rely on his speed to survive the momentum.",
+      "s4_phase_2_animation": "regen-attrition",
+      "s4_phase_2_actor": "b",
+      "s4_phase_2_title": "Regeneration",
+      "s4_phase_2_event": "Hyperion endures heavy sequences and regenerates. Every return strengthens his position.",
+      "s4_phase_2_branch_a": "Superman maintains control and keeps Hyperion at distance.",
+      "s4_phase_2_branch_b": "Hyperion gets inside and turns the fight into a war of attrition.",
+      "s4_phase_3_animation": "berserk-overextend",
+      "s4_phase_3_actor": "b",
+      "s4_phase_3_title": "Inevitability",
+      "s4_phase_3_event": "Without Solar Flare Superman has no tool to definitively end the fight.",
+      "s4_phase_3_branch_a": "A technical miracle — Superman pulls out the win on pure precision.",
+      "s4_phase_3_branch_b": "Hyperion dominates. Without Solar Flare there is no answer for him.",
+      "s4_end_condition": "Without Solar Flare under death rules — Hyperion simply never stops coming back."
+    },
+    "verdict-matrix": {
+      "col_1": "SOLAR FLARE: YES",
+      "col_2": "SOLAR FLARE: NO",
+      "row_1": "STANDARD KO",
+      "row_2": "DEATHMATCH",
+      "case_1": "Superman 7/10. Under standard rules and with Solar Flare, he has the cleanest and most repeatable path to victory.",
+      "case_2": "Superman 6/10. Without Solar Flare he still leads if he maintains full control from start to finish and avoids a war of attrition.",
+      "case_3": "Superman 5.5/10. Solar Flare still gives him a real finish route, but a fight to the death rewards Hyperion's survivability more.",
+      "case_4": "King Hyperion 6/10. Without Solar Flare and under death rules, his regeneration starts tilting the fight his way."
+    },
+    "fight-card": {
+      "fight_title": "Superman vs King Hyperion"
+    }
+  },
+  "templates": {},
+  "fighterA": {
+    "name": "Superman",
+    "version": "New52",
+    "stats": {
+      "battleIq": 92,
+      "durability": 95,
+      "experience": 90,
+      "hax": 80,
+      "skills": 91,
+      "speed": 96,
+      "stamina": 94,
+      "strength": 96,
+      "style": 89
+    }
+  },
+  "fighterB": {
+    "name": "King Hyperion",
+    "version": "Earth-4023",
+    "stats": {
+      "battleIq": 84,
+      "durability": 95,
+      "experience": 92,
+      "hax": 83,
+      "skills": 83,
+      "speed": 84,
+      "stamina": 94,
+      "strength": 92,
+      "style": 83
+    }
+  }
+}

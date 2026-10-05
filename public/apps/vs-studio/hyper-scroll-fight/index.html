@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIGHT INTRO</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=JetBrains+Mono:wght@400;800&family=Syncopate:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; cursor: none !important; }
+
+    :root {
+      --bg: linear-gradient(0deg, #000 0%, #280604 100%);
+      --card-bg: rgba(10, 10, 10, 0.4);
+      --text: #e0e0e0;
+      --accent: #ff003c;
+      --accent-2: #00f3ff;
+      --border: rgba(255, 255, 255, 0.1);
+      --font-display: 'Chakra Petch', 'Syncopate', sans-serif;
+      --font-code: 'Chakra Petch', 'JetBrains Mono', monospace;
+    }
+
+    body {
+      margin: 0; padding: 0;
+      background: var(--bg);
+      background-attachment: fixed;
+      color: var(--text);
+      font-family: var(--font-display);
+      overflow: hidden;
+      width: 100vw; height: 100vh;
+    }
+
+    /* --- POST PROCESSING & OVERLAYS --- */
+    .scanlines {
+      position: fixed; inset: 0;
+      background: linear-gradient(to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0,0,0,0.2) 50%,
+        rgba(0,0,0,0.2));
+      background-size: 100% 4px;
+      pointer-events: none; z-index: 10;
+    }
+    .vignette {
+      position: fixed; inset: 0;
+      background: radial-gradient(circle, transparent 40%, #000 120%);
+      z-index: 11; pointer-events: none;
+    }
+    .noise {
+      display: none;
+      position: fixed; inset: 0; z-index: 12; opacity: 0.07; pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    /* --- HUD --- */
+    .hud {
+      position: fixed; inset: 2rem; z-index: 20; pointer-events: none;
+      display: flex; flex-direction: column; justify-content: space-between;
+      font-family: var(--font-code); font-size: 10px;
+      color: rgba(255,255,255,0.5); text-transform: uppercase;
+    }
+    .hud-top, .hud-bottom { display: flex; justify-content: space-between; align-items: center; }
+    .hud strong { color: var(--accent-2); }
+    .hud-line {
+      flex: 1; height: 1px;
+      background: rgba(255,255,255,0.2);
+      margin: 0 1rem; position: relative;
+    }
+    .hud-line::after {
+      content: ''; position: absolute; right: 0; top: -2px;
+      width: 5px; height: 5px; background: var(--accent);
+    }
+
+    /* --- 3D SCENE --- */
+    .viewport {
+      position: fixed; inset: 0;
+      perspective: 1000px;
+      overflow: hidden; z-index: 1;
+    }
+    .world {
+      position: absolute; top: 50%; left: 50%;
+      transform-style: preserve-3d;
+      will-change: transform;
+    }
+    .item {
+      position: absolute; left: 0; top: 0;
+      backface-visibility: hidden;
+      transform-origin: center center;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* --- CARDS --- */
+    .card {
+      --card-accent: rgba(255, 85, 78, 0.72);
+      --card-accent-strong: rgba(255, 85, 78, 0.96);
+      --card-accent-soft: rgba(255, 85, 78, 0.24);
+      --card-accent-faint: rgba(255, 85, 78, 0.12);
+      --card-accent-glow: rgba(255, 85, 78, 0.08);
+      width: 320px; height: 460px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-accent-soft);
+      position: relative;
+      padding: 2rem;
+      display: flex; flex-direction: column; justify-content: space-between;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 20px 50px rgba(0,0,0,0.5);
+      transition: all 0.3s cubic-bezier(0.25,0.46,0.45,0.94);
+      transform: translate(-50%,-50%);
+      overflow: hidden;
+    }
+    .card::before, .card::after {
+      content: ''; position: absolute;
+      width: 10px; height: 10px;
+      border: 1px solid transparent; transition: 0.3s;
+    }
+    .card::before { top: -1px; left: -1px; border-top-color: var(--card-accent-strong); border-left-color: var(--card-accent-strong); }
+    .card::after  { bottom: -1px; right: -1px; border-bottom-color: var(--card-accent-strong); border-right-color: var(--card-accent-strong); }
+    .card--a {
+      --card-accent: rgba(119, 226, 242, 0.72);
+      --card-accent-strong: rgba(119, 226, 242, 0.96);
+      --card-accent-soft: rgba(119, 226, 242, 0.24);
+      --card-accent-faint: rgba(119, 226, 242, 0.12);
+      --card-accent-glow: rgba(119, 226, 242, 0.08);
+    }
+    .card--b {
+      --card-accent: rgba(255, 85, 78, 0.72);
+      --card-accent-strong: rgba(255, 85, 78, 0.96);
+      --card-accent-soft: rgba(255, 85, 78, 0.24);
+      --card-accent-faint: rgba(255, 85, 78, 0.12);
+      --card-accent-glow: rgba(255, 85, 78, 0.08);
+    }
+    .card.card-spawning {
+      animation: cardSpawnGlitch 240ms steps(4, end) both;
+    }
+    .card.card-pre-spawn {
+      opacity: 0;
+    }
+    .card.card-spawning .card-media::after {
+      animation: cardSpawnScan 260ms linear both;
+    }
+    .card.card-spawning .card-dot {
+      animation: cardSpawnDot 260ms linear both;
+    }
+    @keyframes cardSpawnGlitch {
+      0%   { opacity: 0; filter: brightness(2) contrast(1.45); clip-path: inset(46% 0 42% 0); }
+      24%  { opacity: 0.36; filter: brightness(1.85) contrast(1.35); clip-path: inset(12% 0 60% 0); }
+      52%  { opacity: 0.72; filter: brightness(1.45) contrast(1.18); clip-path: inset(58% 0 10% 0); }
+      78%  { opacity: 0.94; filter: brightness(1.14) contrast(1.08); clip-path: inset(16% 0 20% 0); }
+      100% { opacity: 1; filter: none; clip-path: inset(0 0 0 0); }
+    }
+    @keyframes cardSpawnScan {
+      0%   { opacity: 0.95; filter: brightness(1.8); }
+      45%  { opacity: 0.66; filter: brightness(1.25); }
+      100% { opacity: 1; filter: none; }
+    }
+    @keyframes cardSpawnDot {
+      0%   { opacity: 0; transform: scale(1.8); }
+      35%  { opacity: 1; transform: scale(1.15); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    /* --- CARD BACKGROUND IMAGE --- */
+    .card-media {
+      position: absolute;
+      left: 1rem;
+      right: 1rem;
+      top: 4.8rem;
+      bottom: 3.4rem;
+      overflow: hidden;
+      border: 1px solid var(--card-accent-soft);
+      background: rgba(0, 0, 0, 0.24);
+      box-shadow:
+        inset 0 0 0 1px var(--card-accent-soft),
+        0 0 0 1px var(--card-accent-faint),
+        0 0 18px var(--card-accent-glow);
+      z-index: 0;
+    }
+    .card-media::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom, rgba(255, 85, 78, 0.04), transparent 22%, transparent 78%, rgba(255, 85, 78, 0.06)),
+        linear-gradient(to bottom,
+          rgba(255,255,255,0) 0%,
+          rgba(255,255,255,0) 50%,
+          rgba(0,0,0,0.16) 50%,
+          rgba(0,0,0,0.16) 100%);
+      background-size: 100% 100%, 100% 4px;
+      pointer-events: none;
+    }
+    .card-media::before {
+      content: '';
+      position: absolute;
+      inset: 0.55rem;
+      border: 1px solid color-mix(in srgb, var(--card-accent-strong) 62%, transparent);
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+        0 0 0 1px var(--card-accent-faint);
+      pointer-events: none;
+      z-index: 1;
+    }
+    .card-bg-image {
+      position: absolute;
+      inset: 0.55rem;
+      width: calc(100% - 1.1rem);
+      height: calc(100% - 1.1rem);
+      display: block;
+      object-fit: cover;
+      object-position: center top;
+      opacity: 0.82;
+      filter: saturate(0.96) contrast(1.04) brightness(0.82);
+      transform: scale(1.01);
+      z-index: 0;
+    }
+    .card-header, .card-footer { position: relative; z-index: 1; }
+
+    .card-header {
+      border-bottom: 1px solid var(--card-accent-faint);
+      padding-bottom: 1rem; margin-bottom: 1rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .card-id { font-family: var(--font-code); color: var(--card-accent-strong); font-size: 0.8rem; }
+    .card-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--card-accent-strong);
+      box-shadow: 0 0 10px var(--card-accent-glow);
+    }
+    .card-footer {
+      margin-top: auto; font-family: var(--font-code);
+      font-size: 0.7rem; color: rgba(255,255,255,0.4);
+      display: flex; justify-content: space-between;
+    }
+
+    /* --- SIGNAL PANELS --- */
+    .signal-card {
+      --signal-main-bg: rgba(255, 85, 78, 0.96);
+      --signal-main-glow: rgba(255, 85, 78, 0.32);
+      position: relative;
+      width: min(78vw, 1160px);
+      padding: 1.1rem 1.2rem 1rem;
+      border: 1px solid rgba(255, 85, 78, 0.5);
+      background:
+        linear-gradient(180deg, rgba(26, 7, 7, 0.86), rgba(8, 3, 3, 0.92)),
+        linear-gradient(0deg, rgba(255, 85, 78, 0.05), rgba(255, 85, 78, 0));
+      box-shadow:
+        inset 0 0 0 1px rgba(255, 85, 78, 0.08),
+        0 0 32px rgba(255, 48, 36, 0.12);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .signal-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom,
+          rgba(255,255,255,0) 0%,
+          rgba(255,255,255,0) 50%,
+          rgba(0,0,0,0.18) 50%,
+          rgba(0,0,0,0.18) 100%);
+      background-size: 100% 4px;
+      opacity: 0.32;
+      pointer-events: none;
+    }
+    .signal-corners,
+    .signal-corners::before,
+    .signal-corners::after,
+    .signal-card::after {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      content: '';
+      border-color: rgba(255, 85, 78, 0.95);
+      pointer-events: none;
+    }
+    .signal-corners {
+      inset: 0;
+      border-top: 3px solid rgba(255, 85, 78, 0.95);
+      border-left: 3px solid rgba(255, 85, 78, 0.95);
+      width: 18px;
+      height: 18px;
+    }
+    .signal-corners::before {
+      top: 0;
+      right: -18px;
+      border-top: 3px solid rgba(255, 85, 78, 0.95);
+      border-right: 3px solid rgba(255, 85, 78, 0.95);
+    }
+    .signal-corners::after {
+      bottom: -18px;
+      left: 0;
+      border-bottom: 3px solid rgba(255, 85, 78, 0.95);
+      border-left: 3px solid rgba(255, 85, 78, 0.95);
+    }
+    .signal-card::after {
+      right: 0;
+      bottom: 0;
+      border-right: 3px solid rgba(255, 85, 78, 0.95);
+      border-bottom: 3px solid rgba(255, 85, 78, 0.95);
+    }
+    .signal-kicker {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 0.85rem;
+      font-family: var(--font-display);
+      font-size: clamp(24px, 2.3vw, 40px);
+      color: rgba(255, 85, 78, 0.9);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .signal-main {
+      position: relative;
+      z-index: 1;
+      display: block;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 0.95rem;
+      padding: 0.32em 0.38em 0.28em;
+      background: var(--signal-main-bg);
+      color: #050505;
+      font-family: var(--font-code);
+      font-size: clamp(34px, 4vw, 78px);
+      line-height: 1;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      box-shadow: 0 0 24px var(--signal-main-glow);
+      text-shadow: none;
+      overflow: hidden;
+    }
+    .signal-main::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0) 0 calc(var(--signal-main-scan-gap, 4px) * 0.52),
+          rgba(0, 0, 0, var(--signal-main-scan-darkness, 0.18)) calc(var(--signal-main-scan-gap, 4px) * 0.52) var(--signal-main-scan-gap, 4px)
+        );
+      opacity: var(--signal-main-scan-opacity, 0.42);
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+    .signal-card.is-fighter-a {
+      --signal-main-bg: rgba(119, 226, 242, 0.96);
+      --signal-main-glow: rgba(119, 226, 242, 0.28);
+    }
+    .signal-lines {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 0.16rem;
+      font-family: var(--font-code);
+      font-size: clamp(16px, 1.2vw, 24px);
+      color: rgba(255, 85, 78, 0.86);
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .signal-line {
+      white-space: nowrap;
+    }
+
+    /* --- PARTICLES --- */
+    .star {
+      position: absolute; width: 2px; height: 2px;
+      background: white; transform: translate(-50%,-50%);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scanlines"></div>
+  <div class="vignette"></div>
+  <div class="noise"></div>
+
+  <div class="hud">
+    <div class="hud-top">
+      <span id="hud-top-label">PROJECT ARES // FIGHT LOADING</span>
+      <div class="hud-line"></div>
+      <span>FPS: <strong id="fps">60</strong></span>
+    </div>
+    <div style="align-self:flex-start;margin-top:auto;margin-bottom:auto;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--font-code);font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;">
+      <span id="hud-speed-label">SPEED</span> // <strong id="vel-readout">0.00</strong>
+    </div>
+    <div class="hud-bottom">
+      <span><span id="hud-coord-label">COORD</span>: <strong id="coord">000</strong></span>
+      <div class="hud-line"></div>
+      <span id="hud-os-label">VVV.NEXUS-OS</span>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+    <div class="world" id="world"></div>
+  </div>
+
+  <script>
+  (() => {
+    // --- URL PARAMS ---
+    const params = new URLSearchParams(location.search);
+    const LANG = params.get('lang') === 'pl' ? 'pl' : 'en';
+    const COPY = LANG === 'pl'
+      ? {
+          fighterAFallback: 'POSTAC A',
+          fighterBFallback: 'POSTAC B',
+          hudTopLabel: 'PROJEKT ARES // LADOWANIE WALKI',
+          hudSpeedLabel: 'PREDKOSC',
+          hudCoordLabel: 'KOORD',
+          hudOsLabel: 'VVV.NEXUS-OS',
+          projectAres: 'PROJEKT ARES',
+          signalIntroKicker: 'MATRYCA EWALUACJI GOTOWA',
+          signalIntroMain: '[ 0.000024 ] WEKTORY WALKI GOTOWE',
+          signalArchiveLine: 'ARCHIWUM :: PROJEKT_ARES      [GLOWNY MODUL]',
+          signalHaloLine: 'HALO     :: VERSUSVERSEVAULT  [BRAMA KRAWEDZI]',
+          signalMatchPrefix: 'POJEDYNEK',
+          signalStatusScanLine: 'STATUS   :: SKAN PRZED WALKA  [OKNO OTWARTE]',
+          signalCombatantKicker: 'PROFIL WOJOWNIKA ZINDEKSOWANY',
+          signalHaloShortLine: 'HALO :: VERSUSVERSEVAULT [PROJEKT ARES]',
+          signalStatusThreatLine: 'STATUS :: EKSTREMALNE ZAGROZENIE',
+          signalNamePrefix: 'NAZWA',
+          processLabel: 'PROCES',
+          reverseTitle: '< WYŁĄCZANIE SYSTEMU >',
+          reverseSub: 'SYMULACJA WALKI v0.9 · versusversevault.com',
+          reverseDone: '< SEKWENCJA ZAKOŃCZONA >',
+        }
+      : {
+          fighterAFallback: 'FIGHTER A',
+          fighterBFallback: 'FIGHTER B',
+          hudTopLabel: 'PROJECT ARES // FIGHT LOADING',
+          hudSpeedLabel: 'SPEED',
+          hudCoordLabel: 'COORD',
+          hudOsLabel: 'VVV.NEXUS-OS',
+          projectAres: 'PROJECT ARES',
+          signalIntroKicker: 'EVALUATION MATRIX READY',
+          signalIntroMain: '[ 0.000024 ] combat vectors drift-ready',
+          signalArchiveLine: 'ARCHIVE :: PROJECT_ARES      [PRIMARY SHARD]',
+          signalHaloLine: 'HALO    :: VERSUSVERSEVAULT  [EDGE GATE]',
+          signalMatchPrefix: 'MATCH',
+          signalStatusScanLine: 'STATUS  :: PRE-FIGHT SCAN    [WINDOW OPEN]',
+          signalCombatantKicker: 'COMBATANT PROFILE INDEXED',
+          signalHaloShortLine: 'HALO :: VERSUSVERSEVAULT [PROJECT ARES]',
+          signalStatusThreatLine: 'STATUS :: EXTREME THREAT',
+          signalNamePrefix: 'A. NAME',
+          processLabel: 'PROCESS',
+          reverseTitle: '< SYSTEM SHUTTING DOWN >',
+          reverseSub: 'FIGHT SIMULATION v0.9 · versusversevault.com',
+          reverseDone: '< SEQUENCE COMPLETE >',
+        };
+
+    const FIGHTER_A = (params.get('a') || COPY.fighterAFallback).toUpperCase();
+    const FIGHTER_B = (params.get('b') || COPY.fighterBFallback).toUpperCase();
+    const FOLDER    = params.get('folder') || '';
+    const FLOW_MODE = params.get('flow') === 'reverse' ? 'reverse' : 'forward';
+    document.title = LANG === 'pl' ? 'WPROWADZENIE DO WALKI' : 'FIGHT INTRO';
+    const hudTopLabelEl = document.getElementById('hud-top-label');
+    const hudSpeedLabelEl = document.getElementById('hud-speed-label');
+    const hudCoordLabelEl = document.getElementById('hud-coord-label');
+    const hudOsLabelEl = document.getElementById('hud-os-label');
+    if (hudTopLabelEl) hudTopLabelEl.textContent = COPY.hudTopLabel;
+    if (hudSpeedLabelEl) hudSpeedLabelEl.textContent = COPY.hudSpeedLabel;
+    if (hudCoordLabelEl) hudCoordLabelEl.textContent = COPY.hudCoordLabel;
+    if (hudOsLabelEl) hudOsLabelEl.textContent = COPY.hudOsLabel;
+
+    // --- CONFIGURATION ---
+    const CONFIG = {
+      itemCount: 15,
+      starCount: 150,
+      zGap: 800,
+      loopSize: 0,
+      camSpeed: 2.5,
+      colors: ['#ff003c', '#00f3ff', '#ccff00', '#ffffff']
+    };
+    CONFIG.loopSize = CONFIG.itemCount * CONFIG.zGap; // used only for stars
+
+    const SIGNAL_PANELS = {
+      intro: {
+        kicker: COPY.signalIntroKicker,
+        main: COPY.signalIntroMain,
+        lines: [
+          COPY.signalArchiveLine,
+          COPY.signalHaloLine,
+          `${COPY.signalMatchPrefix}   :: ${FIGHTER_A} // ${FIGHTER_B}`,
+          COPY.signalStatusScanLine,
+        ]
+      },
+      fighterA: {
+        kicker: COPY.signalCombatantKicker,
+        main: FIGHTER_A,
+        className: 'is-fighter-a',
+        lines: [
+          COPY.signalHaloShortLine,
+          COPY.signalStatusThreatLine,
+          `${COPY.signalNamePrefix} :: ${FIGHTER_A}`,
+          `${COPY.signalMatchPrefix} :: ${FIGHTER_A} // ${FIGHTER_B}`,
+        ]
+      },
+      fighterB: {
+        kicker: COPY.signalCombatantKicker,
+        main: FIGHTER_B,
+        lines: [
+          COPY.signalHaloShortLine,
+          COPY.signalStatusThreatLine,
+          `${COPY.signalNamePrefix} :: ${FIGHTER_B}`,
+          `${COPY.signalMatchPrefix} :: ${FIGHTER_A} // ${FIGHTER_B}`,
+        ]
+      }
+    };
+    const buildFightImageUrl = (fileName) =>
+      FOLDER && fileName
+        ? `/api/fights/image?key=${encodeURIComponent(FOLDER)}&file=${encodeURIComponent(fileName)}`
+        : '';
+
+    const fetchFightImageFiles = async () => {
+      if (!FOLDER) return [];
+      try {
+        const response = await fetch(`/api/fights/images?key=${encodeURIComponent(FOLDER)}`, { cache: 'no-store' });
+        if (!response.ok) return [];
+        const payload = await response.json();
+        if (!Array.isArray(payload.files)) return [];
+        return payload.files
+          .map((entry, index) => {
+            if (typeof entry === 'string') {
+              const trimmed = entry.trim();
+              return trimmed ? { fileName: trimmed, side: index % 2 === 0 ? 'a' : 'b' } : null;
+            }
+            if (!entry || typeof entry !== 'object') return null;
+            const fileName = String(entry.fileName || '').trim();
+            if (!fileName) return null;
+            const side = entry.side === 'a' || entry.side === 'b' ? entry.side : (index % 2 === 0 ? 'a' : 'b');
+            return { fileName, side };
+          })
+          .filter(Boolean);
+      } catch {
+        return [];
+      }
+    };
+
+    const STAGE_BLUEPRINT = [
+      { type: 'panel', panel: SIGNAL_PANELS.intro },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'panel', panel: SIGNAL_PANELS.fighterA },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'panel', panel: SIGNAL_PANELS.fighterB },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'cards' },
+      { type: 'cards', final: true },
+    ];
+    const BURST_STAGE_CENTERS = [
+      { x: -0.42, y: -0.24 },
+      { x: 0.4, y: -0.24 },
+      { x: -0.38, y: 0.18 },
+      { x: 0.38, y: 0.16 },
+      { x: -0.08, y: -0.28 },
+      { x: 0.1, y: 0.24 },
+      { x: -0.46, y: -0.02 },
+      { x: 0.46, y: -0.02 },
+      { x: -0.24, y: 0.28 },
+      { x: 0.24, y: -0.3 },
+      { x: -0.02, y: 0.06 },
+      { x: 0.02, y: -0.08 },
+    ];
+    const BURST_LAYOUTS = {
+      1: [{ x: 0, y: 0, rot: -4 }],
+      2: [
+        { x: -0.42, y: -0.02, rot: -18 },
+        { x: 0.42, y: 0.04, rot: 16 },
+      ],
+      3: [
+        { x: -0.42, y: -0.18, rot: -18 },
+        { x: 0.42, y: 0.08, rot: 16 },
+        { x: 0.02, y: 0.28, rot: -8 },
+      ],
+      4: [
+        { x: -0.42, y: -0.22, rot: -18 },
+        { x: 0.42, y: -0.14, rot: 16 },
+        { x: -0.36, y: 0.24, rot: 12 },
+        { x: 0.38, y: 0.18, rot: -14 },
+      ],
+      5: [
+        { x: -0.46, y: -0.24, rot: -18 },
+        { x: 0.46, y: -0.16, rot: 16 },
+        { x: -0.34, y: 0.22, rot: 12 },
+        { x: 0.36, y: 0.2, rot: -14 },
+        { x: 0.02, y: 0.02, rot: -4 },
+      ],
+    };
+
+    const buildBurstGroups = (imageFiles, burstCount) => {
+      const files = imageFiles.length ? imageFiles : [
+        { fileName: '1.jpg', side: 'a' },
+        { fileName: '2.jpg', side: 'b' },
+      ];
+      if (!files.length) return Array.from({ length: burstCount }, () => []);
+
+      if (burstCount <= 1) return [files.slice()];
+
+      const finalImage = files.find((entry) => /^final\.(jpe?g|png|webp|avif)$/i.test(String(entry?.fileName || '').trim()))
+        || files[files.length - 1];
+      const leadFiles = files.filter((entry) => entry !== finalImage);
+      const distributedBursts = burstCount - 1;
+      const groups = [];
+
+      if (!leadFiles.length) {
+        for (let index = 0; index < distributedBursts; index += 1) {
+          groups.push([files[index % files.length]]);
+        }
+      } else if (leadFiles.length < distributedBursts) {
+        for (let index = 0; index < distributedBursts; index += 1) {
+          groups.push([leadFiles[index % leadFiles.length]]);
+        }
+      } else {
+        let cursor = 0;
+        for (let burstIndex = 0; burstIndex < distributedBursts; burstIndex += 1) {
+          const remainingBursts = distributedBursts - burstIndex;
+          const remainingFiles = leadFiles.length - cursor;
+          const take = Math.ceil(remainingFiles / remainingBursts);
+          groups.push(leadFiles.slice(cursor, cursor + take));
+          cursor += take;
+        }
+      }
+
+      groups.push([finalImage]);
+      return groups;
+    };
+
+    const buildSequencePlan = (imageFiles) => {
+      const burstCount = STAGE_BLUEPRINT.filter((entry) => entry.type === 'cards').length;
+      const burstGroups = buildBurstGroups(imageFiles, burstCount);
+      let burstIndex = 0;
+
+      return STAGE_BLUEPRINT.map((entry) => {
+        if (entry.type === 'panel') return entry;
+        return {
+          type: 'cards',
+          files: burstGroups[burstIndex] || [],
+          finalCenter: Boolean(entry.final),
+          burstIndex: burstIndex++,
+        };
+      });
+    };
+
+    const buildBurstPlacements = (burstIndex, count, finalCenter = false) => {
+      if (finalCenter) {
+        return [{ x: 0, y: 0, rot: -4 }];
+      }
+      const center = BURST_STAGE_CENTERS[burstIndex % BURST_STAGE_CENTERS.length];
+      const centerX = center.x * window.innerWidth;
+      const centerY = center.y * window.innerHeight;
+      const layout = BURST_LAYOUTS[Math.min(count, 5)] || BURST_LAYOUTS[5];
+
+      return Array.from({ length: count }, (_, index) => {
+        const preset = layout[index % layout.length];
+        const ring = Math.floor(index / layout.length);
+        const spreadX = window.innerWidth * 0.52 * (1 + ring * 0.48);
+        const spreadY = window.innerHeight * 0.4 * (1 + ring * 0.44);
+        return {
+          x: Math.max(-window.innerWidth * 0.46, Math.min(window.innerWidth * 0.46, centerX + preset.x * spreadX)),
+          y: Math.max(-window.innerHeight * 0.34, Math.min(window.innerHeight * 0.34, centerY + preset.y * spreadY)),
+          rot: preset.rot + ring * (index % 2 === 0 ? -6 : 6),
+        };
+      });
+    };
+
+    // --- STATE ---
+    const state = {
+      scroll: 0,
+      velocity: 0,
+      targetSpeed: 0,
+      mouseX: 0,
+      mouseY: 0
+    };
+
+    const postRelay = (event, x, y, down) => {
+      if (!window.parent || window.parent === window) return;
+      window.parent.postMessage(
+        { type: 'vvv-pointer-relay', source: 'intro', event, x, y, down, timestamp: performance.now() },
+        window.location.origin
+      );
+    };
+
+    const world    = document.getElementById('world');
+    const viewport = document.getElementById('viewport');
+    const items    = [];
+    let rafHandle = 0;
+    let reverseSequenceRunning = false;
+    let reverseAutoStartTimeout = 0;
+
+    const attachCardImage = (imageEl, sources) => {
+      if (!imageEl || !sources.length) return;
+      let sourceIndex = 0;
+
+      const loadNext = () => {
+        if (sourceIndex >= sources.length) {
+          imageEl.remove();
+          return;
+        }
+        imageEl.src = sources[sourceIndex++];
+      };
+
+      imageEl.addEventListener('error', loadNext);
+      loadNext();
+    };
+
+    const postToParent = (payload) => {
+      if (!window.parent || window.parent === window) return;
+      window.parent.postMessage(payload, window.location.origin);
+    };
+
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+    const runReverseExitSequence = async () => {
+      if (reverseSequenceRunning) return;
+      reverseSequenceRunning = true;
+      if (reverseAutoStartTimeout) {
+        clearTimeout(reverseAutoStartTimeout);
+        reverseAutoStartTimeout = 0;
+      }
+      if (rafHandle) {
+        cancelAnimationFrame(rafHandle);
+        rafHandle = 0;
+      }
+
+      const overlay = document.createElement('div');
+      overlay.style.cssText =
+        'position:fixed;inset:0;z-index:60;display:flex;align-items:center;justify-content:center;' +
+        'background:#000;color:#ff6666;font-family:"Courier New", Courier, monospace;overflow:hidden;';
+      overlay.innerHTML = `
+        <style>
+          @keyframes rv-s2-shake {
+            2%,64% { transform: translate(2px,0) skewX(0deg); }
+            4%,60% { transform: translate(-2px,0) skewX(0deg); }
+            62% { transform: translate(0,0) skewX(4deg); }
+          }
+          .s4-lines { display: flex; flex-direction: column; align-items: center; gap: 0.4em; }
+          .s4-glitch {
+            font-family: "Chakra Petch", "Courier New", monospace;
+            font-size: clamp(1.2rem, 4vw, 4rem);
+            font-weight: 900; color: #fff; position: relative;
+            text-shadow: 3px 0 rgba(255,85,78,1), -3px 0 #0cf;
+            animation: s4skew 0.2s steps(2) infinite;
+          }
+          .s4-glitch::before, .s4-glitch::after {
+            content: attr(data-text);
+            position: absolute; top:0; left:0; width:100%; height:100%;
+          }
+          .s4-glitch::before {
+            color: rgba(255,85,78,1); text-shadow: 3px 0 #0cf;
+            animation: s4g1 0.13s steps(2) infinite;
+          }
+          .s4-glitch::after {
+            color: #0cf; text-shadow: -3px 0 rgba(255,85,78,1);
+            animation: s4g2 0.13s steps(2) infinite;
+          }
+          @keyframes s4skew {
+            0%  { transform: skewX(0deg) scaleX(1); }
+            50% { transform: skewX(8deg) scaleX(1.02); }
+          }
+          @keyframes s4g1 {
+            0%  { clip-path:inset(0 0 88% 0); transform:translate(-8px,0); }
+            20% { clip-path:inset(25% 0 55% 0); transform:translate(8px,0); }
+            40% { clip-path:inset(60% 0 20% 0); transform:translate(-5px,0); }
+            60% { clip-path:inset(10% 0 75% 0); transform:translate(10px,0); }
+            80% { clip-path:inset(75% 0 8% 0);  transform:translate(-8px,0); }
+          }
+          @keyframes s4g2 {
+            0%  { clip-path:inset(65% 0 15% 0); transform:translate(6px,0); }
+            20% { clip-path:inset(5%  0 80% 0); transform:translate(-6px,0); }
+            40% { clip-path:inset(40% 0 35% 0); transform:translate(9px,0); }
+            60% { clip-path:inset(85% 0 3% 0);  transform:translate(-5px,0); }
+            80% { clip-path:inset(20% 0 65% 0); transform:translate(7px,0); }
+          }
+        </style>
+        <div style="position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 1px, transparent 1px, transparent 3px);"></div>
+
+        <div id="rv-s3" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(0deg,#000 0%, #280604 100%);color:#ff6666;text-shadow:0 0 4px red;text-align:center;font-size:clamp(24px,4.4vw,52px);">
+          <div style="border:0.18em solid #ff6666;box-shadow:0 0 4px red, inset 0 0 4px red;padding:1.6em 2em;animation:rv-s2-shake 1.5s linear infinite;">
+            <div id="rv-h-main">
+              <p id="rv-h-spin" style="font-size:1.1em;margin-bottom:0.4em;">[/]</p>
+              <p style="font-size:1em;letter-spacing:0.04em;">${COPY.reverseTitle}</p>
+              <p style="font-size:0.6em;margin-top:0.3em;opacity:0.8;">${COPY.reverseSub}</p>
+              <p id="rv-h-pct" style="font-size:0.65em;margin-top:0.3em;">${COPY.processLabel}: 0%</p>
+              <p id="rv-h-bar" style="font-size:0.65em;margin-top:0.5em;letter-spacing:0.04em;">&nbsp;</p>
+            </div>
+            <p id="rv-h-done" style="display:none;font-size:1em;letter-spacing:0.04em;">${COPY.reverseDone}</p>
+          </div>
+        </div>
+
+        <div id="rv-s4" style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;background:#000;overflow:hidden;">
+          <div class="s4-lines">
+            <div class="s4-glitch" data-text="G9K_Rubikon:Session_Sign_Off">G9K_Rubikon:Session_Sign_Off</div>
+            <div class="s4-glitch" data-text="Artemis_Argo:Kernel_Lost">Artemis_Argo:Kernel_Lost</div>
+            <div class="s4-glitch" data-text="Project_Ares:Power_Down">Project_Ares:Power_Down</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const s3El = overlay.querySelector('#rv-s3');
+      const s4El = overlay.querySelector('#rv-s4');
+      const spinEl = overlay.querySelector('#rv-h-spin');
+      const pctEl = overlay.querySelector('#rv-h-pct');
+      const barEl = overlay.querySelector('#rv-h-bar');
+      const mainEl = overlay.querySelector('#rv-h-main');
+      const doneEl = overlay.querySelector('#rv-h-done');
+
+      const runChromaticFlash = (stageEl, options = {}) => new Promise((resolve) => {
+        const {
+          frames = 14,
+          interval = 60,
+          jitterX = 35,
+          skew = 6,
+        } = options;
+
+        if (!stageEl) {
+          resolve();
+          return;
+        }
+
+        const COLORS = ['rgba(255,85,78,1)', '#77e2f2', '#ff0', '#fff', '#0cf', '#f80'];
+        let frame = 0;
+        
+        const POOL_SIZE = 8;
+        const pool = [];
+        for (let i = 0; i < POOL_SIZE; i++) {
+          const bar = document.createElement('div');
+          bar.className = 'rv-chroma-flash';
+          bar.style.cssText = 'position:absolute;left:0;right:0;z-index:10;pointer-events:none;display:none;';
+          stageEl.appendChild(bar);
+          pool.push(bar);
+        }
+
+        const clearFlash = () => {
+          pool.forEach(bar => { bar.style.display = 'none'; });
+          stageEl.style.transform = '';
+        };
+
+        const timer = setInterval(() => {
+          const n = 3 + Math.floor(Math.random() * (POOL_SIZE - 3));
+          for (let i = 0; i < POOL_SIZE; i++) {
+            if (i < n) {
+              const bar = pool[i];
+              bar.style.top = `${Math.random() * 100}%`;
+              bar.style.height = `${1 + Math.random() * 10}%`;
+              bar.style.background = COLORS[Math.floor(Math.random() * COLORS.length)];
+              bar.style.opacity = `${0.3 + Math.random() * 0.4}`;
+              bar.style.display = 'block';
+            } else {
+              pool[i].style.display = 'none';
+            }
+          }
+          stageEl.style.transform = `translate3d(${(Math.random() - 0.5) * jitterX}px, 0, 0) skewX(${(Math.random() - 0.5) * skew}deg)`;
+          frame += 1;
+          if (frame >= frames) {
+            clearInterval(timer);
+            clearFlash();
+            pool.forEach(bar => bar.remove());
+            resolve();
+          }
+        }, interval);
+      });
+
+      // 1) Glitch fullscreen
+      await runChromaticFlash(overlay, { frames: 12, interval: 50, jitterX: 28, skew: 4 });
+
+      // 2) System rebooting / reboot successful (original Hydra logic)
+      if (s3El instanceof HTMLElement) s3El.style.display = 'flex';
+      if (s4El instanceof HTMLElement) s4El.style.display = 'none';
+      if (mainEl instanceof HTMLElement) mainEl.style.display = '';
+      if (doneEl instanceof HTMLElement) doneEl.style.display = 'none';
+      if (pctEl) pctEl.textContent = `${COPY.processLabel}: 0%`;
+      if (barEl) barEl.textContent = '';
+
+      const MAX = 24;
+      const LOADED = '#';
+      const EMPTY = '.';
+      const vals = Array(MAX).fill(EMPTY);
+      const frames = ['/', '-', '\\', '|'];
+      let fi = 0;
+      const spinTimer = setInterval(() => {
+        if (!spinEl) return;
+        spinEl.textContent = `[${frames[fi++ % 4]}]`;
+      }, 120);
+
+      await new Promise((resolve) => {
+        const tick = setInterval(() => {
+          const emptyIdx = vals.lastIndexOf(EMPTY);
+          if (emptyIdx === -1) {
+            clearInterval(tick);
+            resolve();
+            return;
+          }
+          vals[emptyIdx] = LOADED;
+          const loaded = vals.filter((c) => c === LOADED).length;
+          if (pctEl) pctEl.textContent = `${COPY.processLabel}: ${Math.floor((loaded / MAX) * 100)}%`;
+          const ls = vals.slice(0, loaded).join('');
+          const us = vals.slice(loaded).join('');
+          if (barEl) barEl.innerHTML = `(${ls}<span style="color:#fff;text-shadow:0 0 4px #fff;">${us}</span>)`;
+        }, 100 + Math.random() * 150);
+      });
+
+      clearInterval(spinTimer);
+      if (pctEl) pctEl.textContent = `${COPY.processLabel}: 100%`;
+      if (barEl) barEl.innerHTML = `(${'#'.repeat(MAX)})`;
+      await wait(400);
+
+      if (mainEl instanceof HTMLElement) mainEl.style.display = 'none';
+      if (doneEl instanceof HTMLElement) doneEl.style.display = '';
+      await wait(3000);
+
+      // 3) Session authenticated black screen
+      await runChromaticFlash(s3El, { frames: 12, interval: 50, jitterX: 28, skew: 4 });
+      if (s3El instanceof HTMLElement) s3El.style.display = 'none';
+      if (s4El instanceof HTMLElement) s4El.style.display = 'flex';
+      await wait(2500);
+
+      // 4) Color glitch then transition to search
+      await runChromaticFlash(s4El, { interval: 60 });
+
+      overlay.remove();
+
+      postToParent({ type: 'vvv-aaa-reverse-explosion-done' });
+    };
+
+    const updateMouse = e => {
+      state.mouseX = (e.clientX / window.innerWidth  - 0.5) * 2;
+      state.mouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+    };
+
+    const setupListeners = () => {
+      const normalizeFightShortcutKey = event => {
+        const code = event && typeof event.code === 'string' ? event.code : '';
+        switch (code) {
+          case 'Digit5': return '5';
+          case 'Digit6': return '6';
+          case 'Digit7': return '7';
+          case 'Digit8': return '8';
+          case 'Digit9': return '9';
+          case 'Digit0': return '0';
+          case 'Minus':  return '-';
+          case 'Equal':  return '=';
+          default: break;
+        }
+
+        const key = event && typeof event.key === 'string' ? event.key : '';
+        if (/^[5-9]$/.test(key)) return key;
+        if (key === '0') return '0';
+        if (key === '-' || key === '_') return '-';
+        if (key === '=' || key === '+') return '=';
+        return '';
+      };
+
+      window.addEventListener('mousemove', updateMouse);
+      window.addEventListener('pointermove', e => {
+        updateMouse(e);
+        postRelay('move', e.clientX, e.clientY);
+      }, { passive: true });
+      window.addEventListener('pointerdown', e => postRelay('down', e.clientX, e.clientY, true), { passive: true });
+      window.addEventListener('pointerup', e => postRelay('up', e.clientX, e.clientY, false), { passive: true });
+      window.addEventListener('pointercancel', e => postRelay('up', e.clientX, e.clientY, false), { passive: true });
+      window.addEventListener('pointerleave', e => postRelay('leave', e.clientX, e.clientY, false), { passive: true });
+      window.addEventListener('blur', () => postRelay('leave', window.innerWidth * 0.5, window.innerHeight * 0.5, false), { passive: true });
+      window.addEventListener('keydown', e => {
+        if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey) return;
+        if (!window.parent || window.parent === window) return;
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          window.parent.postMessage(
+            { type: 'vvv-studio-exit-darkseid-request' },
+            window.location.origin
+          );
+          return;
+        }
+        if (/^[1-4]$/.test(e.key)) {
+          e.preventDefault();
+          window.parent.postMessage(
+            { type: 'vvv-dev-jump-stage-request', stage: Number(e.key) },
+            window.location.origin
+          );
+          return;
+        }
+        const shortcutKey = normalizeFightShortcutKey(e);
+        if (!shortcutKey) return;
+        e.preventDefault();
+        window.parent.postMessage(
+          { type: 'vvv-dev-open-fight-shortcut-request', key: shortcutKey },
+          window.location.origin
+        );
+      });
+    };
+
+    // --- INIT ---
+    async function init() {
+      const fightImageFiles = await fetchFightImageFiles();
+      const sequencePlan = buildSequencePlan(fightImageFiles);
+      CONFIG.itemCount = sequencePlan.length;
+      CONFIG.loopSize = CONFIG.itemCount * CONFIG.zGap;
+
+      sequencePlan.forEach((entry, i) => {
+        const el = document.createElement('div');
+        el.className = 'item';
+
+        if (entry.type === 'panel') {
+          const panel = entry.panel;
+          const txt = document.createElement('div');
+          txt.className = `signal-card${panel.className ? ` ${panel.className}` : ''}`;
+          txt.innerHTML = `
+            <div class="signal-corners"></div>
+            <div class="signal-kicker">${panel.kicker}</div>
+            <div class="signal-main">${panel.main}</div>
+            <div class="signal-lines">${panel.lines.map(line => `<div class="signal-line">${line}</div>`).join('')}</div>
+          `;
+          el.appendChild(txt);
+          items.push({ el, type: 'text', textNode: txt, x: 0, y: 0, rot: 0, baseZ: -i * CONFIG.zGap });
+        } else {
+          const placements = buildBurstPlacements(entry.burstIndex, entry.files.length, entry.finalCenter);
+
+          entry.files.forEach((fileEntry, fileIndex) => {
+            const cardEl = document.createElement('div');
+            cardEl.className = 'item';
+
+            const card = document.createElement('div');
+            const imageFileName = typeof fileEntry === 'string' ? fileEntry : fileEntry?.fileName;
+            const cardSide = fileEntry?.side === 'a' || fileEntry?.side === 'b'
+              ? fileEntry.side
+              : ((entry.burstIndex + fileIndex) % 2 === 0 ? 'a' : 'b');
+            card.className = `card card--${cardSide} card-pre-spawn`;
+            const cardId = String((entry.burstIndex + 1) * 100 + fileIndex + 1).padStart(4, '0');
+            const imageSources = [buildFightImageUrl(imageFileName)].filter(Boolean);
+            card.innerHTML = `
+              <div class="card-media"></div>
+              <div class="card-header">
+                <span class="card-id">ID-${cardId}</span>
+                <div class="card-dot"></div>
+              </div>
+              <div class="card-footer">
+                <span>${COPY.projectAres}</span>
+                <span>${FIGHTER_A} vs ${FIGHTER_B}</span>
+              </div>
+            `;
+            const media = card.querySelector('.card-media');
+            if (media && imageSources.length) {
+              const img = document.createElement('img');
+              img.className = 'card-bg-image';
+              img.alt = '';
+              img.loading = 'eager';
+              media.appendChild(img);
+              attachCardImage(img, imageSources);
+            }
+            cardEl.appendChild(card);
+
+            const placement = placements[fileIndex] || placements[0] || { x: 0, y: 0, rot: 0 };
+            items.push({
+              el: cardEl,
+              type: 'card',
+              cardNode: card,
+              finalCenter: Boolean(entry.finalCenter),
+              spawned: false,
+              spawnTimer: 0,
+              x: placement.x,
+              y: placement.y,
+              rot: placement.rot,
+              baseZ: -i * CONFIG.zGap - fileIndex * (entry.finalCenter ? 0 : 260),
+            });
+            world.appendChild(cardEl);
+          });
+
+          return;
+        }
+        world.appendChild(el);
+      });
+
+      const finalCard = items.find((item) => item.type === 'card' && item.finalCenter);
+      const doneDistance = finalCard
+        ? -finalCard.baseZ + FINAL_CARD_FINISH_Z
+        : items
+            .filter((item) => item.type !== 'star')
+            .reduce((maxDistance, item) => Math.max(maxDistance, -item.baseZ), 0) + TEXT_PASS_CAMERA_CUT_Z;
+      DONE_AT = doneDistance / CONFIG.camSpeed + FINAL_CARD_COMPLETE_BUFFER_MS;
+
+      // Stars (looping)
+      for (let i = 0; i < CONFIG.starCount; i++) {
+        const el = document.createElement('div');
+        el.className = 'star';
+        world.appendChild(el);
+        items.push({
+          el, type: 'star',
+          x: (Math.random() - 0.5) * 3000,
+          y: (Math.random() - 0.5) * 3000,
+          baseZ: -Math.random() * CONFIG.loopSize
+        });
+      }
+
+      setupListeners();
+    }
+
+    window.addEventListener('message', event => {
+      if (event.origin !== window.location.origin && event.origin !== 'null') return;
+      const payload = event.data;
+      if (!payload || typeof payload !== 'object') return;
+      if (payload.type === 'vvv-aaa-play-reverse-explosion') {
+        if (reverseAutoStartTimeout) {
+          clearTimeout(reverseAutoStartTimeout);
+          reverseAutoStartTimeout = 0;
+        }
+        void runReverseExitSequence();
+      }
+    });
+
+    // --- AUTO-SCROLL ---
+    const AUTO_RATE = 0.375;
+    let autoPos  = -800;
+    let prevTime = null;
+    const TEXT_PASS_CAMERA_CUT_Z = 1800;
+    const FINAL_CARD_FINISH_Z = 920;
+    const FINAL_CARD_COMPLETE_BUFFER_MS = 5;
+    let DONE_AT = (CONFIG.itemCount - 1) * CONFIG.zGap / CONFIG.camSpeed + 1500;
+
+    const feedbackVel = document.getElementById('vel-readout');
+    const feedbackFPS = document.getElementById('fps');
+    const coordEl     = document.getElementById('coord');
+    let lastFpsTime = 0;
+
+    function raf(time) {
+      if (reverseSequenceRunning) return;
+      const delta = prevTime !== null ? Math.min(time - prevTime, 50) : 16;
+      prevTime = time;
+
+      autoPos += AUTO_RATE * delta;
+      state.scroll      = autoPos;
+      state.targetSpeed = AUTO_RATE * 16.67;
+
+      const frameDelta = time - lastFpsTime;
+      lastFpsTime = time;
+      if (frameDelta > 0 && time % 10 < 1) feedbackFPS.innerText = Math.round(1000 / frameDelta);
+
+      state.velocity += (state.targetSpeed - state.velocity) * 0.1;
+
+      feedbackVel.innerText = Math.abs(state.velocity).toFixed(2);
+      coordEl.innerText = Math.max(0, state.scroll).toFixed(0);
+
+      const tiltX = state.mouseY * 5 - state.velocity * 0.5;
+      const tiltY = state.mouseX * 5;
+      world.style.transform = `translate3d(0,0,0) rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+
+      const fov = 1000 - Math.min(Math.abs(state.velocity) * 10, 600);
+      viewport.style.perspective = `${fov}px`;
+
+      const cameraZ = state.scroll * CONFIG.camSpeed;
+
+      items.forEach(item => {
+        let vizZ;
+        if (item.type === 'star') {
+          const relZ = item.baseZ + cameraZ;
+          const modC = CONFIG.loopSize;
+          vizZ = ((relZ % modC) + modC) % modC;
+          if (vizZ > 500) vizZ -= modC;
+        } else {
+          vizZ = item.baseZ + cameraZ;
+        }
+
+        let alpha = 1;
+        if (vizZ < -3000) alpha = 0;
+        else if (vizZ < -2000) alpha = (vizZ + 3000) / 1000;
+        if (item.type === 'text') {
+          if (vizZ > TEXT_PASS_CAMERA_CUT_Z) alpha = 0;
+        } else if (item.type === 'card') {
+          if (vizZ > (item.finalCenter ? FINAL_CARD_FINISH_Z : TEXT_PASS_CAMERA_CUT_Z)) alpha = 0;
+        } else if (vizZ > 100 && item.type !== 'star') alpha = 1 - ((vizZ - 100) / 400);
+        if (alpha < 0) alpha = 0;
+
+        item.el.style.opacity = alpha;
+
+        if (alpha > 0) {
+          let trans = `translate3d(${item.x}px, ${item.y}px, ${vizZ}px)`;
+          if (item.type === 'star') {
+            const stretch = Math.max(1, Math.min(1 + Math.abs(state.velocity) * 0.1, 10));
+            trans += ` scale3d(1, 1, ${stretch})`;
+          } else if (item.type === 'text') {
+            if (item.textNode) {
+              const scanGap = Math.max(4, Math.min(30, 4 + Math.max(0, vizZ + 400) * 0.011));
+              const scanOpacity = Math.max(0.38, Math.min(0.74, 0.38 + Math.max(0, vizZ + 300) * 0.00018));
+              const scanDarkness = Math.max(0.16, Math.min(0.4, 0.16 + Math.max(0, vizZ + 200) * 0.00012));
+              item.textNode.style.setProperty('--signal-main-scan-gap', `${scanGap.toFixed(2)}px`);
+              item.textNode.style.setProperty('--signal-main-scan-opacity', scanOpacity.toFixed(3));
+              item.textNode.style.setProperty('--signal-main-scan-darkness', scanDarkness.toFixed(3));
+            }
+            trans += ` rotateZ(${item.rot}deg)`;
+          } else {
+            const t = time * 0.001;
+            const float = Math.sin(t + item.x) * 10;
+            if (!item.spawned && vizZ > -2200) {
+              item.spawned = true;
+              if (item.cardNode) {
+                item.cardNode.classList.remove('card-spawning');
+                item.cardNode.classList.remove('card-pre-spawn');
+                void item.cardNode.offsetWidth;
+                item.cardNode.classList.add('card-spawning');
+                if (item.spawnTimer) clearTimeout(item.spawnTimer);
+                item.spawnTimer = window.setTimeout(() => {
+                  item.cardNode?.classList.remove('card-spawning');
+                  item.spawnTimer = 0;
+                }, 260);
+              }
+            }
+            trans += ` rotateZ(${item.rot}deg) rotateY(${float}deg)`;
+          }
+          item.el.style.transform = trans;
+        }
+      });
+
+      if (autoPos >= DONE_AT) {
+        postToParent({ type: 'vvv-aaa-complete' });
+        return;
+      }
+      rafHandle = requestAnimationFrame(raf);
+    }
+
+    postToParent({ type: 'vvv-aaa-ready' });
+    if (FLOW_MODE === 'reverse') {
+      document.querySelectorAll('.viewport, .hud, .scanlines, .vignette, .noise').forEach((el) => {
+        if (!(el instanceof HTMLElement)) return;
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+      });
+      // CRITICAL FIX: Setup mouse listeners even in reverse mode!
+      setupListeners();
+      reverseAutoStartTimeout = window.setTimeout(() => {
+        reverseAutoStartTimeout = 0;
+        void runReverseExitSequence();
+      }, 0);
+    } else {
+      init().then(() => {
+        if (reverseSequenceRunning) return;
+        rafHandle = requestAnimationFrame(raf);
+      });
+    }
+  })();
+  </script>
+</body>
+</html>

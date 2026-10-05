@@ -1,0 +1,45 @@
+{
+  "portraits": {
+    "a": "Kyle1.jpg",
+    "b": "Manhattan1.jpg"
+  },
+  "schemaVersion": 1,
+  "templates": {
+    "crucial-feats": {
+      "left_image_1": "Feat_Kyle1.jpg",
+      "left_image_2": "Feat_Kyle2.jpg",
+      "left_image_3": "Feat_Kyle3.jpg",
+      "left_image_4": "Feat_Kyle4.jpg",
+      "left_image_5": "Feat_Kyle5.jpg",
+      "right_image_1": "Feat_Dr1.jpg",
+      "right_image_2": "Feat_Dr2.jpg",
+      "right_image_3": "Feat_Dr3.jpg",
+      "right_image_4": "Feat_Dr4.jpg",
+      "right_image_5": "Feat_Dr5.jpg"
+    },
+    "victory-archive": {
+      "left_image_1": "CV_Kyle1.jpeg",
+      "left_image_2": "CV_Kyle2.jpg",
+      "left_image_3": "CV_Kyle3.jpeg",
+      "left_image_4": "CV_Kyle4.jpg",
+      "left_image_5": "CV_Kyle5.jpeg",
+      "right_image_1": "CV_Dr1.jpg",
+      "right_image_2": "CV_Dr2.jpg",
+      "right_image_3": "CV_Dr3.jpg",
+      "right_image_4": "CV_Dr4.jpg",
+      "right_image_5": "CV_Dr5.jpg"
+    },
+    "fight-card": {
+      "right_image": "Manhattan4.webp",
+      "left_image": "Kyle4.jpg"
+    },
+    "final-summary": {
+      "right_image": "Manhattan2.jpg",
+      "left_image": "Kyle2.webp"
+    },
+    "verdict-matrix": {
+      "right_image": "Manhattan3.webp",
+      "left_image": "Kyle3.jpg"
+    }
+  }
+}

@@ -1,0 +1,23 @@
+.vs-studio-page {
+  width: 100%;
+  min-height: 620px;
+  overflow: hidden;
+  background: #05060a;
+}
+
+.vs-studio-page--immersive {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483000;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.vs-studio-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #05060a;
+}

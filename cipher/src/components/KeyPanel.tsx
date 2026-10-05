@@ -1,0 +1,5 @@
+import { useState } from 'react';
+export function KeyPanel({ password, onChange }: { password: string; onChange: (value: string) => void }) {
+  const [visible, setVisible] = useState(false);
+  return <section className="key-panel" aria-label="Initialization key"><div className="section-index">01</div><div className="key-control"><label htmlFor="initialization-key">INITIALIZATION KEY</label><div className="key-input"><span aria-hidden="true">⌘</span><input id="initialization-key" type={visible ? 'text' : 'password'} value={password} onChange={event => onChange(event.target.value)} placeholder="Wprowadź hasło, aby zainicjalizować maszynę…" autoComplete="off" spellCheck={false} autoCapitalize="off" /><button type="button" onClick={() => setVisible(!visible)} aria-pressed={visible}>{visible ? 'HIDE' : 'SHOW'}</button></div></div><div className="key-note"><span className="tiny-label">KEY HANDLING</span><p>Wyłącznie w pamięci tej strony.<br />Bez zapisywania. Bez wysyłania.</p></div></section>;
+}
