@@ -83,24 +83,26 @@ export function Taris2Cityscape({ sectionStart, sectionCount, textures, building
           // Walkways connect city structures, never the race corridor.
           const from = plaza.xDistance + plaza.scaleX * .55;
           const to = plaza.avenueX;
-          const span = Math.max(.3, to - from);
-          const slope = Math.atan2(plaza.avenueY - plaza.height, side * span);
-          object.rotation.set(0, 0, slope);
-          object.position.set(side * (from + to) / 2, (plaza.height + plaza.avenueY) / 2, z + 2);
-          object.scale.set(span, .36, 4.2);
-          object.updateMatrix();
-          skybridges.current.setMatrixAt(bridgeCount, object.matrix);
-          for (const [railIndex, offsetZ] of [-1.95, 1.95].entries()) {
-            object.position.set(side * (from + to) / 2, (plaza.height + plaza.avenueY) / 2 + .42, z + 2 + offsetZ);
-            object.scale.set(span, .08, .1);
+          if (Math.abs(plaza.height - plaza.avenueY) <= 8 && to > from + 2) {
+            const span = to - from;
+            const slope = Math.atan2(plaza.avenueY - plaza.height, side * span);
+            object.rotation.set(0, 0, slope);
+            object.position.set(side * (from + to) / 2, (plaza.height + plaza.avenueY) / 2, z + 2);
+            object.scale.set(span, .36, 4.2);
             object.updateMatrix();
-            bridgeRails.current.setMatrixAt(bridgeCount * 2 + railIndex, object.matrix);
+            skybridges.current.setMatrixAt(bridgeCount, object.matrix);
+            for (const [railIndex, offsetZ] of [-1.95, 1.95].entries()) {
+              object.position.set(side * (from + to) / 2, (plaza.height + plaza.avenueY) / 2 + .42, z + 2 + offsetZ);
+              object.scale.set(span, .08, .1);
+              object.updateMatrix();
+              bridgeRails.current.setMatrixAt(bridgeCount * 2 + railIndex, object.matrix);
+            }
+            bridgeCount++;
           }
-          bridgeCount++;
         }
 
         let layerOffset = 0;
-        for (const layer of LAYERS) {
+        for (const [layerIndex, layer] of LAYERS.entries()) {
           for (let slot = 0; slot < layer.count; slot++) {
             const serial = sideIndex * (MAX_BUILDINGS_PER_SECTION / 2) + layerOffset + slot;
             const localZ = -TARIS2_SECTION_LENGTH / 2 + (slot + .5) * TARIS2_SECTION_LENGTH / layer.count
@@ -109,6 +111,11 @@ export function Taris2Cityscape({ sectionStart, sectionCount, textures, building
             const width = layer.minWidth + taris2Random(section, serial, 53) * (layer.maxWidth - layer.minWidth);
             const height = layer.minHeight + taris2Random(section, serial, 64) * (layer.maxHeight - layer.minHeight);
             const depth = width * (.75 + taris2Random(section, serial, 75) * .6);
+            // Occasional open sightlines make terraces deep in the city visible
+            // without thinning every block of the dense skyline.
+            if (plaza && plaza.xDistance >= 68 && section % 4 === 0
+              && layerIndex < (plaza.xDistance >= 100 ? 2 : 1)
+              && Math.abs(localZ - plaza.z) < depth / 2 + 5) continue;
             if (plaza && Math.abs(xDistance - plaza.xDistance) < plaza.scaleX * .61 + width / 2 + 1.2
               && Math.abs(localZ - plaza.z) < plaza.scaleZ * .55 + depth / 2 + 1.2) continue;
             const style = STYLE_SEQUENCE[(serial + section * 5) % STYLE_SEQUENCE.length];
@@ -149,7 +156,7 @@ export function Taris2Cityscape({ sectionStart, sectionCount, textures, building
         <boxGeometry args={[148, 1.1, fullLength]} />
         <meshStandardMaterial color="#2b3a42" metalness={.36} roughness={.77} />
       </mesh>
-      {[{ x: 51, y: 3.3, width: 4.5 }, { x: 95, y: 12, width: 6 }].map(avenue => <group key={avenue.x}>
+      {[{ x: 51, y: 3.3, width: 4.5 }, { x: 72, y: 9, width: 4 }, { x: 95, y: 12, width: 6 }, { x: 130, y: 19, width: 5 }].map(avenue => <group key={avenue.x}>
         <mesh position={[side * avenue.x, avenue.y, centerZ]}>
           <boxGeometry args={[avenue.width, .48, fullLength]} />
           <meshStandardMaterial map={textures.metal} color="#c4d0d0" metalness={.63} roughness={.55} />

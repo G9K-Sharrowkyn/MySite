@@ -24,22 +24,34 @@ export interface Taris2PlazaPlan {
   avenueY: number;
 }
 
-const PLAZA_DISTANCES = [14, 29, 50, 77] as const;
-const PLAZA_HEIGHTS = [1.8, 3.3, 7.5, 12] as const;
+const PLAZA_DISTANCES = [18, 42, 68, 102] as const;
+const PLAZA_HEIGHTS = [-8, -1, 2.5, 9, 22, 38, 58] as const;
+const AVENUES = [
+  { x: 51, y: 3.3 },
+  { x: 72, y: 9 },
+  { x: 95, y: 12 },
+  { x: 130, y: 19 },
+] as const;
 
 export function getTaris2PlazaPlan(section: number, sideIndex: number): Taris2PlazaPlan | null {
   // Leaving some city blocks without a plaza makes the skyline less rhythmic.
   if ((section * 2 + sideIndex) % 5 === 3) return null;
-  const tier = (section * 3 + sideIndex * 2) % PLAZA_DISTANCES.length;
+  // Only one block in twenty is close to the track. Most plazas are woven
+  // through the middle and far city instead of lining the windows.
+  const distribution = (section * 11 + sideIndex * 7) % 20;
+  const tier = distribution === 0 ? 0 : distribution < 5 ? 1 : distribution < 13 ? 2 : 3;
   const xDistance = PLAZA_DISTANCES[tier];
+  const height = PLAZA_HEIGHTS[Math.floor(taris2Random(section, sideIndex, 241) * PLAZA_HEIGHTS.length)];
   return {
     xDistance,
     z: (taris2Random(section, sideIndex, 162) - .5) * 13,
-    height: PLAZA_HEIGHTS[tier],
-    scaleX: tier === 0 ? 14 : 18,
-    scaleZ: tier < 2 ? 17 : 15,
+    height,
+    scaleX: tier === 0 ? 14 : tier === 1 ? 18 + Math.floor(taris2Random(section, sideIndex, 252) * 3)
+      : tier === 2 ? 23 + Math.floor(taris2Random(section, sideIndex, 252) * 4)
+        : 26 + Math.floor(taris2Random(section, sideIndex, 252) * 6),
+    scaleZ: tier === 0 ? 15 : 15 + Math.floor(taris2Random(section, sideIndex, 263) * 4),
     style: (section + sideIndex) % 3,
-    avenueX: tier < 2 ? 51 : 95,
-    avenueY: tier < 2 ? 3.3 : 12,
+    avenueX: AVENUES[tier].x,
+    avenueY: AVENUES[tier].y,
   };
 }
