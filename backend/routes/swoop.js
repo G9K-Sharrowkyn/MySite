@@ -7,7 +7,7 @@ import {
 
 const router = express.Router();
 
-const TRACK_IDS = new Set(['taris', 'tatooine', 'manaan', 'korriban']);
+const TRACK_IDS = new Set(['taris', 'taris2', 'tatooine', 'manaan', 'korriban']);
 const MIN_RACE_TIME_MS = 15_000;
 const MAX_RACE_TIME_MS = 10 * 60_000;
 const MAX_COLLISIONS = 1_000;

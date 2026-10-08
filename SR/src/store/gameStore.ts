@@ -21,7 +21,7 @@ import { getInitialGameLanguage, normalizeGameLanguage } from '../i18n.ts';
 import type { GameLanguage } from '../i18n.ts';
 
 export type GamePhase = 'menu' | 'editor' | 'countdown' | 'starting' | 'racing' | 'coasting' | 'finished';
-export type TrackId   = 'taris' | 'tatooine' | 'manaan' | 'korriban';
+export type TrackId   = 'taris' | 'taris2' | 'tatooine' | 'manaan' | 'korriban';
 export type ShiftQuality = 'perfect' | 'good' | 'early' | 'late' | 'none';
 
 // Shift indicator fills based on how close speed is to gear max
@@ -64,6 +64,15 @@ export const TRACKS: Record<TrackId, TrackDef> = {
     record: 43500,
     events: buildTrackEvents(12, 244, 0, 0),
   },
+  taris2: {
+    id: 'taris2',
+    name: 'Taris 2.0 (test)',
+    subtitle: 'Cityscape test · 2650 m',
+    length: 2650,
+    color: '#78c8d5',
+    record: 43500,
+    events: buildTrackEvents(12, 244, 0, 0),
+  },
   tatooine: {
     id: 'tatooine',
     name: 'Tatooine',
@@ -96,7 +105,7 @@ export const TRACKS: Record<TrackId, TrackDef> = {
 export type TrackLayouts = Record<TrackId, TrackEvent[]>;
 
 const TRACK_LAYOUT_STORAGE_KEY = 'swoop-racer-track-layouts-v1';
-const TRACK_IDS: TrackId[] = ['taris', 'tatooine', 'manaan', 'korriban'];
+const TRACK_IDS: TrackId[] = ['taris', 'taris2', 'tatooine', 'manaan', 'korriban'];
 const EVENT_TYPES: ObstacleType[] = ['boulder', 'gate', 'wall', 'lowBarrier', 'mine', 'boost'];
 
 function cloneEvents(events: TrackEvent[]): TrackEvent[] {
@@ -113,7 +122,8 @@ function applyLayoutSource(layouts: TrackLayouts, source: unknown): void {
   if (!source || typeof source !== 'object') return;
   const records = source as Partial<Record<TrackId, unknown>>;
   for (const id of TRACK_IDS) {
-    const sanitized = sanitizeTrackEvents(records[id], TRACKS[id].length);
+    const sourceEvents = records[id] ?? (id === 'taris2' ? records.taris : undefined);
+    const sanitized = sanitizeTrackEvents(sourceEvents, TRACKS[id].length);
     if (sanitized) layouts[id] = sanitized;
   }
 }

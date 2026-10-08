@@ -228,14 +228,15 @@ test('track objects exist at fixed world distances from the beginning', () => {
 test('later tracks repeat the handcrafted Taris grammar with progressively tighter gaps', () => {
   assert.deepEqual(
     Object.values(TRACKS).map((track) => track.length),
-    [2650, 4200, 5100, 6000],
+    [2650, 2650, 4200, 5100, 6000],
   );
 
   const layouts = useGameStore.getState().trackEvents;
-  assert.deepEqual(Object.values(layouts).map((events) => events.length), [73, 121, 152, 183]);
+  assert.deepEqual(Object.values(layouts).map((events) => events.length), [73, 73, 121, 152, 183]);
   const taris = layouts.taris;
   const expectedStats = {
     taris: [6, 35, 74],
+    taris2: [6, 35, 74],
     tatooine: [5, 34, 73],
     manaan: [4, 33, 72],
     korriban: [3, 32, 71],

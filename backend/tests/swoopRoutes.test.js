@@ -90,6 +90,22 @@ describe('Swoop Racing leaderboards', () => {
     ]);
   });
 
+  test('keeps the Taris 2.0 test leaderboard separate from classic Taris', async () => {
+    const run = await request(app)
+      .post('/swoop/runs')
+      .set('x-auth-token', token)
+      .send({ trackId: 'taris2', timeMs: 44_000, collisions: 0 });
+    const testBoard = await request(app).get('/swoop/leaderboard/taris2');
+    const classicBoard = await request(app).get('/swoop/leaderboard/taris');
+
+    expect(run.statusCode).toBe(201);
+    expect(testBoard.statusCode).toBe(200);
+    expect(testBoard.body.leaderboard).toEqual([
+      expect.objectContaining({ trackId: 'taris2', timeMs: 44_000 })
+    ]);
+    expect(classicBoard.body.leaderboard).toEqual([]);
+  });
+
   test('rejects impossible or malformed runs', async () => {
     const response = await request(app)
       .post('/swoop/runs')

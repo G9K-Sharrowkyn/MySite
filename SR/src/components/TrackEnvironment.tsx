@@ -8,6 +8,7 @@ import { getTrackObjectZ } from '../game/raceRules';
 import { buildOpenWorldScenery } from '../game/sceneryDesign';
 import type { CliffRole, OpenWorldTrackId } from '../game/sceneryDesign';
 import { Tunnel } from './Tunnel';
+import { Taris2Environment } from './Taris2Environment';
 
 interface EnvironmentProps {
   trackId: TrackId;
@@ -170,6 +171,17 @@ function CloudBanks({
 export function EnvironmentAtmosphere({ trackId }: { trackId: TrackId }) {
   const accent = TRACKS[trackId].color;
 
+  if (trackId === 'taris2') {
+    return <>
+      <color attach="background" args={['#23333d']} />
+      <fog attach="fog" args={['#23333d', 185, 305]} />
+      <ambientLight intensity={1.12} color="#b0c5c6" />
+      <hemisphereLight args={['#b8d2d8', '#273238', 1.15]} />
+      <directionalLight position={[-6, 11, -12]} intensity={2.2} color="#c5d6d3" />
+      <pointLight position={[0, 4, 2]} intensity={1.5} color={accent} />
+    </>;
+  }
+
   if (trackId === 'tatooine') {
     return (
       <>
@@ -224,6 +236,7 @@ export function EnvironmentAtmosphere({ trackId }: { trackId: TrackId }) {
 }
 
 export function TrackEnvironment({ trackId, distanceRef }: EnvironmentProps) {
+  if (trackId === 'taris2') return <Taris2Environment distanceRef={distanceRef} />;
   if (trackId === 'tatooine') return <TatooineEnvironment distanceRef={distanceRef} />;
   if (trackId === 'manaan') return <ManaanEnvironment distanceRef={distanceRef} />;
   if (trackId === 'korriban') return <KorribanEnvironment distanceRef={distanceRef} />;

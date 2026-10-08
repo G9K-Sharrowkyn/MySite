@@ -5,9 +5,10 @@ import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
-const TRACK_IDS = ['taris', 'tatooine', 'manaan', 'korriban'] as const
+const TRACK_IDS = ['taris', 'taris2', 'tatooine', 'manaan', 'korriban'] as const
 const TRACK_LENGTHS: Record<(typeof TRACK_IDS)[number], number> = {
   taris: 3000,
+  taris2: 2650,
   tatooine: 4200,
   manaan: 5100,
   korriban: 6000,
@@ -42,8 +43,9 @@ function normalizeTrackFile(raw: unknown) {
   const tracks: Record<string, unknown[]> = {}
 
   for (const id of TRACK_IDS) {
-    if (!Array.isArray(source[id])) return null
-    const events = source[id].map((event) => sanitizeEvent(event, TRACK_LENGTHS[id]))
+    const sourceEvents = source[id] ?? (id === 'taris2' ? source.taris : undefined)
+    if (!Array.isArray(sourceEvents)) return null
+    const events = sourceEvents.map((event) => sanitizeEvent(event, TRACK_LENGTHS[id]))
     if (events.some((event) => event === null)) return null
     tracks[id] = (events as Record<string, unknown>[]).sort(
       (a, b) => Number(a.distance) - Number(b.distance),
