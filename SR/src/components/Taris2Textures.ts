@@ -98,22 +98,34 @@ function facadeCanvas(seed: number) {
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Taris 2.0 needs a 2D canvas.');
   const random = seeded(seed);
-  ctx.fillStyle = seed % 2 ? '#25343d' : '#37434a';
+  const colors = [
+    ['#25343d', '#4e616a', '#69aeb4'],
+    ['#374047', '#677178', '#b68f5d'],
+    ['#243743', '#42606c', '#4b9cb3'],
+    ['#3b3a40', '#736c6a', '#bd986e'],
+    ['#26333c', '#52616e', '#84a9b7'],
+    ['#333e43', '#69787a', '#dec193'],
+  ][seed % 6];
+  const columns = seed % 3 === 0 ? 6 : seed % 3 === 1 ? 8 : 10;
+  const rows = seed % 2 ? 18 : 23;
+  const cellWidth = 256 / columns;
+  const cellHeight = 512 / rows;
+  ctx.fillStyle = colors[0];
   ctx.fillRect(0, 0, 256, 512);
-  for (let row = 0; row < 20; row++) for (let col = 0; col < 8; col++) {
-    const x = col * 32;
-    const y = row * 25.6;
-    ctx.fillStyle = row % (seed % 2 ? 4 : 6) === 0 ? '#73858b' : '#52616a';
-    ctx.fillRect(x, y, 30, 1);
+  for (let row = 0; row < rows; row++) for (let col = 0; col < columns; col++) {
+    const x = col * cellWidth;
+    const y = row * cellHeight;
+    ctx.fillStyle = colors[1];
+    ctx.fillRect(x, y, cellWidth - 2, row % 5 === 0 ? 2 : 1);
     ctx.fillStyle = '#161f27';
-    ctx.fillRect(x + 5, y + 5, 22, 15);
-    const lit = random() > (seed % 3 === 0 ? .65 : .47);
-    ctx.fillStyle = lit ? (random() > .75 ? '#69aeb4' : '#b68f5d') : '#1b2b33';
+    ctx.fillRect(x + cellWidth * .16, y + cellHeight * .2, cellWidth * .68, cellHeight * .58);
+    const lit = random() > (seed % 3 === 0 ? .6 : .44);
+    ctx.fillStyle = lit ? (random() > .72 ? colors[2] : '#aa9371') : '#1b2b33';
     ctx.globalAlpha = lit ? .75 + random() * .25 : 1;
-    ctx.fillRect(x + 7, y + 7, 18, 11);
+    ctx.fillRect(x + cellWidth * .22, y + cellHeight * .27, cellWidth * .56, cellHeight * .42);
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#809097';
-    ctx.fillRect(x + 15, y + 7, 1, 11);
+    ctx.fillRect(x + cellWidth * .49, y + cellHeight * .27, 1, cellHeight * .42);
   }
   for (let i = 0; i < 180; i++) {
     ctx.fillStyle = `rgba(180,194,194,${random() * .08})`;
@@ -130,7 +142,7 @@ export function createTaris2Textures(): Taris2Textures {
     metal: canvasTexture(plateCanvas('#4e5e68', '#192a31', 321), 1, 3),
     metalBump: canvasTexture(plateCanvas('#888888', '#333333', 321, true), 1, 3, false),
     sign: canvasTexture(signCanvas()),
-    facades: [9312, 217].map(seed => canvasTexture(facadeCanvas(seed))),
+    facades: [9312, 217, 5402, 5403, 1114, 1115].map(seed => canvasTexture(facadeCanvas(seed))),
   };
 }
 

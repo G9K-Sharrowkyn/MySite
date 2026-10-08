@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { TRACK_WIDTH } from '../game/raceRules';
 import { createTaris2Textures, disposeTaris2Textures } from './Taris2Textures';
 import type { Taris2Textures } from './Taris2Textures';
+import { createTaris2BuildingModels, createTaris2PlazaModels } from './Taris2Architecture';
 import { Taris2Cityscape } from './Taris2Cityscape';
 
 const LENGTH = 40;
@@ -112,7 +113,13 @@ function InstancedBoxes({ boxes, lights = false, texture }: { boxes: BoxInstance
       : <meshStandardMaterial map={texture} color={texture ? '#ffffff' : '#81949a'} emissive={texture ? '#26343b' : '#000000'} emissiveIntensity={texture ? .24 : 0} metalness={.72} roughness={.45} />}
   </instancedMesh>;
 }
-function Taris2Segment({ index, textures, distanceRef }: { index: number; textures: Taris2Textures; distanceRef: React.MutableRefObject<number> }) {
+function Taris2Segment({ index, textures, distanceRef, buildingModels, plazaModels }: {
+  index: number;
+  textures: Taris2Textures;
+  distanceRef: React.MutableRefObject<number>;
+  buildingModels: THREE.BufferGeometry[];
+  plazaModels: THREE.BufferGeometry[];
+}) {
   return <group>
     {/* The window openings are real gaps between the lower sill, roof beam and piers. */}
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.025, 0]}>
@@ -156,7 +163,7 @@ function Taris2Segment({ index, textures, distanceRef }: { index: number; textur
         <meshStandardMaterial color="#8eafb3" metalness={.7} roughness={.36} />
       </mesh>
     </group>)}
-    <Taris2Cityscape index={index} distanceRef={distanceRef} textures={textures} />
+    <Taris2Cityscape index={index} distanceRef={distanceRef} textures={textures} buildingModels={buildingModels} plazaModels={plazaModels} />
 
     {[-1.75, 0, 1.75].map(x => <mesh key={x} position={[x, .006, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry args={[.027, LENGTH]} />
@@ -185,7 +192,10 @@ function Taris2Segment({ index, textures, distanceRef }: { index: number; textur
 export function Taris2Environment({ distanceRef }: { distanceRef: React.MutableRefObject<number> }) {
   const refs = useRef<(THREE.Group | null)[]>([]);
   const textures = useMemo(createTaris2Textures, []);
+  const buildingModels = useMemo(createTaris2BuildingModels, []);
+  const plazaModels = useMemo(createTaris2PlazaModels, []);
   useEffect(() => () => disposeTaris2Textures(textures), [textures]);
+  useEffect(() => () => [...buildingModels, ...plazaModels].forEach(geometry => geometry.dispose()), [buildingModels, plazaModels]);
 
   useFrame(() => {
     const total = SEGMENTS * LENGTH;
@@ -202,7 +212,7 @@ export function Taris2Environment({ distanceRef }: { distanceRef: React.MutableR
       <shaderMaterial vertexShader={SKY_VERTEX} fragmentShader={SKY_FRAGMENT} side={THREE.BackSide} depthWrite={false} />
     </mesh>
     {Array.from({ length: SEGMENTS }, (_, index) => <group key={index} ref={node => { refs.current[index] = node; }} position={[0, 0, -index * LENGTH]}>
-      <Taris2Segment index={index} textures={textures} distanceRef={distanceRef} />
+      <Taris2Segment index={index} textures={textures} distanceRef={distanceRef} buildingModels={buildingModels} plazaModels={plazaModels} />
     </group>)}
   </group>;
 }
