@@ -5,8 +5,8 @@ import type { Taris2Textures } from './Taris2Textures';
 
 const LENGTH = 40;
 const SEGMENTS = 7;
-const COUNT = 12;
-const VARIANTS = 3;
+const COUNT = 8;
+const VARIANTS = 2;
 
 function randomFor(section: number, index: number, salt: number) {
   let value = Math.imul(section + 149, 1597334677) ^ Math.imul(index + 71, 3812015801) ^ salt;
@@ -25,12 +25,10 @@ export function Taris2Cityscape({ index, distanceRef, textures }: {
   const bodies = useRef<(THREE.InstancedMesh | null)[]>([]);
   const crowns = useRef<THREE.InstancedMesh>(null);
   const caps = useRef<THREE.InstancedMesh>(null);
-  const spires = useRef<THREE.InstancedMesh>(null);
-  const conduits = useRef<THREE.InstancedMesh>(null);
   const sections = useRef(-1);
 
   const update = (section: number) => {
-    if (bodies.current.some(mesh => !mesh) || bodies.current.length !== VARIANTS || !crowns.current || !caps.current || !spires.current || !conduits.current || sections.current === section) return;
+    if (bodies.current.some(mesh => !mesh) || bodies.current.length !== VARIANTS || !crowns.current || !caps.current || sections.current === section) return;
     sections.current = section;
     const object = new THREE.Object3D();
     for (let i = 0; i < COUNT; i++) {
@@ -38,17 +36,17 @@ export function Taris2Cityscape({ index, distanceRef, textures }: {
       const slot = i % (COUNT / 2);
       const distance = 12 + randomFor(section, i, 21) * 43;
       const x = side * distance;
-      const z = -17.5 + slot * 7 + (randomFor(section, i, 32) - .5) * 3;
+      const z = -15 + slot * 10 + (randomFor(section, i, 32) - .5) * 3;
       const near = distance < 25;
       const height = (near ? 12 : 21) + randomFor(section, i, 43) * (near ? 22 : 45);
-      const width = 2.7 + randomFor(section, i, 54) * (near ? 4 : 7);
+      const width = 3.2 + randomFor(section, i, 54) * (near ? 4.8 : 7.8);
       const depth = 2.5 + randomFor(section, i, 65) * 5.5;
       const setback = randomFor(section, i, 122) > .31;
       const lowerHeight = setback ? height * (.64 + randomFor(section, i, 133) * .13) : height;
       object.rotation.set(0, 0, 0);
-      // Foundations disappear into the lower-city haze instead of ending in mid-air.
-      object.position.set(x, (lowerHeight - 2 - 30) / 2, z);
-      object.scale.set(width, lowerHeight + 28, depth);
+      // Foundations disappear below the sill without filling the whole skyline.
+      object.position.set(x, (lowerHeight - 2 - 14) / 2, z);
+      object.scale.set(width, lowerHeight + 12, depth);
       object.updateMatrix();
       const body = bodies.current[i % VARIANTS];
       body?.setMatrixAt(Math.floor(i / VARIANTS), object.matrix);
@@ -59,25 +57,14 @@ export function Taris2Cityscape({ index, distanceRef, textures }: {
       object.updateMatrix();
       crowns.current.setMatrixAt(i, object.matrix);
 
-      object.position.set(x - side * width * .44, height * .48 - 1, z - depth * .48);
-      object.scale.set(.12, height * .8, .12);
-      object.updateMatrix();
-      conduits.current.setMatrixAt(i, object.matrix);
-      conduits.current.setColorAt(i, new THREE.Color(i % 3 === 0 ? '#7eb0b2' : '#566b71'));
-
       object.position.set(x, height - 1.65, z);
       object.scale.set(width * 1.08, .5 + randomFor(section, i, 98) * 1.1, depth * 1.08);
       object.updateMatrix();
       caps.current.setMatrixAt(i, object.matrix);
       caps.current.setColorAt(i, new THREE.Color(i % 4 === 0 ? '#68757b' : '#26343b'));
 
-      const antenna = randomFor(section, i, 109) > .43;
-      object.position.set(x + width * .22, height + 1.8, z - depth * .12);
-      object.scale.set(.12, antenna ? 3.8 : .001, .12);
-      object.updateMatrix();
-      spires.current.setMatrixAt(i, object.matrix);
     }
-    for (const mesh of [...bodies.current, crowns.current, caps.current, spires.current, conduits.current]) {
+    for (const mesh of [...bodies.current, crowns.current, caps.current]) {
       if (!mesh) continue;
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
@@ -99,19 +86,11 @@ export function Taris2Cityscape({ index, distanceRef, textures }: {
     </instancedMesh>)}
     <instancedMesh ref={crowns} args={[undefined, undefined, COUNT]} frustumCulled={false}>
       <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial map={textures.facades[2]} metalness={.44} roughness={.77} />
+      <meshStandardMaterial map={textures.facades[1]} metalness={.44} roughness={.77} />
     </instancedMesh>
     <instancedMesh ref={caps} args={[undefined, undefined, COUNT]} frustumCulled={false}>
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial color="#ffffff" metalness={.55} roughness={.65} />
-    </instancedMesh>
-    <instancedMesh ref={spires} args={[undefined, undefined, COUNT]} frustumCulled={false}>
-      <cylinderGeometry args={[1, 1, 1, 5]} />
-      <meshStandardMaterial color="#a9a18a" metalness={.78} roughness={.4} />
-    </instancedMesh>
-    <instancedMesh ref={conduits} args={[undefined, undefined, COUNT]} frustumCulled={false}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color="#ffffff" metalness={.69} roughness={.43} />
     </instancedMesh>
   </group>;
 }

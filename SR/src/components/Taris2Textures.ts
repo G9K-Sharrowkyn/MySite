@@ -130,7 +130,7 @@ export function createTaris2Textures(): Taris2Textures {
     metal: canvasTexture(plateCanvas('#4e5e68', '#192a31', 321), 1, 3),
     metalBump: canvasTexture(plateCanvas('#888888', '#333333', 321, true), 1, 3, false),
     sign: canvasTexture(signCanvas()),
-    facades: [9312, 217, 5403].map(seed => canvasTexture(facadeCanvas(seed))),
+    facades: [9312, 217].map(seed => canvasTexture(facadeCanvas(seed))),
   };
 }
 
