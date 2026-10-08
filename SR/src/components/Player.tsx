@@ -3,6 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store/gameStore';
 import type { PlayerPhysics } from '../hooks/usePlayerPhysics';
+import { SwoopBodyDetails } from './SwoopBodyDetails';
 import {
   getAirParticleIntensity,
   getCollisionReactionPose,
@@ -75,6 +76,7 @@ function EnginePod({
 function SwoopVehicle({ flameRefs, lightRefs }: { flameRefs: VehicleFxRefs; lightRefs: VehicleLightRefs }) {
   return (
     <group>
+      <SwoopBodyDetails />
       <mesh scale={[0.23, 0.18, 1.02]}>
         <sphereGeometry args={[1, 16, 10]} />
         <meshStandardMaterial color="#aeb5b5" metalness={0.76} roughness={0.3} flatShading />

@@ -1,8 +1,10 @@
-import { useRef, useMemo } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { TRACKS, useGameStore } from '../store/gameStore';
 import { getWorldFlowSpeed, TRACK_WIDTH } from '../game/raceRules';
+import { createTarisSurfaceTextures, disposeTarisSurfaceTextures } from './TarisSurfaceTextures';
+import type { TarisSurfaceTextures } from './TarisSurfaceTextures';
 
 const SEGMENT_COUNT  = 10;
 const SEGMENT_LENGTH = 40;
@@ -13,6 +15,8 @@ export function Tunnel({ distanceRef }: { distanceRef: React.MutableRefObject<nu
   const segmentRefs = useRef<(THREE.Group | null)[]>([]);
   const trackId = useGameStore((s) => s.selectedTrack);
   const accent = TRACKS[trackId].color;
+  const textures = useMemo(createTarisSurfaceTextures, []);
+  useEffect(() => () => disposeTarisSurfaceTextures(textures), [textures]);
 
   const positions = useMemo(() => {
     return Array.from({ length: SEGMENT_COUNT }, (_, i) => -i * SEGMENT_LENGTH);
@@ -34,7 +38,7 @@ export function Tunnel({ distanceRef }: { distanceRef: React.MutableRefObject<nu
     <group>
       {positions.map((z, i) => (
         <group key={i} ref={(el) => { segmentRefs.current[i] = el; }} position={[0, 0, z]}>
-          <TunnelSegment accent={accent} variant={i % 4} />
+          <TunnelSegment accent={accent} variant={i % 4} textures={textures} />
         </group>
       ))}
     </group>
@@ -48,7 +52,7 @@ const TUNNEL_PALETTES = [
   { floor: '#50575c', ceiling: '#3c464d', wall: '#566169', rib: '#6e7b83', secondary: '#39d8c2' },
 ];
 
-function TunnelSegment({ accent, variant }: { accent: string; variant: number }) {
+function TunnelSegment({ accent, variant, textures }: { accent: string; variant: number; textures: TarisSurfaceTextures }) {
   const palette = TUNNEL_PALETTES[variant];
   const ribCount = [5, 4, 6, 3][variant];
 
@@ -57,33 +61,31 @@ function TunnelSegment({ accent, variant }: { accent: string; variant: number })
       {/* Floor */}
       <mesh position={[0, 0, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <planeGeometry args={[TUNNEL_WIDTH, SEGMENT_LENGTH]} />
-        <meshStandardMaterial color={palette.floor} metalness={0.68} roughness={0.56} />
+        <meshStandardMaterial map={textures.floor} color="#ffffff" metalness={0.48} roughness={0.72} />
       </mesh>
       {/* Ceiling */}
       <mesh position={[0, TUNNEL_HEIGHT, 0]} rotation={[Math.PI / 2, 0, 0]}>
         <planeGeometry args={[TUNNEL_WIDTH, SEGMENT_LENGTH]} />
-        <meshStandardMaterial color={palette.ceiling} metalness={0.7} roughness={0.5} />
+        <meshStandardMaterial map={textures.ceiling} color="#ffffff" metalness={0.48} roughness={0.7} />
       </mesh>
       {/* Left wall */}
       <mesh position={[-TUNNEL_WIDTH / 2, TUNNEL_HEIGHT / 2, 0]} rotation={[0, Math.PI / 2, 0]}>
         <planeGeometry args={[SEGMENT_LENGTH, TUNNEL_HEIGHT]} />
         <meshStandardMaterial
-          color={variant === 1 ? '#111b22' : palette.wall}
-          emissive={variant === 1 ? '#071117' : '#000000'}
-          emissiveIntensity={variant === 1 ? 0.55 : 0}
-          metalness={0.64}
-          roughness={0.58}
+          map={textures.wall}
+          color="#ffffff"
+          metalness={0.42}
+          roughness={0.68}
         />
       </mesh>
       {/* Right wall */}
       <mesh position={[TUNNEL_WIDTH / 2, TUNNEL_HEIGHT / 2, 0]} rotation={[0, -Math.PI / 2, 0]}>
         <planeGeometry args={[SEGMENT_LENGTH, TUNNEL_HEIGHT]} />
         <meshStandardMaterial
-          color={variant === 1 ? '#111b22' : palette.wall}
-          emissive={variant === 1 ? '#071117' : '#000000'}
-          emissiveIntensity={variant === 1 ? 0.55 : 0}
-          metalness={0.64}
-          roughness={0.58}
+          map={textures.wall}
+          color="#ffffff"
+          metalness={0.42}
+          roughness={0.68}
         />
       </mesh>
 
@@ -102,6 +104,16 @@ function TunnelSegment({ accent, variant }: { accent: string; variant: number })
              <boxGeometry args={[TUNNEL_WIDTH, 0.2, 0.4]} />
              <meshStandardMaterial color={palette.rib} metalness={0.76} roughness={0.4} />
            </mesh>
+           {([-1, 1] as const).map(side => <group key={`brace-${side}`}>
+             <mesh position={[side * 2.84, 5.23, 0]} rotation={[0, 0, side * 0.72]}>
+               <boxGeometry args={[0.17, 1.8, 0.48]} />
+               <meshStandardMaterial color="#9dabb0" metalness={0.68} roughness={0.43} />
+             </mesh>
+             <mesh position={[side * 3.44, 3.72, 0]}>
+               <boxGeometry args={[0.1, 0.36, 1.5]} />
+               <meshStandardMaterial color="#c18a55" emissive="#7d3c16" emissiveIntensity={0.65} />
+             </mesh>
+           </group>)}
            <mesh position={[0, 0.018, 0]} rotation={[-Math.PI / 2, 0, 0]}>
              <planeGeometry args={[TUNNEL_WIDTH - 0.35, 0.055]} />
              <meshBasicMaterial color="#c0c7cd" />
@@ -110,6 +122,10 @@ function TunnelSegment({ accent, variant }: { accent: string; variant: number })
              <boxGeometry args={[0.08, 0.72, 1.9]} />
              <meshStandardMaterial color="#5b1f10" emissive="#c74418" emissiveIntensity={1.2} />
            </mesh>
+           {([-1, 1] as const).map(side => <mesh key={`shoulder-${side}`} position={[side * 3.1, 0.027, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+             <planeGeometry args={[0.5, 0.62]} />
+             <meshBasicMaterial color={variant % 2 === 0 ? '#c58e4e' : '#e4c4a0'} />
+           </mesh>)}
            <mesh position={[3.38, 3.05, 0]}>
              <boxGeometry args={[0.08, 0.72, 1.9]} />
              <meshStandardMaterial color="#5b1f10" emissive="#c74418" emissiveIntensity={1.2} />
@@ -130,6 +146,16 @@ function TunnelSegment({ accent, variant }: { accent: string; variant: number })
           <meshStandardMaterial color="#a4acb3" emissive="#3b444a" emissiveIntensity={0.45} />
         </mesh>
       ))}
+      {([-1, 1] as const).map(side => <group key={`raceway-${side}`}>
+        <mesh position={[side * 3.03, 0.04, 0]}>
+          <boxGeometry args={[0.13, 0.055, SEGMENT_LENGTH]} />
+          <meshStandardMaterial color="#b37640" metalness={0.42} roughness={0.55} />
+        </mesh>
+        <mesh position={[side * 3.34, 4.95, 0]}>
+          <boxGeometry args={[0.15, 0.18, SEGMENT_LENGTH]} />
+          <meshStandardMaterial color="#758d98" metalness={0.7} roughness={0.34} />
+        </mesh>
+      </group>)}
       <mesh position={[-3.32, 1.35, 0]}>
         <boxGeometry args={[0.12, 0.12, SEGMENT_LENGTH]} />
         <meshStandardMaterial color="#a0a8af" metalness={0.82} roughness={0.32} />
@@ -158,22 +184,24 @@ function TunnelSegment({ accent, variant }: { accent: string; variant: number })
         <boxGeometry args={[0.06, 0.06, SEGMENT_LENGTH]} />
         <meshStandardMaterial color={palette.secondary} emissive={palette.secondary} emissiveIntensity={2} />
       </mesh>
-      {variant === 1 && ([-1, 1] as const).flatMap((side) => [-15, -5, 5, 15].map((z, panelIndex) => (
+      {(variant === 1 || variant === 3) && ([-1, 1] as const).flatMap((side) => [-13, 0, 13].map((z, panelIndex) => (
         <group key={`wall-screen-${side}-${z}`} position={[side * (TUNNEL_WIDTH / 2 - 0.018), 3.1, z]} rotation={[0, side < 0 ? Math.PI / 2 : -Math.PI / 2, 0]}>
           <mesh>
-            <planeGeometry args={[7.4, 2.65]} />
-            <meshStandardMaterial color="#26353c" emissive="#101d23" emissiveIntensity={0.7} metalness={0.82} roughness={0.28} />
+            <planeGeometry args={[8.4, 3.15]} />
+            <meshStandardMaterial color="#8197a0" metalness={0.72} roughness={0.3} />
           </mesh>
           <mesh position={[0, 0, 0.012]}>
-            <planeGeometry args={[6.75, 2.05]} />
-            <meshBasicMaterial color={panelIndex % 2 === 0 ? '#123f4b' : '#3a2419'} />
+            <planeGeometry args={[7.65, 2.55]} />
+            <meshBasicMaterial map={textures.skyline} color={panelIndex % 2 === 0 ? '#b3ddec' : '#e0c0a3'} toneMapped={false} />
           </mesh>
-          {[-0.68, 0, 0.68].map((y) => (
-            <mesh key={y} position={[0, y, 0.02]}>
-              <planeGeometry args={[6.2, 0.045]} />
-              <meshBasicMaterial color={panelIndex % 2 === 0 ? '#4bdcf2' : '#ff983f'} />
-            </mesh>
-          ))}
+          <mesh position={[0, -1.36, 0.025]}>
+            <boxGeometry args={[7.85, 0.08, 0.04]} />
+            <meshBasicMaterial color={panelIndex % 2 === 0 ? '#69d8e3' : '#e2aa70'} />
+          </mesh>
+          {[-2.4, 0, 2.4].map(x => <mesh key={x} position={[x, 0, 0.03]}>
+            <boxGeometry args={[0.11, 2.65, 0.06]} />
+            <meshStandardMaterial color="#849da6" metalness={0.8} roughness={0.3} />
+          </mesh>)}
         </group>
       )))}
       {variant === 2 && [-1.8, 0, 1.8].map((x) => (
