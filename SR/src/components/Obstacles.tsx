@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import {
@@ -15,6 +15,8 @@ import {
 import type { CollisionImpact } from '../game/raceRules';
 import { useGameStore } from '../store/gameStore';
 import type { TrackEvent } from '../store/gameStore';
+import { createIndustrialSurfaces, disposeIndustrialSurfaces } from './IndustrialSurfaces';
+import type { IndustrialSurfaces } from './IndustrialSurfaces';
 
 const PASSED_HIDE_Z = 10;
 
@@ -43,6 +45,9 @@ export function Obstacles({
   const triggered = useRef<Set<number>>(new Set());
   const previousZ = useRef<Map<number, number>>(new Map());
   const collisionCooldown = useRef(0);
+  const surfaces = useMemo(() => trackId === 'taris2' ? createIndustrialSurfaces() : null, [trackId]);
+
+  useEffect(() => () => { if (surfaces) disposeIndustrialSurfaces(surfaces); }, [surfaces]);
 
   useEffect(() => {
     if (phase === 'starting') {
@@ -115,7 +120,7 @@ export function Obstacles({
           }}
           position={[event.x, 0, -event.distance]}
         >
-          <ObstacleModel event={event} seed={event.distance + index * 17} />
+          <ObstacleModel event={event} seed={event.distance + index * 17} surfaces={surfaces} />
         </group>
       ))}
     </group>
@@ -162,13 +167,13 @@ function evaluateEventContact(event: TrackEvent, player: THREE.Vector3): EventCo
   return { hit: true, zone: player.x < gapX ? 'left' : 'right' };
 }
 
-function ObstacleModel({ event, seed }: { event: TrackEvent; seed: number }) {
+function ObstacleModel({ event, seed, surfaces }: { event: TrackEvent; seed: number; surfaces: IndustrialSurfaces | null }) {
   if (event.type === 'boulder') return <RockDebris seed={seed} />;
-  if (event.type === 'gate') return <ClawGate width={event.width ?? 2.5} />;
-  if (event.type === 'wall') return <IndustrialBulkhead side={event.side ?? 'center'} />;
-  if (event.type === 'lowBarrier') return <JumpBarrier />;
-  if (event.type === 'mine') return <RepulsorMine seed={seed} />;
-  return <BoostPad />;
+  if (event.type === 'gate') return <ClawGate width={event.width ?? 2.5} surfaces={surfaces} />;
+  if (event.type === 'wall') return <IndustrialBulkhead side={event.side ?? 'center'} surfaces={surfaces} />;
+  if (event.type === 'lowBarrier') return <JumpBarrier surfaces={surfaces} />;
+  if (event.type === 'mine') return <RepulsorMine seed={seed} surfaces={surfaces} />;
+  return <BoostPad surfaces={surfaces} />;
 }
 
 function RockDebris({ seed }: { seed: number }) {
@@ -199,7 +204,7 @@ function RockDebris({ seed }: { seed: number }) {
   );
 }
 
-function ClawGate({ width }: { width: number }) {
+function ClawGate({ width, surfaces }: { width: number; surfaces: IndustrialSurfaces | null }) {
   const gap = width / 2;
   const pylonX = gap + 0.75;
   return (
@@ -208,12 +213,16 @@ function ClawGate({ width }: { width: number }) {
         <group key={direction} position={[direction * pylonX, 0, 0]}>
           <mesh position={[0, 1.2, 0]}>
             <boxGeometry args={[0.58, 2.4, 0.78]} />
-            <meshStandardMaterial color="#4d555d" metalness={0.86} roughness={0.3} />
+            <meshStandardMaterial map={surfaces?.alloy} color={surfaces ? '#d1d9db' : '#4d555d'} metalness={surfaces ? .76 : .86} roughness={surfaces ? .43 : .3} />
           </mesh>
           <mesh position={[0, 0.16, 0.12]}>
             <boxGeometry args={[1.02, 0.3, 1.16]} />
             <meshStandardMaterial color="#292e33" metalness={0.9} roughness={0.25} />
           </mesh>
+          {surfaces && <mesh position={[0, 2.11, 0.397]}>
+            <planeGeometry args={[.47, .27]} />
+            <meshStandardMaterial map={surfaces.warning} metalness={.35} roughness={.66} />
+          </mesh>}
           <mesh position={[-direction * 0.38, 0.86, 0]} rotation={[0, 0, direction * 0.55]}>
             <boxGeometry args={[0.24, 1.62, 0.5]} />
             <meshStandardMaterial color="#69727a" metalness={0.92} roughness={0.2} />
@@ -242,7 +251,7 @@ function ClawGate({ width }: { width: number }) {
   );
 }
 
-function IndustrialBulkhead({ side }: { side: 'left' | 'right' | 'center' }) {
+function IndustrialBulkhead({ side, surfaces }: { side: 'left' | 'right' | 'center'; surfaces: IndustrialSurfaces | null }) {
   const gapX = side === 'left' ? -2.2 : side === 'right' ? 2.2 : 0;
   const gapHalf = 1.2;
   const leftEdge = -3.5;
@@ -252,8 +261,8 @@ function IndustrialBulkhead({ side }: { side: 'left' | 'right' | 'center' }) {
 
   return (
     <group>
-      {leftWidth > 0.15 && <BulkheadBlock width={leftWidth} x={leftEdge + leftWidth / 2} />}
-      {rightWidth > 0.15 && <BulkheadBlock width={rightWidth} x={gapX + gapHalf + rightWidth / 2} />}
+      {leftWidth > 0.15 && <BulkheadBlock width={leftWidth} x={leftEdge + leftWidth / 2} surfaces={surfaces} />}
+      {rightWidth > 0.15 && <BulkheadBlock width={rightWidth} x={gapX + gapHalf + rightWidth / 2} surfaces={surfaces} />}
       {[-1, 1].map((direction) => (
         <group key={direction} position={[gapX + direction * gapHalf, 1.35, 0.36]}>
           <mesh>
@@ -280,17 +289,21 @@ function IndustrialBulkhead({ side }: { side: 'left' | 'right' | 'center' }) {
   );
 }
 
-function BulkheadBlock({ width, x }: { width: number; x: number }) {
+function BulkheadBlock({ width, x, surfaces }: { width: number; x: number; surfaces: IndustrialSurfaces | null }) {
   return (
     <group position={[x, 1.35, 0]}>
       <mesh>
         <boxGeometry args={[width, 2.7, 0.62]} />
-        <meshStandardMaterial color="#485057" metalness={0.84} roughness={0.34} />
+        <meshStandardMaterial map={surfaces?.alloy} color={surfaces ? '#d4d8d8' : '#485057'} metalness={surfaces ? .73 : .84} roughness={surfaces ? .48 : .34} />
       </mesh>
       <mesh position={[0, 0, 0.34]}>
         <boxGeometry args={[Math.max(0.08, width - 0.22), 2.26, 0.08]} />
         <meshStandardMaterial color="#2e3439" metalness={0.9} roughness={0.25} />
       </mesh>
+      {surfaces && <mesh position={[0, -.94, .391]}>
+        <planeGeometry args={[Math.max(.08, width - .2), .23]} />
+        <meshStandardMaterial map={surfaces.warning} metalness={.3} roughness={.7} />
+      </mesh>}
       {[-0.78, 0, 0.78].map((y) => (
         <mesh key={y} position={[0, y, 0.4]}>
           <boxGeometry args={[Math.max(0.05, width - 0.36), 0.055, 0.055]} />
@@ -301,13 +314,17 @@ function BulkheadBlock({ width, x }: { width: number; x: number }) {
   );
 }
 
-function JumpBarrier() {
+function JumpBarrier({ surfaces }: { surfaces: IndustrialSurfaces | null }) {
   return (
     <group>
       <mesh position={[0, 0.58, 0]}>
         <boxGeometry args={[6.15, 0.32, 0.64]} />
-        <meshStandardMaterial color="#4d555d" metalness={0.9} roughness={0.25} />
+        <meshStandardMaterial map={surfaces?.alloy} color={surfaces ? '#d7dddd' : '#4d555d'} metalness={surfaces ? .76 : .9} roughness={surfaces ? .43 : .25} />
       </mesh>
+      {surfaces && <mesh position={[0, .59, .326]}>
+        <planeGeometry args={[5.8, .25]} />
+        <meshStandardMaterial map={surfaces.warning} metalness={.25} roughness={.65} />
+      </mesh>}
       {[-2.55, -1.7, -0.85, 0, 0.85, 1.7, 2.55].map((x, index) => (
         <mesh key={x} position={[x, 0.59, 0.345]} rotation={[0, 0, index % 2 === 0 ? 0.35 : -0.35]}>
           <boxGeometry args={[0.44, 0.14, 0.06]} />
@@ -336,13 +353,13 @@ function JumpBarrier() {
   );
 }
 
-function RepulsorMine({ seed }: { seed: number }) {
+function RepulsorMine({ seed, surfaces }: { seed: number; surfaces: IndustrialSurfaces | null }) {
   const rotation = (seed % 19) * 0.18;
   return (
     <group position={[0, 0.62, 0]} rotation={[0.12, rotation, 0.08]}>
       <mesh>
         <sphereGeometry args={[0.46, 16, 12]} />
-        <meshStandardMaterial color="#252a2f" emissive="#54120d" emissiveIntensity={0.7} metalness={0.96} roughness={0.16} />
+        <meshStandardMaterial map={surfaces?.alloy} color={surfaces ? '#adb6b9' : '#252a2f'} emissive="#54120d" emissiveIntensity={surfaces ? .45 : .7} metalness={surfaces ? .82 : .96} roughness={surfaces ? .4 : .16} />
       </mesh>
       <mesh rotation={[Math.PI / 2, 0, 0]}>
         <torusGeometry args={[0.59, 0.075, 8, 24]} />
@@ -373,13 +390,17 @@ function RepulsorMine({ seed }: { seed: number }) {
   );
 }
 
-function BoostPad() {
+function BoostPad({ surfaces }: { surfaces: IndustrialSurfaces | null }) {
   return (
     <group>
       <mesh position={[0, 0.025, 0]}>
         <boxGeometry args={[2.45, 0.08, 3.2]} />
-        <meshStandardMaterial color="#283037" metalness={0.92} roughness={0.2} />
+        <meshStandardMaterial map={surfaces?.alloy} color={surfaces ? '#9eacb3' : '#283037'} metalness={surfaces ? .75 : .92} roughness={surfaces ? .46 : .2} />
       </mesh>
+      {surfaces && <mesh position={[0, .068, -1.38]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[2.27, .27]} />
+        <meshStandardMaterial map={surfaces.warning} metalness={.28} roughness={.62} />
+      </mesh>}
       {[-0.76, 0, 0.76].map((x) => (
         <mesh key={x} position={[x, 0.075, 0]}>
           <boxGeometry args={[0.48, 0.045, 2.7]} />

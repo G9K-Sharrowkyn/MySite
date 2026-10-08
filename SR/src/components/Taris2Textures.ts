@@ -6,6 +6,7 @@ export interface Taris2Textures {
   metal: THREE.CanvasTexture;
   metalBump: THREE.CanvasTexture;
   sign: THREE.CanvasTexture;
+  facades: THREE.CanvasTexture[];
 }
 
 function seeded(seed: number) {
@@ -90,6 +91,38 @@ function signCanvas() {
   return canvas;
 }
 
+function facadeCanvas(seed: number) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 512;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Taris 2.0 needs a 2D canvas.');
+  const random = seeded(seed);
+  ctx.fillStyle = seed % 2 ? '#25343d' : '#37434a';
+  ctx.fillRect(0, 0, 256, 512);
+  for (let row = 0; row < 20; row++) for (let col = 0; col < 8; col++) {
+    const x = col * 32;
+    const y = row * 25.6;
+    ctx.fillStyle = row % (seed % 2 ? 4 : 6) === 0 ? '#73858b' : '#52616a';
+    ctx.fillRect(x, y, 30, 1);
+    ctx.fillStyle = '#161f27';
+    ctx.fillRect(x + 5, y + 5, 22, 15);
+    const lit = random() > (seed % 3 === 0 ? .65 : .47);
+    ctx.fillStyle = lit ? (random() > .75 ? '#69aeb4' : '#b68f5d') : '#1b2b33';
+    ctx.globalAlpha = lit ? .75 + random() * .25 : 1;
+    ctx.fillRect(x + 7, y + 7, 18, 11);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#809097';
+    ctx.fillRect(x + 15, y + 7, 1, 11);
+  }
+  for (let i = 0; i < 180; i++) {
+    ctx.fillStyle = `rgba(180,194,194,${random() * .08})`;
+    ctx.fillRect(random() * 256, random() * 512, 1, 3 + random() * 25);
+  }
+  return canvas;
+}
+
+
 export function createTaris2Textures(): Taris2Textures {
   return {
     road: canvasTexture(plateCanvas('#465257', '#18242b', 784), 1, 8),
@@ -97,9 +130,10 @@ export function createTaris2Textures(): Taris2Textures {
     metal: canvasTexture(plateCanvas('#4e5e68', '#192a31', 321), 1, 3),
     metalBump: canvasTexture(plateCanvas('#888888', '#333333', 321, true), 1, 3, false),
     sign: canvasTexture(signCanvas()),
+    facades: [9312, 217, 5403].map(seed => canvasTexture(facadeCanvas(seed))),
   };
 }
 
 export function disposeTaris2Textures(textures: Taris2Textures) {
-  Object.values(textures).forEach(texture => texture.dispose());
+  Object.values(textures).flat().forEach(texture => texture.dispose());
 }
