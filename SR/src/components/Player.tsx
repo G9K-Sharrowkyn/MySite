@@ -3,7 +3,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useGameStore } from '../store/gameStore';
 import type { PlayerPhysics } from '../hooks/usePlayerPhysics';
-import { SwoopBodyDetails } from './SwoopBodyDetails';
+import { KotorSwoopBody } from './KotorSwoopBody';
 import {
   getAirParticleIntensity,
   getCollisionReactionPose,
@@ -27,32 +27,12 @@ function EnginePod({
   lightRefs: VehicleLightRefs;
 }) {
   return (
-    <group position={[side * 0.4, 0, 0.05]}>
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.145, 0.18, 1.5, 12, 1]} />
-        <meshStandardMaterial color="#b9572d" metalness={0.78} roughness={0.34} flatShading />
-      </mesh>
-      <mesh position={[0, 0, -0.92]} rotation={[-Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.145, 0.52, 8]} />
-        <meshStandardMaterial color="#cf6736" metalness={0.72} roughness={0.38} flatShading />
-      </mesh>
-      <mesh position={[0, 0, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[0.185, 0.185, 0.28, 12]} />
-        <meshStandardMaterial color="#626b70" metalness={0.9} roughness={0.24} />
-      </mesh>
-      <mesh position={[side * 0.09, 0.13, -0.1]} rotation={[0, -side * 0.05, -side * 0.16]}>
-        <boxGeometry args={[0.19, 0.04, 0.95]} />
-        <meshStandardMaterial color="#c35e32" metalness={0.68} roughness={0.38} />
-      </mesh>
-      <mesh position={[0, 0, 0.82]}>
-        <torusGeometry args={[0.145, 0.045, 8, 16]} />
-        <meshStandardMaterial color="#1d2227" metalness={0.98} roughness={0.13} />
-      </mesh>
-      <mesh position={[0, 0, 0.828]}>
+    <group position={[side * 0.4, 0, 0]}>
+      <mesh position={[0, 0, 0.904]}>
         <circleGeometry args={[0.115, 18]} />
         <meshStandardMaterial color="#ffb22e" emissive="#ff6a08" emissiveIntensity={4.2} toneMapped={false} />
       </mesh>
-      <group ref={(node) => { flameRefs.current[index] = node; }} position={[0, 0, 0.84]}>
+      <group ref={(node) => { flameRefs.current[index] = node; }} position={[0, 0, 0.91]}>
         <mesh position={[0, 0, 0.3]} rotation={[Math.PI / 2, 0, 0]}>
           <coneGeometry args={[0.13, 0.6, 10]} />
           <meshBasicMaterial color="#21bfff" transparent opacity={0.48} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
@@ -64,7 +44,7 @@ function EnginePod({
       </group>
       <pointLight
         ref={(node) => { lightRefs.current[index] = node; }}
-        position={[0, 0.02, 0.93]}
+        position={[0, 0.02, 0.97]}
         color="#ff8a18"
         intensity={1.8}
         distance={3.2}
@@ -76,41 +56,13 @@ function EnginePod({
 function SwoopVehicle({ flameRefs, lightRefs }: { flameRefs: VehicleFxRefs; lightRefs: VehicleLightRefs }) {
   return (
     <group>
-      <SwoopBodyDetails />
-      <mesh scale={[0.23, 0.18, 1.02]}>
-        <sphereGeometry args={[1, 16, 10]} />
-        <meshStandardMaterial color="#aeb5b5" metalness={0.76} roughness={0.3} flatShading />
-      </mesh>
-      <mesh position={[0, 0, -1.08]} rotation={[-Math.PI / 2, 0, 0]}>
-        <coneGeometry args={[0.21, 0.46, 8]} />
-        <meshStandardMaterial color="#c55e31" metalness={0.7} roughness={0.38} flatShading />
-      </mesh>
-      <mesh position={[0, 0.17, -0.35]} scale={[0.17, 0.1, 0.36]}>
-        <sphereGeometry args={[1, 16, 8]} />
-        <meshStandardMaterial color="#172631" emissive="#071723" emissiveIntensity={0.55} metalness={0.64} roughness={0.12} />
-      </mesh>
-      <mesh position={[0, 0.1, 0.16]}>
-        <boxGeometry args={[0.58, 0.065, 0.18]} />
-        <meshStandardMaterial color="#9f4d2b" metalness={0.72} roughness={0.36} />
-      </mesh>
+      <KotorSwoopBody />
       {([-1, 1] as const).map((side) => (
         <group key={side}>
           <EnginePod side={side} index={side === -1 ? 0 : 1} flameRefs={flameRefs} lightRefs={lightRefs} />
         </group>
       ))}
-      <mesh position={[0, 0.03, 0.91]}>
-        <boxGeometry args={[0.3, 0.2, 0.1]} />
-        <meshStandardMaterial color="#3a4144" metalness={0.88} roughness={0.25} />
-      </mesh>
-      <mesh position={[0, 0.08, 0.97]}>
-        <boxGeometry args={[0.21, 0.07, 0.035]} />
-        <meshStandardMaterial color="#ff2818" emissive="#ff1208" emissiveIntensity={4.2} metalness={0.38} roughness={0.16} toneMapped={false} />
-      </mesh>
-      <mesh position={[0, -0.19, 0.15]} rotation={[-Math.PI / 2, 0, 0]}>
-        <circleGeometry args={[0.36, 20]} />
-        <meshBasicMaterial color="#2ad7ff" transparent opacity={0.13} side={THREE.DoubleSide} blending={THREE.AdditiveBlending} depthWrite={false} />
-      </mesh>
-      <pointLight position={[0, -0.1, 0.2]} color="#22cfff" intensity={0.65} distance={2.2} />
+      <pointLight position={[0, -0.1, 0.2]} color="#80c9db" intensity={0.35} distance={1.8} />
     </group>
   );
 }

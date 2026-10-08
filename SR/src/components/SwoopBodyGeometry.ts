@@ -73,3 +73,21 @@ export function createSwoopTopPanelGeometry(sections: HullSection[]) {
   geometry.computeVertexNormals();
   return geometry;
 }
+
+// Flat stamped aerofoils, drawn in vehicle X/Z coordinates. A shallow bevel
+// catches the track lighting without giving the wings a box-like silhouette.
+export function createSwoopWingGeometry(points: Array<[number, number]>, thickness = .035) {
+  const shape = new THREE.Shape();
+  points.forEach(([x, z], index) => index ? shape.lineTo(x, z) : shape.moveTo(x, z));
+  shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    depth: thickness,
+    bevelEnabled: true,
+    bevelThickness: .008,
+    bevelSize: .008,
+    bevelSegments: 1,
+    curveSegments: 1,
+  });
+  geometry.rotateX(Math.PI / 2);
+  return geometry;
+}
